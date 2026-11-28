@@ -82,7 +82,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 处理同名分类器、可调用声明冲突
      */
     val REDECLARATION by object : DiagnosticGroup("Redeclaration") {
-        val CONFLICTING_OVERLOADS by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+        /**
+         * 冲突可由宏生成声明触发；其来源映射到调用表达式时不再是命名声明 PSI。
+         * 定位策略对普通声明仍标记名称，对宏调用则标记调用源范围。
+         */
+        val CONFLICTING_OVERLOADS by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Collection<String>>("conflictingSymbols")
         }
 
@@ -404,11 +408,16 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val WRONG_NUMBER_OF_ARGUMENTS by error<PsiElement>(PositioningStrategy.DEFAULT)
 
         // 泛型调用的类型映射无法使形参与实参兼容
-        val PARAMETERS_AND_ARGUMENTS_MISMATCH by error<PsiElement>()
+        val PARAMETERS_AND_ARGUMENTS_MISMATCH by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
 
         // 命名参数名在目标参数列表中不存在
         val NAMED_PARAMETER_NOT_FOUND by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT) {
             parameter<Name>("parameterName")
+        }
+
+        // 命名实参名称不存在于目标参数列表中
+        val UNKNOWN_NAMED_ARGUMENT by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT) {
+            parameter<Name>("argumentName")
         }
 
         // 同一个参数被多次传入
@@ -1114,7 +1123,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val NO_MATCH_FUNCTION_DECLARATION_FOR_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)
 
         // 函数引用没有可访问的匹配声明，对齐官方 sema_no_match_function_declaration_for_ref。
-        val NO_MATCH_FUNCTION_DECLARATION_FOR_REF by error<PsiElement>(PositioningStrategy.DEFAULT)
+        val NO_MATCH_FUNCTION_DECLARATION_FOR_REF by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
 
         // 目标函数类型下仍有多个匹配函数引用，对齐官方 sema_ambiguous_func_ref。
         val AMBIGUOUS_FUNCTION_REFERENCE by error<PsiElement>(PositioningStrategy.DEFAULT) {
@@ -1154,7 +1163,10 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 歧义使用
-        val AMBIGUOUS_USE by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+        // 官方 `sema_ambiguous_use` 由 `DiagAmbiguousUse` 以整节点锚定（外部参考实现
+        // Sema/Diags.cpp 的 DiagnoseRefactor 重载不接收 Range，恒取 node.begin..node.end），
+        // 因此这里必须标记完整锚点元素，不能收窄到最终被引用的名称。
+        val AMBIGUOUS_USE by error<PsiElement>(PositioningStrategy.DEFAULT) {
             parameter<Name>("name")
         }
 

@@ -54,6 +54,9 @@ object CfirTree : AbstractCfirTreeBuilder() {
         "CfirConditionalCompilationFailure",
         exactPackage = true,
     )
+    private val patternTreeOwnerType = type("patterns", "CfirPatternTreeOwner", kind = TypeKind.Interface)
+    private val patternTreeNodeType = type("patterns", "CfirPatternTreeNode", kind = TypeKind.Interface)
+    private val patternTypeReferencesType = type("patterns", "CfirPatternTypeReferences", kind = TypeKind.Interface)
 
     /**
      * 模块数据类型引用。
@@ -67,6 +70,10 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * 声明属性集合类型引用。
      */
     private val declarationAttributesType = generatedType("declarations", "CfirDeclarationAttributes", TypeKind.Class)
+    /** 修饰符来源显式性类型。 */
+    private val modifierExplicitnessType = generatedType("declarations", "CfirModifierExplicitness", TypeKind.Class)
+    /** 可调用体存在性类型。 */
+    private val bodyPresenceType = generatedType("declarations", "CfirBodyPresence", TypeKind.Class)
     /**
      * 描述符可见性类型引用。
      */
@@ -232,6 +239,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      * 模式绑定变量符号类型引用。
      */
     val patternBindingVariableSymbolType = type("symbols", "CfirPatternBindingSymbol")
+    val resourceVariableSymbolType = type("symbols", "CfirResourceVariableSymbol")
     /**
      * enum 构造器符号类型引用。
      */
@@ -611,7 +619,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             arbitraryImportables += unresolvedDeprecationsProviderType
         }
 
-        +field("dispatchReceiverType", coneSimpleCangJieTypeType, nullable = true)
+        +field("dispatchReceiverType", coneSimpleCangJieTypeType, nullable = true, withReplace = true)
         +referencedSymbol(callableSymbolType.withArgs(callableDeclaration))
 
     }
@@ -950,17 +958,32 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("name", nameType)
     }
 
-    /**
-     * 模式变量声明容器节点。
-     */
+    /** try 资源直接拥有 initializer，是专用局部变量声明，不属于字段成员。 */
+    val resourceVariable: Element by element(Declaration, name = "ResourceVariable") {
+        parent(variable)
+        +declaredSymbol(resourceVariableSymbolType)
+        +FieldSets.typeParameters
+        +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
+        +field("name", nameType)
+    }
+
+    /** 模式变量声明容器节点。 */
     val patternVariable: Element by element(Declaration, name = "PatternVariable") {
         parent(variable)
         parent(typeParametersOwner)
         customParentInVisitor = variable
+        parent(patternTreeOwnerType)
+        patternTreeRootFieldName = "pattern"
         +FieldSets.typeParameters
         +declaredSymbol(patternVariableSymbolType)
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
-        +field("pattern", pattern, withTransform = true)
+        +field("pattern", pattern, withReplace = true, withTransform = true) {
+            skippedInCopy = true
+            kDoc = """
+                该 pattern 含有由本声明 owner 管理的 binding initializer 语义引用。
+                浅拷贝必须由调用方显式提供独立 pattern，避免两个 owner 竞争同一 binding。
+            """.trimIndent()
+        }
     }
 
     /**
@@ -973,8 +996,43 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(variable)
         parent(typeParametersOwner)
         customParentInVisitor = variable
+        parent(patternTreeNodeType)
         +FieldSets.typeParameters
         +declaredSymbol(patternBindingVariableSymbolType)
+        +field(
+            "initializer",
+            expression,
+            nullable = true,
+            withReplace = true,
+            withTransform = true,
+            isChild = false,
+        ) {
+            skippedInCopy = true
+            kDoc = """
+                整体查询可读取独立保存槽或宿主模式的整值视图；此属性本身不拥有表达式子树。
+            """.trimIndent()
+        }
+        +field("ownedInitializer", expression, nullable = true, withReplace = true, withTransform = true) {
+            defaultValueInBuilder = "null"
+            implementationDefaultStrategy = AbstractField.ImplementationDefaultStrategy.ConstructorDefaultValue("null")
+            publishedContentKind = Field.PublishedContentKind.INITIALIZER
+            kDoc = "实际拥有的初始化表达式，例如从 CJO 完成产品读取的 RANGE/STRING For 绑定存储槽。"
+        }
+        +field(
+            "patternTreeOwner",
+            patternTreeOwnerType,
+            nullable = true,
+            withReplace = true,
+            isChild = false,
+        ) {
+            isOverride = true
+            replaceOverride = true
+            skippedInCopy = true
+            kDoc = """
+                唯一包含该 binding 的模式树宿主。该反向语义引用不是 CFIR 子节点。
+                只有宿主为 CfirPatternVariable 且绑定形状匹配时才派生整个 initializer。
+            """.trimIndent()
+        }
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +field("name", nameType)
     }
@@ -1032,6 +1090,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         kind = ImplementationKind.Interface
         +field("visibility", visibilityType)
         +field("modality", modalityType, nullable = true)
+        +field("visibilityExplicitness", modifierExplicitnessType)
+        +field("modalityExplicitness", modifierExplicitnessType)
+        +field("bodyPresence", bodyPresenceType)
+        +field("isDeclarationFile", booleanType)
         generateBooleanFields(
             "visibilityExplicit",
             "modalityExplicit",
@@ -1045,6 +1107,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             "foreign",
             "c",
             "common",
+            "fromCommonPart",
             "specific",
             "commonWithDefault",
             "redef",
@@ -1168,7 +1231,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val arrayCreationExpression: Element by element(Expression, name = "ArrayCreationExpression") {
         parent(expression)
         +listField("arguments", functionArgument, withTransform = true)
-        +field("initializerSymbol", functionSymbolType, nullable = true, withReplace = true) {
+        +referencedSymbol("initializerSymbol", functionSymbolType, nullable = true, withReplace = true) {
             withBindThis = false
         }
         +field("isValueArray", booleanType)
@@ -1527,8 +1590,13 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val letPatternExpression: Element by element(Expression, name = "LetPatternExpression") {
         parent(expression)
+        parent(patternTreeOwnerType)
+        patternTreeRootFieldName = "pattern"
         +field("initializer", expression, withTransform = true)
-        +field("pattern", pattern, withTransform = true)
+        +field("pattern", pattern, withReplace = true, withTransform = true) {
+            skippedInCopy = true
+            kDoc = "模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
+        }
     }
 
     /**
@@ -1536,6 +1604,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val ifExpression: Element by element(Expression, name = "IfExpression") {
         parent(expression)
+        // 与 Kotlin when 相同，分支 select 的实际候选由表达式本身承载。
+        parent(resolvable)
         +field("condition", expression, withTransform = true)
         +field("thenBranch", block, withTransform = true)
         +field("elseBranch", expression, nullable = true, withTransform = true)
@@ -1546,6 +1616,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val matchExpression: Element by element(Expression, name = "MatchExpression") {
         parent(expression)
+        // 对位 Kotlin when/try：分支 select 的引用由真实表达式持有。
+        parent(resolvable)
         +field("subject", expression, withTransform = true, nullable = true)
         +listField("branches", matchBranch, withTransform = true)
         +field("exhaustiveness", matchExhaustivenessStatusType, withReplace = true) {
@@ -1558,7 +1630,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val orPattern: Element by element(Pattern, name = "OrPattern") {
         parent(pattern)
-        +listField("alternatives", pattern, withTransform = true)
+        +listField("alternatives", pattern, withReplace = true, withTransform = true)
     }
 
     /**
@@ -1574,7 +1646,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val matchBranch: Element by element(Expression, name = "MatchBranch") {
         parent(expression)
-        +field("pattern", pattern, withTransform = true)
+        parent(patternTreeOwnerType)
+        patternTreeRootFieldName = "pattern"
+        +field("pattern", pattern, withReplace = true, withTransform = true) {
+            skippedInCopy = true
+            kDoc = "模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
+        }
         +field("guard", expression, nullable = true, withTransform = true)
         +field("body", block, withTransform = true)
     }
@@ -1587,8 +1664,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val catchPattern: Element by element(Pattern, name = "CatchPattern") {
         parent(pattern)
+        parent(patternTypeReferencesType)
         +field("nestedPattern", pattern, withReplace = true, withTransform = true)
-        +listField("typeRefs", typeRef, withReplace = true, withTransform = true)
+        +listField("typeRefs", typeRef, withReplace = true, withTransform = true) {
+            isOverride = true
+            replaceOverride = true
+        }
     }
 
     /**
@@ -1596,8 +1677,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val catchClause: Element by element(Expression, name = "Catch") {
         parent(expression)
-        // catch (_) 直接拥有共享 WildcardPattern；带类型列表才拥有 CatchPattern。
-        +field("pattern", pattern, withReplace = true, withTransform = true)
+        parent(patternTreeOwnerType)
+        patternTreeRootFieldName = "pattern"
+        +field("pattern", pattern, withReplace = true, withTransform = true) {
+            skippedInCopy = true
+            kDoc = "异常模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
+        }
         +field("body", block, withTransform = true)
     }
 
@@ -1609,8 +1694,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val commandTypePattern: Element by element(Pattern, name = "CommandTypePattern") {
         parent(pattern)
+        parent(patternTypeReferencesType)
         +field("nestedPattern", pattern, withReplace = true, withTransform = true)
-        +listField("typeRefs", typeRef, withReplace = true, withTransform = true)
+        +listField("typeRefs", typeRef, withReplace = true, withTransform = true) {
+            isOverride = true
+            replaceOverride = true
+        }
     }
 
     /**
@@ -1621,7 +1710,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val handleClause: Element by element(Expression, name = "HandleClause") {
         parent(expression)
-        +field("commandPattern", commandTypePattern, withTransform = true)
+        parent(patternTreeOwnerType)
+        patternTreeRootFieldName = "commandPattern"
+        +field("commandPattern", commandTypePattern, withReplace = true, withTransform = true) {
+            skippedInCopy = true
+            kDoc = "command 模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。"
+        }
         +field("body", block, withTransform = true)
     }
 
@@ -1641,8 +1735,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val forInExpression: Element by element(Expression, name = "ForInExpression") {
         parent(expression)
         parent(iterationOwner)
+        parent(patternTreeOwnerType)
+        patternTreeRootFieldName = "pattern"
         customParentInVisitor = expression
-        +field("pattern", pattern, withReplace = true, withTransform = true)
+        +field("pattern", pattern, withReplace = true, withTransform = true) {
+            skippedInCopy = true
+        }
         +field("iterable", expression, withTransform = true)
         +field("patternGuard", expression, nullable = true, withTransform = true)
         +field("body", block, withTransform = true)
@@ -1654,7 +1752,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val tryExpression: Element by element(Expression, name = "TryExpression") {
         parent(expression)
-        +listField("resources", fieldVariable, withReplace = true, withTransform = true)
+        // 对位 Kotlin when/try：分支 select 的引用由真实表达式持有。
+        parent(resolvable)
+        +listField("resources", resourceVariable, withReplace = true, withTransform = true)
         +field("tryBlock", block, withTransform = true)
         +listField("handlers", handleClause, withTransform = true)
         +listField("catches", catchClause, withTransform = true)
@@ -1674,7 +1774,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val resolvedDeclarationStatus: Element by element(Declaration) {
         kind = ImplementationKind.Interface
 
-        parent( declarationStatus)
+        parent(declarationStatus)
 
         +field(modalityType, nullable = false)
 //        +field("effectiveVisibility", effectiveVisibilityType)
@@ -1799,7 +1899,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(expression)
         +listField("elements", expression, withTransform = true, withReplace = true)
         // initFunc 是引用目标；不能 bind 到 ArrayLit，也不能通过它扩大拥有域。
-        +field("initializerSymbol", functionSymbolType, nullable = true, withReplace = true) {
+        +referencedSymbol("initializerSymbol", functionSymbolType, nullable = true, withReplace = true) {
             withBindThis = false
         }
     }
@@ -1924,6 +2024,13 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("contextExpression", expression, nullable = true, isChild = false, withReplace = true) {
             defaultValueInBuilder = "null"
         }
+        parent(patternTreeNodeType)
+        +field("patternTreeOwner", patternTreeOwnerType, nullable = true, withReplace = true, isChild = false) {
+            isOverride = true
+            replaceOverride = true
+            skippedInCopy = true
+            kDoc = "该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。"
+        }
     }
 
     /**
@@ -1962,7 +2069,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val varOrEnumPattern: Element by element(Pattern, name = "VarOrEnumPattern") {
         parent(pattern)
         +field("name", nameType)
-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true, withReplace = true)
     }
 
     /**
@@ -1975,6 +2082,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
     /**
      * enum 构造器模式节点。
+     *
+     * 限定名模式（`E.A` / `Alias<Int64>.B(x)`）的类型限定符保留在 constructor 表达式的 receiver 中。
+     * 解析后的类型用于检查 enum 或 typealias 的 owner 是否与 subject 一致。
      */
     val enumPattern: Element by element(Pattern, name = "EnumPattern") {
         parent(pattern)
@@ -2155,7 +2265,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      */
     val resolvedNamedReference: Element by element(Reference, name = "ResolvedNamedReference") {
         parent(namedReference)
-        +field("resolvedSymbol", symbolType)
+        +field("resolvedSymbol", symbolType) {
+            symbolFieldRole = AbstractField.SymbolFieldRole.REFERENCED
+            withBindThis = false
+        }
     }
 
     /** 已绑定的仓颉内建运算引用；原生 primitive 运算没有 FuncDecl 符号。 */

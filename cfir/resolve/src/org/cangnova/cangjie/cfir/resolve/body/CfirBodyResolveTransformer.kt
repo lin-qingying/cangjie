@@ -23,6 +23,10 @@ open class CfirBodyResolveTransformer(
     override var implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformerDispatcher(phase, implicitTypeOnly) {
 
+    /** 普通 body dispatcher 不缓存局部声明的变换结果。 */
+    open override val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession?
+        get() = null
+
     /** 当前 body resolve 上下文。 */
     override val context: BodyResolveContext = outerBodyResolveContext ?: BodyResolveContext(
         returnTypeCalculator = returnTypeCalculator,

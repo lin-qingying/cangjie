@@ -511,7 +511,7 @@ class CfirFlowVariableOwnershipTest : SessionHolder {
             moduleData = module; resolvePhase = CfirResolvePhase.BODY_RESOLVE; origin = CfirDeclarationOrigin.Source
             attributes = CfirDeclarationAttributes.EMPTY; isLocal = true; status = CfirDeclarationStatusImpl()
             this.name = Name.identifier(name); symbol = CfirPatternBindingSymbol(CallableId(this.name))
-            returnTypeRef = typeRef(type); initializer = null; isVar = mutable
+            returnTypeRef = typeRef(type); ownedInitializer = null; isVar = mutable
         }
 
     private fun pattern(binding: CfirPatternBindingVariable): CfirBindingPattern = buildBindingPattern {

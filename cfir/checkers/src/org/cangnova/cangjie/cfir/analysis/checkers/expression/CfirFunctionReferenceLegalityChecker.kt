@@ -2,15 +2,16 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirCallExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -56,6 +57,10 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker(MppChec
         val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
 
         if (targetDeclaration is CfirEnumConstructor && targetDeclaration.valueParameters.isNotEmpty()) {
+            // 模式拥有真正的 constructor 访问；其载荷由模式检查器独立验证。
+            val enumPattern = context.containingElements.filterIsInstance<CfirEnumPattern>().lastOrNull()
+            val constructor = enumPattern?.constructor
+            if (constructor === expression || (constructor as? CfirCallExpression)?.base === expression) return
             reporter.reportOn(
                 source = diagnosticSource,
                 factory = CfirErrors.ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS,

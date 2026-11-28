@@ -1,0 +1,5 @@
+FILE: macroNamedParams.cj
+    package macronamed
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>

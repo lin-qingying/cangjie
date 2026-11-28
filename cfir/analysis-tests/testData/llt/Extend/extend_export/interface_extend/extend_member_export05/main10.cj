@@ -4,7 +4,7 @@
 package a
 
 private interface I0 {
-    public func f0(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f0(): Unit
 }
 
 public class Foo<T> {}
@@ -22,19 +22,19 @@ package b.c
 import a.Foo
 
 private interface I1 {
-    public func f1(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f1(): Unit
 }
 
 internal interface I2 {
-    public func f2(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f2(): Unit
 }
 
 protected interface I3 {
-    public func f3(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f3(): Unit
 }
 
 public interface I4 {
-    public func f4(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f4(): Unit
 }
 
 extend<T> Foo<T> <: I1 & I2 & I3 & I4 {

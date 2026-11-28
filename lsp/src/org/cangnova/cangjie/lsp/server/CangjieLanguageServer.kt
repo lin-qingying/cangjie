@@ -1,6 +1,10 @@
 package org.cangnova.cangjie.lsp.server
 
+import com.intellij.openapi.application.ApplicationManager
+import org.cangnova.cangjie.CangJieCoreEnvironmentMode
+import org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticExpansionEnvironment
 import org.cangnova.cangjie.lsp.CangjieLspServerOptions
+import org.cangnova.cangjie.lsp.analysis.LspMacroSemanticExpansionEnvironment
 import org.cangnova.cangjie.lsp.capabilities.CangjieClientCapabilityNegotiator
 import org.cangnova.cangjie.lsp.capabilities.CangjieServerCapabilitiesFactory
 import org.cangnova.cangjie.lsp.state.LspProjectConfiguration
@@ -31,8 +35,30 @@ class CangjieLanguageServer(
     /**
      * 语言服务器启动和运行选项。
      */
-    private val options: CangjieLspServerOptions = CangjieLspServerOptions(),
+    initialOptions: CangjieLspServerOptions = CangjieLspServerOptions(),
 ) : LanguageServer, LanguageClientAware, AutoCloseable {
+    /**
+     * 生效的启动选项。
+     *
+     * 宏快照发布或失效后需要把新的诊断推给客户端；这里在保留宿主配置的前提下挂接
+     * [CangjieServerContext.republishMacroDiagnostics]，避免每个宿主重复实现刷新。
+     */
+    private val options: CangjieLspServerOptions = initialOptions
+
+    /** 宏发布/失效回调运行在构造线程，诊断刷新必须等写屏障释放后执行。 */
+    private fun scheduleMacroDiagnosticsRefresh() {
+        // 终态 listener 仍记录取消/失败；实际关闭的宿主不再提交新的 PSI 分析任务。
+        if (closed.get() || (environmentLazy.isInitialized() && environment.project.isDisposed)) return
+        ApplicationManager.getApplication().executeOnPooledThread refresh@ {
+            if (closed.get() || (environmentLazy.isInitialized() && environment.project.isDisposed)) return@refresh
+            try {
+                serverContext.republishMacroDiagnostics()
+            } catch (failure: Throwable) {
+                logger.log(Level.SEVERE, "Failed to refresh LSP diagnostics after macro snapshot change", failure)
+            }
+        }
+    }
+
     /**
      * 语言服务器主日志记录器。
      */
@@ -70,7 +96,16 @@ class CangjieLanguageServer(
      * 只有 initialize 成功进入上下文创建路径时才会触发环境构造。
      */
     private val environmentLazy = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        options.environmentFactory()
+        options.environmentFactory().also { environment ->
+            if (options.macroExpansion != null) {
+                val macroEnvironment = MacroSemanticExpansionEnvironment.getInstance(environment.project)
+                (macroEnvironment as? LspMacroSemanticExpansionEnvironment)?.addLifecycleListeners(
+                    publishListener = { _, _ -> scheduleMacroDiagnosticsRefresh() },
+                    invalidationListener = { scheduleMacroDiagnosticsRefresh() },
+                    abandonedListener = { _, _ -> scheduleMacroDiagnosticsRefresh() },
+                )
+            }
+        }
     }
 
     /**
@@ -85,6 +120,7 @@ class CangjieLanguageServer(
         CangjieServerContext(
             descriptor = options.descriptor,
             environment = environment,
+            retainDiagnosticCollectionFailures = options.environmentMode == CangJieCoreEnvironmentMode.UnitTest,
             analysisFacadeFactory = options.analysisFacadeFactory,
         )
     }
@@ -93,6 +129,18 @@ class CangjieLanguageServer(
      * 当前服务端运行上下文。
      */
     private val serverContext by serverContextLazy
+
+    /**
+     * 已装配的服务端上下文（只读入口）。
+     *
+     * 供嵌入式宿主与集成测试读取装配结果——例如取出 project 与环境，验证补全管线在
+     * **生产容器**里能否跑通；这类验证不能改由测试自建容器替代（设计 §12.7 的教训：
+     * 夹具容器的结论不能外推到生产容器）。
+     *
+     * 协议处理不依赖本入口：文本与工作区请求一律走 [textDocumentService] / [workspaceService]。
+     */
+    val context: CangjieServerContext
+        get() = serverContext
 
     /**
      * 惰性创建文本服务。
@@ -154,7 +202,7 @@ class CangjieLanguageServer(
         // 在构造 server context 之前先落库标准库/库搜索路径，避免任何懒初始化的 analysis 组件捕获到空搜索路径。
         LspProjectConfiguration.fromInitializeParams(params).applyLibrarySearchProperties()
 
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.INITIALIZE) {
             serverContext.client = connectedClient
             serverContext.workspaceState.initialize(params)
             serverContext.refreshProjectStructure()

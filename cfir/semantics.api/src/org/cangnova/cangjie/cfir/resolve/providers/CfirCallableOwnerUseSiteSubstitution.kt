@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTypeConstructor
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructedClassTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -15,13 +16,12 @@ import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.ClassId
@@ -42,13 +42,29 @@ fun createCallableOwnerUseSiteSubstitutionMap(
 ): Map<TypeConstructorMarker, ConeCangJieType> {
     if (callableSymbol == null || receiverType == null) return emptyMap()
     val originalCallableSymbol = callableSymbol.unwrapSubstitutionOverrides()
+    val enumConstructor = originalCallableSymbol.cfir as? CfirEnumConstructor
+    if (enumConstructor != null) {
+        val parameters = enumConstructor.typeParameters
+        if (parameters.isEmpty()) return emptyMap()
+        // 参数 refs 直接携带实际声明 owner；ClassId 只用于 receiver 的名义类型关系。
+        val ownerSymbol = parameters.first().symbol.containingDeclarationSymbol as? CfirEnumSymbol
+            ?: error("Constructed enum parameter has no actual enum owner")
+        check(parameters.size == ownerSymbol.cfir.typeParameters.size &&
+                parameters.zip(ownerSymbol.cfir.typeParameters).all { (reference, parameter) ->
+                    reference is CfirConstructedClassTypeParameterRef &&
+                            reference.symbol === parameter.symbol
+                }) { "Enum constructor parameters differ from its constructed enum" }
+        val concreteOwnerType = findConcreteOwnerType(session, receiverType, ownerSymbol.classId)
+            ?: return emptyMap()
+        if (concreteOwnerType.isBareOrDeclarationSelfTypeOf(ownerSymbol)) return emptyMap()
+        return createClassLikeOwnerSubstitutionMap(ownerSymbol.cfir, concreteOwnerType)
+    }
     val ownerExtend = originalCallableSymbol.getContainingExtend()
     if (ownerExtend != null) {
         return createExtendOwnerSubstitutionMap(session, ownerExtend, receiverType)
     }
 
     val ownerClassId = originalCallableSymbol.getContainingClass()?.classId
-        ?: enumConstructorOwnerClassId(originalCallableSymbol, receiverType, session)
         ?: return emptyMap()
     val concreteOwnerType = findConcreteOwnerType(session, receiverType, ownerClassId)
         ?: return emptyMap()
@@ -101,18 +117,6 @@ private fun createExtendOwnerSubstitutionMap(
             ?: return@mapNotNull null
         key to value
     }.toMap()
-}
-
-/**
- * 当 callable 是 enum constructor 时，从 receiver 类型恢复 owner enum 的 [ClassId]。
- */
-private fun enumConstructorOwnerClassId(
-    callableSymbol: CfirCallableSymbol<*>,
-    receiverType: ConeCangJieType,
-    session: CfirSession,
-): ClassId? {
-    if (callableSymbol !is CfirEnumConstructorSymbol && callableSymbol.cfir !is CfirEnumConstructor) return null
-    return receiverType.fullyExpandedType(session).expandedClassIdOrPrimitiveClassId
 }
 
 /**

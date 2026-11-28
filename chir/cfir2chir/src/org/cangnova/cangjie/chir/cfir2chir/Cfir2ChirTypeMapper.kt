@@ -27,6 +27,7 @@ import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -99,7 +100,9 @@ class Cfir2ChirTypeMapper {
     fun mapConeType(type: ConeCangJieType): ChirType {
         return when (type) {
             is ConePrimitiveType -> mapPrimitiveType(type.kind)
-            is ConeClassLikeType -> ChirRefType(
+            is ConeClassLikeType -> if (type.classId == StdlibClassIds.String) {
+                ChirNamedType("String")
+            } else ChirRefType(
                 referencedType = ChirResolvedTypeRef(
                     ChirClassType(
                         declarationId = type.classId.toChirTypeDeclarationId(),
@@ -250,10 +253,10 @@ class Cfir2ChirTypeMapper {
     private fun ConeCangJieType.renderNameForSyntheticType(): String =
         when (this) {
             is ConePrimitiveType -> mapPrimitiveType(kind).renderName
-            is ConeClassLikeType -> classId.asString()
-            is ConeStructType -> classId.asString()
-            is ConeEnumType -> classId.asString()
-            is ConeTypeAliasType -> classId.asString()
+            is ConeClassLikeType -> classId.asFqNameString()
+            is ConeStructType -> classId.asFqNameString()
+            is ConeEnumType -> classId.asFqNameString()
+            is ConeTypeAliasType -> classId.asFqNameString()
             ConeAnyType -> "Any"
             is ConeTypeParameterType -> lookupTag.typeParameterSymbol.name.asString()
             else -> this::class.simpleName ?: "anonymous"

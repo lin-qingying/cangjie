@@ -174,7 +174,9 @@ internal fun CfirInteropInfo.frozenCopy(): CfirInteropInfo = copy(
 )
 
 /** Attribute key used to attach the canonical interop snapshot to a declaration. */
-internal object CfirInteropInfoKey : CfirDeclarationDataKey()
+internal object CfirInteropInfoKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.interop
+}
 
 /** Canonical declaration-owned interop snapshot. */
 private var CfirDeclaration.ownedInteropInfo: CfirInteropInfo? by CfirDeclarationDataRegistry.data(CfirInteropInfoKey)

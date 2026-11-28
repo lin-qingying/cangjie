@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.components.CaAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.components.CaCDocProvider
+import org.cangnova.cangjie.analysis.api.completion.CaCompletionExtensionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaCompletionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaDataFlowProvider
 import org.cangnova.cangjie.analysis.api.components.CaDefaultImportsProvider
@@ -11,12 +12,14 @@ import org.cangnova.cangjie.analysis.api.components.CaDiagnosticProvider
 import org.cangnova.cangjie.analysis.api.components.CaEvaluator
 import org.cangnova.cangjie.analysis.api.components.CaExpressionInformationProvider
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
+import org.cangnova.cangjie.analysis.api.components.CaMacroExpansionMappingProvider
 import org.cangnova.cangjie.analysis.api.components.CaImportOptimizer
 import org.cangnova.cangjie.analysis.api.components.CaOriginalPsiProvider
 import org.cangnova.cangjie.analysis.api.components.CaReferenceShortener
 import org.cangnova.cangjie.analysis.api.components.CaRenderer
 import org.cangnova.cangjie.analysis.api.components.CaResolver
 import org.cangnova.cangjie.analysis.api.components.CaScopeProvider
+import org.cangnova.cangjie.analysis.api.components.CaTypeScopeProvider
 import org.cangnova.cangjie.analysis.api.components.CaSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
 import org.cangnova.cangjie.analysis.api.components.CaSubstitutorProvider
@@ -60,10 +63,13 @@ interface CaSession : CaLifetimeOwner,
 
     CaDiagnosticProvider,
     CaScopeProvider,
+    CaTypeScopeProvider,
     CaAnalysisScopeProvider,
     CaDefaultImportsProvider,
     CaCompletionCandidateChecker,
+    CaCompletionExtensionCandidateChecker,
     CaExpressionTypeProvider,
+    CaMacroExpansionMappingProvider,
     CaExpressionInformationProvider,
     CaEvaluator,
     CaDataFlowProvider,

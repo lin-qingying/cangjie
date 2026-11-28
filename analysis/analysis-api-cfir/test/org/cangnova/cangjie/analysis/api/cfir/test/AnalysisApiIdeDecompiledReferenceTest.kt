@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
 import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
+import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.decompiled.psi.file.CjDecompiledFile
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
@@ -105,4 +106,28 @@ class AnalysisApiIdeDecompiledReferenceTest : AbstractAnalysisApiExecutionTest(
             "mainReference 与 contributor-based reference service 应解析到同一个 decompiled type alias PSI。",
         )
     }
+
+    /**
+     * decompiled 库签名里的 typealias 必须按展开类型参与类型比较，且 `Array` 的 extend 成员可用。
+     *
+     * 症状（真实 IDE）：`RETURN_TYPE_MISMATCH: expected Array<UInt8>, actual Array<Byte>` 与
+     * `NOT_MEMBER_OF 'size'`。根因是 stub 路径把库签名里的 `MyByte` 建成了 class-like 类型，
+     * 而不是 `ConeTypeAliasType`，导致别名不会在 use-site 展开。
+     */
+    @Test
+    fun decompiledLibraryAliasSignature(mainFile: CjFile) {
+        // 诊断对象只能在 `analyze` 生命周期内读取（factoryName/psi 都受 lifetime token 约束），
+        // 因此先把它们投影成字符串，再在生命周期外断言。
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+                .map { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" }
+        }
+
+        assertTrue(
+            diagnostics.isEmpty(),
+            "decompiled 库签名中的别名不应产生诊断：\n" + diagnostics.joinToString("\n") { "  - $it" },
+        )
+    }
 }
+
+

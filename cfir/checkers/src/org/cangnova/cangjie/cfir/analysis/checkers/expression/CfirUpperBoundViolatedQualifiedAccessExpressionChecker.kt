@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
@@ -50,6 +51,8 @@ object CfirUpperBoundViolatedQualifiedAccessExpressionChecker : CfirQualifiedAcc
         if (typeArgumentRefs.none { it.source != null }) return
 
         val resolvedSymbol = expression.resolvedSymbolOrNull() ?: return
+        // 限定枚举成员的显式实参不绑定 owner 参数，合法性由枚举成员访问检查器报告。
+        if (resolvedSymbol is CfirEnumConstructorSymbol && expression.explicitReceiver != null) return
         val typeParameters = resolvedSymbol.useSiteTypeParameters()
         if (typeParameters.isEmpty() || typeArgumentRefs.size != typeParameters.size) return
 

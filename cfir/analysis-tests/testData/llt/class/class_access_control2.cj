@@ -16,8 +16,8 @@ class DateTime {
     public static func MaxValue(): DateTime {
         var d = DateTime()
         d.SetTick(MinTickValue)
-        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>S<!>etTick(MinTickValue)
-        var a = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>T<!>icks
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>SetTick<!>(MinTickValue)
+        var a = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>Ticks<!>
         return d
     }
 }

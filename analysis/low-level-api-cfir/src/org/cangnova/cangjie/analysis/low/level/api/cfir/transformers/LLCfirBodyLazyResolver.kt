@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirExpressionsResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
@@ -58,7 +59,6 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
-import kotlin.reflect.KProperty1
 
 /**
  * BODY_RESOLVE 阶段的低阶懒解析入口。
@@ -76,7 +76,11 @@ internal object LLCfirBodyLazyResolver : LLCfirLazyResolver(CfirResolvePhase.BOD
         when (target) {
             is CfirValueParameter -> checkDefaultValueIsResolved(target)
             is CfirVariable -> checkInitializerIsResolved(target)
-            is CfirConstructor -> checkBodyIsResolved(target)
+            is CfirConstructor -> {
+                // 对齐 Kotlin：构造器除了 body，还要校验委托构造调用的 callee 已 resolve。
+                checkDelegatedConstructorIsResolved(target)
+                checkBodyIsResolved(target)
+            }
             is CfirEnumConstructor -> checkBodyIsResolved(target)
             is CfirFunction -> checkBodyIsResolved(target)
         }
@@ -131,8 +135,18 @@ private class CfirPartialBodyDeclarationResolveTransformer(
      */
     override fun transformConstructorContent(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
         if (constructor.partialBodyAnalysisState != null) {
-            resolveDeclarationAnnotations(constructor, data)
-            constructor.transformBody(this, data)
+            // 对齐 Kotlin `LLFirBodyLazyResolver.transformConstructorContent`：
+            // 构造器 body 必须在 `forConstructor` / `forConstructorBody` 上下文中解析，
+            // 否则构造器参数作用域与 tower data mode 不完整，resolveState 不会推进到 BODY_RESOLVE。
+            context.forConstructor(constructor) {
+                resolveDeclarationAnnotations(constructor, data)
+                transformDelegatedConstructorCall(constructor, data)
+                context.forConstructorBody(constructor, session) {
+                    constructor.transformBody(this, data)
+                }
+            }
+
+            constructor.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(constructor))
             return constructor
         }
 
@@ -583,6 +597,22 @@ private class CfirPartialBodyExpressionResolveTransformer(
  * @see CfirResolvePhase.BODY_RESOLVE
  */
 private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbstractBodyTargetResolver(target, CfirResolvePhase.BODY_RESOLVE) {
+    /** 整体递归请求中的当前独立声明目标；阶段发布仍由该声明自己的锁负责。 */
+    private var targetBeingResolved: CfirElementWithResolveState? = null
+
+    /**
+     * 推进 class-like 声明自身的注解实参绑定。
+     *
+     * 对齐 Kotlin `LLFirAnnotationArgumentsLazyResolver.transformAnnotations`：Kotlin 用独立的
+     * `ANNOTATION_ARGUMENTS` 阶段承载声明注解实参；仓颉没有该阶段，实参映射只在 BODY 阶段的
+     * `CfirExpressionsResolveTransformer.transformAnnotationCall` 产生，而 class-like 容器分支
+     * 从不走声明 transformer，因此必须在这里显式转换自身注解，否则 `LLCfirPhaseUpdater`
+     * 会把容器推进到 `BODY_RESOLVE` 之后，分析层再请求该阶段只会在 `checkAnalysisReadiness` 短路。
+     */
+    private fun transformDeclarationAnnotations(target: CfirClassLikeDeclaration) {
+        target.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+    }
+
     /**
      * BODY_RESOLVE 阶段使用的 dispatcher。
      */
@@ -592,6 +622,10 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
      * low-level body 解析 dispatcher，接入局部 body 分析专用的声明和表达式 transformer。
      */
     inner class BodyTransformerDispatcher : CfirAbstractBodyResolveTransformerDispatcher(resolverPhase, false) {
+        /** LL 正式 body dispatcher 不缓存局部声明变换，局部分析状态由声明及其 state keeper 持有。 */
+        override val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession?
+            get() = null
+
         /**
          * body 解析上下文，持有返回类型计算器和数据流分析上下文。
          */
@@ -623,6 +657,17 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
          */
         override val declarationsTransformer: CfirDeclarationsResolveTransformer =
             CfirPartialBodyDeclarationResolveTransformer(this)
+
+        /** 非局部模式叶子是独立解析目标，owner 遍历只完成共享模式投影。 */
+        override fun transformPatternBindingVariable(
+            patternBindingVariable: CfirPatternBindingVariable,
+            data: ResolutionMode,
+        ): CfirPatternBindingVariable {
+            if (!patternBindingVariable.isLocal && targetBeingResolved !== patternBindingVariable) {
+                return patternBindingVariable
+            }
+            return super.transformPatternBindingVariable(patternBindingVariable, data)
+        }
 
         /**
          * low-level body 解析不复用类 CFG。
@@ -656,6 +701,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 )
 
                 performCustomResolveUnderLock(target) {
+                    transformDeclarationAnnotations(target)
                     calculateControlFlowGraph(target)
                 }
 
@@ -668,6 +714,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 performCustomResolveUnderLock(target) {
                     // 非 regular class 的 class-like 容器没有额外 CFG 入口；
                     // 这里仅推进容器自身 phase，成员仍作为独立 target 按既有路径完成 BODY_RESOLVE。
+                    transformDeclarationAnnotations(target)
                 }
 
                 return true
@@ -782,7 +829,8 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         val resolutionFacade = module.getResolutionFacade(cjCodeFragment.project)
 
         fun CfirTowerDataContext.withExtraScopes(): CfirTowerDataContext {
-            return resolutionFacade.useSiteCfirSession.codeFragmentScopeProvider.getExtraScopes(cjCodeFragment)
+            return resolutionFacade.useSiteCfirSession.codeFragmentScopeProvider
+                .getExtraScopes(cjCodeFragment, cfirCodeFragment)
                 .fold(this) { context, scope ->
                     val scopeWithProperSession = scope.withReplacedSessionOrNull(resolveTargetSession, resolveTargetScopeSession) ?: scope
                     val localScope = scopeWithProperSession as? CfirLocalScope
@@ -870,6 +918,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 -> {
                 // No bodies here
             }
+            is CfirEnumConstructor -> {
+                // 枚举构造器没有函数体；返回类型由所属 enum 在 TYPES 阶段写入。
+            }
             else -> throwUnexpectedCfirElementError(target)
         }
     }
@@ -878,12 +929,16 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
      * 执行 raw body 解析，并在完整或局部成功时通知声明修改服务。
      */
     override fun rawResolve(target: CfirElementWithResolveState) {
+        val previousTarget = targetBeingResolved
+        targetBeingResolved = target
         try {
             super.rawResolve(target)
         } catch (e: PartialBodyAnalysisSuspendedException) {
             // We successfully analyzed some part of the body so need to keep track of it
             LLCfirDeclarationModificationService.bodyResolved(target, resolverPhase)
             throw e
+        } finally {
+            targetBeingResolved = previousTarget
         }
 
         LLCfirDeclarationModificationService.bodyResolved(target, resolverPhase)
@@ -909,8 +964,13 @@ internal object BodyStateKeepers {
     /**
      * code fragment block 状态保持器。
      */
-    val CODE_FRAGMENT: StateKeeper<CfirCodeFragment, CfirDesignation> = stateKeeper { builder, _, _ ->
-        builder.add(CfirCodeFragment::block, CfirCodeFragment::replaceBlock, ::blockGuard)
+    val CODE_FRAGMENT: StateKeeper<CfirCodeFragment, CfirDesignation> = stateKeeper { builder, codeFragment, _ ->
+        builder.add(CfirCodeFragment::block, CfirCodeFragment::replaceBlock)
+        val snapshot = org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot.capture(codeFragment)
+        builder.register(object : PreservedState {
+            override fun restore() = snapshot.restore()
+            override fun postProcess() {}
+        })
     }
 
     /**
@@ -940,7 +1000,13 @@ internal object BodyStateKeepers {
             builder.add(PARTIAL_BODY_RESOLVABLE, designation)
             preserveResolvedState(builder, function)
 
-            builder.add(CfirFunction::body, CfirFunction::replaceBody, ::blockGuard)
+            // 仓颉模式叶子可独立发起阶段查询；已构建正文必须保留绑定身份，失败时恢复完整解析快照。
+            builder.add(CfirFunction::body, CfirFunction::replaceBody)
+            val snapshot = org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot.capture(function)
+            builder.register(object : PreservedState {
+                override fun restore() = snapshot.restore()
+                override fun postProcess() {}
+            })
             builder.entityList(function.valueParameters, VALUE_PARAMETER, designation)
         }
 
@@ -960,10 +1026,14 @@ internal object BodyStateKeepers {
     val VARIABLE: StateKeeper<CfirVariable, CfirDesignation> = stateKeeper { builder, variable, _ ->
         builder.add(CfirVariable::returnTypeRef, CfirVariable::replaceReturnTypeRef)
 
-        if (!isCallableWithSpecialBody(variable)) {
-            variable.initializerGetterIfUnresolved?.let {
-                builder.add(it, CfirVariable::replaceInitializer, ::expressionGuard)
-            }
+        /*
+         * pattern binding 的 initializer 由其唯一模式树 owner 派生，不是 binding 自己拥有的
+         * 可变状态。状态保持器只能保存真正由该声明拥有的槽位；对派生槽位调用 replaceInitializer
+         * 会违反模式树所有权不变量。
+         */
+        if (variable !is CfirPatternBindingVariable && !isCallableWithSpecialBody(variable)) {
+            // CfirProperty 是独立 callable，已由 PROPERTY/FUNCTION 的 phase guard 处理。
+            builder.add(CfirVariable::initializer, CfirVariable::replaceInitializer, ::expressionGuard)
         }
     }
 
@@ -1101,12 +1171,6 @@ private val CfirFunction.isCertainlyResolved: Boolean
         val body = this.body ?: return false // Not completely sure
         return body !is CfirLazyBlock && body.hasResolvedType
     }
-
-/**
- * 返回尚未解析 initializer 的变量 initializer 属性访问器。
- */
-private val CfirVariable.initializerGetterIfUnresolved: KProperty1<CfirVariable, CfirExpression?>?
-    get() = CfirVariable::initializer.takeUnless { this is CfirProperty && bodyResolveState >= CfirPropertyBodyResolveState.INITIALIZER_RESOLVED }
 
 /**
  * 返回尚未解析 getter body 的属性访问器。

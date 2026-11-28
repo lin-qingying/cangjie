@@ -1215,7 +1215,7 @@ class CfirCompletedValueLifecycleTest {
             returnTypeRef = buildResolvedTypeRef { coneType = type }
             isVar = mutable
             isTypeImplicit = typeImplicit
-            this.initializer = initializer
+            this.ownedInitializer = initializer
         }
 
         fun access(variable: CfirPatternBindingVariable, identity: String) = buildNamedAccessExpression {

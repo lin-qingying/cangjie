@@ -1,0 +1,38 @@
+FILE: optionalChainInvoke.cj
+    internal? class A {
+        init()
+        internal? func f(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        internal? prop p: R|Int64|
+    }
+    internal? func useOptionalChain(a: R|Option<R|A|>|): R|Unit| {
+        local? let x: <implicit> = ...
+            initializer:
+                OPTIONAL_CHAIN_EXPRESSION {
+                    FUNCTION_CALL(f) {
+                        receiver:
+                            OPTIONAL_EXPRESSION {
+                                NAMED_ACCESS(a)
+                            }
+                    }
+                }
+        local? let y: <implicit> = ...
+            initializer:
+                OPTIONAL_CHAIN_EXPRESSION {
+                    NAMED_ACCESS(p) {
+                        receiver:
+                            OPTIONAL_EXPRESSION {
+                                NAMED_ACCESS(a)
+                            }
+                    }
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(x)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(y)
+    }

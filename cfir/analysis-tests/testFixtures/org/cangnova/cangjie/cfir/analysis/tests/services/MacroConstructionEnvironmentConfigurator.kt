@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets
  * 本配置器不解析 `public macro` 生成假 `.cjo/.dll`，也不注入
  * `MacroDefinitionEntry` 或 stub executor。测试里的 `macro package` 文件只会
  * 被复制到临时源码根，后续由 production orchestrator 调用
- * `cjc -p <root> --compile-macro -o <dir>` 生成真实 artifact。
+ * `cjc -p <root> --compile-macro` 生成真实 artifact。
  */
 class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
     /**
@@ -73,18 +73,19 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
     }
 
     /**
-     * 将一个宏源码包写入测试临时目录。
+     * 将同一宏包的全部源文件直接写入 cjc 的包目录。
+     * cjc -p 不递归编译嵌套目录；编号保留不同虚拟路径下同名文件的独立身份。
      */
     private fun materializeSourcePackage(testCaseId: String, sourcePackage: SourceMacroPackage): File {
         val root = testServices.getOrCreateTempDirectory(
             "macro-source-$testCaseId-${sourcePackage.packageFqName.asString().sanitizeFileName()}",
         )
-        for (file in sourcePackage.files) {
-            val target = File(root, file.relativePath)
-            require(target.toPath().toAbsolutePath().normalize().startsWith(root.toPath().toAbsolutePath().normalize())) {
+        for ((index, file) in sourcePackage.files.withIndex()) {
+            val originalTarget = File(root, file.relativePath)
+            require(originalTarget.toPath().toAbsolutePath().normalize().startsWith(root.toPath().toAbsolutePath().normalize())) {
                 "Macro source fragment escapes its source root: ${file.relativePath}"
             }
-            target.parentFile?.mkdirs()
+            val target = File(root, "$index-${originalTarget.name}")
             target.writeText(file.content, StandardCharsets.UTF_8)
         }
         return root
@@ -197,4 +198,3 @@ private fun String.sanitizeFileName(): String =
 /**
  * 判断当前运行平台是否为 Windows。
  */
-private fun isWindows(): Boolean = System.getProperty("os.name").contains("Windows", ignoreCase = true)

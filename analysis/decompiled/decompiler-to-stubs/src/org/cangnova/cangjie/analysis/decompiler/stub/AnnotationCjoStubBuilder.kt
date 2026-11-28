@@ -14,6 +14,10 @@ import org.cangnova.cangjie.psi.stubs.impl.*
 
 /** 注解参数与声明头共用 compiled stub 协议；不依赖 sidecar 原文或已绑定的源码 PSI。 */
 internal fun createAnnotationChildrenStubs(parent: StubElement<*>, annotation: CfirAnnotationCall, sourceName: String) {
+    createAnnotationChildrenStubs(parent, sourceName, annotation.argumentList.arguments)
+}
+
+internal fun createAnnotationChildrenStubs(parent: StubElement<*>, sourceName: String, arguments: List<CfirExpression>) {
     val callee = CangJiePlaceHolderStubImpl<CjConstructorCalleeExpression>(parent, CjStubElementTypes.CONSTRUCTOR_CALLEE)
     val type = CangJiePlaceHolderStubImpl<CjTypeReference>(callee, CjStubElementTypes.TYPE_REFERENCE)
     fun userType(parent: StubElement<*>, segments: List<String>) {
@@ -27,7 +31,6 @@ internal fun createAnnotationChildrenStubs(parent: StubElement<*>, annotation: C
     }
     userType(type, sourceName.split('.'))
 
-    val arguments = annotation.argumentList.arguments
     if (arguments.isEmpty()) return
     val list = CangJiePlaceHolderStubImpl<CjValueArgumentList>(parent, CjStubElementTypes.VALUE_ARGUMENT_LIST)
     for (argument in arguments) {

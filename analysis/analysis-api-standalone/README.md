@@ -11,7 +11,7 @@
 
 - 命令行分析器
 - 静态检查 CI
-- 编译器内嵌分析（如 `--analyze-only`）
+- 编译器内嵌分析
 - 工件由 `:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-standalone-for-ide` 聚合
 
 ## testFixtures
@@ -21,8 +21,8 @@
 ## 依赖
 
 - `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`
-- `:analysis:analysis-api-impl-base`、`:analysis:analysis-api-cfir`
-- `:cfir:entrypoint`
+- `:analysis:analysis-api-impl-base`、`:analysis:decompiled:decompiler-to-psi`、`:analysis:analysis-internal-utils`、`:analysis:stubs`
+- `:common`、`:psi`
 
 ## 命令
 

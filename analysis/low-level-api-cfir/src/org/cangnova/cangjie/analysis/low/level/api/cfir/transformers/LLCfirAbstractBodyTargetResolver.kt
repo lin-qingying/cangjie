@@ -71,7 +71,15 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
         val context = declarationsTransformer.context
         val actionWithScopes = {
             context.withScopesForClass(cfirClassLike, declarationsTransformer.components) {
-                action()
+                /*
+                 * 类体解析的容器栈必须包含当前 class-like，与 eager 路径
+                 * `forRegularClassBody` 以及 ContextCollector 的 class-like body 入口保持一致。
+                 * 否则 components.containingDeclarations 只剩文件和函数，private/protected
+                 * 成员会被误判为跨类访问，private 成员也不再参与成员候选解析。
+                 */
+                context.withContainer(cfirClassLike) {
+                    action()
+                }
             }
         }
 
@@ -84,11 +92,18 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
 
     /**
      * 在 [cfirExtend] 扩展声明容器上下文中执行 [action]。
+     *
+     * 与 eager [org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer.transformExtendContent] 同形：
+     * 先进入 extend 的类型参数与隐式扩展接收者作用域（`this` 指向被扩展类型），再安装 extend 容器。
      */
     @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
     override fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
-        transformer.declarationsTransformer.context.withContainer(cfirExtend) {
-            action()
+        val declarationsTransformer = transformer.declarationsTransformer
+        val context = declarationsTransformer.context
+        context.withScopesForExtend(cfirExtend, declarationsTransformer.components) {
+            context.withContainer(cfirExtend) {
+                action()
+            }
         }
     }
 

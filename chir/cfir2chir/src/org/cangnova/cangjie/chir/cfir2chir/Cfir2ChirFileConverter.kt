@@ -4,6 +4,7 @@ import org.cangnova.cangjie.chir.core.declaration.DefaultChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.DefaultChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirPropertyDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirTypeDeclaration
@@ -89,7 +90,7 @@ internal class Cfir2ChirFileConverter(
      * 将已经登记 header 的 CFIR 文件转换为完整 CHIR module。
      */
     fun convertFile(file: CfirFile): ChirModule {
-        val declarations = file.declarations.map(::convertDeclaration)
+        val declarations = file.declarations.mapNotNull(::convertDeclaration)
         return ChirModule(
             semanticId = Cfir2ChirIds.moduleId(file),
             name = Cfir2ChirIds.moduleName(file),
@@ -215,8 +216,10 @@ internal class Cfir2ChirFileConverter(
 
     /**
      * 将单个 CFIR 声明转换为 CHIR 声明。
+     *
+     * 无 body 的隐式构造器返回 null（由 JVM 后端的默认构造器生成路径接管）。
      */
-    private fun convertDeclaration(declaration: CfirDeclaration): ChirDeclaration {
+    private fun convertDeclaration(declaration: CfirDeclaration): ChirDeclaration? {
         return when (declaration) {
             is CfirErrorFunction -> throw Cfir2ChirConversionException(
                 "error CFIR function cannot be lowered to CHIR: ${declaration.diagnostic.reason}",
@@ -338,8 +341,13 @@ internal class Cfir2ChirFileConverter(
 
     /**
      * 将 CFIR 函数及其 body 转换为 CHIR 函数声明。
+     *
+     * 无 body 的构造器是类的隐式默认构造器：JVM 后端在无显式构造器时
+     * 自动生成 `public <init>()`（generateDefaultConstructor），CHIR 侧
+     * 跳过以避免产出无语义的 absent_body 函数体。
      */
-    private fun convertFunction(function: CfirFunction): DefaultChirFunctionDeclaration {
+    private fun convertFunction(function: CfirFunction): DefaultChirFunctionDeclaration? {
+        if (function is CfirConstructor && function.body == null) return null
         val header = storage.getFunctionHeader(function.symbol)
         val declaration = Cfir2ChirFunctionBodyConverter(
             components = components,
@@ -401,6 +409,7 @@ internal class Cfir2ChirFileConverter(
             semanticId = components.declarationId(symbol),
             name = when (this) {
                 is CfirFieldVariable -> name.asString()
+                is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable -> name.asString()
                 is org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable -> name.asString()
                 is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable -> pattern::class.simpleName ?: "<pattern>"
                 is CfirValueParameter -> symbol.name.asString()
@@ -421,7 +430,13 @@ internal class Cfir2ChirFileConverter(
         )
 
     /**
-     * 将 enum constructor 转换为返回 enum case value 的 CHIR 函数。
+     * 将 enum constructor 转换为返回 enum case 值的 CHIR 函数。
+     *
+     * 无 payload 的 case：函数体发射 `jvm.getstatic`（owner 为枚举类
+     * internal name、name 为 case 名），与后端 enum `<clinit>` 实例化的
+     * 静态常量字段对齐，`cfir.enum_constructor` 占位被消化。
+     * 带 payload 的 case：构造需要枚举 payload ABI（后端 `<clinit>` 尚
+     * 只实例化无参 case），保留占位。
      */
     private fun convertEnumConstructor(constructor: CfirEnumConstructor): DefaultChirFunctionDeclaration {
         val header = storage.getFunctionHeader(constructor.symbol)
@@ -431,20 +446,21 @@ internal class Cfir2ChirFileConverter(
             type = header.returnType,
             name = expressionId.value,
         )
-        val expression = ChirOtherExpression(
-            semanticId = expressionId,
-            operation = Cfir2ChirOperation.CFIR_ENUM_CONSTRUCTOR.canonicalName,
-            operands = header.parameters.map { parameter ->
-                org.cangnova.cangjie.chir.core.value.ChirParameterValue(
-                    semanticId = parameter.semanticId,
-                    type = parameter.type,
-                    name = parameter.name,
-                    ownerFunctionId = header.semanticId,
-                )
-            },
-            resultType = header.returnType,
-            attributes = setOf(ChirStringAttribute("cfir.enumConstructor", constructor.name.asString())),
-        )
+        val caseExpression = enumCaseExpressionOrNull(constructor, header, expressionId)
+            ?: ChirOtherExpression(
+                semanticId = expressionId,
+                operation = Cfir2ChirOperation.CFIR_ENUM_CONSTRUCTOR.canonicalName,
+                operands = header.parameters.map { parameter ->
+                    org.cangnova.cangjie.chir.core.value.ChirParameterValue(
+                        semanticId = parameter.semanticId,
+                        type = parameter.type,
+                        name = parameter.name,
+                        ownerFunctionId = header.semanticId,
+                    )
+                },
+                resultType = header.returnType,
+                attributes = setOf(ChirStringAttribute("cfir.enumConstructor", constructor.name.asString())),
+            )
         return DefaultChirFunctionDeclaration(
             semanticId = header.semanticId,
             name = header.name,
@@ -454,7 +470,7 @@ internal class Cfir2ChirFileConverter(
                 ChirBlock(
                     semanticId = Cfir2ChirIds.generatedId("entry", header.semanticId, 1),
                     name = "entry",
-                    expressions = listOf(expression),
+                    expressions = listOf(caseExpression),
                     terminator = ChirReturnTerminator(
                         semanticId = Cfir2ChirIds.generatedId("return", header.semanticId, 2),
                         returnValue = resultValue,
@@ -463,6 +479,34 @@ internal class Cfir2ChirFileConverter(
             ),
             entryBlockId = Cfir2ChirIds.generatedId("entry", header.semanticId, 1),
             attributes = setOf(ChirStringAttribute("cfir.kind", "enumConstructor")),
+        )
+    }
+
+    /**
+     * 为无 payload 的 enum case 构造 `jvm.getstatic` 表达式。
+     *
+     * 返回类型必须是点分名称的 `ChirEnumType` 才能推导 owner；
+     * 否则返回 null 由调用方回退占位。
+     */
+    private fun enumCaseExpressionOrNull(
+        constructor: CfirEnumConstructor,
+        header: ChirFunctionHeader,
+        expressionId: org.cangnova.cangjie.chir.core.identity.ChirSemanticId,
+    ): ChirOtherExpression? {
+        if (header.parameters.isNotEmpty()) return null
+        val enumType = (header.returnType as? org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef)?.type
+            as? org.cangnova.cangjie.chir.core.type.ChirEnumType ?: return null
+        if (!enumType.name.contains('.')) return null
+        val ownerInternalName = enumType.name.replace('.', '/')
+        return ChirOtherExpression(
+            semanticId = expressionId,
+            operation = "jvm.getstatic",
+            operands = emptyList(),
+            resultType = header.returnType,
+            attributes = setOf(
+                ChirStringAttribute("jvm.owner", ownerInternalName),
+                ChirStringAttribute("jvm.name", constructor.name.asString()),
+            ),
         )
     }
 

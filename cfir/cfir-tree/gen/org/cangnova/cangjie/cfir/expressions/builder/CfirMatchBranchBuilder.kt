@@ -67,7 +67,6 @@ inline fun buildMatchBranchCopy(original: CfirMatchBranch, init: CfirMatchBranch
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.mappedExpression = original.mappedExpression
     copyBuilder.overflowStrategy = original.overflowStrategy
-    copyBuilder.pattern = original.pattern
     copyBuilder.guard = original.guard
     copyBuilder.body = original.body
     return copyBuilder.apply(init).build()

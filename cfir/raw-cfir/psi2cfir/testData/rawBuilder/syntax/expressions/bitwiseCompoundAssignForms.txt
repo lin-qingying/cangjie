@@ -1,0 +1,84 @@
+FILE: bitwiseCompoundAssignForms.cj
+    internal? func bitwiseCompoundAssignForms(a: R|Int64|, b: R|Int64|): R|Int64| {
+        local? let shifted: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_or) {
+                    receiver:
+                        FUNCTION_CALL(*operator_left_shift) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(1)
+                        }
+                    arguments:
+                        FUNCTION_CALL(*operator_right_shift) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(2)
+                        }
+                }
+        local? var x: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    TYPE_CONVERSION(R|Int64|) {
+                        NAMED_ACCESS(shifted)
+                    }
+            }
+        }
+    }
+    internal? func bitwiseShiftForms(a: R|UInt64|, b: R|UInt64|): R|UInt64| {
+        RETURN {
+            FUNCTION_CALL(*operator_or) {
+                receiver:
+                    FUNCTION_CALL(*operator_left_shift) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            INT(1)
+                    }
+                arguments:
+                    FUNCTION_CALL(*operator_xor) {
+                        receiver:
+                            FUNCTION_CALL(*operator_right_shift) {
+                                receiver:
+                                    NAMED_ACCESS(a)
+                                arguments:
+                                    INT(2)
+                            }
+                        arguments:
+                            FUNCTION_CALL(*operator_and) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_left_shift) {
+                                        receiver:
+                                            NAMED_ACCESS(b)
+                                        arguments:
+                                            INT(3)
+                                    }
+                                arguments:
+                                    FUNCTION_CALL(*operator_right_shift) {
+                                        receiver:
+                                            NAMED_ACCESS(b)
+                                        arguments:
+                                            INT(4)
+                                    }
+                            }
+                    }
+            }
+        }
+    }

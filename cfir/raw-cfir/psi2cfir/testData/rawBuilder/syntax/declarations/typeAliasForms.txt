@@ -1,0 +1,53 @@
+FILE: typeAliasForms.cj
+    internal? typealias Id = R|Int64|
+    internal? typealias Names = R|Array<R|String|>|
+    internal? typealias Matrix = R|Array<R|Array<R|Float64|>|>|
+    internal? typealias Handler = R|(R|Int64|, R|String|) -> R|Unit||
+    internal? typealias NamedHandler = R|(R|Int64|, R|String|) -> R|Bool||
+    internal? typealias Pair = R|(R|Int64|, R|Bool|)|
+    internal? typealias Maybe = R|Option<R|Int64|>|
+    internal? typealias Boxes = R|Array<R|Array<R|Int64|>|>|
+    internal? typealias AliasOfAlias = R|Names|
+    internal? func aliasUses(): R|Unit| {
+        local? let a: R|Id| = ...
+            initializer:
+                INT(1)
+        local? let b: R|Names| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    STRING("x")
+                }
+        local? let c: R|Matrix| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    ARRAY_LITERAL {
+                        FLOAT(1.0)
+                    }
+                }
+        local? let d: R|Maybe| = ...
+            initializer:
+                NAMED_ACCESS(None)
+        local? let e: R|AliasOfAlias| = ...
+            initializer:
+                NAMED_ACCESS(b)
+        local? let f: R|Handler| = ...
+            initializer:
+                LAMBDA(i: <implicit>, s: <implicit>) {
+                    UNIT(())
+                }
+        local? let g: R|NamedHandler| = ...
+            initializer:
+                LAMBDA(x: R|Int64|, y: R|String|) {
+                    BOOLEAN(true)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(f)
+                    NAMED_ACCESS(g)
+                }
+    }

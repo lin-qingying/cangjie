@@ -1,0 +1,449 @@
+FILE: localFunctionForms.cj
+    internal? func localFunctionFormsPlain(seed: R|Int64|): R|Int64| {
+        local? func localGreet(name: R|String|): R|String| {
+            RETURN {
+                STRING_INTERPOLATION {
+                    STRING("hello ")
+                    NAMED_ACCESS(name)
+                    STRING("#")
+                    NAMED_ACCESS(seed)
+                }
+            }
+        }
+        RETURN {
+            NAMED_ACCESS(size) {
+                receiver:
+                    FUNCTION_CALL(localGreet) {
+                        STRING("x")
+                    }
+            }
+        }
+    }
+    internal? class LocalFunctionFormsHolder {
+        private var value: R|Int64| = ...
+            initializer:
+                INT(0)
+        init(x: R|Int64|) {
+            local? func scale(a: R|Int64|): R|Int64| {
+                RETURN {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_times) {
+                                receiver:
+                                    NAMED_ACCESS(a)
+                                arguments:
+                                    INT(2)
+                            }
+                        arguments:
+                            NAMED_ACCESS(value) {
+                                receiver:
+                                    <element: CfirThisReceiverExpression>
+                            }
+                    }
+                }
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    FUNCTION_CALL(scale) {
+                        NAMED_ACCESS(x)
+                    }
+            }
+        }
+        public func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(value) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? class LocalFunctionFormsProps {
+        init()
+        private var store: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? prop doubled: R|Int64|
+        internal? mut prop value: R|Int64|
+    }
+    internal? func localFunctionFormsRecursion(): R|Int64| {
+        local? func factorial(n: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(LE) {
+                        NAMED_ACCESS(n)
+                        INT(1)
+                    }
+                then:
+                    RETURN {
+                        INT(1)
+                    }
+            }
+            RETURN {
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(n)
+                    arguments:
+                        FUNCTION_CALL(factorial) {
+                            FUNCTION_CALL(*operator_minus) {
+                                receiver:
+                                    NAMED_ACCESS(n)
+                                arguments:
+                                    INT(1)
+                            }
+                        }
+                }
+            }
+        }
+        RETURN {
+            FUNCTION_CALL(factorial) {
+                INT(5)
+            }
+        }
+    }
+    internal? func localFunctionFormsCapture(seed: R|Int64|): R|Int64| {
+        local? let factor: <implicit> = ...
+            initializer:
+                INT(3)
+        local? var total: R|Int64| = ...
+            initializer:
+                INT(0)
+        local? func step(a: R|Int64|): R|Int64| {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(total)
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(total)
+                        arguments:
+                            NAMED_ACCESS(a)
+                    }
+            }
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(total)
+                            arguments:
+                                NAMED_ACCESS(factor)
+                        }
+                    arguments:
+                        NAMED_ACCESS(seed)
+                }
+            }
+        }
+        FUNCTION_CALL(step) {
+            INT(1)
+        }
+        RETURN {
+            FUNCTION_CALL(step) {
+                INT(2)
+            }
+        }
+    }
+    internal? func localFunctionFormsShadowTarget(): R|Int64| {
+        RETURN {
+            INT(0)
+        }
+    }
+    internal? func localFunctionFormsShadow(): R|Int64| {
+        local? func localFunctionFormsShadowTarget(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        RETURN {
+            FUNCTION_CALL(localFunctionFormsShadowTarget) {
+            }
+        }
+    }
+    internal? func localFunctionFormsWithVars(): R|Int64| {
+        local? let K: R|Int64| = ...
+            initializer:
+                INT(2)
+        local? let base: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(K)
+                    arguments:
+                        INT(3)
+                }
+        local? var acc: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(base)
+                    arguments:
+                        INT(1)
+                }
+        local? func useLocal(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        NAMED_ACCESS(acc)
+                }
+            }
+        }
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(acc)
+            rValue:
+                FUNCTION_CALL(useLocal) {
+                    INT(1)
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(acc)
+        }
+    }
+    internal? func localFunctionFormsApply(f: R|(R|Int64|) -> R|Int64||, v: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(f) {
+                NAMED_ACCESS(v)
+            }
+        }
+    }
+    internal? func localFunctionFormsHigherOrder(): R|Int64| {
+        local? var current: <implicit> = ...
+            initializer:
+                INT(1)
+        local? func inc(a: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        INT(1)
+                }
+            }
+        }
+        local? let bound: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(inc)
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(current)
+            rValue:
+                FUNCTION_CALL(localFunctionFormsApply) {
+                    NAMED_ACCESS(bound)
+                    NAMED_ACCESS(current)
+                }
+        }
+        RETURN {
+            FUNCTION_CALL(localFunctionFormsApply) {
+                NAMED_ACCESS(inc)
+                NAMED_ACCESS(current)
+            }
+        }
+    }
+    internal? func localFunctionFormsNested(): R|Int64| {
+        local? func outerLocal(x: R|Int64|): R|Int64| {
+            local? func innerLocal(a: R|Int64|): R|Int64| {
+                RETURN {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            INT(1)
+                    }
+                }
+            }
+            RETURN {
+                FUNCTION_CALL(innerLocal) {
+                    NAMED_ACCESS(x)
+                }
+            }
+        }
+        RETURN {
+            FUNCTION_CALL(outerLocal) {
+                INT(1)
+            }
+        }
+    }
+    internal? func localFunctionFormsInControlFlow(flag: R|Bool|, n: R|Int64|): R|Int64| {
+        local? var acc: R|Int64| = ...
+            initializer:
+                INT(0)
+        IF {
+            condition:
+                NAMED_ACCESS(flag)
+            then:
+                local? func inIf(): R|Int64| {
+                    RETURN {
+                        INT(1)
+                    }
+                }
+                <element: CfirAugmentedAssignment>
+            else:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    NAMED_ACCESS(n)
+                }
+            body:
+                local? func inFor(step: R|Int64|): R|Int64| {
+                    RETURN {
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(step)
+                            arguments:
+                                INT(1)
+                        }
+                    }
+                }
+                <element: CfirAugmentedAssignment>
+        }
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(acc)
+                    INT(100)
+                }
+            body:
+                local? func inWhile(): R|Int64| {
+                    RETURN {
+                        INT(10)
+                    }
+                }
+                <element: CfirAugmentedAssignment>
+        }
+        DO_WHILE {
+            condition:
+                COMPARISON(GT) {
+                    NAMED_ACCESS(acc)
+                    INT(0)
+                }
+            body:
+                local? func inDoWhile(): R|Int64| {
+                    RETURN {
+                        INT(1)
+                    }
+                }
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            NAMED_ACCESS(acc)
+        }
+    }
+    internal? enum LocalFunctionFormsChoice {
+        First
+        Second
+        init()
+    }
+    internal? func localFunctionFormsInTry(choice: R|LocalFunctionFormsChoice|): R|Int64| {
+        TRY {
+            try:
+                local? func inTry(): R|Int64| {
+                    RETURN {
+                        INT(1)
+                    }
+                }
+                FUNCTION_CALL(println) {
+                    FUNCTION_CALL(inTry) {
+                    }
+                }
+            catch(e: R|Exception|):
+                local? func inCatch(): R|Int64| {
+                    RETURN {
+                        INT(2)
+                    }
+                }
+                FUNCTION_CALL(println) {
+                    FUNCTION_CALL(inCatch) {
+                    }
+                }
+            finally:
+                local? func inFinally(): R|Int64| {
+                    RETURN {
+                        INT(3)
+                    }
+                }
+                FUNCTION_CALL(println) {
+                    FUNCTION_CALL(inFinally) {
+                    }
+                }
+        }
+        MATCH {
+            subject:
+                NAMED_ACCESS(choice)
+            BRANCH(LocalFunctionFormsChoice.First()) {
+                local? func inMatchCase(): R|Int64| {
+                    RETURN {
+                        INT(4)
+                    }
+                }
+                FUNCTION_CALL(println) {
+                    FUNCTION_CALL(inMatchCase) {
+                    }
+                }
+            }
+            BRANCH(LocalFunctionFormsChoice.Second()) {
+                local? func inMatchCase2(): R|Int64| {
+                    RETURN {
+                        INT(5)
+                    }
+                }
+                FUNCTION_CALL(println) {
+                    FUNCTION_CALL(inMatchCase2) {
+                    }
+                }
+            }
+        }
+        RETURN {
+            INT(0)
+        }
+    }
+    internal? func localFunctionFormsGenericAndConst(): R|Int64| {
+        local? func <T>identity(a: R|T|): R|T| {
+            RETURN {
+                NAMED_ACCESS(a)
+            }
+        }
+        local? func constantValue(): R|Int64| {
+            RETURN {
+                INT(7)
+            }
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(identity) {
+                        INT(1)
+                    }
+                arguments:
+                    FUNCTION_CALL(constantValue) {
+                    }
+            }
+        }
+    }
+    internal? func localFunctionFormsEscapeLetCapture(): R|(R|Int64|) -> R|Int64|| {
+        local? let num: R|Int64| = ...
+            initializer:
+                INT(10)
+        local? func add(a: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(num)
+                }
+            }
+        }
+        RETURN {
+            NAMED_ACCESS(add)
+        }
+    }

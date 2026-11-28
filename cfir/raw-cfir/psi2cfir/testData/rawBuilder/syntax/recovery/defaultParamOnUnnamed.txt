@@ -1,0 +1,10 @@
+FILE: defaultParamOnUnnamed.cj
+    internal? func defaultParamOnUnnamed(a: R|Int64|, b: R|Int64| = INT(2)
+    ): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+    }

@@ -1,0 +1,17 @@
+CJ element: CjOperationReferenceExpression
+CJ element text:
+..
+CFIR element: CfirRangeExpressionImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+RANGE(..) {
+    INT(1)
+    INT(2)
+}
+
+CFIR FILE:
+FILE: rangeOperationReference.cj
+    package lowlevel.getorbuild
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>

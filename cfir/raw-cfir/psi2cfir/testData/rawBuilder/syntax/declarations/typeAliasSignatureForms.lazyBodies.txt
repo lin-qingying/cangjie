@@ -1,0 +1,18 @@
+FILE: typeAliasSignatureForms.cj
+    import std.collection.*
+    internal? typealias Id = R|Int64|
+    internal? typealias H = R|(R|Int64|) -> R|Unit||
+    internal? typealias M = R|HashMap<R|Int64|, R|String|>|
+    internal? typealias Pair<A, B> = R|(R|A|, R|B|)|
+    internal? func typeAliasSignatureForms(a: R|Id|, b: R|H|, c: R|Option<R|M|>|, d: R|Pair<R|Int64|, R|String|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? class Holder<T> {
+        internal? var v: R|T|
+        init(v: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func typeAliasGeneric(a: R|Box<R|Id|>|, b: R|Holder<R|Id|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

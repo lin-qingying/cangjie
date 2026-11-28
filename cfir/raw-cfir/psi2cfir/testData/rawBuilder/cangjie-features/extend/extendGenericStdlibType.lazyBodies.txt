@@ -1,0 +1,6 @@
+FILE: extendGenericStdlibType.cj
+    extend<T> R|Array<R|T|>| {
+        internal? func dumpAll(): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }

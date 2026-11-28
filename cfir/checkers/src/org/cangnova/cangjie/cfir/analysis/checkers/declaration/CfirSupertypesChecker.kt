@@ -188,7 +188,7 @@ object CfirSupertypesChecker : CfirClassLikeChecker(MppCheckerKind.Platform) {
                     if (declaration is CfirStruct || declaration is CfirEnum) {
                         val typeKind = if (declaration is CfirStruct) "struct" else "enum"
                         reporter.reportOn(
-                            source = declaration.source?.firstCharacterDiagnosticSource(),
+                            source = declaration.source ,
                             factory = CfirErrors.TYPE_IMPLEMENT_NON_INTERFACE,
                             a = typeKind,
                             b = declaration.classLikeName(),

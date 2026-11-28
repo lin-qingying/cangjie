@@ -9,6 +9,8 @@ package org.cangnova.cangjie.cfir.declarations.impl
 
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -19,6 +21,10 @@ import org.cangnova.cangjie.source.CjSourceElement
 internal class CfirResolvedDeclarationStatusImpl(
     override var source: CjSourceElement?,
     override val visibility: Visibility,
+    override val visibilityExplicitness: CfirModifierExplicitness,
+    override val modalityExplicitness: CfirModifierExplicitness,
+    override val bodyPresence: CfirBodyPresence,
+    override val isDeclarationFile: Boolean,
     override val isVisibilityExplicit: Boolean,
     override val isModalityExplicit: Boolean,
     override val isAbstractExplicit: Boolean,
@@ -31,6 +37,7 @@ internal class CfirResolvedDeclarationStatusImpl(
     override val isForeign: Boolean,
     override val isC: Boolean,
     override val isCommon: Boolean,
+    override val isFromCommonPart: Boolean,
     override val isSpecific: Boolean,
     override val isCommonWithDefault: Boolean,
     override val isRedef: Boolean,

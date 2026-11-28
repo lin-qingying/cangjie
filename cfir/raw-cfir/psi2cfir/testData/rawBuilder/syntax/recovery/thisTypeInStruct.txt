@@ -1,0 +1,9 @@
+FILE: thisTypeInStruct.cj
+    internal? struct S {
+        init()
+        public func me(): R|This| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+    }

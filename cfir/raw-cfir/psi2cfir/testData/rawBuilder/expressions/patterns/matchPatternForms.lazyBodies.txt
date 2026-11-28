@@ -1,0 +1,29 @@
+FILE: matchPatternForms.cj
+    internal? enum Shape {
+        Circle(R|Int64|)
+        Rect(R|Int64|, R|Int64|)
+        init()
+        internal? func selfArea(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func area(s: R|Shape|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func guarded(s: R|Shape|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func orPattern(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func tuple(t: R|(R|Int64|, R|String|)|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? enum E {
+        A
+        B(R|Int64|)
+        init()
+    }
+    internal? func varOrEnum(e: R|E|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

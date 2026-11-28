@@ -1,0 +1,10 @@
+FILE: typeConversions.cj
+    internal? open class A {
+        init()
+    }
+    internal? class B <: R|A| {
+        init()
+    }
+    internal? func convert(a: R|A|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

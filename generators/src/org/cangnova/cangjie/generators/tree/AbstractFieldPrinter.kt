@@ -90,6 +90,8 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
                     constructorDefault != null -> constructorDefault.defaultValue
                     defaultValue?.withGetter == true -> null
                     defaultValue != null -> defaultValue.defaultValue
+                    inImplementation && field.readOnlyImplementationList && !inConstructor ->
+                        "java.util.Collections.unmodifiableList(${field.name}.toList())"
                     !inConstructor && (field.customSetter != null || field.customGetter != null) -> field.name
                     else -> null
                 },
@@ -112,6 +114,9 @@ abstract class AbstractFieldPrinter<Field : AbstractField<*>>(
                 }
                 field.customSetter?.let {
                     withIndent {
+                        if (field.customSetterVisibility != Visibility.PUBLIC) {
+                            print(field.customSetterVisibility.name.lowercase(), " ")
+                        }
                         print("set(value)")
                         printBlock {
                             printlnMultiLine(it)

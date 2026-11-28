@@ -1,0 +1,50 @@
+FILE: ifLetWhileLet.cj
+    internal? func firstOrZero(o: R|Option<R|Int64|>|): R|Int64| {
+        IF {
+            condition:
+                <element: CfirLetPatternExpression>
+            then:
+                RETURN {
+                    NAMED_ACCESS(v)
+                }
+        }
+        RETURN {
+            INT(0)
+        }
+    }
+    internal? func drain(o: R|Option<R|Int64|>|): R|Int64| {
+        local? var w: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(o)
+        local? var count: <implicit> = ...
+            initializer:
+                INT(0)
+        WHILE {
+            condition:
+                <element: CfirLetPatternExpression>
+            body:
+                local? let _: <implicit> = ...
+                    initializer:
+                        NAMED_ACCESS(x)
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(count)
+                    rValue:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(count)
+                            arguments:
+                                INT(1)
+                        }
+                }
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(w)
+                    rValue:
+                        NAMED_ACCESS(None)
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(count)
+        }
+    }

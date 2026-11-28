@@ -7,132 +7,140 @@ import std.core.*
 import std.fs.*
 
 @Frozen
-func blackBox<T>(input: T): T { /* compiled code */ }
+@Intrinsic
+public func blackBox<T>(input: T): T
 
-func invokeGC(heavy: Bool): Unit { /* compiled code */ }
+@Intrinsic
+internal func invokeGC(heavy: Bool): Unit
 
-func getCjGCCount(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getCjGCCount(): Int64
 
-func getCjGCTime(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getCjGCTime(): Int64
 
-func getCjGCFreedSize(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getCjGCFreedSize(): Int64
 
-func setCjGCThreshold(value: UInt64): Unit { /* compiled code */ }
+@Intrinsic
+internal func setCjGCThreshold(value: UInt64): Unit
 
 @Deprecated[message: "Use 'public func gc(heavy!: Bool = false): Unit' instead."]
-func GC(heavy: Bool): Unit { /* compiled code */ }
+public func GC(heavy!: Bool = COMPILED_CODE /* compiled code */): Unit { /* compiled code */ }
 
 @Deprecated[message: "Use 'public func setGCThreshold(value: UInt64): Unit' instead."]
-func SetGCThreshold(value: UInt64): Unit { /* compiled code */ }
+public func SetGCThreshold(value: UInt64): Unit { /* compiled code */ }
 
-func gc(heavy: Bool): Unit { /* compiled code */ }
+public func gc(heavy!: Bool = COMPILED_CODE /* compiled code */): Unit { /* compiled code */ }
 
-func setGCThreshold(value: UInt64): Unit { /* compiled code */ }
+public func setGCThreshold(value: UInt64): Unit { /* compiled code */ }
 
-func getGCCount(): Int64 { /* compiled code */ }
+public func getGCCount(): Int64 { /* compiled code */ }
 
-func getGCTime(): Int64 { /* compiled code */ }
+public func getGCTime(): Int64 { /* compiled code */ }
 
-func getGCFreedSize(): Int64 { /* compiled code */ }
+public func getGCFreedSize(): Int64 { /* compiled code */ }
 
-func getMaxCjHeapSize(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getMaxCjHeapSize(): Int64
 
-func getAllocatedCjHeapSize(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getAllocatedCjHeapSize(): Int64
 
-func getRealHeapSize(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getRealHeapSize(): Int64
 
-func dumpCjHeapData(fd: Int32): Bool { /* compiled code */ }
+@Intrinsic
+internal func dumpCjHeapData(fd: Int32): Bool
 
-class MemoryInfoException <: std.core.Exception {
+internal class MemoryInfoException <: std.core.Exception {
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName(): std.core.String { /* compiled code */ }
+    protected func getClassName(): std.core.String { /* compiled code */ }
 }
 
 @Deprecated[message: "All static Properties are converted to public functions."]
-struct MemoryInfo {
-    @Annotation
-    static prop maxHeapSize: Int64 {
+public struct MemoryInfo {
+    public static prop maxHeapSize: Int64 {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    static prop allocatedHeapSize: Int64 {
+    public static prop allocatedHeapSize: Int64 {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    static prop heapPhysicalMemory: Int64 {
+    public static prop heapPhysicalMemory: Int64 {
         get() { /* compiled code */ }
     }
 
     init() { /* compiled code */ }
 }
 
-func getMaxHeapSize(): Int64 { /* compiled code */ }
+public func getMaxHeapSize(): Int64 { /* compiled code */ }
 
-func getAllocatedHeapSize(): Int64 { /* compiled code */ }
+public func getAllocatedHeapSize(): Int64 { /* compiled code */ }
 
-func getUsedHeapSize(): Int64 { /* compiled code */ }
+public func getUsedHeapSize(): Int64 { /* compiled code */ }
 
-func dumpHeapData(path: std.fs.Path): Unit { /* compiled code */ }
+public func dumpHeapData(path: std.fs.Path): Unit { /* compiled code */ }
 
-func startCjCPUProfiling(): Bool { /* compiled code */ }
+@Intrinsic
+internal func startCjCPUProfiling(): Bool
 
-func stopCjCPUProfiling(fd: Int32): Bool { /* compiled code */ }
+@Intrinsic
+internal func stopCjCPUProfiling(fd: Int32): Bool
 
-foreign func CJ_OS_ProcessorCount(): Int64
+internal foreign func CJ_OS_ProcessorCount(): Int64
 
-class ProfilingInfoException <: std.core.Exception {
+internal class ProfilingInfoException <: std.core.Exception {
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName(): std.core.String { /* compiled code */ }
+    protected func getClassName(): std.core.String { /* compiled code */ }
 }
 
 @Deprecated[message: "All static Properties are converted to public functions."]
-struct ProcessorInfo {
-    @Annotation
-    static prop processorCount: Int64 {
+public struct ProcessorInfo {
+    public static prop processorCount: Int64 {
         get() { /* compiled code */ }
     }
 
     init() { /* compiled code */ }
 }
 
-func getProcessorCount(): Int64 { /* compiled code */ }
+public func getProcessorCount(): Int64 { /* compiled code */ }
 
-func startCPUProfiling(): Unit { /* compiled code */ }
+public func startCPUProfiling(): Unit { /* compiled code */ }
 
-func stopCPUProfiling(path: std.fs.Path): Unit { /* compiled code */ }
+public func stopCPUProfiling(path: std.fs.Path): Unit { /* compiled code */ }
 
-func getThreadNumber(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getThreadNumber(): Int64
 
-func getBlockingThreadNumber(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getBlockingThreadNumber(): Int64
 
-func getNativeThreadNumber(): Int64 { /* compiled code */ }
+@Intrinsic
+internal func getNativeThreadNumber(): Int64
 
 @Deprecated[message: "All static Properties are converted to public functions."]
-struct ThreadInfo {
-    @Annotation
-    static prop threadCount: Int64 {
+public struct ThreadInfo {
+    public static prop threadCount: Int64 {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    static prop blockingThreadCount: Int64 {
+    public static prop blockingThreadCount: Int64 {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    static prop nativeThreadCount: Int64 {
+    public static prop nativeThreadCount: Int64 {
         get() { /* compiled code */ }
     }
 
     init() { /* compiled code */ }
 }
 
-func getThreadCount(): Int64 { /* compiled code */ }
+public func getThreadCount(): Int64 { /* compiled code */ }
 
-func getBlockingThreadCount(): Int64 { /* compiled code */ }
+public func getBlockingThreadCount(): Int64 { /* compiled code */ }
 
-func getNativeThreadCount(): Int64 { /* compiled code */ }
+public func getNativeThreadCount(): Int64 { /* compiled code */ }

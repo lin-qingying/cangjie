@@ -25,6 +25,12 @@ public class SourceClassIdTestGenerated extends AbstractSourceClassIdTest {
   }
 
   @Test
+  @TestMetadata("extendHasNoClassId.cj")
+  public void testExtendHasNoClassId() {
+    run("extendHasNoClassId.cj");
+  }
+
+  @Test
   @TestMetadata("topLevelAndNested.cj")
   public void testTopLevelAndNested() {
     run("topLevelAndNested.cj");

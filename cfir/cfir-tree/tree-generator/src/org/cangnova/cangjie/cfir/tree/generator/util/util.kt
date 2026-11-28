@@ -35,6 +35,7 @@ inline fun File.writeToFileUsingSmartPrinterIfFileContentChanged(block: SmartPri
 fun Field.getMutableType(forBuilder: Boolean = false): TypeRefWithNullability = when (this) {
     is ListField -> when {
         forBuilder -> StandardTypes.mutableList
+        readOnlyImplementationList -> StandardTypes.list
         !isMutable -> StandardTypes.list
         isMutableOrEmptyList -> type(BASE_PACKAGE, "MutableOrEmptyList", kind = TypeKind.Class, exactPackage = true)
         else -> StandardTypes.mutableList

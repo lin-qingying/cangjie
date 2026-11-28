@@ -1,0 +1,370 @@
+FILE: operatorForms.cj
+    internal? func identity(x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    internal? func operatorForms(a: R|Int64|, b: R|Int64|, flag: R|Bool|, opt: R|Option<R|Int64|>|, s: R|String|): R|Unit| {
+        local? let neg: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_unaryMinus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                }
+        local? let bitNot: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_not) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                }
+        local? let logicalNot: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_not) {
+                    receiver:
+                        NAMED_ACCESS(flag)
+                }
+        local? let power: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        TYPE_CONVERSION(R|UInt64|) {
+                            INT(2)
+                        }
+                }
+        local? let powerRight: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        TYPE_CONVERSION(R|UInt64|) {
+                            INT(3)
+                        }
+                }
+        local? let mul: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let div: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_div) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let mod: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_rem) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let add: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let sub: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_minus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let chainLeft: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_minus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_minus) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                NAMED_ACCESS(b)
+                        }
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let shl: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_left_shift) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let shr: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_right_shift) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let cmp: <implicit> = ...
+            initializer:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+        local? let cmpLe: <implicit> = ...
+            initializer:
+                COMPARISON(LE) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+        local? let cmpGt: <implicit> = ...
+            initializer:
+                COMPARISON(GT) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+        local? let cmpGe: <implicit> = ...
+            initializer:
+                COMPARISON(GE) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+        local? let eq: <implicit> = ...
+            initializer:
+                COMPARISON(EQ) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+        local? let ne: <implicit> = ...
+            initializer:
+                COMPARISON(NE) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+        local? let and: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_and) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let xor: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_xor) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let or: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_or) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let bitChain: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_or) {
+                    receiver:
+                        FUNCTION_CALL(*operator_xor) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                FUNCTION_CALL(*operator_and) {
+                                    receiver:
+                                        NAMED_ACCESS(b)
+                                    arguments:
+                                        NAMED_ACCESS(a)
+                                }
+                        }
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let logicalAnd: <implicit> = ...
+            initializer:
+                BINARY_OP(AND) {
+                    NAMED_ACCESS(flag)
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(a)
+                        NAMED_ACCESS(b)
+                    }
+                }
+        local? let logicalOr: <implicit> = ...
+            initializer:
+                BINARY_OP(OR) {
+                    NAMED_ACCESS(flag)
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(a)
+                        NAMED_ACCESS(b)
+                    }
+                }
+        local? let shortCircuit: <implicit> = ...
+            initializer:
+                BINARY_OP(AND) {
+                    NAMED_ACCESS(flag)
+                    COMPARISON(GT) {
+                        FUNCTION_CALL(*operator_div) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                NAMED_ACCESS(b)
+                        }
+                        INT(0)
+                    }
+                }
+        local? let coalesce: <implicit> = ...
+            initializer:
+                BINARY_OP(COALESCING) {
+                    NAMED_ACCESS(opt)
+                    INT(0)
+                }
+        local? let coalesceRight: <implicit> = ...
+            initializer:
+                BINARY_OP(COALESCING) {
+                    NAMED_ACCESS(opt)
+                    NAMED_ACCESS(a)
+                }
+        local? let pipe: <implicit> = ...
+            initializer:
+                BINARY_OP(PIPELINE) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(identity)
+                }
+        local? let pipeChain: <implicit> = ...
+            initializer:
+                BINARY_OP(PIPELINE) {
+                    BINARY_OP(PIPELINE) {
+                        NAMED_ACCESS(a)
+                        NAMED_ACCESS(identity)
+                    }
+                    NAMED_ACCESS(identity)
+                }
+        local? let concat: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("x")
+                }
+        local? let range: <implicit> = ...
+            initializer:
+                RANGE(..) {
+                    INT(0)
+                    NAMED_ACCESS(b)
+                }
+        local? let rangeClosed: <implicit> = ...
+            initializer:
+                RANGE(..=) {
+                    INT(0)
+                    NAMED_ACCESS(b)
+                }
+        local? let mixed: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_minus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                FUNCTION_CALL(*operator_times) {
+                                    receiver:
+                                        NAMED_ACCESS(b)
+                                    arguments:
+                                        INT(2)
+                                }
+                        }
+                    arguments:
+                        FUNCTION_CALL(*operator_rem) {
+                            receiver:
+                                FUNCTION_CALL(*operator_div) {
+                                    receiver:
+                                        NAMED_ACCESS(a)
+                                    arguments:
+                                        INT(2)
+                                }
+                            arguments:
+                                INT(3)
+                        }
+                }
+        local? let mixedShift: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_or) {
+                    receiver:
+                        FUNCTION_CALL(*operator_left_shift) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(1)
+                        }
+                    arguments:
+                        FUNCTION_CALL(*operator_and) {
+                            receiver:
+                                FUNCTION_CALL(*operator_right_shift) {
+                                    receiver:
+                                        NAMED_ACCESS(b)
+                                    arguments:
+                                        INT(1)
+                                }
+                            arguments:
+                                INT(0xF)
+                        }
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(neg)
+                    NAMED_ACCESS(bitNot)
+                    NAMED_ACCESS(logicalNot)
+                    NAMED_ACCESS(power)
+                    NAMED_ACCESS(powerRight)
+                    NAMED_ACCESS(mul)
+                    NAMED_ACCESS(div)
+                    NAMED_ACCESS(mod)
+                    NAMED_ACCESS(add)
+                    NAMED_ACCESS(sub)
+                    NAMED_ACCESS(chainLeft)
+                    NAMED_ACCESS(shl)
+                    NAMED_ACCESS(shr)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(cmp)
+                    NAMED_ACCESS(cmpLe)
+                    NAMED_ACCESS(cmpGt)
+                    NAMED_ACCESS(cmpGe)
+                    NAMED_ACCESS(eq)
+                    NAMED_ACCESS(ne)
+                    NAMED_ACCESS(and)
+                    NAMED_ACCESS(xor)
+                    NAMED_ACCESS(or)
+                    NAMED_ACCESS(bitChain)
+                    NAMED_ACCESS(logicalAnd)
+                    NAMED_ACCESS(logicalOr)
+                    NAMED_ACCESS(shortCircuit)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(coalesce)
+                    NAMED_ACCESS(coalesceRight)
+                    NAMED_ACCESS(pipe)
+                    NAMED_ACCESS(pipeChain)
+                    NAMED_ACCESS(concat)
+                    NAMED_ACCESS(range)
+                    NAMED_ACCESS(rangeClosed)
+                    NAMED_ACCESS(mixed)
+                    NAMED_ACCESS(mixedShift)
+                }
+    }

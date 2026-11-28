@@ -28,7 +28,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
@@ -56,7 +55,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
-import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
@@ -65,6 +63,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
@@ -73,6 +72,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
@@ -91,60 +91,65 @@ import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import java.math.BigInteger
 
 /**
  * 浮点字面量范围检查器
  *
- * 对齐 C++ TypeCheckExpr/LitConstExpr.cpp:
- * - EXCEED_FLOAT_LITERAL_RANGE: NaN/Infinity
- * - FLOAT_LITERAL_TOO_LARGE: 超出目标类型最大值（警告）
- * - FLOAT_LITERAL_TOO_SMALL: 小于目标类型最小正值（警告）
+ * 对齐官方 `TypeChecker::TypeCheckerImpl::ChkFloatTypeOverflow`
+ * （`external/cangjie_compiler/src/Sema/CalcConstExpr.cpp:30-85`），它分两段：
+ * 先看 `InitializeLitConstValue` 记录的 `flowStatus`（`OVER`/`UNDER`），
+ * 再把字面量值转成目标位宽后比对 inf 位模式与"归零"位模式。
+ *
+ * 因此判据是"转成目标位宽后是否成为 inf / 是否归零"，不是"字面量值是否超出上下界"。
+ * cjc 1.0.5 探针：`var a: Float32 = 3.4028235e38` 通过而 `3.5e38` 报
+ * `sema_float_literal_too_large`，因为前者转 float32 后恰好等于 `Float.MAX_VALUE` 而非 inf。
+ * 边界文案取自官方 `GetFloatTypeInfoByKind`（`src/AST/Utils.cpp:179-191`），
+ * `IDEAL_FLOAT` 与 `FLOAT64` 共用同一行。
+ *
+ * 官方没有 NaN/Infinity 的独立字面量诊断（`sema_exceed_float_literal_range` 只有声明、
+ * 无生产者），因此这里不设该分支；浮点 NaN/Inf 统一由 `flowStatus` 的 `OVER` 覆盖。
  */
 object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker(MppCheckerKind.Common) {
     /**
-     * 检查浮点字面量的特殊值和 Float32 目标范围。
-     *
-     * NaN/Infinity 直接按错误报告；解析类型为 Float32 时进一步区分过大和过小的 warning。
+     * 检查浮点字面量转成目标位宽后的溢出与下溢。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirLiteralExpression) {
-        val value = expression.value
-        if (value !is Double && value !is Float) return
+        val value = (expression.value as? Number)?.toDouble() ?: return
 
-        val doubleValue = (value as Number).toDouble()
         val resolvedType = expression.coneTypeOrNull
+        if (resolvedType == null || resolvedType is ConeErrorType) return
+        val primitive = resolvedType as? ConePrimitiveType ?: return
+        val targetKind = primitive.kind
+        val typeInfo = CfirFloatConstantEvalUtils.floatTypeInfoFor(targetKind) ?: return
 
-        if (doubleValue.isNaN() || doubleValue.isInfinite()) {
+        if (CfirFloatConstantEvalUtils.convertsToInfinity(value, targetKind)) {
             reporter.reportOn(
                 source = expression.source,
-                factory = CfirErrors.EXCEED_FLOAT_LITERAL_RANGE,
-                a = value.toString(),
+                factory = CfirErrors.FLOAT_LITERAL_TOO_LARGE,
+                a = primitive,
+                b = typeInfo.max,
             )
             return
         }
 
-        if (resolvedType == null || resolvedType is ConeErrorType) return
-
-        // Float32 范围检查
-        if (resolvedType is ConePrimitiveType && resolvedType.kind == PrimitiveTypeKind.FLOAT32) {
-            val absValue = kotlin.math.abs(doubleValue)
-            if (absValue > Float.MAX_VALUE.toDouble() && absValue != 0.0) {
-                reporter.reportOn(
-                    source = expression.source,
-                    factory = CfirErrors.FLOAT_LITERAL_TOO_LARGE,
-                    a = resolvedType,
-                    b = value.toString(),
-                )
-            } else if (absValue != 0.0 && absValue < Float.MIN_VALUE.toDouble()) {
-                reporter.reportOn(
-                    source = expression.source,
-                    factory = CfirErrors.FLOAT_LITERAL_TOO_SMALL,
-                    a = resolvedType,
-                    b = value.toString(),
-                )
-            }
+        // 官方下溢守卫是"高精度值非零但目标位宽为零"（`value != 0 && value == 0`），
+        // 所以字面量本身就写作 0 时不报；精确量级取自原文，因为 double 已丢失该信息。
+        if (CfirFloatConstantEvalUtils.convertsToZero(
+                value,
+                targetKind,
+                CfirFloatConstantEvalUtils.hasExactNonZeroMagnitude(expression.source?.text?.toString()),
+            )
+        ) {
+            reporter.reportOn(
+                source = expression.source,
+                factory = CfirErrors.FLOAT_LITERAL_TOO_SMALL,
+                a = primitive,
+                b = typeInfo.min,
+            )
         }
     }
 }
@@ -215,8 +220,6 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker(MppChecke
                 expression is CfirCatch && diagnostic is ConeMismatchingCatchBlockError -> expression.body.source ?: source
                 expression is CfirPerformExpression && diagnostic is ConeCommandIncompatibleTypeError ->
                     expression.expression.source ?: source
-                expression is CfirHandleClause && diagnostic is ConeCommandHandleTypeError ->
-                    expression.commandPattern.typeRefs.firstOrNull()?.source ?: expression.commandPattern.source ?: source
                 else -> source
             }
             ErrorNodeDiagnosticCollectorComponent.reportCfirDiagnostic(
@@ -357,8 +360,7 @@ object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker(MppCheckerKind
         if (parent?.explicitReceiver === expression || parent?.dispatchReceiver === expression) return
 
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source ?: expression.source,
             factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
             a = "finalizer",
         )
@@ -407,17 +409,14 @@ object CfirFinalizerMemberAccessChecker : CfirQualifiedAccessChecker(MppCheckerK
         // 未解析的 extend 类型不证明 owner subtype；原类型诊断保留，capture 的角色判定独立。
         if (targetType != null && AbstractTypeChecker.isSubtypeOf(state, currentType, targetType)) {
             reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source ?: expression.source,
                 factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
                 a = if (declaration is CfirProperty) "property" else "function",
             )
         }
         // 声明 owner 的 subtype 结果不决定 capture：泛型父类的真实 TP 不做 alpha/receiver 代换。
         reporter.reportOn(
-            source = expression.explicitReceiver?.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource()
-                ?: expression.calleeReference.source?.firstCharacterDiagnosticSource(),
+            source = expression.explicitReceiver?.source ?: expression.calleeReference.source ?: expression.source,
             factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
             a = original.name, b = "finalizer",
         )
@@ -457,8 +456,8 @@ object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker(MppCheck
 
         val classKind = if (owner.status.isOpen) "open" else "abstract"
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source ,
             factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
             a = "constructor of $classKind class",
         )
@@ -469,8 +468,8 @@ object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker(MppCheck
  * static 函数体中禁止引用实例 `this`。
  *
  * 官方 `TypeCheckReference.cpp::CheckUsageOfThis` 在当前函数体带 `static`
- * 属性时报告 `sema_static_members_cannot_call_members`。这里挂在 basic
- * expression checker 上，覆盖裸 `this` 与 `this.member` 接收者。
+ * 属性时，显式 `this` 访问实例成员会报告 `sema_static_members_cannot_call_members`。
+ * `this` 被用作静态成员的接收者时只由对象访问规则报告，不重复诊断。
  */
 object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker(MppCheckerKind.Common) {
     /**
@@ -481,13 +480,30 @@ object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker(MppChecker
         if (expression !is CfirThisReceiverExpression) return
         if (expression.calleeReference.isImplicit) return
         val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
-        if (!containingFunction.status.isStatic) return
+        if (!containingFunction.status.isStatic && !context.hasStaticEnclosingDeclarationAfter(containingFunction)) return
 
-            reporter.reportOn(
-                source = expression.calleeReference.source ?: expression.source,
-                factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
-            )
+        val access = context.callsOrAssignments.asReversed()
+            .filterIsInstance<CfirQualifiedAccessExpression>()
+            .firstOrNull { it.explicitReceiver === expression || it.dispatchReceiver === expression }
+        val staticMemberReceiverAccess = access
+            ?.resolvedAccessSymbolOrNull()
+            ?.let { (it as? CfirCallableSymbol<*>)?.cfir?.status?.isStatic } == true
+        if (staticMemberReceiverAccess) return
+
+        reporter.reportOn(
+            source = expression.calleeReference.source ?: expression.source,
+            factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
+        )
     }
+}
+
+/** 静态成员所在的外层函数体也使其 lambda 与本地函数处于 static 语境。 */
+private fun CheckerContext.hasStaticEnclosingDeclarationAfter(function: CfirFunction): Boolean {
+    val functionSymbol = function.symbol
+    return containingDeclarations.asReversed()
+        .dropWhile { symbol -> symbol !== functionSymbol }
+        .drop(1)
+        .any { symbol -> (symbol as? CfirCallableSymbol<*>)?.cfir?.status?.isStatic == true }
 }
 
 /**
@@ -528,8 +544,8 @@ object CfirThisAsExpressionInMutFuncChecker : CfirBasicExpressionChecker(MppChec
         val outermost = functions.first().takeIf { it.isMutStructMemberContext() } as? CfirNamedFunction ?: return
 
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source,
             factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
             a = "mutable function '${outermost.name.asString()}'",
         )
@@ -556,8 +572,8 @@ object CfirThisCaptureInMutFuncChecker : CfirBasicExpressionChecker(MppCheckerKi
         val outermost = functions.first().takeIf { it.isMutStructMemberContext() } as? CfirNamedFunction ?: return
 
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source,
             factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
             a = Name.identifier("this"),
             b = "mutable function '${outermost.name.asString()}'",
@@ -586,15 +602,15 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
 
         when (accessKind) {
             StaticNonStaticAccessKind.FUNCTION -> reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source
+                    ?: expression.source,
                 factory = CfirErrors.STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER,
                 a = memberName,
             )
 
             StaticNonStaticAccessKind.LAMBDA -> reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source
+                    ?: expression.source,
                 factory = CfirErrors.STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC,
                 a = memberName,
             )
@@ -627,14 +643,6 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
     /**
      * lambda 和本地函数本身不带 static 状态；它们从外层 static 函数或 static 存储成员继承 static 语境。
      */
-    private fun CheckerContext.hasStaticEnclosingDeclarationAfter(function: CfirFunction): Boolean {
-        val functionSymbol = function.symbol
-        return containingDeclarations.asReversed()
-            .dropWhile { symbol -> symbol !== functionSymbol }
-            .drop(1)
-            .any { symbol -> (symbol as? CfirCallableSymbol<*>)?.cfir?.status?.isStatic == true }
-    }
-
     /**
      * 只把当前类型的非 static 成员作为 static 上下文非法访问目标。
      */
@@ -668,19 +676,17 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
         }
     }
 
-    /**
-     * 从 qualified access 中解析访问目标符号。
-     */
-    private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? {
-        return when (val reference = calleeReference) {
-            is CfirResolvedNamedReference -> reference.resolvedSymbol
-            is CfirResolvedErrorReference -> reference.resolvedSymbol
-            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
-            is CfirErrorNamedReference -> (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
-            else -> null
-        }
-    }
 }
+
+/** 从 qualified access 中解析已解析或候选访问目标符号。 */
+private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? =
+    when (val reference = calleeReference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol
+        is CfirResolvedErrorReference -> reference.resolvedSymbol
+        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+        is CfirErrorNamedReference -> (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
+        else -> null
+    }
 
 /**
  * static 上下文中实例成员访问的诊断类别。
@@ -719,8 +725,8 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker(MppCh
         }
 
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source,
             factory = CfirErrors.ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR,
             a = memberKind,
             b = target.symbol.callableId.callableName.asString(),
@@ -792,24 +798,24 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker(MppCh
 }
 
 /**
- * 禁止通过 `super` 直接访问抽象函数。
+ * 禁止通过 `super` 直接访问抽象函数或属性。
  *
- * 官方语义将 `super.abstractFunc()` 与 `super.abstractFunc` 都视为直接访问抽象成员。
- * 这里在解析后的 qualified access 上检查目标函数状态，并把诊断落在 `super` 关键字。
+ * 官方语义将 `super.abstractFunc()` 与 `super.abstractProp` 都视为直接访问抽象成员。
+ * 这里在解析后的 qualified access 上检查目标 callable 状态，并把诊断落在完整的 `super` token。
  */
 object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker(MppCheckerKind.Common) {
     /**
-     * 检查通过 `super` 直接访问抽象函数的场景。
+     * 检查通过 `super` 直接访问抽象函数或属性的场景。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         val receiver = expression.explicitReceiver as? CfirSuperReceiverExpression ?: return
-        val target = expression.resolvedCallableTarget() as? CfirNamedFunction ?: return
+        val target = expression.resolvedCallableTarget() ?: return
         if (!target.status.isAbstract) return
 
         reporter.reportOn(
-            source = receiver.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: receiver.source?.firstCharacterDiagnosticSource()
+            source = receiver.calleeReference.source
+                ?: receiver.source
                 ?: expression.source,
             factory = CfirErrors.ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY,
         )

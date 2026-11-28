@@ -37,6 +37,10 @@ import org.cangnova.cangjie.descriptors.Visibilities
 val DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS: CfirResolvedDeclarationStatus =
     buildResolvedDeclarationStatus {
         visibility = Visibilities.Public
+        visibilityExplicitness = CfirModifierExplicitness.UNKNOWN
+        modalityExplicitness = CfirModifierExplicitness.UNKNOWN
+        bodyPresence = CfirBodyPresence.UNKNOWN
+        isDeclarationFile = false
         isVisibilityExplicit = false
         isModalityExplicit = false
         isAbstractExplicit = false
@@ -49,6 +53,7 @@ val DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS: CfirResolvedDeclarationStatus =
         isForeign = false
         isC = false
         isCommon = false
+        isFromCommonPart = false
         isSpecific = false
         isCommonWithDefault = false
         isRedef = false
@@ -68,28 +73,44 @@ val DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS: CfirResolvedDeclarationStatus =
 fun CfirDeclarationStatus.resolvedForStatuslessDeclaration(): CfirResolvedDeclarationStatus {
     if (this is CfirResolvedDeclarationStatus) return this
 
+    return copyResolvedStatus(modality ?: Modality.FINAL)
+}
+
+/** 将已有有效模态的状态复制为 resolved 形态，不重新推导库声明的语义。 */
+fun CfirDeclarationStatus.resolvedWithEffectiveModality(): CfirResolvedDeclarationStatus {
+    if (this is CfirResolvedDeclarationStatus) return this
+
+    return copyResolvedStatus(checkNotNull(modality) { "Effective modality is required for a resolved status" })
+}
+
+private fun CfirDeclarationStatus.copyResolvedStatus(effectiveModality: Modality): CfirResolvedDeclarationStatus {
     return buildResolvedDeclarationStatus {
-        source = this@resolvedForStatuslessDeclaration.source
-        visibility = this@resolvedForStatuslessDeclaration.visibility
-        isVisibilityExplicit = this@resolvedForStatuslessDeclaration.isVisibilityExplicit
-        isModalityExplicit = this@resolvedForStatuslessDeclaration.isModalityExplicit
-        isAbstractExplicit = this@resolvedForStatuslessDeclaration.isAbstractExplicit
-        isOverride = this@resolvedForStatuslessDeclaration.isOverride
-        isOperator = this@resolvedForStatuslessDeclaration.isOperator
-        isStatic = this@resolvedForStatuslessDeclaration.isStatic
-        isConst = this@resolvedForStatuslessDeclaration.isConst
-        isMut = this@resolvedForStatuslessDeclaration.isMut
-        isUnsafe = this@resolvedForStatuslessDeclaration.isUnsafe
-        isForeign = this@resolvedForStatuslessDeclaration.isForeign
-        isC = this@resolvedForStatuslessDeclaration.isC
-        isCommon = this@resolvedForStatuslessDeclaration.isCommon
-        isSpecific = this@resolvedForStatuslessDeclaration.isSpecific
-        isCommonWithDefault = this@resolvedForStatuslessDeclaration.isCommonWithDefault
-        isRedef = this@resolvedForStatuslessDeclaration.isRedef
-        isDefault = this@resolvedForStatuslessDeclaration.isDefault
-        isAbstract = this@resolvedForStatuslessDeclaration.isAbstract
-        isOpen = this@resolvedForStatuslessDeclaration.isOpen
-        isSealed = this@resolvedForStatuslessDeclaration.isSealed
-        modality = this@resolvedForStatuslessDeclaration.modality ?: Modality.FINAL
+        source = this@copyResolvedStatus.source
+        visibility = this@copyResolvedStatus.visibility
+        visibilityExplicitness = this@copyResolvedStatus.visibilityExplicitness
+        modalityExplicitness = this@copyResolvedStatus.modalityExplicitness
+        bodyPresence = this@copyResolvedStatus.bodyPresence
+        isDeclarationFile = this@copyResolvedStatus.isDeclarationFile
+        isVisibilityExplicit = this@copyResolvedStatus.isVisibilityExplicit
+        isModalityExplicit = this@copyResolvedStatus.isModalityExplicit
+        isAbstractExplicit = this@copyResolvedStatus.isAbstractExplicit
+        isOverride = this@copyResolvedStatus.isOverride
+        isOperator = this@copyResolvedStatus.isOperator
+        isStatic = this@copyResolvedStatus.isStatic
+        isConst = this@copyResolvedStatus.isConst
+        isMut = this@copyResolvedStatus.isMut
+        isUnsafe = this@copyResolvedStatus.isUnsafe
+        isForeign = this@copyResolvedStatus.isForeign
+        isC = this@copyResolvedStatus.isC
+        isCommon = this@copyResolvedStatus.isCommon
+        isFromCommonPart = this@copyResolvedStatus.isFromCommonPart
+        isSpecific = this@copyResolvedStatus.isSpecific
+        isCommonWithDefault = this@copyResolvedStatus.isCommonWithDefault
+        isRedef = this@copyResolvedStatus.isRedef
+        isDefault = this@copyResolvedStatus.isDefault
+        isAbstract = this@copyResolvedStatus.isAbstract
+        isOpen = this@copyResolvedStatus.isOpen
+        isSealed = this@copyResolvedStatus.isSealed
+        modality = effectiveModality
     }
 }

@@ -1,0 +1,10 @@
+FILE: stringInterpolationCall.cj
+    internal? class A {
+        init()
+        internal? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func greet(a: R|A|, x: R|Int64|): R|String| {
+        <element: CfirLazyBlock>
+    }

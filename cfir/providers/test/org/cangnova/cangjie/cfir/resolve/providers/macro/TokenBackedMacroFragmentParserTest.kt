@@ -182,6 +182,28 @@ class TokenBackedMacroFragmentParserTest {
         assertEquals(0, reparseCalls)
     }
 
+    /** 声明宏允许删除 carrier，空 token 流必须成为零声明输出而不是展开失败。 */
+    @Test
+    fun `empty declaration fragment represents zero replacements`() {
+        var reparseCalls = 0
+        val parser = TokenBackedMacroFragmentParser(
+            reparse = { _, _ ->
+                reparseCalls++
+                error("An empty declaration fragment does not require reparsing.")
+            },
+            reTokenize = MacroTokenReEvaluator::preserveTextTokens,
+        )
+
+        val result = parser.parse(
+            input(node("RemoveDeclaration"), emptyList(), MacroFragmentParser.Mode.DECLARATION),
+        )
+
+        assertTrue(result is MacroFragmentResult.Success)
+        val success = result as MacroFragmentResult.Success
+        assertTrue((success.payload as MacroDeclarationFragment).declarations.isEmpty())
+        assertEquals(0, reparseCalls)
+    }
+
     /**
      * 验证表达式模式下成功重解析会返回 construction-only 的成功片段。
      */
@@ -327,6 +349,7 @@ class TokenBackedMacroFragmentParserTest {
                 ),
                 hasParenthesis = true,
                 attrTokens = emptyList(),
+                hasAttr = false,
                 inputTokens = emptyList(),
                 sourceRange = sourceRange ?: MacroSurfaceSourceRange(
                     source = null,

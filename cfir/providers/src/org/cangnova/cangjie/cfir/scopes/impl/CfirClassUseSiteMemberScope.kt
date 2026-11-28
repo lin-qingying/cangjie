@@ -55,12 +55,13 @@ import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenanceScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
-import org.cangnova.cangjie.cfir.scopes.CfirMemberScopeOwner
 import org.cangnova.cangjie.cfir.scopes.CfirFunctionInstantiationScope
 import org.cangnova.cangjie.cfir.scopes.CfirFunctionInstantiationTable
 import org.cangnova.cangjie.cfir.scopes.CfirFunctionMemberTableKind
-import org.cangnova.cangjie.cfir.scopes.CfirStoredFunctionMember
 import org.cangnova.cangjie.cfir.scopes.CfirInheritanceMemberKind
+import org.cangnova.cangjie.cfir.scopes.CfirMemberScopeOwner
+import org.cangnova.cangjie.cfir.scopes.CfirPotentialDirectExtendCallableScope
+import org.cangnova.cangjie.cfir.scopes.CfirStoredFunctionMember
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
@@ -170,7 +171,7 @@ class CfirClassUseSiteMemberScope internal constructor(
     internal val cacheGeneration: Long,
     internal val cacheDependencies: Set<org.cangnova.cangjie.cfir.scopes.CfirScopeCacheEpoch>,
 ) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirFunctionInstantiationScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
-    CfirMemberLookupCompletenessScope, CfirCjmpMemberSubstitutorProvider {
+    CfirPotentialDirectExtendCallableScope, CfirMemberLookupCompletenessScope, CfirCjmpMemberSubstitutorProvider {
     companion object {
         /**
          * 为具体接收者取得共享结构成员图；来源、阶段和缓存生命周期统一由 provider 负责。
@@ -1034,9 +1035,43 @@ class CfirClassUseSiteMemberScope internal constructor(
         }
     }
 
+    /** 将 K2 CDoc receiver 关系检查所需的原始直接 extend 候选委托给目标索引 scope。 */
+    override fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        extendScope?.processPotentialDirectExtendCallablesByName(name) { candidate ->
+            if (emitted.add(candidate)) processor(candidate)
+        }
+
+        for (parent in parentScopes) {
+            val potentialExtendScope = parent as? CfirPotentialDirectExtendCallableScope
+                ?: error("Class parent use-site scope must expose direct extend candidates")
+            potentialExtendScope.processPotentialDirectExtendCallablesByName(name) { candidate ->
+                if (emitted.add(candidate)) processor(candidate)
+            }
+        }
+    }
+
     /**
      * 按名称处理所有可见 callable。
      */
+    /**
+     * 按名称处理 use-site 变量成员。
+     *
+     * 本作用域是 `CaType.scope` 实际落到的包装层；它覆写了 callable、属性与名称集合，
+     * 唯独漏掉 `processVariablesByName`，而 Analysis 的 `getCallableSymbols` 正是走这一入口。
+     * 后果是成员补全只拿到函数、拿不到字段与成员变量。这里直接复用 callable 分派，
+     * 保证与 `processCallablesByName` 的可见集合完全一致。
+     */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        if (name !in getCallableNames()) return
+        processCallablesByName(name) { symbol ->
+            (symbol as? CfirVariableSymbol<*>)?.let(processor)
+        }
+    }
+
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         if (name !in getCallableNames()) return
 

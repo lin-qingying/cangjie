@@ -1,8 +1,11 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
+import org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies
 
-internal object GenericNodePresentKey : CfirDeclarationDataKey()
+internal object GenericNodePresentKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = CfirRawDeclarationDataPolicies.boolean
+}
 
 /** 原始 Generic 语法节点是否存在；错误恢复中的空泛型列表也有节点，where 子句本身没有。 */
 var CfirDeclarationAttributes.hasGenericNode: Boolean? by CfirDeclarationDataRegistry.attributesAccessor(GenericNodePresentKey)
@@ -16,7 +19,9 @@ var CfirDeclaration.hasGenericNode: Boolean
         genericNodePresentAttribute = value
     }
 
-internal object CjmpSourceNominalDefaultKey : CfirDeclarationDataKey()
+internal object CjmpSourceNominalDefaultKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = CfirRawDeclarationDataPolicies.boolean
+}
 
 /** 源码容器解析完成时计算的默认实现事实；null 表示没有可用的源码事实。 */
 var CfirDeclarationAttributes.cjmpSourceNominalHasDefault: Boolean? by
@@ -26,7 +31,9 @@ var CfirDeclarationAttributes.cjmpSourceNominalHasDefault: Boolean? by
 val CfirDeclaration.cjmpSourceNominalHasDefault: Boolean? by
     CfirDeclarationDataRegistry.data(CjmpSourceNominalDefaultKey)
 
-internal object OriginalDoNotExportKey : CfirDeclarationDataKey()
+internal object OriginalDoNotExportKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = CfirRawDeclarationDataPolicies.boolean
+}
 private var CfirDeclaration.originalDoNotExportAttribute: Boolean? by CfirDeclarationDataRegistry.data(OriginalDoNotExportKey)
 
 /**

@@ -1,0 +1,104 @@
+FILE: typeConvForms.cj
+    internal? func numericConversions(a: R|Int64|, f: R|Float64|): R|Unit| {
+        local? let i8: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|Int8|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let i16: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|Int16|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let i32: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|Int32|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let u8: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|UInt8|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let u16: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|UInt16|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let u32: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|UInt32|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let u64: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|UInt64|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let f16: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|Float16|) {
+                    NAMED_ACCESS(f)
+                }
+        local? let f32: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|Float32|) {
+                    NAMED_ACCESS(f)
+                }
+        local? let f64: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|Float64|) {
+                    NAMED_ACCESS(f)
+                }
+        local? let back: <implicit> = ...
+            initializer:
+                TYPE_CONVERSION(R|Int64|) {
+                    NAMED_ACCESS(f)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(i8)
+                    NAMED_ACCESS(i16)
+                    NAMED_ACCESS(i32)
+                    NAMED_ACCESS(u8)
+                    NAMED_ACCESS(u16)
+                    NAMED_ACCESS(u32)
+                    NAMED_ACCESS(u64)
+                    NAMED_ACCESS(f16)
+                    NAMED_ACCESS(f32)
+                    NAMED_ACCESS(f64)
+                    NAMED_ACCESS(back)
+                }
+    }
+    internal? func typeChecks(x: R|Any|, y: R|Int64|): R|Unit| {
+        local? let isInt: <implicit> = ...
+            initializer:
+                TYPE_OP(IS, R|Int64|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let isStr: <implicit> = ...
+            initializer:
+                TYPE_OP(IS, R|String|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let asInt: <implicit> = ...
+            initializer:
+                TYPE_OP(AS, R|Int64|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let asStr: <implicit> = ...
+            initializer:
+                TYPE_OP(AS, R|String|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(isInt)
+                    NAMED_ACCESS(isStr)
+                    NAMED_ACCESS(asInt)
+                    NAMED_ACCESS(asStr)
+                    NAMED_ACCESS(y)
+                }
+    }

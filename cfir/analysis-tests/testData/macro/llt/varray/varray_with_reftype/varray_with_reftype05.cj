@@ -1,12 +1,12 @@
 
 
 
-<!VALUE_TYPE_RECURSIVE!>s<!>truct S1 {
+<!VALUE_TYPE_RECURSIVE!>struct S1 {
     var a: S2
     init(a1: S2) {
         a = a1
     }
-}
+}<!>
 
 struct S2 {
     static var b: Array<Int64> = [1, 2, 3]

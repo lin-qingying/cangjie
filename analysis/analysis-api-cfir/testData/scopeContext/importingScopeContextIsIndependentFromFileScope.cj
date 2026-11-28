@@ -1,0 +1,10 @@
+package sample.scope
+
+func tracked(): Int64 {
+    1
+}
+
+func consume(value: Int64): Int64 {
+    let localValue = value
+    return localValue
+}

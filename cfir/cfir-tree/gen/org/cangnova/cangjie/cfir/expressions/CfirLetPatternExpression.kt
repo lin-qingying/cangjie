@@ -9,6 +9,7 @@ import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -17,14 +18,21 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.letPatternExpression]
  */
-abstract class CfirLetPatternExpression : CfirExpression() {
+abstract class CfirLetPatternExpression : CfirExpression(), CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract override val mappedExpression: CfirExpression?
     abstract override val overflowStrategy: CangjieOverflowStrategy?
     abstract val initializer: CfirExpression
+    /**
+     * 模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。
+     */
     abstract val pattern: CfirPattern
+
+    abstract override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement
+    abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
+    abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
 
     /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
     @CfirImplementationDetail
@@ -51,6 +59,8 @@ abstract class CfirLetPatternExpression : CfirExpression() {
     abstract override fun replaceMappedExpression(newMappedExpression: CfirExpression?)
 
     abstract override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?)
+
+    abstract fun replacePattern(newPattern: CfirPattern)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpression
 

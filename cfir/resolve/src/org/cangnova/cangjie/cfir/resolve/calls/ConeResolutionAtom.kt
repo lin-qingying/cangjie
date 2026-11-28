@@ -258,6 +258,8 @@ class ConeResolvedLambdaAtom(
     override val expression: CfirExpression,
     /** lambda 对应的匿名函数声明。 */
     val anonymousFunction: CfirAnonymousFunction,
+    /** 实际 lambda 参数检查的 candidate，与接收约束的 completion owner 分开。 */
+    val candidateOfOuterCall: Candidate,
     /** 外层调用下传的期望函数类型。 */
     expectedType: ConeCangJieType?,
     /** 期望函数类型中的形参类型列表。 */
@@ -314,7 +316,10 @@ class ConeResolvedLambdaAtom(
  */
 sealed class ConePostponedAtomWithRevisableExpectedType :
     ConeFunctionTypeRelatedPostponedResolvedAtom(),
-    PostponedAtomWithRevisableExpectedType
+    PostponedAtomWithRevisableExpectedType {
+    /** 真实外层候选；factory 不从全局当前状态、顺序或名字猜测变量来源。 */
+    abstract val candidateOfOuterCall: Candidate
+}
 
 /**
  * 期望类型本身仍包含类型变量的 lambda atom。
@@ -327,7 +332,7 @@ class ConeLambdaWithTypeVariableAsExpectedTypeAtom(
     /** 含类型变量的期望函数类型。 */
     override val expectedType: ConeCangJieType,
     /** 提供该期望类型的外层调用候选。 */
-    val candidateOfOuterCall: Candidate,
+    override val candidateOfOuterCall: Candidate,
     /** 当 lambda 作为 return 表达式时对应的匿名函数声明。 */
     val anonymousFunctionIfReturnExpression: CfirAnonymousFunction? = null,
 ) : ConePostponedAtomWithRevisableExpectedType(), LambdaWithTypeVariableAsExpectedTypeMarker {
@@ -371,6 +376,8 @@ class ConeResolvedCallableReferenceAtom(
     override val expression: CfirExpression,
     /** callable reference 的上下文期望类型。 */
     expectedType: ConeCangJieType?,
+    /** 提供该引用所属变量槽的真实外层候选，不能省略。 */
+    override val candidateOfOuterCall: Candidate,
 ) : ConePostponedAtomWithRevisableExpectedType(), PostponedCallableReferenceMarker {
     /** 首轮 eager 解析获得的原始期望类型。 */
     private val initialExpectedType: ConeCangJieType? = expectedType

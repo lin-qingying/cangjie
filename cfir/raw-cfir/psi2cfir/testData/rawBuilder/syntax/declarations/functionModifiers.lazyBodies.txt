@@ -1,0 +1,45 @@
+FILE: functionModifiers.cj
+    public func publicFunc(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    private func privateFunc(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal func internalFunc(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    public func constFunc(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? foreign func foreignFunc(p: R|CPointer<R|Int64|>|): R|Int64|
+    internal? open class Base {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func openFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public static func staticFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        protected func protectedFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        private func privateFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal func internalFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived <: R|Base| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func openFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public static func staticFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

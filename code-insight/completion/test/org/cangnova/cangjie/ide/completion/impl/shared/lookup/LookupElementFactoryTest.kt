@@ -1,0 +1,427 @@
+package org.cangnova.cangjie.ide.completion.impl.shared.lookup
+
+import com.intellij.codeInsight.completion.PrioritizedLookupElement
+import com.intellij.codeInsight.lookup.LookupElement
+import com.intellij.codeInsight.lookup.LookupElementDecorator
+import com.intellij.codeInsight.lookup.LookupElementPresentation
+import com.intellij.codeInsight.lookup.LookupElementRenderer
+import com.intellij.icons.AllIcons
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSymbolKind
+import org.cangnova.cangjie.ide.completion.api.lookup.ExpectedTypeMatch
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
+import org.cangnova.cangjie.ide.completion.api.lookup.toWeight
+import org.cangnova.cangjie.ide.completion.api.lookup.withExpectedTypeMatch
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
+import org.cangnova.cangjie.ide.completion.impl.shared.namedArgumentSnapshot
+import org.cangnova.cangjie.lang.CangJieFileType
+import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import javax.swing.Icon
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+
+/**
+ * lookup 元素工厂回归。
+ *
+ * 工厂是「分析结果 → 界面元素」的唯一转换点：这里验证的每一条
+ * （字段映射、快照回挂、优先级折算、稳定排序）都是 B5/B6 的硬约束，
+ * 破坏任何一条都会让弹窗展示与分析结论脱节。
+ */
+class LookupElementFactoryTest : CjParsingTestCase(
+    dataPath = "",
+    fileExt = "cj",
+    fileType = CangJieFileType.INSTANCE,
+    CangJieParserDefinition(),
+) {
+    /**
+     * 初始化平台测试环境。
+     */
+    @BeforeEach
+    fun setUpFixture() {
+        setUp()
+    }
+
+    /**
+     * 释放平台测试环境。
+     */
+    @AfterEach
+    fun tearDownFixture() {
+        tearDown()
+    }
+
+    /**
+     * 快照字段必须原样映射到平台元素，不许在界面期重算语义。
+     */
+    @Test
+    fun mapsSnapshotFields() {
+        val snapshot = completionSnapshot(
+            lookupString = "visible",
+            kind = CompletionItemKind.MEMBER,
+            origin = CompletionOrigin.MEMBER,
+            tailText = "(x: Int64): Int64",
+            typeText = "Int64",
+        ).build()
+
+        val element = LookupElementFactory.create(snapshot)
+        assertEquals("visible", element.lookupString)
+        // 展示字段经平台的呈现模型读取：builder 的尾文本、类型文本与图标
+        // 由 expensive renderer 渲染（普通 renderElement 只写主文本），
+        // 弹窗展示的就是这份呈现内容。
+        val presentation = presentationOf(element)
+        assertEquals("visible", presentation.itemText)
+        assertEquals("(x: Int64): Int64", presentation.tailText)
+        assertEquals("Int64", presentation.typeText)
+        assertNotNull(presentation.icon, "候选必须有图标：没有图标会让弹窗出现空白行")
+    }
+
+    /**
+     * 图标按**声明形态**取，不按候选类别取。
+     *
+     * 顶层一类里同时有 class、interface、struct、enum、typealias 与函数：
+     * 只按类别取图标会让它们全部显示成 class 图标（真机实测就是「全是 class 图标」）。
+     */
+    @Test
+    fun iconFollowsDeclarationKindNotCandidateCategory() {
+        val classIcon = iconOfSnapshot("Widget", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.CLASS)
+        val interfaceIcon = iconOfSnapshot("Shape", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.INTERFACE)
+        val enumIcon = iconOfSnapshot("Color", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.ENUM)
+        val aliasIcon = iconOfSnapshot("Name", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.TYPE_ALIAS)
+        val functionIcon = iconOfSnapshot("compute", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.FUNCTION)
+
+        assertEquals(AllIcons.Nodes.Class, classIcon)
+        assertEquals(AllIcons.Nodes.Interface, interfaceIcon)
+        assertEquals(AllIcons.Nodes.Enum, enumIcon)
+        assertEquals(AllIcons.Nodes.Alias, aliasIcon)
+        assertEquals(AllIcons.Nodes.Function, functionIcon)
+        // 同一类别下的五种声明必须两两不同：这正是本用例要钉死的回归。
+        assertEquals(
+            5,
+            setOf(classIcon, interfaceIcon, enumIcon, aliasIcon, functionIcon).size,
+            "同一候选类别下的不同声明不得共用图标",
+        )
+    }
+
+    /**
+     * 成员的函数用成员图标，顶层的函数用顶层图标。
+     */
+    @Test
+    fun memberFunctionUsesMemberIcon() {
+        assertEquals(
+            AllIcons.Nodes.Method,
+            iconOfSnapshot("run", CompletionItemKind.MEMBER, CompletionSymbolKind.FUNCTION),
+            "成员函数与顶层函数在平台上本来就是两种图标",
+        )
+    }
+
+    /**
+     * 形态未定时图标退回按类别的粗粒度映射（引入声明形态之前的行为）。
+     */
+    @Test
+    fun unknownSymbolKindKeepsCategoryIcon() {
+        val snapshot = completionSnapshot(
+            lookupString = "Widget",
+            kind = CompletionItemKind.TOP_LEVEL,
+            origin = CompletionOrigin.TOP_LEVEL,
+        ).build()
+        assertEquals(
+            CompletionSymbolKind.OTHER,
+            snapshot.symbolKind,
+            "说不出形态时必须落 OTHER，而不是猜一个：猜错会把函数显示成类型",
+        )
+        assertEquals(
+            iconOfKind(CompletionItemKind.TOP_LEVEL),
+            presentationOf(LookupElementFactory.create(snapshot)).icon,
+            "形态未定时图标必须与引入本字段之前逐字一致",
+        )
+    }
+
+    /**
+     * 空 typeText 不得调用 withTypeText：平台把「没设置」与「显式空串」区别对待。
+     */
+    @Test
+    fun emptyTypeTextStaysUnset() {
+        val snapshot = completionSnapshot(
+            lookupString = "alpha",
+            kind = CompletionItemKind.LOCAL,
+            origin = CompletionOrigin.LOCAL_SCOPE,
+        ).build()
+        val presentation = presentationOf(LookupElementFactory.create(snapshot))
+        assertTrue(presentation.typeText.isNullOrEmpty(), "未设置 typeText 时不得凭空出现类型文本")
+    }
+
+    /**
+     * 快照必须能经用户数据键完整取回：插入与语义复查都依赖它。
+     */
+    @Test
+    fun snapshotRoundTripsThroughUserData() {
+        val snapshot = completionSnapshot(
+            lookupString = "alpha",
+            kind = CompletionItemKind.LOCAL,
+            origin = CompletionOrigin.LOCAL_SCOPE,
+        ).build()
+        val element = LookupElementFactory.create(snapshot)
+        assertSame(snapshot, element.getUserData(COMPLETION_SNAPSHOT))
+    }
+
+    /**
+     * 分析期权重必须经优先包装器进入平台：排序是分析结论的机械映射。
+     *
+     * 平台如何读取包装器内的优先级属于平台行为；这里验证两件属于本层的事：
+     * 折算函数给出与权重一致的优先级，且工厂确实把元素包进优先包装器。
+     */
+    @Test
+    fun priorityMatchesAnalysisWeight() {
+        val snapshot = completionSnapshot(
+            lookupString = "alpha",
+            kind = CompletionItemKind.LOCAL,
+            origin = CompletionOrigin.LOCAL_SCOPE,
+        ).build()
+        assertEquals(snapshot.weight.toDouble(), priorityOf(snapshot), 0.0)
+        assertTrue(
+            LookupElementFactory.create(snapshot) is PrioritizedLookupElement<*>,
+            "工厂必须把元素包进 PrioritizedLookupElement，否则分析期权重不会影响展示次序",
+        )
+    }
+
+    /**
+     * 批量转换保持传入顺序，不在工厂内部重排。
+     */
+    @Test
+    fun createAllKeepsOrder() {
+        val first = completionSnapshot("first", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE).build()
+        val second = completionSnapshot("second", CompletionItemKind.TOP_LEVEL, CompletionOrigin.TOP_LEVEL).build()
+        assertEquals(
+            listOf("first", "second"),
+            LookupElementFactory.createAll(listOf(first, second)).map { it.lookupString },
+        )
+    }
+
+    /**
+     * 稳定排序：权重降序，同权重保持到达次序。
+     */
+    @Test
+    fun sortsByWeightKeepingArrivalOrder() {
+        val low = completionSnapshot("low", CompletionItemKind.TOP_LEVEL, CompletionOrigin.TOP_LEVEL).build()
+        val high1 = completionSnapshot("high1", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE).build()
+        val high2 = completionSnapshot("high2", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE).build()
+        assertEquals(
+            listOf("high1", "high2", "low"),
+            listOf(low, high1, high2).sortedByAnalysisWeight().map { it.lookupString },
+        )
+    }
+
+    /**
+     * 权重维度次序：来源 > 导入成本 > 期望类型。
+     */
+    @Test
+    fun weightOrdersDimensions() {
+        val local = CompletionSortDataImpl(CompletionOrigin.LOCAL_SCOPE).toWeight()
+        val topLevel = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL).toWeight()
+        assertTrue(local > topLevel, "局部来源必须排在顶层来源之前，实际 $local vs $topLevel")
+
+        val direct = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, importCost = ImportCost.DIRECT).toWeight()
+        val addImport = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, importCost = ImportCost.ADD_IMPORT).toWeight()
+        assertTrue(direct > addImport, "已可达候选必须排在需导入候选之前，实际 $direct vs $addImport")
+
+        val matched = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL)
+            .withExpectedTypeMatch(ExpectedTypeMatch.MATCH).toWeight()
+        val unknown = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL)
+            .withExpectedTypeMatch(ExpectedTypeMatch.UNKNOWN).toWeight()
+        val mismatched = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL)
+            .withExpectedTypeMatch(ExpectedTypeMatch.MISMATCH).toWeight()
+        assertTrue(matched > unknown, "MATCH 必须高于 UNKNOWN，实际 $matched vs $unknown")
+        assertTrue(unknown > mismatched, "UNKNOWN 必须高于 MISMATCH，实际 $unknown vs $mismatched")
+    }
+
+    /**
+     * 弃用候选在同来源、同导入成本、同匹配度内部降权。
+     *
+     * 降权而不是剔除：迁移期的代码仍要能选到它，但不该排在同等可用的替代项之前。
+     */
+    @Test
+    fun deprecatedCandidatesAreDemotedWithinTheSameBand() {
+        val usable = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL).toWeight()
+        val deprecated = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, isDeprecated = true).toWeight()
+        assertTrue(usable > deprecated, "同等条件下弃用候选必须排在可用候选之后，实际 $usable vs $deprecated")
+
+        // 但降权不得越过更高的维度：已可达的弃用候选仍应排在需要追加 import 的可用候选之前。
+        val deprecatedDirect = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, isDeprecated = true).toWeight()
+        val usableAddImport = CompletionSortDataImpl(
+            CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.ADD_IMPORT,
+        ).toWeight()
+        assertTrue(
+            deprecatedDirect > usableAddImport,
+            "弃用只应影响同层次序，不得越过导入成本维度，实际 $deprecatedDirect vs $usableAddImport",
+        )
+    }
+
+    /**
+     * 同级声明次序有上限，不得越过更高的维度。
+     *
+     * 声明次序是无界的：不给它限幅，一个排在很后面的候选就能越过「是否需要导入」，
+     * 让需要追加 import 的候选排到已可达候选之前。
+     */
+    @Test
+    fun declarationOrderIsBoundedBelowHigherDimensions() {
+        val lateButReachable = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            declarationOrder = Int.MAX_VALUE,
+        ).toWeight()
+        val earlyButNeedsImport = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.ADD_IMPORT,
+            declarationOrder = -Int.MAX_VALUE,
+        ).toWeight()
+        assertTrue(
+            lateButReachable > earlyButNeedsImport,
+            "声明次序不得越过导入成本维度，实际 $lateButReachable vs $earlyButNeedsImport",
+        )
+    }
+
+    /**
+     * 附属类别压到真实符号之下：文档标签/引用不该盖过声明本身。
+     */
+    @Test
+    fun documentationItemsRankBelowRealSymbols() {
+        val real = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, kind = CompletionItemKind.TOP_LEVEL).toWeight()
+        val documentation =
+            CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, kind = CompletionItemKind.DOCUMENTATION).toWeight()
+        val keyword = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, kind = CompletionItemKind.KEYWORD).toWeight()
+        assertTrue(real > documentation, "文档项不得盖过声明本身，实际 $real vs $documentation")
+        assertEquals(real, keyword, "真实候选之间不引入类别次序——位置分类已经限制在同种类里")
+    }
+
+    /**
+     * 类别不得越过更高的维度：期望类型匹配仍然优先。
+     *
+     * 位段划分若算错，这种「低位维度拿到极值就越过高位维度」的错误排序会静默发生——
+     * 它不报错，只是候选顺序看起来没道理。
+     */
+    @Test
+    fun categoryNeverCrossesHigherDimensions() {
+        // 最差类别 + 最差弃用 + 最差次序，对上最好的更高维度。
+        val worstMatched = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            expectedTypeMatch = ExpectedTypeMatch.MATCH,
+            kind = CompletionItemKind.DOCUMENTATION,
+            isDeprecated = true,
+            declarationOrder = Int.MAX_VALUE,
+        ).toWeight()
+        val bestUnknown = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            expectedTypeMatch = ExpectedTypeMatch.UNKNOWN,
+            kind = CompletionItemKind.TOP_LEVEL,
+            declarationOrder = 0,
+        ).toWeight()
+        assertTrue(worstMatched > bestUnknown, "类型匹配必须压过类别，实际 $worstMatched vs $bestUnknown")
+
+        // 最差类别 + 最差弃用 + 最差次序，对上更好一档的导入成本。
+        val worstDirect = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.DIRECT,
+            kind = CompletionItemKind.DOCUMENTATION,
+            isDeprecated = true,
+            declarationOrder = Int.MIN_VALUE,
+        ).toWeight()
+        val bestAddImport = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.ADD_IMPORT,
+            kind = CompletionItemKind.TOP_LEVEL,
+            declarationOrder = Int.MAX_VALUE,
+            expectedTypeMatch = ExpectedTypeMatch.MATCH,
+        ).toWeight()
+        assertTrue(worstDirect > bestAddImport, "导入成本必须压过其下各维，实际 $worstDirect vs $bestAddImport")
+    }
+
+    /**
+     * 替换期望类型结论必须保留来源、导入成本、声明次序与弃用标记。
+     */
+    @Test
+    fun withExpectedTypeMatchPreservesOtherDimensions() {
+        val original = CompletionSortDataImpl(
+            origin = CompletionOrigin.EXTEND,
+            importCost = ImportCost.ADD_IMPORT,
+            declarationOrder = 3,
+            isDeprecated = true,
+        )
+        val rewritten = original.withExpectedTypeMatch(ExpectedTypeMatch.MATCH)
+        assertEquals(CompletionOrigin.EXTEND, rewritten.origin)
+        assertEquals(ImportCost.ADD_IMPORT, rewritten.importCost)
+        assertEquals(3, rewritten.declarationOrder)
+        assertEquals(ExpectedTypeMatch.MATCH, rewritten.expectedTypeMatch)
+        assertTrue(rewritten.isDeprecated, "重写匹配结论不得丢掉弃用标记")
+    }
+
+    /**
+     * 辅助契约：只有确定匹配才加权；命名实参必须携带后缀文本。
+     */
+    @Test
+    fun helperContracts() {
+        assertTrue(isPromotedByExpectedType(ExpectedTypeMatch.MATCH))
+        assertFalse(isPromotedByExpectedType(ExpectedTypeMatch.UNKNOWN), "UNKNOWN 不得当成匹配")
+        assertFalse(isPromotedByExpectedType(ExpectedTypeMatch.MISMATCH))
+
+        assertTrue(
+            originRank(CompletionOrigin.LOCAL_SCOPE) < originRank(CompletionOrigin.TOP_LEVEL),
+            "来源次序是契约：局部必须先于顶层",
+        )
+
+        assertTrue(namedArgumentSnapshot("value").build().insertion.requiresSuffixText(), "命名实参必须追加 `name: `")
+        assertFalse(
+            completionSnapshot("alpha", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE)
+                .build().insertion.requiresSuffixText(),
+            "普通候选不得携带命名实参前缀",
+        )
+    }
+
+    /**
+     * 按平台渲染约定取得展示内容。
+     *
+     * 尾文本、类型文本与图标由 expensive renderer 渲染（普通 renderElement 只写主文本），
+     * 弹窗展示的就是这份呈现内容；装饰器沿委托链向下找第一个非空渲染器。
+     */
+    private fun presentationOf(element: LookupElement): LookupElementPresentation {
+        val presentation = LookupElementPresentation()
+        val renderer = expensiveRendererOf(element)
+        if (renderer != null) {
+            renderer.renderElement(element, presentation)
+        } else {
+            element.renderElement(presentation)
+        }
+        return presentation
+    }
+
+    /**
+     * 按声明形态渲染一个候选的图标。
+     */
+    private fun iconOfSnapshot(
+        name: String,
+        kind: CompletionItemKind,
+        symbolKind: CompletionSymbolKind,
+    ): Icon? {
+        val snapshot = completionSnapshot(lookupString = name, kind = kind, origin = CompletionOrigin.TOP_LEVEL)
+            .apply { this.symbolKind = symbolKind }
+            .build()
+        return presentationOf(LookupElementFactory.create(snapshot)).icon
+    }
+
+    /**
+     * 取得元素的 expensive renderer；装饰器没有自己的渲染器时沿委托链向下找。
+     */
+    private fun expensiveRendererOf(element: LookupElement): LookupElementRenderer<LookupElement>? {
+        val decorator = element as? LookupElementDecorator<*> ?: return null
+        @Suppress("UNCHECKED_CAST")
+        val own = decorator.expensiveRenderer as? LookupElementRenderer<LookupElement>
+        return own ?: decorator.delegate.let(::expensiveRendererOf)
+    }
+}

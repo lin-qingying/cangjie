@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolvableSessionForTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
@@ -11,7 +12,18 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -89,5 +101,30 @@ class DecompiledLibraryTypeAliasResolveTest : AbstractAnalysisApiExecutionTest(
             declaredUserTypeRef?.qualifier?.lastOrNull()?.name?.asString(),
             "delegatedTypeRef 必须继续指向被声明的 typealias 名称，而不是被提前抹平成展开类型。",
         )
+    }
+
+    /**
+     * 通过 stub-based library provider 加载 callable，确认其 CPointer pointee ClassId 完整保留。
+     */
+    @Test
+    fun decompiledCPointerSignature(mainFile: CjFile) {
+        val session = mainFile.getResolvableSessionForTest()
+        val functionSymbol = session.symbolProvider.getTopLevelFunctionSymbols(
+            FqName("sample.lib"),
+            Name.identifier("echoProcessInfo"),
+        ).single()
+        val function = functionSymbol.cfir as CfirNamedFunction
+        assertTrue((function.psi as CjNamedFunction).containingCjFile.isCompiled)
+
+        fun assertProcessInfoPointer(type: ConeCangJieType) {
+            assertTrue(type is ConePointerType, "decompiled CPointer signature must deserialize as ConePointerType")
+            val pointerType = type as ConePointerType
+            assertTrue(pointerType.pointeeType is ConeClassifierType, "CPointer pointee must retain a classifier type")
+            val pointeeType = pointerType.pointeeType as ConeClassifierType
+            assertEquals(ClassId.topLevel(FqName("sample.lib.ProcessInfo")), pointeeType.lookupTag.classId)
+        }
+
+        assertProcessInfoPointer(function.valueParameters.single().returnTypeRef.coneType)
+        assertProcessInfoPointer(function.returnTypeRef.coneType)
     }
 }

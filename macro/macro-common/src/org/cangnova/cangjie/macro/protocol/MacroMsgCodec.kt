@@ -13,9 +13,12 @@ package org.cangnova.cangjie.macro.protocol
 import MacroMsgFormat.*
 import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.macro.MacroCallInfo
+import org.cangnova.cangjie.macro.MacroDiagnosticOrigin
+import org.cangnova.cangjie.macro.MacroDiagnosticSeverity
 import org.cangnova.cangjie.macro.MacroDiagnosticInfo
 import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
+import org.cangnova.cangjie.macro.MacroTokenKind
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
 import java.nio.ByteBuffer
@@ -46,7 +49,11 @@ object MacroMsgCodec {
      */
     const val TYPE_EXIT_TASK: UByte = 4u
 
-    // MacroEvalStatus
+    // MacroEvalStatus：与 CJC MacroEvalStatus wire enum 保持同一编号。
+    /** 宏服务已初始化，尚未进入求值阶段。 */
+    const val STATUS_INIT: UByte = 0u
+    /** 宏服务已就绪，尚未返回本次调用的求值结果。 */
+    const val STATUS_READY: UByte = 1u
     /**
      * 宏调用已经执行、结果需要按 token 判断是否失败的状态。
      */
@@ -59,10 +66,16 @@ object MacroMsgCodec {
      * 宏展开失败状态。
      */
     const val STATUS_FAIL: UByte = 4u
+    /** 宏服务要求重新求值的中间状态。 */
+    const val STATUS_REEVAL: UByte = 5u
     /**
      * 宏服务端完成当前展开批次的状态。
      */
     const val STATUS_FINISH: UByte = 6u
+    /** 注解宏中间结果；CJC 完成处理后才以成功状态返回调用方。 */
+    const val STATUS_ANNOTATION: UByte = 7u
+    /** 宏服务重新求值失败的状态。 */
+    const val STATUS_REEVAL_FAILED: UByte = 8u
 
     // ─── 消息构建 ─────────────────────────────────────────────────────────────
 
@@ -232,6 +245,7 @@ object MacroMsgCodec {
                     line = end?.line ?: 0,
                     column = end?.column ?: 0,
                 ),
+                delimiterNum = tok.delimiterNum.toInt(),
             )
         }
 
@@ -246,17 +260,33 @@ object MacroMsgCodec {
             )
         }
 
-        return if ((status == STATUS_SUCCESS || status == STATUS_FINISH || status == STATUS_EVAL) && !macroExpandFailed(tokens)) {
+        // CJC 在子进程中执行 assertParentContext 时通过 assertParents 返回失败的上下文约束；
+        // 这不是普通 DiagReport，遗漏该字段会把可解释的上下文失败折叠成 status=4。
+        val callPosition = result.id?.pos?.toSourcePosition() ?: SourcePosition()
+        val parentContextDiagnostics = (0 until result.assertParentsLength).mapNotNull { i ->
+            val requiredParent = result.assertParents(i)?.takeIf(String::isNotBlank) ?: return@mapNotNull null
+            MacroDiagnosticInfo(
+                severity = MacroDiagnosticSeverity.ERROR,
+                message = "未找到要求的父宏上下文 `$requiredParent`。",
+                hint = "assertParentContext(\"$requiredParent\")",
+                begin = callPosition,
+                end = callPosition,
+                origin = MacroDiagnosticOrigin.EXECUTOR,
+            )
+        }
+        val allDiagnostics = parentContextDiagnostics + diagnostics
+
+        return if (isMacroResultSuccessful(status, tokens)) {
             MacroExpansionResult.Success(
                 tokens = tokens,
                 expandedText = rebuildExpandedText(tokens),
-                diagnostics = diagnostics,
+                diagnostics = allDiagnostics,
             )
         } else {
             MacroExpansionResult.Failure(
-                message = diagnostics.firstOrNull()?.message ?: "宏展开失败（status=$status）",
+                message = allDiagnostics.firstOrNull()?.message ?: "宏展开失败（status=$status）",
                 kind = MacroExpansionFailureKind.EXPAND_FAILED,
-                diagnostics = diagnostics,
+                diagnostics = allDiagnostics,
             )
         }
     }
@@ -268,6 +298,15 @@ object MacroMsgCodec {
      */
     private fun macroExpandFailed(tokens: List<TokenInfo>): Boolean =
         tokens.size == 1 && tokens.single().kind == TOKEN_ILLEGAL
+
+    /**
+     * 共享定义宏协议结果的成功语义，供 CFIR 和 IDE 预览统一使用。
+     * 未知状态以及官方失败哨兵 token 都不是成功结果。
+     */
+    fun isMacroResultSuccessful(status: UByte, tokens: List<TokenInfo>): Boolean =
+        status in SUCCESS_STATUSES && !macroExpandFailed(tokens)
+
+    private val SUCCESS_STATUSES = setOf(STATUS_SUCCESS, STATUS_FINISH, STATUS_EVAL)
 
     /**
      * 将协议层位置对象转换为公共源码位置模型。
@@ -283,52 +322,155 @@ object MacroMsgCodec {
     // ─── 展开文本重建 ─────────────────────────────────────────────────────────
 
     /**
-     * 根据 token 类型启发式重建展开文本
+     * 按官方 CJC TokenKind 规则把展开 token 流还原为可重新解析的源码。
      *
-     * C++ 宏服务返回的展开 token 位置信息指向原始宏调用位置，不代表展开后的布局，
-     * 因此无法通过位置重建空白。改用基于 token 值的启发式规则在 token 间插入空格。
+     * 宏协议中的字符串 token 值不包含源码定界符；格式化必须依据 token kind 和
+     * delimiterNum 恢复字面量，再按 CJC 的相邻 token 空格规则拼接，不能从 token
+     * value 猜测语法类别。协议不携带原始单/双引号选择，因此字符串使用双引号规范化。
      */
-    fun rebuildExpandedText(tokens: List<TokenInfo>): String {
-        if (tokens.isEmpty()) return ""
-        val sb = StringBuilder()
-        var prevValue: String? = null
-        for (tok in tokens) {
-            if (tok.value.contains('\n') || tok.value.contains('\r')) {
-                sb.append('\n')
-                prevValue = tok.value
-                continue
-            }
-            val prev = prevValue
-            if (prev != null && needsSpaceBetween(prev, tok.value)) {
-                sb.append(' ')
-            }
-            sb.append(tok.value)
-            prevValue = tok.value
+    /** 一次重建同时输出文本和逐 token span，分隔空格不冒充原 token 的坐标。 */
+    data class ExpandedTokenSpan(val tokenIndex: Int, val startOffset: Int, val endOffset: Int)
+    data class ExpandedText(val text: String, val spans: List<ExpandedTokenSpan>)
+
+    fun rebuildExpandedText(tokens: List<TokenInfo>): String = rebuildExpandedTextWithSpans(tokens).text
+
+    fun rebuildExpandedTextWithSpans(tokens: List<TokenInfo>): ExpandedText {
+        val text = StringBuilder()
+        val spans = ArrayList<ExpandedTokenSpan>(tokens.size)
+        tokens.forEachIndexed { index, token ->
+            val start = text.length
+            text.append(tokenToSource(token))
+            spans += ExpandedTokenSpan(index, start, text.length)
+            val next = tokens.getOrNull(index + 1)
+            if (next != null && needsSpaceBetween(token.kind, next.kind)) text.append(' ')
         }
-        return sb.toString()
+        return ExpandedText(text.toString(), spans)
     }
 
-    /**
-     * 这些 token 后面不插入空格。
-     */
-    private val noSpaceAfter = setOf("(", "[", ".", "@", "#", "!")
-    /**
-     * 这些 token 前面不插入空格。
-     */
-    private val noSpaceBefore = setOf(")", "]", ",", ";", ".", "(")
+    private val noSpaceAfterKinds = setOf(
+        "DOT",
+        "QUEST",
+        "DOLLAR",
+        "LPAREN",
+        "LSQUARE",
+        "AT",
+        "AT_EXCL",
+        "ILLEGAL",
+        "NL",
+    ).mapTo(hashSetOf(), MacroTokenKind::kindOf)
+
+    private val noSpaceBeforeKinds = setOf(
+        "DOT",
+        "COLON",
+        "COMMA",
+        "SEMI",
+        "QUEST",
+        "LPAREN",
+        "RPAREN",
+        "LSQUARE",
+        "RSQUARE",
+        "NL",
+        "END",
+    ).mapTo(hashSetOf(), MacroTokenKind::kindOf)
+
+    private val noSpaceBetweenKinds = setOf(
+        MacroTokenKind.kindOf("GT") to MacroTokenKind.kindOf("GT"),
+        MacroTokenKind.kindOf("GT") to MacroTokenKind.kindOf("ASSIGN"),
+        MacroTokenKind.kindOf("QUEST") to MacroTokenKind.kindOf("QUEST"),
+        MacroTokenKind.kindOf("LPAREN") to MacroTokenKind.kindOf("RPAREN"),
+        MacroTokenKind.kindOf("LSQUARE") to MacroTokenKind.kindOf("RSQUARE"),
+        MacroTokenKind.kindOf("IDENTIFIER") to MacroTokenKind.kindOf("NOT"),
+        MacroTokenKind.kindOf("BITNOT") to MacroTokenKind.kindOf("INIT"),
+    )
+
+    private fun tokenToSource(token: TokenInfo): String = when (MacroTokenKind.nameOf(token.kind)) {
+        "STRING_LITERAL" -> "\"${processSingleLineLiteralValue(token.value)}\""
+        "JSTRING_LITERAL" -> "J\"${processSingleLineLiteralValue(token.value)}\""
+        "RUNE_LITERAL" -> if (token.value == "'") "r'\\''" else "r'${token.value}'"
+        "MULTILINE_STRING" -> "\"\"\"${System.lineSeparator()}${processMultilineLiteralValue(token.value)}\"\"\""
+        "MULTILINE_RAW_STRING" -> {
+            val delimiter = "#".repeat(token.delimiterNum)
+            "$delimiter\"${token.value}\"$delimiter"
+        }
+        "NL" -> System.lineSeparator()
+        else -> token.value
+    }
+
+    /** 对齐 CJC 的单行字符串重建，保留插值表达式内部的引号。 */
+    private fun processSingleLineLiteralValue(value: String): String = buildString {
+        var inInterpolation = false
+        var interpolationBraceDepth = 0
+        for (character in value) {
+            if (isNotEmpty() && last() == '$' && character == '{') inInterpolation = true
+            if (inInterpolation && character == '{') interpolationBraceDepth++
+            if (inInterpolation && character == '}') {
+                if (interpolationBraceDepth > 0) interpolationBraceDepth--
+                if (interpolationBraceDepth == 0) inInterpolation = false
+            }
+            if (inInterpolation) {
+                append(character)
+                continue
+            }
+            when {
+                character == '"' && shouldEscapeQuote(this) -> append("\\\"")
+                character == '\r' && lastOrNull() != '\\' -> append("\\r")
+                character == '\n' && lastOrNull() != '\\' -> append("\\n")
+                else -> append(character)
+            }
+        }
+    }
+
+    /** 对齐 CJC 多行字符串的连续三引号转义规则。 */
+    private fun processMultilineLiteralValue(value: String): String = buildString {
+        var inInterpolation = false
+        var interpolationBraceDepth = 0
+        var pendingQuotes = 0
+        for (character in value) {
+            if (isNotEmpty() && last() == '$' && character == '{') inInterpolation = true
+            if (inInterpolation && character == '{') interpolationBraceDepth++
+            if (inInterpolation && character == '}') {
+                if (interpolationBraceDepth > 0) interpolationBraceDepth--
+                if (interpolationBraceDepth == 0) inInterpolation = false
+            }
+            if (inInterpolation) {
+                append(character)
+                continue
+            }
+            if (character == '"' && (isEmpty() || last() != '\\')) {
+                pendingQuotes++
+                if (pendingQuotes == 3) {
+                    append("\\\"\\\"\\\"")
+                    pendingQuotes = 0
+                }
+                continue
+            }
+            repeat(pendingQuotes) { append('"') }
+            pendingQuotes = 0
+            append(character)
+        }
+        repeat(pendingQuotes) { append('"') }
+    }
+
+    /** 判断按官方规则还原单行字面量时，当前位置的双引号是否需要转义。 */
+    private fun shouldEscapeQuote(value: CharSequence): Boolean {
+        if (value.isEmpty() || value.last() != '\\') return true
+        var precedingBackslashes = 0
+        for (index in value.lastIndex downTo 0) {
+            if (value[index] != '\\') break
+            precedingBackslashes++
+        }
+        return precedingBackslashes % 2 == 0
+    }
 
     /**
      * 官方宏协议中表示非法 token 的 kind 编码。
      */
-    private val TOKEN_ILLEGAL: UByte = 0u
+    private val TOKEN_ILLEGAL: UByte = MacroTokenKind.kindOf("ILLEGAL")
 
-    /**
-     * 基于相邻 token 文本判断重建展开文本时是否需要插入空格。
-     */
-    private fun needsSpaceBetween(prevValue: String, currValue: String): Boolean {
-        if (prevValue.contains('\n') || prevValue.contains('\r')) return false
-        if (prevValue in noSpaceAfter) return false
-        if (currValue in noSpaceBefore) return false
-        return true
+    /** 按官方 `CheckAddSpace` 的 token kind 表决定是否插入空格。 */
+    private fun needsSpaceBetween(previousKind: UByte, nextKind: UByte): Boolean {
+        if (previousKind in noSpaceAfterKinds) return false
+        if (nextKind in noSpaceBeforeKinds) return false
+        return (previousKind to nextKind) !in noSpaceBetweenKinds
     }
 }

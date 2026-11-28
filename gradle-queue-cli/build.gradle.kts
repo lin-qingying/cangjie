@@ -44,9 +44,10 @@ val shadowJar = tasks.register<Jar>("shadowJar") {
     group = "build"
     description =
         "Builds a self-contained executable fat jar (kotlin-stdlib bundled) for gradle-queue."
+    // 产物名带版本戳：改版本号可绕过被进程占用的旧产物文件（Windows 锁内容不锁目录项）。
     archiveBaseName.set("gradle-queue-cli")
     archiveClassifier.set("")
-    archiveVersion.set("")
+    archiveVersion.set("2")
     destinationDirectory.set(layout.buildDirectory.dir("libs"))
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 

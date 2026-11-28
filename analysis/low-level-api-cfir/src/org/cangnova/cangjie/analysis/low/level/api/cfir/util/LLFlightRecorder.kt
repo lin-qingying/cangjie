@@ -5,13 +5,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 import com.intellij.openapi.diagnostic.logger
 import jdk.jfr.*
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
-import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.moduleKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLPartialBodyAnalysisState
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResolveDesignationCollector
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirModuleData
@@ -289,20 +284,12 @@ object LLFlightRecorder {
 
 /**
  * 计算 [target] 所属 Analysis API 模块的紧凑类别编号。
+ *
+ * 编号由 [CaModuleKind.jfrCode] 提供，保证 JFR 事件与 OpenTelemetry 指标落在同一分类上；
+ * 既有编号不可变更，修改前必须确认所有 JFR 消费方。
  */
-private fun computeModuleKind(target: CfirElementWithResolveState): Byte {
-    val moduleData = target.moduleData as LLCfirModuleData
-    return when (moduleData.caModule) {
-        is CaDanglingFileModule -> 1
-        is CaSourceModule -> 0
-        is CaNotUnderContentRootModule -> 2
-        is CaLibraryFallbackDependenciesModule -> 3
-        is CaLibraryModule -> 4
-        is CaLibrarySourceModule -> 5
-        is CaBuiltinsModule -> 6
-        else -> -1
-    }
-}
+private fun computeModuleKind(target: CfirElementWithResolveState): Byte =
+    (target.moduleData as LLCfirModuleData).caModule.moduleKind().jfrCode
 
 /**
  *                  !!!

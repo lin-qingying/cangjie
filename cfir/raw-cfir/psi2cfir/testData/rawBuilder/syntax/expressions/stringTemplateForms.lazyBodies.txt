@@ -1,0 +1,11 @@
+FILE: stringTemplateForms.cj
+    internal? class User {
+        init()
+        internal? var name: R|String|
+        internal? func greet(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func stringTemplateForms(u: R|User|, xs: R|Array<R|String|>|, n: R|Int64|): R|String| {
+        <element: CfirLazyBlock>
+    }

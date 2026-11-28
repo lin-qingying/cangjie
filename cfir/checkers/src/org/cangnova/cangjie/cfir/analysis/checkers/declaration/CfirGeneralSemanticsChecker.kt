@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -50,11 +51,12 @@ import org.cangnova.cangjie.cfir.session.interopSettings
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
+import org.cangnova.cangjie.cfir.resolve.directExpansionType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysis
 import org.cangnova.cangjie.cfir.resolve.providers.exportAnalysisSettings
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.session.cjmpFamilyAggregate
 import org.cangnova.cangjie.cfir.session.cjmpSettings
-import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -217,6 +219,7 @@ object CfirGeneralSemanticsChecker : CfirFileChecker(MppCheckerKind.Common) {
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED,
+                positioningStrategy = SourceElementPositioningStrategies.SOURCE_NODE,
             )
         }
     }
@@ -358,12 +361,14 @@ object CfirGeneralSemanticsChecker : CfirFileChecker(MppCheckerKind.Common) {
      * - 成员有效访问级别不高于外层 nominal 声明；
      * - 函数检查返回类型、参数类型和泛型约束；
      * - nominal/typealias 检查泛型约束，并递归检查成员。
+     * - extend 的约束与成员由扩展语义检查处理。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkNonPrivateDeclarationAccessLevelValidity(
         declaration: CfirDeclaration,
         containingAccessLevel: Visibility?,
     ) {
+        if (declaration is CfirExtend) return
         val ownVisibility = declaration.accessLevelVisibility() ?: return
         if (Visibilities.isPrivate(ownVisibility)) return
 
@@ -884,11 +889,24 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker(MppCheckerKind.Common)
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPropertyAccessors(property: CfirProperty) {
         if (property.isCatchParameter == true) return
-        if (context.containingDeclarations.lastOrNull() is CfirInterfaceSymbol) return
-        // 无默认实现的 common 属性不走普通属性访问器完整性检查。
         if (property.status.isCommon && !property.cjmpHasCommonDefault()) return
         if (property.status.hasAbstractAttribute || property.symbol.isAbstractLike(context)) return
-        if (property.getter == null && property.setter == null) {
+
+        val getterMissing = property.getter == null
+        val setterMissing = property.setter == null
+        val mutablePropertyRequiresBothAccessors = property.status.isMut && (
+            (!property.status.isStatic && !property.status.isOverride) ||
+                (property.status.isStatic && !property.status.isRedef)
+            )
+        val accessorsMissing = if (mutablePropertyRequiresBothAccessors) {
+            getterMissing || setterMissing
+        } else if (property.status.isMut) {
+            getterMissing && setterMissing
+        } else {
+            getterMissing
+        }
+
+        if (accessorsMissing) {
             reporter.reportOn(
                 source = property.source,
                 factory = CfirErrors.PROPERTY_MUST_HAVE_ACCESSORS,
@@ -1125,16 +1143,19 @@ private fun ConeCangJieType.findFirstExposure(
         else -> {}
     }
 
-    classIdOrNull()?.let { classId ->
-        val referencedDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
-        val referencedVisibility = referencedDeclaration?.accessLevelVisibility()
-        if (referencedVisibility != null && !declarationVisibility.canExpose(referencedVisibility)) {
-            return referencedVisibility
+    if (this !is ConeTypeAliasType) {
+        classIdOrNull()?.let { classId ->
+            val referencedDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
+            val referencedVisibility = referencedDeclaration?.accessLevelVisibility()
+            if (referencedVisibility != null && !declarationVisibility.canExpose(referencedVisibility)) {
+                return referencedVisibility
+            }
         }
     }
 
     if (this is ConeTypeAliasType) {
-        expandedType?.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+        val resolvedExpandedType = directExpansionType(context.session) ?: expandedType
+        resolvedExpandedType?.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
     }
 
     return null

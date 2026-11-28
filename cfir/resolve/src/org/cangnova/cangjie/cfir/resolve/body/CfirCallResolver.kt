@@ -71,8 +71,9 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariabl
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.FreshReceiverMemberAccessShape
+import org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.FreshReceiverMemberAccessShape
+import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.findCorrespondingClassLikeSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
@@ -165,11 +166,6 @@ enum class NamedValueAccessPurpose {
 
     /** 隐式 `invoke` 改写中只用于构造临时 receiver 的值访问。 */
     ImplicitInvokeReceiver,
-
-    /**
-     * 模式裸名字的枚举构造器探测。探测失败表示普通绑定变量，不能产生最终诊断。
-     */
-    PatternConstructorProbe,
 }
 
 /**
@@ -267,6 +263,7 @@ class CfirCallResolver(
         resolutionMode: ResolutionMode,
     ): CallArgumentPrecheckFailure? {
         val probe = buildFunctionCallCopy(functionCall) {}
+        transformer.context.implicitTypeComputationScope?.registerDerivedElement(functionCall, probe)
         val callee = probe.calleeReference as? CfirNamedReference ?: return null
         val collected = transformer.resolutionContext.withCandidateProcessingMode(CandidateProcessingMode.ARGUMENT_SHAPE) {
             collectFunctionCallCandidates(probe, callee, resolutionMode, collectionLiteralContext = null)
@@ -941,6 +938,42 @@ class CfirCallResolver(
         )
 
     /**
+     * 裸名字模式的 enum constructor 分类探测。
+     *
+     * 对齐官方 `ASTContext::IsEnumConstructor`（`external/cangjie_compiler/src/AST/ASTContext.cpp`，
+     * 由 `ChkVarOrEnumPattern` 调用）：只回答「当前作用域里有哪些名为 [patternName] 的
+     * enum constructor」。它不是一次值访问解析：
+     * - 同名局部变量、形参、顶层变量或函数不遮蔽 constructor，普通值查找不参与；
+     * - 多个 enum 声明同名 constructor、或同一 enum 按 payload 个数重载，都不构成歧义。
+     *
+     * 探测只经 tower 的 [CallKind.EnumConstructorCall] 入口收集候选，不创建 callee reference，
+     * 因此不会向 body 诊断写入任何结果。返回空表示该名字是绑定变量；非空时 pattern 的构造器目标
+     * 由调用方按 subject enum 定位，这里的候选只承担分类（以及 subject 不是 enum 时的导航目标）。
+     */
+    fun collectEnumConstructorsForBareNamePattern(
+        patternName: Name,
+        patternSource: org.cangnova.cangjie.source.CjSourceElement?,
+    ): List<CfirEnumConstructorSymbol> {
+        val probe = buildNamedAccessExpression {
+            source = patternSource
+            calleeReference = buildNamedReference {
+                source = patternSource
+                name = patternName
+            }
+        }
+        val result = collectCandidates(
+            qualifiedAccess = probe,
+            name = patternName,
+            forceCallKind = CallKind.EnumConstructorCall,
+            callSite = probe,
+            resolutionMode = ResolutionMode.ContextIndependent,
+        )
+        return result.candidates.mapNotNullTo(linkedSetOf()) { candidate ->
+            (candidate.symbol as? CfirEnumConstructorSymbol)?.takeIf { symbol -> symbol.isBound }
+        }.toList()
+    }
+
+    /**
      * 命名值访问解析的实际实现。
      *
      * 这里统一处理显式 receiver、package qualifier、VArray.size、classifier/type parameter
@@ -1017,7 +1050,13 @@ class CfirCallResolver(
                 }
             }
 
-            if (!result.isSuccess || (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })) {
+            val hasLexicalEnumConstructorValue = result.candidates.any { candidate ->
+                candidate.symbol is CfirEnumConstructorSymbol
+            }
+            if (
+                (!result.isSuccess && !hasLexicalEnumConstructorValue) ||
+                (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })
+            ) {
                 val classifier = towerResolver.findClassifiers(callee.name)
                     .firstOrNull { it.isValidClassifierExpression(isUsedAsReceiver) }
                 if (classifier != null) {
@@ -1083,8 +1122,6 @@ class CfirCallResolver(
                             ?.valueParameters
                             ?.isEmpty() == true
                     }
-
-                NamedValueAccessPurpose.PatternConstructorProbe -> enumConstructorCandidates
             }
             if (enumValueCandidates.isNotEmpty()) {
                 result = enumResult.withCandidates(enumValueCandidates)
@@ -1105,15 +1142,6 @@ class CfirCallResolver(
         }
 
         val reducedCandidates = result.candidates
-        if (purpose == NamedValueAccessPurpose.PatternConstructorProbe &&
-            reducedCandidates.none { candidate ->
-                candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor
-            }
-        ) {
-            // `case Day(x)` 中的 x 先按裸模式名探测；没有枚举构造器时它是绑定，
-            // 该次临时访问的 unresolved 结果不能污染最终 body diagnostics。
-            return transformedAccess
-        }
         transformedAccess.resolveEnumConstructorAsImplicitInvokeReceiver(
             callee = callee,
             candidates = reducedCandidates,
@@ -1322,7 +1350,7 @@ class CfirCallResolver(
                     return CallableReferenceResolutionResult.TYPE_MISMATCH
                 }
                 if (atom.failureKind == null) {
-                    atom.markNoMatchingFunctionReference()
+                    atom.markNoMatchingFunctionReference(containingCallCandidate)
                 }
                 return CallableReferenceResolutionResult.FAILURE
             }
@@ -1417,7 +1445,9 @@ class CfirCallResolver(
      * 的源码归属属于函数引用自身。必须在 postponed atom 上写回错误引用，completion
      * 和 checker 才能保留该锚点，而不会把它降级为外层 synthetic invoke 的失败。
      */
-    private fun ConeResolvedCallableReferenceAtom.markNoMatchingFunctionReference() {
+    private fun ConeResolvedCallableReferenceAtom.markNoMatchingFunctionReference(
+        containingCallCandidate: Candidate,
+    ) {
         val expression = expression as? CfirNamedAccessExpression
         val reference = expression?.calleeReference as? CfirNamedReference
         if (expression == null || reference == null) {
@@ -1426,7 +1456,7 @@ class CfirCallResolver(
             return
         }
 
-        val diagnostic = ConeNoMatchingFunctionReferenceError(reference.name)
+        val diagnostic = ConeNoMatchingFunctionReferenceError(reference.name, containingCallCandidate)
         resultingReference = buildErrorNamedReference {
             source = reference.source
             name = reference.name
@@ -1790,7 +1820,7 @@ class CfirCallResolver(
     }
 
     /**
-     * 把初次 tower 名字查找的完整成功候选集冻结成 expected-return 细化描述。
+     * 把初次 tower 名字查找的词法候选集冻结成 expected-return 细化描述。
      *
      * 这里只读取已确定的声明类型，不为落选候选启动隐式返回类型计算；否则保存信息就会
      * 重入当前函数并发布伪递归错误。未确定的类型保留为空，由需要目标细化的调用走完整解析。
@@ -1800,20 +1830,24 @@ class CfirCallResolver(
         candidates: Collection<Candidate>,
     ): List<CfirCallableCandidateDiscovery> {
         if (info.callKind != CallKind.Function && info.callKind != CallKind.EnumConstructorCall) return emptyList()
-        if (candidates.isEmpty() || candidates.any { !it.isSuccessful }) return emptyList()
-        // 单个泛型调用同样可能在外层运算目标到达后重新定型；保存 discovery 而非已固定的 Candidate。
-        if (candidates.size == 1 && candidates.single().freshVariables.isEmpty()) return emptyList()
+        if (candidates.isEmpty()) return emptyList()
+        // discovery 保存词法查找身份；实参和返回目标的适用性由重检时的 fresh candidate 决定。
 
         val discoveries = ArrayList<CfirCallableCandidateDiscovery>(candidates.size)
         for (candidate in candidates) {
             val symbol = candidate.symbol as? CfirCallableSymbol<*> ?: return emptyList()
-            val returnType = if (symbol.cfir.returnTypeRef is CfirResolvedTypeRef) {
-                components.initialTypeOfCandidate(candidate).fullyExpandedType(session)
+            val declaration = symbol.cfir
+            val returnType = if (
+                declaration.returnTypeRef is CfirResolvedTypeRef && candidate.typeParameterSubstitutorOrNull != null &&
+                (declaration is CfirFunction || declaration is CfirEnumConstructor)
+            ) {
+                // 只读声明实例化及 This 投影；discovery 不消费旧候选的 CS 或 invoke 依赖。
+                candidate.substitutedReturnType().fullyExpandedType(session)
             } else {
                 null
             }
             val deterministicReturnType = returnType?.takeIf {
-                candidate.system.isProperType(it) && !it.hasUncertainExpectedTypeCompatibilityShape()
+                !it.hasUncertainExpectedTypeCompatibilityShape()
             }
             discoveries += CfirCallableCandidateDiscovery(
                 symbol = symbol,
@@ -3083,10 +3117,7 @@ class CfirCallResolver(
                                 ConeFunctionExpectedError(name.asString(), typeAliasExpandedType)
 
                             actualDeclaration is CfirEnum ->
-                                ConeNoMatchingInvokeOperatorError(
-                                    actualClassifier.name,
-                                    actualClassifier.constructType()
-                                )
+                                ConeNoMatchOperatorFunctionCallError
 
                             else -> ConeNoConstructorError
                         }

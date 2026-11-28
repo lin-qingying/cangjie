@@ -57,6 +57,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 
 /**
@@ -168,36 +169,65 @@ class CaDeclarationRenderer private constructor(
         symbol: CaDeclarationSymbol,
         printer: PrettyPrinter,
     ) {
-        when (symbol) {
-            is CaClassSymbol -> classLikeRenderer.renderSymbol(
-                analysisSession,
-                symbol,
-                symbol.classKind.keyword(),
-                this,
-                printer,
-            )
+        printer {
+            codeStyle.getSeparatorBetweenAnnotationAndOwner(analysisSession, symbol).separated(
+                { annotationRenderer.renderAnnotations(analysisSession, symbol, this) },
+                {
+                    when (symbol) {
+                        is CaClassSymbol -> {
+                            // 类别不可判定（库符号本会话不可恢复）时跳过渲染，而不是让
+                            // `classKind` 抛异常把整段声明渲染带崩。
+                            val kind = symbol.classKindOrNull
+                            if (kind != null) {
+                                classLikeRenderer.renderSymbol(
+                                    analysisSession,
+                                    symbol,
+                                    kind.keyword(),
+                                    this@CaDeclarationRenderer,
+                                    this,
+                                )
+                            }
+                        }
 
-            is CaTypeAliasSymbol -> typeAliasRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaExtendSymbol -> extendRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaNamedFunctionSymbol -> namedFunctionRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaConstructorSymbol -> constructorRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaFinalizerSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "finalizer", this, printer)
-            is CaAnonymousFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
-            is CaEnumConstructorSymbol -> enumConstructorRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaPropertySymbol -> propertyRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaPropertyGetterSymbol -> getterRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaPropertySetterSymbol -> setterRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaFieldSymbol -> fieldRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaValueParameterSymbol -> valueParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaVariableSymbol -> localVariableRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaTypeParameterSymbol -> typeParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
-            else -> {
-                modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, printer)
-                symbol.name?.let { name ->
-                    nameRenderer.renderName(analysisSession, name, null, this, printer)
-                } ?: printer.append("<unnamed>")
-            }
+                        is CaTypeAliasSymbol -> typeAliasRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaExtendSymbol -> extendRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaNamedFunctionSymbol -> namedFunctionRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaConstructorSymbol -> constructorRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaFinalizerSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "finalizer", this@CaDeclarationRenderer, this)
+                        is CaAnonymousFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this@CaDeclarationRenderer, this)
+                        is CaEnumConstructorSymbol -> enumConstructorRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaPropertySymbol -> propertyRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaPropertyGetterSymbol -> getterRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaPropertySetterSymbol -> setterRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaFieldSymbol -> fieldRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaValueParameterSymbol -> valueParameterRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaPatternVariableSymbol -> {
+                            append(when {
+                                symbol.isConst -> "const"
+                                symbol.isVar -> "var"
+                                else -> "let"
+                            })
+                            append(" (")
+                            symbol.entries.forEachIndexed { index, entry ->
+                                if (index != 0) append(", ")
+                                nameRenderer.renderName(analysisSession, entry, this@CaDeclarationRenderer, this)
+                                append(": ")
+                                returnTypeRenderer.renderReturnType(analysisSession, entry, this@CaDeclarationRenderer, this)
+                            }
+                            append(")")
+                        }
+                        is CaVariableSymbol -> localVariableRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaTypeParameterSymbol -> typeParameterRenderer.renderSymbol(analysisSession, symbol, this@CaDeclarationRenderer, this)
+                        is CaFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this@CaDeclarationRenderer, this)
+                        else -> {
+                            modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, this)
+                            symbol.name?.let { name ->
+                                nameRenderer.renderName(analysisSession, name, null, this@CaDeclarationRenderer, this)
+                            } ?: append("<unnamed>")
+                        }
+                    }
+                }
+            )
         }
     }
 
@@ -394,4 +424,7 @@ private fun CaClassKind.keyword(): String = when (this) {
     CaClassKind.INTERFACE -> "interface"
     CaClassKind.STRUCT -> "struct"
     CaClassKind.ENUM -> "enum"
+    // primitive 没有关键字形态的声明体；渲染层按语言层类型名直接呈现，
+    // 这里返回空串由调用方以 `name` 承载（对齐反编译文本的 primitive 形态）。
+    CaClassKind.PRIMITIVE -> ""
 }

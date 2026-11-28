@@ -78,6 +78,7 @@ import org.cangnova.cangjie.utils.SmartSet
 internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
     internal val context: CheckerContext,
 ) {
+    private val sourceOrder = CfirDeclarationConflictSourceOrder(context.session)
     val declarationConflictingSymbols: HashMap<D, SmartSet<CfirBasedSymbol<*>>> = hashMapOf()
     var hasLogicalMemberRedeclarationContext: Boolean = false
         private set
@@ -193,8 +194,22 @@ internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
         previous: CfirBasedSymbol<*>,
         reported: Set<CfirBasedSymbol<*>>?,
     ) {
-        if (reported != null && current !in reported) return
-        declarationConflictingSymbols.getOrPut(current as D) { SmartSet.create() } += previous
+        fun record(owner: CfirBasedSymbol<*>, peer: CfirBasedSymbol<*>) {
+            if (reported == null || owner in reported) {
+                declarationConflictingSymbols.getOrPut(owner as D) { SmartSet.create() } += peer
+            }
+        }
+        val signature = functionConflictSignature(current)
+        if (signature != null && signature == functionConflictSignature(previous)) {
+            record(current, previous)
+            record(previous, current)
+        } else if (!hasLogicalMemberRedeclarationContext &&
+            sourceOrder.compareForDiagnosticRepresentative(current, previous) < 0
+        ) {
+            record(previous, current)
+        } else {
+            record(current, previous)
+        }
     }
 
     /** 包级输入跨文件共用，但每个文件仅报告其真正拥有的声明。 */

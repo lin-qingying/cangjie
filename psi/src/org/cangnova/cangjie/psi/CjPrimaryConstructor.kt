@@ -49,7 +49,7 @@ class CjPrimaryConstructor : CjConstructor<CjPrimaryConstructor> {
     /**
      * 实现 `getContainingTypeStatement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun getContainingTypeStatement() = parent?.parent as CjTypeStatement
+    override fun getContainingTypeStatement() = containingCjTypeStatement()
 
     /**
      * 执行 `getOrCreateConstructorKeyword` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。

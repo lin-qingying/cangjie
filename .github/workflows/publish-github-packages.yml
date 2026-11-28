@@ -1,6 +1,11 @@
 name: publish-github-packages
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       version:
@@ -43,7 +48,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          input_version="${{ github.event.inputs.version }}"
+          input_version="${{ inputs.version }}"
           if [[ -n "$input_version" ]]; then
             version="$input_version"
           elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then

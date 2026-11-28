@@ -1,0 +1,8 @@
+FILE: synchronizedWithoutLock.cj
+    internal? func synchronizedWithoutLock(): R|Unit| {
+        SYNCHRONIZED {
+            monitor:
+                ERROR_EXPR(Missing synchronized mutex expression)
+            body:
+        }
+    }

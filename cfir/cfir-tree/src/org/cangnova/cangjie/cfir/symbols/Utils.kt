@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.symbols
 
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.withCfirSymbolIdEntry
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -14,5 +15,16 @@ internal fun CfirBasedSymbol<*>.errorInLazyResolve(name: String, actualClass: KC
     errorWithAttachment("Unexpected $name. Expected is ${expected.simpleName}, but was ${actualClass.simpleName}") {
         withCfirEntry("cfirElement", cfir)
         withCfirSymbolIdEntry("cfirSymbol", this@errorInLazyResolve)
+        withEntry("resolvePhase", cfir.resolvePhase.toString())
+        withEntry("origin", cfir.origin.toString())
+        withEntry("sessionClass", cfir.moduleData.session::class.java.name)
+        if (this@errorInLazyResolve is CfirValueParameterSymbol) {
+            val owner = this@errorInLazyResolve.containingDeclarationSymbol
+            withCfirEntry("parameterOwner", owner.cfir)
+            withCfirSymbolIdEntry("parameterOwnerSymbol", owner)
+            withEntry("parameterOwnerPhase", owner.cfir.resolvePhase.toString())
+            withEntry("parameterOwnerSessionClass", owner.cfir.moduleData.session::class.java.name)
+            withEntry("sameOwnerModuleData", (owner.cfir.moduleData === cfir.moduleData).toString())
+        }
     }
 }

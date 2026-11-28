@@ -2,6 +2,8 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.DeclKind
 import PackageFormat.FuncInfo
 import PackageFormat.Package
@@ -454,10 +456,15 @@ class CjoDefaultValueMetadataTest : CjParsingTestCase("", "cj", CangJieFileType.
         }
     }
 
-    private fun context(pkg: Package): CfirDeserializationContext = CfirDeserializationContext(
-        pkg, CjoPackageHeader.fromPackage(pkg), Module(CfirSession.Kind.Library),
-        CjoManager(CjoSearchPath { null }, CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT)),
-    )
+    private fun context(pkg: Package): CfirDeserializationContext {
+        val module = Module(CfirSession.Kind.Library)
+        val manager = CjoManager(CjoSearchPath { null }, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
+        val binding = bindCjoFixture(module, manager, emptySet())
+        return CfirDeserializationContext(
+            pkg, CjoPackageHeader.fromPackage(pkg), module, manager,
+            classSymbolLookup = manager.deserializedSymbolLookups.forBinding(binding, module, CjoDeserializationMode.FULL),
+        )
+    }
 
     private fun sourceFunction(module: Module, psi: CjNamedFunction): CfirNamedFunction = buildNamedFunction {
         source = psi.toCjPsiSourceElement()

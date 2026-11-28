@@ -53,6 +53,12 @@ public class CfirIdeNormalAnalysisCodeFragmentModuleDanglingFileCollectDiagnosti
   }
 
   @Test
+  @TestMetadata("danglingUnresolvedReferencePreferSelf.cj")
+  public void testDanglingUnresolvedReferencePreferSelf() {
+    run("danglingUnresolvedReferencePreferSelf.cj");
+  }
+
+  @Test
   @TestMetadata("interfaceMember.cj")
   public void testInterfaceMember() {
     run("interfaceMember.cj");

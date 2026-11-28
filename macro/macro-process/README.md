@@ -18,9 +18,9 @@
 
 ## 依赖
 
-- `:macro:macro-common`
-- `:flatbuffers-gen`
-- `:util`、`:common`
+- `:macro:macro-common`（`api`；`:flatbuffers-gen` / `:common` 等经其传递）
+- `intellijCore()`（compileOnly）
+- JNA（`libs.jna` / `libs.jna.platform`，`implementation`）
 
 ## 命令
 

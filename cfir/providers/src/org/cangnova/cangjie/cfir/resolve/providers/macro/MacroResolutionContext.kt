@@ -190,7 +190,7 @@ class MacroResolutionContext internal constructor(
         }
 
         // 2. builtin annotation：annotation site 不能被同名外部 macro 定义劫持。
-        if (name in builtinRegistries.annotations && qualifier == null &&
+        if (name in builtinRegistries.annotations &&
             BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
                 sourceName = name.asString(),
                 forcedCustom = kind == MacroSurface.Kind.FORCED,
@@ -218,48 +218,68 @@ class MacroResolutionContext internal constructor(
             }
         }
 
-        // 6. explicit import 命中
-        for (binding in importBindings) {
-            if (binding.aliasName == name || (!binding.isAllUnder && binding.importedFqName.shortName() == name)) {
-                val target = binding.resolvedTargets.firstOrNull() ?: continue
-                return verifyCallShapeOrMismatch(
-                    target,
-                    kind,
-                    hasParenthesis,
-                    allowsDeclarationInputParenthesisOmission,
-                ) ?: MacroResolution.Resolved(target)
-            }
-        }
+        // 6–8. explicit import、wildcard、default import 按同一优先级解析。
+        val target = importedMacroTargets(name).firstOrNull() ?: return MacroResolution.Unresolved(name)
+        return verifyCallShapeOrMismatch(
+            target,
+            kind,
+            hasParenthesis,
+            allowsDeclarationInputParenthesisOmission,
+        ) ?: MacroResolution.Resolved(target)
+    }
 
-        // 7. wildcard 命中
-        for (binding in importBindings) {
-            if (binding.isAllUnder) {
-                val candidate = symbolIndex.lookupByFqName(binding.importedFqName.child(name))
-                if (candidate != null) {
-                    return verifyCallShapeOrMismatch(
-                        candidate,
-                        kind,
-                        hasParenthesis,
-                        allowsDeclarationInputParenthesisOmission,
-                    ) ?: MacroResolution.Resolved(candidate)
+    /**
+     * 判断某个已路由宏是否由当前调用形式唯一解析到。
+     *
+     * 语义高亮消费此结果时不能把 import 列表的首项当成唯一目标；名称别名和导入优先级
+     * 必须与 [resolveMacroCall] 使用完全相同的候选集合。
+     */
+    fun resolvesUniquelyTo(surface: MacroSurface, expected: MacroDefinitionEntry): Boolean {
+        val qualifiedName = surface.qualifiedName ?: return false
+        val name = qualifiedName.shortName()
+        if (surface.isQualifiedName) {
+            val qualifier = qualifiedName.parent()
+            val target = symbolIndex.lookupByFqName(qualifier.child(name))
+                ?: packageAliases[qualifier.shortName()]?.let { aliasPackage ->
+                    symbolIndex.lookupByFqName(aliasPackage.child(name))
                 }
-            }
+            return target?.fqName == expected.fqName
         }
 
-        // 8. default macro import 命中
-        for (defaultPkg in defaultMacroImports) {
-            val candidate = symbolIndex.lookupByFqName(defaultPkg.child(name))
-            if (candidate != null) {
-                return verifyCallShapeOrMismatch(
-                    candidate,
-                    kind,
-                    hasParenthesis,
-                    allowsDeclarationInputParenthesisOmission,
-                ) ?: MacroResolution.Resolved(candidate)
+        val declarationInputCanOmitParentheses = surface is MacroSurfaceDecl || surface is MacroSurfaceParam
+        val candidates = importedMacroTargets(name)
+            .filter { target ->
+                verifyCallShapeOrMismatch(
+                    target,
+                    surface.kind,
+                    surface.hasParenthesis,
+                    declarationInputCanOmitParentheses,
+                ) == null
             }
-        }
+            .distinctBy { target -> target.fqName }
+        return candidates.singleOrNull()?.fqName == expected.fqName
+    }
 
-        return MacroResolution.Unresolved(name)
+    /** 返回按显式、通配、默认优先级排列的当前可见宏目标。 */
+    private fun importedMacroTargets(name: Name): List<MacroDefinitionEntry> {
+        val explicitTargets = importBindings.asSequence()
+            .filter { binding ->
+                binding.aliasName == name ||
+                    (!binding.isAllUnder && binding.aliasName == null && binding.importedFqName.shortName() == name)
+            }
+            .flatMap { binding -> binding.resolvedTargets.asSequence() }
+            .toList()
+        if (explicitTargets.isNotEmpty()) return explicitTargets
+
+        val wildcardTargets = importBindings.asSequence()
+            .filter { binding -> binding.isAllUnder }
+            .mapNotNull { binding -> symbolIndex.lookupByFqName(binding.importedFqName.child(name)) }
+            .toList()
+        if (wildcardTargets.isNotEmpty()) return wildcardTargets
+
+        return defaultMacroImports.mapNotNull { packageName ->
+            symbolIndex.lookupByFqName(packageName.child(name))
+        }
     }
 
     /**
@@ -373,6 +393,26 @@ fun bindMacroImports(
     symbolIndex: MacroSymbolIndex,
     defaultMacroImports: List<FqName> = emptyList(),
     builtinRegistries: MacroBuiltinRegistries = MacroBuiltinRegistries.DEFAULT,
+): MacroResolutionContext {
+    // construction 阶段 2/3：import 绑定。
+    val observer = pre.session.macroConstructionTimingObserverOrNull
+    return observer.measureMacroConstructionStage(
+        stage = CfirMacroConstructionStage.IMPORT_BINDING,
+        fileCount = pre.size,
+        surfaceCount = pre.allSurfaces.size,
+    ) {
+        bindMacroImportsContent(pre, symbolIndex, defaultMacroImports, builtinRegistries)
+    }
+}
+
+/**
+ * [bindMacroImports] 的实际绑定逻辑；由 [bindMacroImports] 在计时包装内调用。
+ */
+private fun bindMacroImportsContent(
+    pre: PreMacroRawBuildResult,
+    symbolIndex: MacroSymbolIndex,
+    defaultMacroImports: List<FqName>,
+    builtinRegistries: MacroBuiltinRegistries,
 ): MacroResolutionContext {
     val bindings = mutableListOf<MacroImportBinding>()
     val packageAliases = mutableMapOf<Name, FqName>()

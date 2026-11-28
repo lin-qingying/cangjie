@@ -1,17 +1,19 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.Package
+import kotlin.concurrent.withLock
 import PackageFormat.Position
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.cjoDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.cjoDeclarationIndex
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.source.CfirSourceCallableSignature
 import org.cangnova.cangjie.cfir.source.CfirImportedDeclarationHeaderSource
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
 import org.cangnova.cangjie.cfir.declarations.utils.evaluatedInitializer
@@ -29,16 +31,23 @@ import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
+import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.resolve.providers.CfirPrimitiveDeclarationFactory
+import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolver
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceExportSnapshot
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoSavedSourcePosition
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoSavedConstantStorage
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoConstantRootSlot
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSavedConstantRoot
-import org.cangnova.cangjie.cfir.source.CfirSourcePositionIdentity
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoSavedConstantStorage
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoSavedSourcePosition
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceExportSnapshot
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoSourcePositionResolver
+import org.cangnova.cangjie.cfir.serialization.provider.CfirClassLikeSymbolLookup
+import org.cangnova.cangjie.cfir.serialization.provider.CjoPackageContextProvider
 import org.cangnova.cangjie.cfir.source.CfirSourceImportedPosition
+import org.cangnova.cangjie.cfir.source.CfirSourcePositionIdentity
 import org.cangnova.cangjie.cfir.source.patterns
 import org.cangnova.cangjie.cfir.session.implicitSystemAnnotations
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
@@ -62,31 +71,29 @@ data class CfirDeserializedGenericConstraint(
  */
 class CfirDeserializationContext(
     /** 当前反序列化的 FlatBuffers Package。 */
-    val pkg: Package,
+    pkg: Package,
     /** 当前包头。 */
     val header: CjoPackageHeader,
     /** 库模块元数据。 */
     val moduleData: CfirModuleData,
     /** `.cjo` 包管理器，用于跨包声明索引和包头装载。 */
-    val cjoManager: CjoManager,
+    cjoManager: CjoManager,
+    /** 反序列化期间的 class-like 符号查找入口，只读 `.cjo` 头部与 flatbuffer，不得进 PSI。 */
+    classSymbolLookup: CfirClassLikeSymbolLookup,
     /** 实际读取 CJO 的路径；内存/旧调用方默认不加载 sidecar。 */
     val sourcePath: java.nio.file.Path? = null,
     /** 从 session-owned 平台配置读取隐式系统注解；绝不从 sourcePath 推断。 */
-    val implicitSystemAnnotations: Set<org.cangnova.cangjie.name.FqName> =
+    implicitSystemAnnotations: Set<org.cangnova.cangjie.name.FqName> =
         moduleData.session.implicitSystemAnnotations,
-    /** 通过所属 deserialized provider 的真实 package context 解析跨包声明索引。 */
-    private val initializationDependencyResolver: ((java.nio.file.Path?, String, Int, Int) -> CfirDeclaration?)? = null,
-    /** FullId 目标通过实际快照所属 provider 物化；跨包参数不创建同名替身。 */
-    private val declarationResolver: ((java.nio.file.Path?, String, Int) -> CfirDeclaration?)? = null,
-    /** 由请求输入的真实依赖图选择目标快照，多候选无选择证据时必须拒绝。 */
-    private val dependencySnapshotResolver: ((String) -> org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage?)? = null,
-    /** 正式 provider 所属实际装载身份；FlatBuffers accessor wrapper 不能替代此 token。 */
-    internal val loadedPackage: org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage? = null,
-    /** 注解映射仅请求实际遗漏参数的默认值，不授目标自己的注解或正文。 */
-    private val parameterDefaultsResolver: ((java.nio.file.Path?, String, List<Int>) -> Map<CfirValueParameter, org.cangnova.cangjie.cfir.expressions.CfirExpression?>)? = null,
+    val mode: CjoDeserializationMode = CjoDeserializationMode.FULL,
+    val binding: org.cangnova.cangjie.cfir.serialization.provider.CjoDeserializationBinding =
+        (classSymbolLookup as? org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider)
+            ?.deserializationBinding ?: cjoManager.deserializedSymbolLookups.bindingForModule(moduleData),
+    /** 导入必须进入实际目标模块的 metadata provider；独立 reader 使用本 manager 的模块入口。 */
+    packageContextProvider: CjoPackageContextProvider = binding,
+    /** 实际 snapshot 或明确的内存 Package 身份，withMode 保留同一对象。 */
+    val snapshotIdentity: Any = binding.publishedSnapshot(header, sourcePath) ?: pkg,
 ) {
-    /** 同一包的节点、类型和参数保留一个可重入事务锁，避免逐槽锁的交叉依赖死锁。 */
-    internal val materializationLock = Any()
     /** 仅事务内可见的真实参数壳；完成上界和元数据后才进入公开声明缓存。 */
     internal val reservedTypeParameters = HashMap<Int, CfirTypeParameter>()
     internal val genericTypes = HashMap<CfirTypeParameterSymbol, ConeTypeParameterType>()
@@ -109,12 +116,99 @@ class CfirDeserializationContext(
         pendingGenericTypes.remove(index)
         pendingGenericSelections.remove(index)
     }
+    private val poolAuthority = pkg
+    /** actual 输入只授权已发布 wire pool；根视图由该 snapshot 提供，不能由 caller 另指 bb_pos。 */
+    val pkg: Package = if (snapshotIdentity is org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage)
+        snapshotIdentity.pkg else pkg
+
+    private val lookupAuthority = classSymbolLookup
+    private val sourceManager = cjoManager
+
+    /** 实际 lookup 由当前 context 绑定；ctor 的 named lookup 参数只验证原 producer authority。 */
+    val classSymbolLookup: CfirClassLikeSymbolLookup = CjoSnapshotClassSymbolLookup(this)
+    val packageContextProvider: CjoPackageContextProvider = binding.contextRouter(packageContextProvider)
+    val cjoManager: CjoManager = binding.dependencyManager
+    val implicitSystemAnnotations: Set<org.cangnova.cangjie.name.FqName> = implicitSystemAnnotations.toSet()
+
+    /** 保留原完整位置参数构造入口；装配仍必须来自原 metadata 服务。 */
+    constructor(
+        pkg: Package, header: CjoPackageHeader, moduleData: CfirModuleData,
+        cjoManager: CjoManager, classSymbolLookup: CfirClassLikeSymbolLookup,
+        sourcePath: java.nio.file.Path?, implicitSystemAnnotations: Set<org.cangnova.cangjie.name.FqName>,
+        mode: CjoDeserializationMode, legacyPackageContextProvider: CjoPackageContextProvider,
+    ) : this(
+        pkg = pkg, header = header, moduleData = moduleData, cjoManager = cjoManager,
+        classSymbolLookup = classSymbolLookup, sourcePath = sourcePath,
+        implicitSystemAnnotations = implicitSystemAnnotations, mode = mode,
+        packageContextProvider = legacyPackageContextProvider,
+    )
+
+    init {
+        require(sourceManager === binding.ownManager || sourceManager === binding.dependencyManager)
+        binding.requireLookupAuthority(lookupAuthority)
+        requireAuthority()
+    }
+
+    /** 先验证原服务和实际 pool/source，再允许 canonical publication；先到的 reader 没有重配权。 */
+    internal fun requireAuthority() {
+        binding.requireSessionAuthority(moduleData)
+        require(moduleData in binding.moduleDataProvider.allModuleData)
+        require(packageContextProvider === binding && cjoManager === binding.dependencyManager &&
+            implicitSystemAnnotations == binding.implicitSystemAnnotations &&
+            classSymbolLookup is CjoSnapshotClassSymbolLookup && classSymbolLookup.owns(this)) {
+            "CJO context services differ from their original producer"
+        }
+        if (sourcePath != null) {
+            require(binding.moduleDataProvider.getModuleData(sourcePath) === moduleData) {
+                "CJO context source has another module owner"
+            }
+            val snapshot = checkNotNull(binding.publishedSnapshot(header, sourcePath)) {
+                "CJO actual context has no published source snapshot"
+            }
+            require(snapshotIdentity === snapshot) { "CJO actual context has another snapshot identity" }
+            val sourceBuffer = snapshot.pkg.byteBuffer
+            val contextBuffer = poolAuthority.byteBuffer
+            require(sourceBuffer.hasArray() && contextBuffer.hasArray() &&
+                sourceBuffer.array() === contextBuffer.array() &&
+                sourceBuffer.arrayOffset() == contextBuffer.arrayOffset()) {
+                "CJO actual context does not contain its published wire pool"
+            }
+        } else {
+            require(snapshotIdentity === pkg) { "CJO memory context must retain its explicit Package identity" }
+        }
+        require(header.fullPkgName == poolAuthority.fullPkgName && header.moduleName == poolAuthority.moduleName.orEmpty() &&
+            header.fullPkgName == pkg.fullPkgName && header.moduleName == pkg.moduleName.orEmpty()) {
+            "CJO context header does not describe its actual Package"
+        }
+    }
+
+    /** 跨图入口在进入 target materialization 前统一核验 mode、来源 authority 和事务。 */
+    internal fun validatedTarget(
+        sourceBinding: org.cangnova.cangjie.cfir.serialization.provider.CjoDeserializationBinding,
+        packageName: String,
+        requestedMode: CjoDeserializationMode,
+    ): CfirDeserializationContext {
+        require(header.fullPkgName == packageName && mode == requestedMode) {
+            "CJO import target has a different package or deserialization mode"
+        }
+        require(materialization === sourceBinding.dependencyManager.declarationMaterialization) {
+            "CJO import target belongs to another metadata graph transaction"
+        }
+        requireAuthority()
+        return canonical()
+    }
+
+    internal fun packageContextOrNull(packageName: String): CfirDeserializationContext? =
+        binding.getPackageContext(packageName, mode, moduleData)?.validatedTarget(binding, packageName, mode)
+
+    internal val loadedPackage: org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage?
+        get() = snapshotIdentity as? org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage
 
     /**
      * 反序列化必须消费所属 session 的同一份语言设置；不能为 CJO 重新创建默认设置。
      */
     val languageVersionSettings: LanguageVersionSettings
-        get() = moduleData.session.languageVersionSettings
+        get() = binding.languageVersionSettings
 
     /** 在首次声明物化前完成快照与匹配计划；整代 context/provider/session 重建才会重新读取。 */
     val sidecar: org.cangnova.cangjie.cfir.serialization.cjd.CjdBinaryAnnotationOverlay? by lazy {
@@ -141,8 +235,12 @@ class CfirDeserializationContext(
         val positionFileBindings: Map<org.cangnova.cangjie.cfir.serialization.cjo.CjoSavedFileReference, org.cangnova.cangjie.cfir.serialization.cjo.CjoPositionFileBinding> = emptyMap(),
     )
     @Volatile
-    private var completedGraph = CompletedGraph(emptyMap(), emptyMap(), emptyMap(), null, null, emptyMap(), emptyMap(), emptyMap(),
+    private var publishedGraph = CompletedGraph(emptyMap(), emptyMap(), emptyMap(), null, null, emptyMap(), emptyMap(), emptyMap(),
         emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptySet(), CfirBodyDeserializationSnapshot())
+    /** 跨包完成过程中只让当前事务读取 provisional graph；任一 owner 失败均撤销此代。 */
+    private var pendingGraph: CompletedGraph? = null
+    private val completedGraph: CompletedGraph
+        get() = if (materialization.lock.isHeldByCurrentThread) pendingGraph ?: publishedGraph else publishedGraph
     internal var bodyState = CfirBodyDeserializationState()
     private var sourceRegistry: CjoSourceOwnershipPlan? = null
     /** 仅memo已发表metadata的验证请求；Context/Package生命周期固定，不缓存失败或工作域发现。 */
@@ -186,23 +284,23 @@ class CfirDeserializationContext(
     private val readOnlyContentDepth = ThreadLocal.withInitial { 0 }
     internal val publishedContentSource: CfirImportedDeclarationHeaderSource = object : CfirImportedDeclarationHeaderSource,
         org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceGraphPublicationOwner {
-        override fun snapshot(): org.cangnova.cangjie.cfir.CfirPublishedContentSnapshot = completedGraph.bodies
+        override fun snapshot(): org.cangnova.cangjie.cfir.CfirPublishedContentSnapshot = publishedGraph.bodies
         override val binderIdentity: Any get() = sourceExportBinderIdentity
         override fun completedSnapshotOf(original: org.cangnova.cangjie.cfir.source.CfirSourceGraph): CjoSourceExportSnapshot = completedGraphSnapshotOf(original)
-        override fun currentPublicationIdentity(): Any = synchronized(materializationLock) {
+        override fun currentPublicationIdentity(): Any = materialization.lock.withLock {
             check(transactionDepth == 0) { "SOURCE export cannot observe a running materialization transaction" }
-            completedGraph
+            publishedGraph
         }
-        override fun requirePublicationUnchanged(publicationIdentity: Any) = synchronized(materializationLock) {
-            check(transactionDepth == 0 && completedGraph === publicationIdentity) { "SOURCE export publication changed after final preparation" }
+        override fun requirePublicationUnchanged(publicationIdentity: Any) = materialization.lock.withLock {
+            check(transactionDepth == 0 && publishedGraph === publicationIdentity) { "SOURCE export publication changed after final preparation" }
         }
 
         override fun completeHeader(declaration: CfirDeclaration) {
-            check(declaration.symbol.isBound && declaration.symbol.cfir === declaration &&
-                declaration.contentSource === this && isPublishedDeclaration(declaration)) {
+            check(declaration.symbol.isBound && declaration.symbol.cfir === declaration && declaration.contentSource === this) {
                 "Imported header completion requires its original bound declaration and content owner"
             }
-            createDeclDeserializer().deserializeHeaderContents(declaration)
+            val root = checkNotNull(publishedDeclarationRoot(declaration))
+            createDeclDeserializer().deserializeHeaderContents(root)
         }
 
         override fun <T> withReadOnlyContent(action: () -> T): T {
@@ -253,11 +351,21 @@ class CfirDeserializationContext(
     }
 
     /** 旧Unselected header可以首次完成内容；旧Complete产品及其nodes永久复用，不能再次写入。 */
-    internal fun publishAnnotations(declaration: CfirDeclaration, product: org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Complete) {
+    internal fun publishAnnotations(
+        declaration: CfirDeclaration,
+        product: org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Complete,
+        wireOwner: CfirDeclaration = declaration,
+    ) {
         check(transactionDepth != 0 && declaration.symbol.isBound && declaration.contentSource === publishedContentSource)
         check(declaration !in completedGraph.bodies.annotationContents) { "A completed annotation product cannot be replaced" }
         check(bodyState.annotationDrafts.remove(declaration) != null) { "Annotation metadata requires its actual binding draft" }
         check(bodyState.annotationContents.putIfAbsent(declaration, product) == null)
+        if (wireOwner !== declaration) {
+            // 单个包变量 wire record 在真实 binding 上完成注解，两侧读取同一份产品。
+            check(wireOwner.symbol.isBound && wireOwner.contentSource === publishedContentSource)
+            check(wireOwner !in completedGraph.bodies.annotationContents)
+            check(bodyState.annotationContents.putIfAbsent(wireOwner, product) == null)
+        }
     }
     private var initializationOwners = linkedSetOf<Int>()
     private var initializationRestorer: ((Set<Int>) -> Set<Int>)? = null
@@ -404,7 +512,7 @@ class CfirDeserializationContext(
             pendingDeclarationMetadata.isNotEmpty() || pendingConstantInitializers.isNotEmpty() ||
             pendingClassLikeHeaders.isNotEmpty() || pendingGenericTypes.isNotEmpty())
     }
-    private val queuedConstantVariables = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirFieldVariable, Boolean>())
+    private val queuedConstantVariables = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirVariable, Boolean>())
     /** 同一 container 的 VarInfo/Pattern/v 池使用唯一语义 helper；所有调用都在本 context 事务内。 */
     internal val constDeserializer: CfirConstDeserializer by lazy { CfirConstDeserializer(this) }
     /** Header-first 的匿名 F 与后续 SOURCE 使用同一内联 table 身份；随完成图原子发布。 */
@@ -416,10 +524,10 @@ class CfirDeserializationContext(
     internal val completedHeaderSourceGraph: CfirDeserializedSourceGraph? get() = completedGraph.headerSource
     internal var headerSourceGraph: CfirDeserializedSourceGraph? = null
     /** 公开查询只见完成图；一次 volatile 发布同时切换声明与类型缓存。 */
-    val typeCache: Map<Int, ConeCangJieType> get() = completedGraph.types
-    val declCache: Map<Int, CfirDeclaration> get() = completedGraph.declarations
+    val typeCache: Map<Int, ConeCangJieType> get() = publishedGraph.types
+    val declCache: Map<Int, CfirDeclaration> get() = publishedGraph.declarations
     val genericConstraints: Map<CfirBasedSymbol<*>, List<CfirDeserializedGenericConstraint>>
-        get() = completedGraph.constraints
+        get() = publishedGraph.constraints
     internal var constraints: MutableMap<CfirBasedSymbol<*>, List<CfirDeserializedGenericConstraint>> = HashMap()
         private set
     internal var types: MutableMap<Int, ConeCangJieType> = HashMap()
@@ -437,7 +545,7 @@ class CfirDeserializationContext(
     private var positionFileBindings = HashMap<org.cangnova.cangjie.cfir.serialization.cjo.CjoSavedFileReference, org.cangnova.cangjie.cfir.serialization.cjo.CjoPositionFileBinding>()
 
     /** 壳、引用与上界在同一事务完成后原子发布；失败/取消不留下本次部分缓存。 */
-    internal fun <T> materialize(action: () -> T): T = synchronized(materializationLock) {
+    internal fun <T> materialize(action: () -> T): T = materialization.read {
         check(readOnlyContentDepth.get() == 0) { "Imported content materialization is forbidden in a read-only input region" }
         val root = transactionDepth == 0
         val oldGenericTypes = if (root) genericTypes.toMap() else emptyMap()
@@ -526,7 +634,24 @@ class CfirDeserializationContext(
                     java.util.Collections.unmodifiableMap(java.util.IdentityHashMap(definitionScopes)),
                     java.util.Collections.unmodifiableMap(HashMap(positionFileBindings)),
                 )
-                completedGraph = publication
+                if (pendingGraph == null) {
+                    val previous = publishedGraph
+                    materialization.onCompletion(
+                        publish = {
+                            publishedGraph = checkNotNull(pendingGraph)
+                            pendingGraph = null
+                        },
+                        fail = {
+                            publishedGraph = previous
+                            pendingGraph = null
+                            genericTypes.clear()
+                            genericTypes.putAll(oldGenericTypes)
+                            genericBounds.clear()
+                            genericBounds.putAll(oldGenericBounds)
+                        },
+                    )
+                }
+                pendingGraph = publication
             }
             result
         } catch (failure: Throwable) {
@@ -583,7 +708,7 @@ class CfirDeserializationContext(
      * 声明 header 的 identity/字段先完成，再填保存的值；类自身 static const 不可重入未完成类。
      * 新值及 evaluatedInitializer 在同一根事务完成后发布，不改写此前完成的值或字段集合。
      */
-    internal fun enqueueConstantInitializer(variable: CfirFieldVariable, info: PackageFormat.VarInfo, typeReference: UInt, hostPosition: Int) {
+    internal fun enqueueConstantInitializer(variable: CfirVariable, info: PackageFormat.VarInfo, typeReference: UInt, hostPosition: Int) {
         check(transactionDepth != 0 && queuedConstantVariables.add(variable))
         pendingConstantInitializers.addLast(ConstantCompletion(checkNotNull(currentSourceSelection)) {
             val value = checkNotNull(constDeserializer.read(info, typeReference, hostPosition))
@@ -678,9 +803,121 @@ class CfirDeserializationContext(
             .mapValues { (_, references) -> references.map { it.toInt() - 1 } }
     }
 
+    internal val packageIndex: CjoPackageIndex by lazy { CjoPackageIndex(header, pkg, sourcePath) }
+    internal val declarationEntries = mutableMapOf<Int, CjoDeclarationCacheEntry>()
+    /** 当前 module/snapshot/mode 的 Lambda wire index 对应唯一匿名函数；不跨读取模式共用。 */
+    internal val anonymousFunctionEntries = mutableMapOf<Int, CjoAnonymousFunctionCacheEntry>()
+    internal val materialization: CjoDeclarationMaterialization
+        get() = binding.dependencyManager.deserializedSymbolLookups.materialization()
 
-    /** 导入包索引 -> 包级声明索引。 */
-    internal val importedPackageIndices = ConcurrentHashMap<Int, CjoPackageIndex>()
+    internal fun canonical(): CfirDeserializationContext = binding.dependencyManager.deserializedSymbolLookups.canonical(this)
+
+    /** 同包不同模式独立物化；不允许用 FULL 的结果补 signature-only 缓存。 */
+    internal fun withMode(requested: CjoDeserializationMode): CfirDeserializationContext {
+        if (mode == requested) return canonical()
+        val changed = CfirDeserializationContext(
+            pkg = pkg, header = header, moduleData = moduleData, cjoManager = cjoManager,
+            classSymbolLookup = binding.dependencyManager.deserializedSymbolLookups.forBinding(binding, moduleData, requested),
+            sourcePath = sourcePath, implicitSystemAnnotations = implicitSystemAnnotations,
+            mode = requested, binding = binding, snapshotIdentity = snapshotIdentity,
+            packageContextProvider = packageContextProvider,
+        )
+        return changed.canonical()
+    }
+
+    /** 导入使用目标 provider 的 manager、module、语言设置与模式，不创建 consumer 的目标副本。 */
+    internal fun importedContext(packageName: String): CfirDeserializationContext =
+        checkNotNull(packageContextOrNull(packageName)) {
+            "Cannot load CJO FullId target package $packageName"
+        }.canonical()
+
+    /** ClassId 只用于目标包内查询；目标模块由 metadata provider 先确定，禁止 session/PSI 查询。 */
+    internal fun lookupClassLikeSymbol(classId: org.cangnova.cangjie.name.ClassId):
+        org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>? {
+        return classSymbolLookup.getClassLikeSymbolByClassId(classId)
+    }
+
+    /** primitive 没有普通 CJO Decl；其 module/session 由实际 std.core 元数据 owner 决定。 */
+    internal fun lookupPrimitiveTypeSymbol(kind: PrimitiveTypeKind): CfirPrimitiveTypeSymbol {
+        check(kind.isExposedBuiltinClassifier) { "CJO primitive qualifier has a non-language type" }
+        val coreName = StandardNames.FqNames.core.asString()
+        val owner = if (header.fullPkgName == coreName) this else importedContext(coreName)
+        return CfirPrimitiveDeclarationFactory.getInstance(owner.moduleData.session, owner.moduleData)
+            .getDeclaration(kind).symbol
+    }
+
+    /** wire 投影引用本次物化的同一个拥有根；不另建声明树或替身符号。 */
+    internal fun recordWireHeader(index: Int, root: CfirDeclaration, wireSymbol: CfirBasedSymbol<*>) {
+        check(inMaterialization && materialization.lock.isHeldByCurrentThread)
+        check(root.symbol.isBound && wireSymbol.isBound)
+        val record = CfirDeserializedDeclaration(root, wireSymbol)
+        when (val previous = declarationEntries[index]) {
+            is CjoDeclarationCacheEntry.Header -> {
+                check(previous.record.declarationRoot === root && previous.record.wireSymbol === wireSymbol)
+                return
+            }
+            is CjoDeclarationCacheEntry.Ready -> {
+                check(previous.record.declarationRoot === root && previous.record.wireSymbol === wireSymbol)
+                return
+            }
+            is CjoDeclarationCacheEntry.Failed -> throw previous.failure
+            CjoDeclarationCacheEntry.Building, null -> Unit
+        }
+        declarationEntries[index] = CjoDeclarationCacheEntry.Header(record)
+        materialization.onCompletion(
+            publish = { declarationEntries[index] = CjoDeclarationCacheEntry.Ready(record) },
+            fail = { failure -> recordWireFailure(index, failure) },
+        )
+    }
+
+    internal fun recordWireFailure(index: Int, failure: Throwable) {
+        val previous = declarationEntries[index]
+        if (previous is CjoDeclarationCacheEntry.Failed ||
+            previous is CjoDeclarationCacheEntry.Ready && publishedGraph.declarations[index] === previous.record.declarationRoot) return
+        val accepted = (failure as? CjoDeclarationDeserializationException)?.takeIf {
+            it.packageName == header.fullPkgName && it.declarationIndex == index && it.mode == mode
+        } ?: CjoDeclarationDeserializationException(header.fullPkgName, index, mode, failure)
+        declarationEntries[index] = CjoDeclarationCacheEntry.Failed(accepted)
+    }
+
+    /** 包级变量的 wire binding 只投影其真实拥有根；两者共享一个已发布 d 条目。 */
+    internal fun publishedDeclarationRoot(declaration: CfirDeclaration): CfirDeclaration? = materialization.lock.withLock {
+        if (publishedGraph.declarations.values.any { it === declaration } ||
+            publishedGraph.sourceFunctions.values.any { it === declaration }) return@withLock declaration
+        val index = declaration.cjoDeclarationIndex ?: return@withLock null
+        val record = (declarationEntries[index] as? CjoDeclarationCacheEntry.Ready)?.record ?: return@withLock null
+        record.declarationRoot.takeIf {
+            record.wireSymbol === declaration.symbol && record.wireSymbol.isBound &&
+                record.wireSymbol.cfir === declaration && publishedGraph.declarations[index] === it
+        }
+    }
+
+    private val pendingNormalReferenceInitializers = HashSet<Int>()
+
+    internal fun isNormalReferenceInitializerPending(index: Int): Boolean =
+        index in pendingNormalReferenceInitializers
+
+    /** 只有普通 FULL wire reference 才请求该变量自己的 initializer。 */
+    internal fun enqueueNormalReferenceInitializer(index: Int, complete: () -> Unit): Boolean {
+        check(materialization.lock.isHeldByCurrentThread)
+        if (!pendingNormalReferenceInitializers.add(index)) return false
+        materialization.postCompute(complete)
+        materialization.onCompletion(
+            publish = { pendingNormalReferenceInitializers.remove(index) },
+            fail = { pendingNormalReferenceInitializers.remove(index) },
+        )
+        return true
+    }
+
+    internal fun headerRecordOrNull(index: Int): CfirDeserializedDeclaration? = when (val entry = declarationEntries[index]) {
+        is CjoDeclarationCacheEntry.Header -> entry.record
+        is CjoDeclarationCacheEntry.Ready -> entry.record
+        is CjoDeclarationCacheEntry.Failed -> throw entry.failure
+        else -> null
+    }
+
+    /** 导入包索引 -> 同次取得的 target context/pool 索引；物化不再按包名重新选目标。 */
+    internal val importedPackageIndices = ConcurrentHashMap<Int, CjoImportedPackage>()
 
 
     /** FullId 统一解析器。 */
@@ -749,12 +986,12 @@ class CfirDeserializationContext(
     internal val sourceGraphPublicationOwner: org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceGraphPublicationOwner
         get() = publishedContentSource as org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceGraphPublicationOwner
 
-    private fun completedGraphSnapshotOf(original: org.cangnova.cangjie.cfir.source.CfirSourceGraph): CjoSourceExportSnapshot = synchronized(materializationLock) {
+    private fun completedGraphSnapshotOf(original: org.cangnova.cangjie.cfir.source.CfirSourceGraph): CjoSourceExportSnapshot = materialization.lock.withLock {
             check(transactionDepth == 0) { "SOURCE export cannot capture a running materialization transaction" }
             check((original.provenance as? org.cangnova.cangjie.cfir.source.CfirSourceGraphProvenance.Published)?.owner === sourceGraphPublicationOwner) {
                 "SOURCE graph belongs to a different publication owner"
             }
-            val completed = completedGraph
+            val completed = publishedGraph
             val final = checkNotNull(completed.sourceGraphPublications[original]) {
                 "SOURCE graph was not successfully published by its actual context"
             }
@@ -787,10 +1024,10 @@ class CfirDeserializationContext(
     }
 
     /** 只导出同一实际 context 已完成的产品；不交出事务工作容器或活动 reader。 */
-    internal fun sourceExportSnapshot(source: org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage, includeContent: Boolean): CjoSourceExportSnapshot = synchronized(materializationLock) {
+    internal fun sourceExportSnapshot(source: org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage, includeContent: Boolean): CjoSourceExportSnapshot = materialization.lock.withLock {
         check(transactionDepth == 0) { "SOURCE export cannot capture a running materialization transaction" }
         check(source === loadedPackage)
-        val completed = completedGraph
+        val completed = publishedGraph
         val graph = if (includeContent) checkNotNull(completed.source).graph else checkNotNull(completed.headerSource).graph
         exportSnapshot(completed, source, graph)
     }
@@ -804,14 +1041,14 @@ class CfirDeserializationContext(
     }
 
     /** 原 request 的 source/binder/session 和 canonical d 必须同时属于当前 context。 */
-    internal fun definitionRequestViolation(request: org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotRequest): String? = synchronized(materializationLock) {
+    internal fun definitionRequestViolation(request: org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotRequest): String? = materialization.lock.withLock {
         if (request.source !== loadedPackage || request.binderIdentity !== sourceExportBinderIdentity || request.domain !== moduleData.session)
-            return@synchronized "Definition request belongs to a different source/binder/session"
+            return@withLock "Definition request belongs to a different source/binder/session"
         (request.seeds + request.contents.map { it.declaration }).forEach { declaration ->
             val origin = declaration.cjoDeclarationOrigin
             if (origin == null || !declaration.symbol.isBound || declaration.symbol.cfir !== declaration ||
-                declaration.contentSource !== publishedContentSource || completedGraph.declarations[origin.declarationIndex] !== declaration)
-                return@synchronized "Definition request requires the original published canonical d binding"
+                declaration.contentSource !== publishedContentSource || publishedGraph.declarations[origin.declarationIndex] !== declaration)
+                return@withLock "Definition request requires the original published canonical d binding"
         }
         null
     }
@@ -842,10 +1079,10 @@ class CfirDeserializationContext(
     }
 
     /** 只查成功 request 目录；别名升级由同一次 body/graph publication 提供最终图。 */
-    internal fun completedDefinitionSnapshot(request: org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotRequest): org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotResult.Completed? = synchronized(materializationLock) {
+    internal fun completedDefinitionSnapshot(request: org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotRequest): org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotResult.Completed? = materialization.lock.withLock {
         check(transactionDepth == 0) { "Definition snapshot cannot observe a running materialization" }
-        val completed = completedGraph
-        val scope = completed.definitionScopes[request.identity] ?: return@synchronized null
+        val completed = publishedGraph
+        val scope = completed.definitionScopes[request.identity] ?: return@withLock null
         check(scope.request === request && matchesDefinitionSource(request))
         val graph = completed.bodies.selectedGraphs.getValue(scope.roots)
         val definitions = scope.declarations.associate { reference -> reference.toInt() - 1 to completed.declarations.getValue(reference.toInt() - 1) }
@@ -939,12 +1176,12 @@ class CfirDeserializationContext(
         fullPackageName: String,
         ownerDeclarationIndex: Int,
         declarationIndex: Int,
-    ): CfirDeclaration? = initializationDependencyResolver?.invoke(
-        targetSourcePath,
-        fullPackageName,
-        ownerDeclarationIndex,
-        declarationIndex,
-    )
+    ): CfirDeclaration? {
+        val target = if (header.fullPkgName == fullPackageName && sourcePath == targetSourcePath) this
+        else packageContextOrNull(fullPackageName) ?: return null
+        if (targetSourcePath != target.sourcePath) return null
+        return target.createDeclDeserializer().deserializeInitializationDependency(ownerDeclarationIndex, declarationIndex)
+    }
 
     /**
      * `CfirDeclDeserializer` / `CfirTypeDeserializer` 都带有调用栈态，
@@ -967,27 +1204,25 @@ class CfirDeserializationContext(
             requireSourceDeclaration(index)
             reservedTypeParameters[index] ?: declarations[index] ?: createDeclDeserializer().deserializeCanonicalDeclaration(index)
         } else {
-            declarationResolver?.invoke(resolved.packageIndex.sourcePath, resolved.packageIndex.packageFqName.asString(), index)
+            materializeExternalDeclaration(resolved)
         }
         return checkNotNull(parameter as? CfirTypeParameter) {
             "Cannot materialize canonical generic parameter: ${fullIdResolver.describe(fullId)}"
         }
     }
 
-    internal fun importedSnapshot(fullPackageName: String): org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage? {
-        if (dependencySnapshotResolver != null) return dependencySnapshotResolver.invoke(fullPackageName)
-        val candidates = cjoManager.loadPackageSnapshots(fullPackageName)
-        check(candidates.size <= 1) { "Ambiguous imported CJO snapshots for '$fullPackageName'" }
-        return candidates.singleOrNull()
+    internal fun importedSnapshot(fullPackageName: String): org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage? =
+        packageContextOrNull(fullPackageName)?.loadedPackage
+
+    internal fun materializeExternalDeclaration(target: ResolvedFullId.Declaration): CfirDeclaration? {
+        check(target.packageIndex === target.targetContext.packageIndex)
+        return target.targetContext.createDeclDeserializer().deserializeCanonicalDeclaration(target.declaration.zeroBasedIndex)
     }
 
-    internal fun materializeExternalDeclaration(target: ResolvedFullId.Declaration): CfirDeclaration? =
-        declarationResolver?.invoke(target.packageIndex.sourcePath, target.packageIndex.packageFqName.asString(),
-            target.declaration.zeroBasedIndex)
-
-    internal fun materializeExternalDefaults(target: ResolvedFullId.Declaration, parameters: List<CfirValueParameter>): Map<CfirValueParameter, org.cangnova.cangjie.cfir.expressions.CfirExpression?> =
-        checkNotNull(parameterDefaultsResolver) { "External defaults require their actual provider" }.invoke(
-            target.packageIndex.sourcePath, target.packageIndex.packageFqName.asString(),
-            parameters.map { checkNotNull(it.cjoDeclarationOrigin).declarationIndex })
+    internal fun materializeExternalDefaults(target: ResolvedFullId.Declaration, parameters: List<CfirValueParameter>): Map<CfirValueParameter, org.cangnova.cangjie.cfir.expressions.CfirExpression?> {
+        check(target.packageIndex === target.targetContext.packageIndex)
+        val indices = parameters.map { checkNotNull(it.cjoDeclarationOrigin).declarationIndex }
+        return target.targetContext.createDeclDeserializer().deserializeParameterDefaults(indices)
+    }
 
 }

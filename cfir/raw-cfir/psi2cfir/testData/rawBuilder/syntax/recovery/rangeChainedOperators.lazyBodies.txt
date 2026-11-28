@@ -1,0 +1,4 @@
+FILE: rangeChainedOperators.cj
+    internal? func rangeChained(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

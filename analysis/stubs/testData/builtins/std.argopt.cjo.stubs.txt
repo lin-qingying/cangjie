@@ -4,12 +4,16 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=argopt]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null)], packageFqName=std.argopt]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.argopt]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.argopt]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.collection, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.argopt]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
   CangJieStub$CLASS[classId=std/argopt/ArgOpt, fqName=std.argopt.ArgOpt, name=ArgOpt, superNames=[]]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
@@ -34,11 +38,11 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=utils]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -48,7 +52,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ParserHelper]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=arguments]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -221,7 +225,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -260,7 +264,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -291,7 +295,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -319,11 +323,11 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$CLASS[classId=std/argopt/ParserHelper, fqName=std.argopt.ParserHelper, name=ParserHelper, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=argMap]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -350,7 +354,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=argsList]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -364,7 +368,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                   CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=arguments]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -374,11 +378,11 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Arguments]
   CangJieStub$CLASS[classId=std/argopt/Arguments, fqName=std.argopt.Arguments, name=Arguments, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=myArgs]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -397,7 +401,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=unparseArgs]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -431,7 +435,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -514,7 +518,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -525,7 +529,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -550,12 +554,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-        CangJieStub$CONSTRUCTOR_CALLEE
-          CangJieStub$TYPE_REFERENCE
-            CangJieStub$USER_TYPE
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.argopt.ArgumentSpec, name=Short, typeCount=2]
         CangJieStub$ANNOTATIONS
@@ -814,11 +813,11 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_options]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -845,7 +844,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_nonOptions]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -875,12 +874,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -921,12 +915,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -959,7 +948,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=since]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=22]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1010,7 +999,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1036,7 +1025,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
             CangJieStub$VALUE_ARGUMENT_NAME
               CangJieStub$REFERENCE_EXPRESSION[referencedName=throwexception]
             CangJieStub$BOOLEAN_CONSTANT[kind=BOOLEAN_CONSTANT, value=true]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE

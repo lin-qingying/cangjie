@@ -14,7 +14,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 /**
  * 挂在 CFIR declaration 上的 partial body analysis 状态键。
  */
-private object PartialBodyAnalysisStateKey : CfirDeclarationDataKey()
+private object PartialBodyAnalysisStateKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<LLPartialBodyAnalysisState>("partial body analysis state")
+}
 
 /**
  * Represents the partial (incomplete) body resolve state.

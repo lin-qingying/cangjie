@@ -10,7 +10,7 @@ func help() {
 }
 
 func help2(): Unit {
-    return <!RETURN_TYPE_MISMATCH!>0<!>
+    return <!CANNOT_CONVERT_LITERAL!>0<!>
 }
 
 func help3(): Unit {
@@ -58,7 +58,7 @@ func callFunc(myfunc: (Int32, Int32) -> Int32): Int32 {
 }
 
 func foo(): Int32 {
-    return callFunc(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>f<!>un)
+    return callFunc(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>fun<!>)
 }
 
 func bar() {

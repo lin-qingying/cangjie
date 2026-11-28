@@ -8,22 +8,32 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirSourcePsiGeneration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.forEachWithDiagnosticIsolation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.providers.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.parsing.compilationParsingResultOrNull
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.CjVisitorUnit
 import org.cangnova.cangjie.psi.psiUtil.isAncestorOf
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -64,7 +74,7 @@ internal class FileStructure private constructor(
             cjFile: CjFile,
             moduleComponents: LLCfirModuleResolveComponents,
         ): FileStructure {
-            val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+            val cfirFile = moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(cjFile)
             return FileStructure(cjFile, cfirFile, moduleComponents)
         }
 
@@ -80,9 +90,20 @@ internal class FileStructure private constructor(
     }
 
     /**
-     * 当前 CFIR 文件 session 中的 declaration provider。
+     * 当前 PSI 文件在统一语义视图中的 CFIR；快照发布后，文件级和声明级结构都必须使用同一棵展开树。
      */
-    private val cfirProvider = cfirFile.moduleData.session.cfirProvider
+    private val sourceGeneration = LLCfirSourcePsiGeneration.capture(
+        listOf(cjFile.compilationParsingResultOrNull()?.originFile ?: cjFile),
+        compareModificationStamps = false,
+    )
+
+    private fun semanticCfirFile(): CfirFile {
+        sourceGeneration.requireCurrent()
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot ?: return cfirFile
+        return checkNotNull(snapshot.fileForSource(cjFile) ?: snapshot.fileForReparsedPsi(cjFile)) {
+            "The current source PSI generation must belong to the published macro snapshot"
+        }
+    }
 
     /**
      * PSI 容器到 structure element 的缓存。
@@ -105,10 +126,17 @@ internal class FileStructure private constructor(
     /**
      * @return [FileStructureElement] for the closest non-local element which contains this [element].
      */
+    fun getStructureElementFor(element: CjElement): FileStructureElement {
+        // Kotlin 的默认参数在进入函数前求值；父链读取必须发生在当前 source generation 校验之后。
+        sourceGeneration.requireCurrent()
+        return getStructureElementFor(element, findNonLocalContainer(element))
+    }
+
     fun getStructureElementFor(
         element: CjElement,
-        nonLocalContainer: CjElement? = findNonLocalContainer(element),
+        nonLocalContainer: CjElement?,
     ): FileStructureElement {
+        sourceGeneration.requireCurrent()
         val targetElement = checkNotNull(moduleComponents.cache.compilationElement(element) as? CjElement) {
             "A structure query must identify a syntax element in the current target product."
         }
@@ -124,16 +152,38 @@ internal class FileStructure private constructor(
      */
     private fun addStructureElementForTo(element: CjElement, result: MutableCollection<FileStructureElement>) {
         checkCanceled()
+        if (element is CjDeclaration && !hasSemanticStructure(element)) return
         LLCfirDiagnosticVisitor.suppressAndLogExceptions {
             result += getStructureElementFor(element)
         }
+    }
+
+    /** 声明只有在最终快照中有精确的一对一 PSI 身份映射时才拥有独立结构。 */
+    private fun hasSemanticStructure(declaration: CjDeclaration): Boolean {
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot ?: return true
+        return snapshot.declarationsForSource(declaration).size == 1
     }
 
     /**
      * 返回用于缓存 structure element 的 PSI 容器；无法定位时回退到文件。
      */
     private fun getContainerCjElement(element: CjElement, nonLocalContainer: CjElement?): CjElement {
-        return getStructureCjElement(element, nonLocalContainer) ?: element.containingCjFile
+        val container = getStructureCjElement(element, nonLocalContainer) ?: return element.containingCjFile
+        if (container !is CjDeclaration || hasSemanticStructure(container)) return container
+        return nearestSemanticStructureOwner(container)
+    }
+
+    /** 零/多输出 carrier 没有自己的 CFIR 声明结构，诊断归属沿 PSI 声明树提升到最近有效 owner。 */
+    private fun nearestSemanticStructureOwner(declaration: CjDeclaration): CjElement {
+        var parent = declaration.parent
+        while (parent != null) {
+            when (parent) {
+                is CjFile -> return parent
+                is CjDeclaration -> if (hasSemanticStructure(parent)) return parent
+            }
+            parent = parent.parent
+        }
+        return declaration.containingCjFile
     }
 
     /**
@@ -182,6 +232,8 @@ internal class FileStructure private constructor(
         diagnosticCheckerFilter: DiagnosticCheckerFilter,
         platformCheckerComponents: LLCfirModuleResolveComponents? = null,
     ): List<CjPsiDiagnostic> {
+        // 每次顶层收集前重置当前 worker 的记录，避免混入该 worker 上一次收集的异常。
+        DiagnosticCollectionFailures.clear()
         val structureElements = getAllStructureElements()
         return buildList {
             collectDiagnosticsFromStructureElements(structureElements, diagnosticCheckerFilter, platformCheckerComponents)
@@ -196,9 +248,12 @@ internal class FileStructure private constructor(
         diagnosticCheckerFilter: DiagnosticCheckerFilter,
         platformCheckerComponents: LLCfirModuleResolveComponents?,
     ) {
-        structureElements.forEach { structureElement ->
-            ProgressManager.checkCanceled()
-
+        /*
+         * 单个 structure element 的解析/收集失败不能丢弃整份文件其余元素的诊断。
+         * 隔离边界放在 element 级；[forEachWithDiagnosticIsolation] 同时把失败写入
+         * DiagnosticCollectionFailures，测试/报告必须断言该计数为 0。
+         */
+        forEachWithDiagnosticIsolation(structureElements) { structureElement ->
             structureElement.diagnostics.forEach(diagnosticCheckerFilter, platformCheckerComponents) { diagnostics ->
                 addAll(diagnostics)
             }
@@ -209,6 +264,7 @@ internal class FileStructure private constructor(
      * 返回文件中所有可独立收集 diagnostics 的 structure element。
      */
     fun getAllStructureElements(): Collection<FileStructureElement> {
+        sourceGeneration.requireCurrent()
         val structureElements = mutableSetOf<FileStructureElement>()
         addStructureElementForTo(cjFile, structureElements)
 
@@ -234,11 +290,49 @@ internal class FileStructure private constructor(
 
     /**
      * 创建根文件 structure element。
+     *
+     * 根结构元素只负责**文件级**诊断（imports/package 等）：凡是在 [getAllStructureElements]
+     * 中获得独立结构单元的顶层声明，都必须在这里跳过，否则同一声明内部的诊断会被根与声明结构单元
+     * 各收集一次。
+     *
+     * 判据是「声明有自己的真实 PSI 且该 PSI 属于本文件」，**不是「PSI 是否物理」**：
+     * dangling file 等非物理副本的整棵 PSI 树都不是物理 PSI，但 [getAllStructureElements] 仍然
+     * 逐条为它们建立结构单元。按物理性判据会让副本的声明既由根、又由自身结构单元收集，
+     * 同一 PSI、同一 text range 的诊断被报告两次。
+     *
+     * 一对多宏替换输出没有唯一 carrier（[LLCfirMacroSemanticSnapshot.physicalSourceForDeclaration]
+     * 返回 null），它们仍然归根结构元素统一拥有。
      */
     private fun createRootStructure(): RootStructureElement {
-        val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
-        cfirFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
-        return RootStructureElement(cfirFile, moduleComponents)
+        val semanticCfirFile = semanticCfirFile()
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        val declarationsWithOwnStructure = semanticCfirFile.declarations.filterTo(linkedSetOf()) { declaration ->
+            declaration.sourceDeclarationIn(cjFile, snapshot) != null
+        }
+        semanticCfirFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+        return RootStructureElement(
+            sourceCfirFile = cfirFile,
+            semanticCfirFile = semanticCfirFile,
+            declarationsWithOwnStructure = declarationsWithOwnStructure,
+            moduleComponents = moduleComponents,
+        )
+    }
+
+    /**
+     * 返回该语义声明在本文件中拥有独立结构单元的物理来源声明。
+     *
+     * 与 [createDeclarationStructure] 使用同一对 source→declaration 映射（快照优先，
+     * 否则按 PSI 在 raw CFIR 中定位），因此「根跳过哪些声明」与「哪些声明有自己的结构单元」
+     * 由同一份关系决定，不会各自漂移。
+     */
+    private fun CfirDeclaration.sourceDeclarationIn(
+        physicalFile: CjFile,
+        snapshot: LLCfirMacroSemanticSnapshot?,
+    ): CjDeclaration? {
+        if (snapshot?.isDeclarationReplacementOutput(this, physicalFile) == true) {
+            return snapshot.physicalSourceForDeclaration(this, physicalFile)
+        }
+        return (realPsi as? CjDeclaration)?.takeIf { it.containingFile === physicalFile }
     }
 
     /**
@@ -251,14 +345,32 @@ internal class FileStructure private constructor(
     }
 
     /**
-     * 创建普通 PSI 声明对应的 structure element。
+     * 在统一语义视图中定位 PSI 声明，并用该声明构造诊断与 PSI 映射结构。
      */
     private fun createDeclarationStructure(declaration: CjDeclaration): FileStructureElement {
-        val cfirDeclaration = declaration.findSourceNonLocalCfirDeclaration(cfirFile, cfirProvider)
+        val semanticCfirFile = semanticCfirFile()
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        val cfirDeclaration = if (snapshot != null) {
+            snapshot.declarationForSource(declaration)
+                ?: errorWithAttachment("No unique semantic declaration is mapped to physical PSI") {
+                    withPsiEntry("declaration", declaration)
+                    withCfirEntry("semanticCfirFile", semanticCfirFile)
+                }
+        } else {
+            val semanticCfirProvider = semanticCfirFile.moduleData.session.cfirProvider
+            declaration.findSourceNonLocalCfirDeclaration(semanticCfirFile, semanticCfirProvider)
+        }
+        val semanticMappings = IdentityHashMap<CjElement, CfirElement>().apply {
+            snapshot?.declarationForSource(declaration)?.let { put(declaration, it) }
+            snapshot?.expressionReplacementsForSource(declaration.containingCjFile).orEmpty().forEach { (macroPsi, replacement) ->
+                if (findNonLocalContainer(macroPsi) === declaration) put(macroPsi, replacement)
+            }
+        }
         return FileElementFactory.createFileStructureElement(
             cfirDeclaration = cfirDeclaration,
-            cfirFile = cfirFile,
-            moduleComponents = moduleComponents
+            cfirFile = semanticCfirFile,
+            moduleComponents = moduleComponents,
+            additionalMappings = semanticMappings,
         )
     }
 

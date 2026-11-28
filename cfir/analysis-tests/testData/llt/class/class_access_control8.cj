@@ -7,7 +7,7 @@ open class A {
 }
 
 class B <: A {
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>rivate var d: Int32 = 1
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>private var d: Int32 = 1<!>
 }
 
 main(): Int64 {

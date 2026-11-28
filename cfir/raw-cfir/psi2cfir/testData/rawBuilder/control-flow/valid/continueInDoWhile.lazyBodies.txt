@@ -1,0 +1,4 @@
+FILE: continueInDoWhile.cj
+    internal? func f(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

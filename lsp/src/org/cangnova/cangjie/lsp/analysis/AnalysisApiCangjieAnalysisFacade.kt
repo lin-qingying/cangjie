@@ -1,6 +1,14 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.openapi.application.ReadAction
+import com.google.gson.JsonObject
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.impl.DocumentImpl
+import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.codeStyle.CodeStyleSettings
@@ -8,19 +16,41 @@ import org.cangnova.cangjie.analysis.api.CaNonPublicApi
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.components.isSubClassOf
+import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.analysis.api.resolution.*
 import org.cangnova.cangjie.analysis.api.session.restoreSymbol
 import org.cangnova.cangjie.analysis.api.symbols.*
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
+import org.cangnova.cangjie.documentation.api.DocumentationBody
+import org.cangnova.cangjie.documentation.cdoc.buildDocumentationDescription
+import org.cangnova.cangjie.documentation.cdoc.buildDocumentationModel
+import org.cangnova.cangjie.documentation.markdown.MarkdownDocumentationRenderer
+import org.cangnova.cangjie.documentation.resolve.DefaultDocumentationService
+import org.cangnova.cangjie.documentation.resolve.DocumentationMode
+import org.cangnova.cangjie.documentation.resolve.DocumentationRequest
+import org.cangnova.cangjie.documentation.resolve.findCangJieDocumentationTarget
+import org.cangnova.cangjie.documentation.resolve.DocumentationResolution
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingKind
 import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingRangeCollector
+import org.cangnova.cangjie.codeinsight.hints.CangJieInlayHintCollector
+import org.cangnova.cangjie.codeinsight.hints.CangJieInlayHintOptions
 import org.cangnova.cangjie.formatter.CangJieCodeStyleSettingsFactory
 import org.cangnova.cangjie.formatter.CangJieFormatter
 import org.cangnova.cangjie.formatter.cangjieCommonSettings
-import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
-import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
-import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
+import org.cangnova.cangjie.ide.completion.api.CompletionKind
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionRejection
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionStage
+import org.cangnova.cangjie.ide.completion.api.statistics.completionStatistics
+import org.cangnova.cangjie.ide.completion.impl.cfir.cfirCompletionServiceOrNull
+import org.cangnova.cangjie.ide.completion.impl.shared.PlatformCompletionRequest
+import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyIdentifierProvider
+import org.cangnova.cangjie.ide.completion.impl.shared.resolve.completionDeclarationResolverOrNull
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
+import org.cangnova.cangjie.lsp.completion.LspCompletionItemConverter
+import org.cangnova.cangjie.lsp.hints.CangjieLspInlayHintConverter
+import org.cangnova.cangjie.lsp.server.LspRequestCancellation
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticToken
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenCollector
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenModifier
@@ -52,6 +82,11 @@ class AnalysisApiCangjieAnalysisFacade(
     private val psiDocumentFactory = AnalysisApiPsiDocumentFactory(lifecycleContext)
 
     /**
+     * 生命周期上下文：补全路径需要工程、描述符开关与补全会话存储。
+     */
+    private val lifecycle = lifecycleContext
+
+    /**
      * Analysis API 语义查询和 LSP 坐标转换的共享支持层。
      */
     private val semanticSupport = AnalysisApiLspSemanticSupport(lifecycleContext, psiDocumentFactory)
@@ -60,6 +95,11 @@ class AnalysisApiCangjieAnalysisFacade(
      * LSP rename 协议适配器。
      */
     private val renameSupport = AnalysisApiLspRenameSupport(semanticSupport)
+
+    /**
+     * LSP codeAction 协议适配器：列表走 quick-fix 框架，应用走成员生成 headless 写路径。
+     */
+    private val codeActionSupport = AnalysisApiLspCodeActionSupport(semanticSupport)
 
     /**
      * Analysis API facade 当前支持的 LSP 功能集合。
@@ -76,13 +116,24 @@ class AnalysisApiCangjieAnalysisFacade(
         documentHighlight = true,
         documentSymbol = true,
         workspaceSymbol = true,
+        codeAction = true,
         rename = true,
         formatting = true,
         foldingRange = true,
         selectionRange = true,
         semanticTokens = true,
+        inlayHints = true,
         diagnostics = true,
     )
+
+    /**
+     * LSP 侧 inlay hint 开关。
+     *
+     * 协议不传递逐项开关，因此全开；共享层的 `options` 参数只服务 IDE 宿主的设置项。
+     * 后续要做服务端可配置时走描述符级 flag 或 `workspace/didChangeConfiguration`，
+     * 不复用 IDE 的 optionId 体系。
+     */
+    private val inlayHintOptions: CangJieInlayHintOptions = CangJieInlayHintOptions()
 
     /**
      * 文档打开后创建或更新 PSI 快照。
@@ -96,6 +147,9 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     override fun didChange(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         upsertSnapshot(document)
+        // 内容变了：旧会话的替换区间与候选都可能不再成立，留在那里只会让用户
+        // 接受一个落在错误区间的编辑（applyCompletion 会因版本不同而拒绝）。
+        lifecycle.completionSessions.invalidate(document.uri)
     }
 
     /**
@@ -110,6 +164,7 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     override fun didClose(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         psiDocumentFactory.removeSnapshot(document.uri)
+        lifecycle.completionSessions.invalidate(document.uri)
     }
 
     /**
@@ -144,6 +199,8 @@ class AnalysisApiCangjieAnalysisFacade(
             document = document,
             source = context.descriptor.diagnosticIdentifier,
             diagnostics = diagnostics,
+            showDiagnosticFactoryNames =
+                context.workspaceState.projectConfiguration().showDiagnosticFactoryNames,
         )
     }
 
@@ -163,6 +220,8 @@ class AnalysisApiCangjieAnalysisFacade(
                         document = workspaceFile.analysisDocument,
                         source = context.descriptor.diagnosticIdentifier,
                         diagnostics = collected,
+                        showDiagnosticFactoryNames =
+                            context.workspaceState.projectConfiguration().showDiagnosticFactoryNames,
                     )
                 }
             }
@@ -180,9 +239,278 @@ class AnalysisApiCangjieAnalysisFacade(
     /**
      * 计算当前位置的补全项。
      *
-     * 优先使用引用 variants；缺少 variants 时补充当前文件作用域和工作区源码声明。
+     * 默认走**与 IDE 共用的候选管线**（设计 L1：LSP 只做协议适配，不重新实现候选生成）。
+     * 旧实现留在 [legacyCompletion]，由 `descriptor.useLegacyCompletion` 打开——
+     * 两条路径不混用（旧实现按击键遍历工作区、类别一律 `Text`、无导入计划，
+     * 混用会让候选质量类验收无法判定，见设计 §7.11.5）。
      */
     override fun completion(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CompletionParams,
+    ): Either<List<CompletionItem>, CompletionList> {
+        if (lifecycle.descriptor.useLegacyCompletion) {
+            return legacyCompletion(context, document, params)
+        }
+        return Either.forLeft(pipelineCompletion(context, document, params))
+    }
+
+    /**
+     * 共享补全管线（分支 B）。
+     *
+     * 形态由 15.1② 的实验判定（见 `implementation-log.md`）：
+     * 1. **在副本上**做 dummy 修正——修正是 PSI 写，改文档那份会污染 `LspDocumentStore`；
+     *    副本的路径与文档相同，因此仍落进正确的模块作用域；
+     * 2. 修正在 **EDT 的写命令**内执行（本线程直调 `CommandProcessor` 会静默不执行）；
+     * 3. 管线调用要有**进度指示器**（RPC 线程没有）；
+     * 4. 候选存进会话存储，客户端稍后接受时由 `applyCompletion` 按会话键取回。
+     *
+     * 前缀与替换区间取自修正结果：用户在补全前敲的那半截标识符由服务端负责替换
+     * （候选自带的 `textEdit` 是空的）。
+     */
+    private fun pipelineCompletion(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CompletionParams,
+    ): List<CompletionItem> {
+        val project = lifecycle.environment.project
+        val statistics = completionStatistics(project)
+        val setupStartedNanos = System.nanoTime()
+        val uri = document.uri
+        val analysisText = document.analysisText
+        val caret = document.analysisOffsetAt(params.position).coerceIn(0, analysisText.length)
+
+        // 副本文本 = 文档文本 + 光标处的 dummy 标记（IDE 侧由平台插入，无头宿主自己插）。
+        val copyText = StringBuilder(analysisText)
+            .insert(caret, CompletionDummyIdentifierProvider.DUMMY_MARKER)
+            .toString()
+        val copy = LspAnalysisPsiFileFactory.createFile(project, uri, lspFileNameOf(uri), copyText)
+
+        var request: PlatformCompletionRequest? = null
+        runInWriteCommand(project) {
+            val dummy = CompletionDummyIdentifierProvider.provideFor(copy, caret)
+            if (dummy == null) {
+                LOG.fine("dummy 修正在 $uri@$caret 返回 null：该位置不允许补全")
+                return@runInWriteCommand
+            }
+            request = PlatformCompletionRequest(
+                originalPosition = dummy.position,
+                completionPosition = dummy.position,
+                prefix = dummy.prefix,
+                // LSP 没有智能补全触发：恒为 BASIC（15.1③）。
+                kind = CompletionKind.BASIC,
+                // 同一位置重复请求 = 用户再要一次，对应索引段放宽前缀匹配的那条分支。
+                invocationCount = lifecycle.completionSessions.invocationCountFor(uri, document.version, caret),
+                offset = caret,
+                replaceStartOffset = caret - dummy.prefix.length,
+                replaceEndOffset = caret,
+                // 过期判定接**LSP 文档版本**：分析副本上的改动与用户文档无关（15.4②）。
+                documentStamp = document.version.toLong(),
+                positionElement = dummy.position,
+            )
+        }
+        val completionRequest = request ?: run {
+            // 位置不允许补全（原始字符串内部等）：这是分流结果，不是错误——记下来才能回答
+            // 「用户没看到候选是位置不对还是别的」。
+            statistics.recordRejection(CompletionRejection.POSITION_NOT_ALLOWED)
+            statistics.recordStage(CompletionStage.SETUP, System.nanoTime() - setupStartedNanos)
+            return emptyList()
+        }
+        statistics.recordStage(CompletionStage.SETUP, System.nanoTime() - setupStartedNanos)
+
+        val service = cfirCompletionServiceOrNull(project)
+        if (service == null) {
+            // 不静默：服务未注册时用户会看到「没有候选」，日志里必须留下原因。
+            LOG.warning("补全服务未注册（CfirCompletionServiceProvider 缺失），$uri 不产出候选")
+            statistics.recordRejection(CompletionRejection.SERVICE_UNAVAILABLE)
+            return emptyList()
+        }
+        /*
+         * 取消闸门（前）：本容器里 `ProgressManager.checkCanceled()` 不生效——实测推入一个
+         * 已取消的进度指示器它也不抛（容器的 `ProgressIndicatorProvider` 未接线，全局指示器恒为 null）。
+         * 因此不能只靠指示器，至少要在这两处直接查请求的取消状态。
+         */
+        context.cancellation.throwIfCancelledRecording(statistics)
+        /*
+         * 进度指示器仍接**本次请求的取消状态**：容器将来接上全局指示器时，
+         * 管线里的 `checkCanceled()` 就能中途收场，不必等整轮跑完。
+         */
+        val delegateIndicator = EmptyProgressIndicator()
+        val indicator = object : ProgressIndicator by delegateIndicator {
+            override fun isCanceled(): Boolean =
+                context.cancellation.isCancelled() || delegateIndicator.isCanceled()
+        }
+        val snapshots = try {
+            ProgressManager.getInstance().runProcess(
+                Computable { service.complete(completionRequest) },
+                indicator,
+            )
+        } catch (cancelled: ProcessCanceledException) {
+            // 取消不是失败：转成 LSP 的 `RequestCancelled`，客户端据此丢弃结果而不弹错。
+            context.cancellation.throwIfCancelledRecording(statistics)
+            throw cancelled
+        }
+        // 取消闸门（后）：管线期间收到的取消在这里生效——宁可丢弃算好的结果，也不返回给用户
+        // 一份他已经不要的候选（指示器路径若将来生效，这里也会同样命中）。
+        context.cancellation.throwIfCancelledRecording(statistics)
+        val session = lifecycle.completionSessions.create(
+            uri = uri,
+            version = document.version,
+            replaceStart = completionRequest.replaceStartOffset,
+            replaceEnd = completionRequest.replaceEndOffset,
+            items = snapshots,
+        )
+        val renderStartedNanos = System.nanoTime()
+        val items = snapshots.mapIndexed { index, snapshot ->
+            LspCompletionItemConverter.toCompletionItem(snapshot, index, params.position, session.key)
+        }
+        statistics.recordStage(CompletionStage.RENDER, System.nanoTime() - renderStartedNanos)
+        return items
+    }
+
+    /**
+     * 取消闸门：已取消时记一笔原因再抛 `RequestCancelled`。
+     *
+     * 记原因是必要的——「用户取消」与「位置不允许」「服务没装」在数字上完全一样（都是没有候选），
+     * 混在一起就回答不了「用户为什么没看到候选」。
+     */
+    private fun LspRequestCancellation.throwIfCancelledRecording(
+        statistics: org.cangnova.cangjie.ide.completion.api.statistics.CompletionStatisticsSink,
+    ) {
+        if (isCancelled()) {
+            statistics.recordRejection(CompletionRejection.CANCELLED)
+            throwIfCancelled()
+        }
+    }
+
+    /**
+     * 补齐候选的文档（LSP `completionItem/resolve`）。
+     *
+     * 恢复分两步，各自用最合适的层：
+     * 1. **恢复声明**交给 `CompletionDeclarationResolver`（在生成候选的那一层实现，
+     *    用的是与快照工厂**同一套身份算法**；放到这里就要复制那份算法）；
+     * 2. **渲染 Markdown** 用本类既有的 CDoc 渲染（与 hover 同一份，不另写渲染器）。
+     *
+     * 任一步拿不到结果都返回原 item：`resolve` 只是补文档，失败不该让候选消失。
+     */
+    @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
+    override fun resolveCompletionItem(
+        context: CangjieAnalysisRequestContext,
+        item: CompletionItem,
+    ): CompletionItem {
+        // 与候选生成分开计时：resolve 是用户按下候选才触发的第二次分析，
+        // 它的耗时直接影响「翻候选卡不卡」，混进 CANDIDATES 就看不出来了。
+        // 失败路径（含所有 skipResolve 早退）同样计时——「没填文档」也花了时间。
+        val statistics = completionStatistics(lifecycle.environment.project)
+        val resolveStartedNanos = System.nanoTime()
+        try {
+            return resolveCompletionItemInternal(context, item)
+        } finally {
+            statistics.recordStage(CompletionStage.RESOLVE, System.nanoTime() - resolveStartedNanos)
+        }
+    }
+
+    /**
+     * resolve 的实际实现；计时与统计在 [resolveCompletionItem] 里做。
+     */
+    @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
+    private fun resolveCompletionItemInternal(
+        context: CangjieAnalysisRequestContext,
+        item: CompletionItem,
+    ): CompletionItem {
+        val data = item.data as? JsonObject ?: return skipResolve("item 没有 data", item)
+        val sessionKey = data.get(LspCompletionCommands.SESSION_KEY_FIELD)?.asString
+            ?: return skipResolve("data 里没有会话键", item)
+        val index = data.get(LspCompletionCommands.INDEX_FIELD)?.asInt
+            ?: return skipResolve("data 里没有候选下标", item)
+        val session = lifecycle.completionSessions.find(sessionKey)
+            ?: return skipResolve("会话已过期（key=$sessionKey）", item)
+        val snapshot = session.itemAt(index) ?: return skipResolve("会话里没有第 $index 个候选", item)
+        val document = lifecycle.documentStore.get(session.uri)
+            ?: return skipResolve("文档已关闭（${session.uri}）", item)
+        val resolver = completionDeclarationResolverOrNull(lifecycle.environment.project)
+            ?: return skipResolve("宿主没有装配候选声明解析器", item)
+
+        val documentation = semanticSupport.analyzeSnapshot(document) { psiSnapshot ->
+            val leaf = psiSnapshot.psiFile.findElementAt(session.replaceEnd)
+                ?: return@analyzeSnapshot skipResolveDocumentation("使用点偏移 ${session.replaceEnd} 处没有元素")
+            val useSite = leaf.nearestCangjieElement()
+                ?: return@analyzeSnapshot skipResolveDocumentation("使用点不在仓颉 PSI 里")
+            // 恢复与消费都在**同一个分析会话内**：符号不得跨会话带出（见契约 KDoc）。
+            val documentation = resolver.resolveDeclaration(this@analyzeSnapshot, snapshot) { symbol ->
+                documentationOf(symbol)
+            }
+            documentation ?: return@analyzeSnapshot skipResolveDocumentation(
+                "按身份恢复不出声明（name=${snapshot.identity.name}, qualified=${snapshot.identity.qualifiedName}）",
+            )
+        }
+        if (documentation.isNullOrBlank()) {
+            // 恢复成功却没有文档：本容器里 light PSI 上的 `docComment` 为空（见 implementation-log）。
+            LOG.fine("resolve 不填文档：声明恢复成功但没有可渲染的 CDoc（${snapshot.identity.qualifiedName}）")
+            return item
+        }
+        return item.apply {
+            this.documentation = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, documentation))
+        }
+    }
+
+    /**
+     * 跳过 resolve 并留下原因。
+     *
+     * resolve 的失败路径**必须留痕**：它按协议是「原样返回」，客户端看不出区别，
+     * 没有日志就只能看到「文档没填」，而这可能是过期、缺装配、身份对不上三种完全不同的原因。
+     */
+    private fun skipResolve(reason: String, item: CompletionItem): CompletionItem {
+        LOG.fine("resolve 跳过：$reason")
+        return item
+    }
+
+    /**
+     * 同上，供 `analyzeSnapshot` 的 lambda 里使用（返回值即「没有文档」）。
+     */
+    private fun skipResolveDocumentation(reason: String): String? {
+        LOG.fine("resolve 跳过：$reason")
+        return null
+    }
+
+    /**
+     * 取距离叶子最近的仓颉元素（叶子本身不是仓颉 PSI 时向上找）。
+     */
+    private fun PsiElement.nearestCangjieElement(): CjElement? {
+        var current: PsiElement? = this
+        while (current != null) {
+            if (current is CjElement) return current
+            current = current.parent
+        }
+        return null
+    }
+
+    /**
+     * 在 EDT 的写命令内执行一段 PSI 写。
+     *
+     * 两条约束都**实测**过（见 `implementation-log.md` 15.1 节）：PSI 写必须在命令内，
+     * 而 RPC 线程不是 EDT——直接在本线程调 `CommandProcessor.executeCommand` 会**静默不执行**
+     * （命令块不运行、也不抛异常），因此统一走 `EventQueue.invokeAndWait`。
+     */
+    private fun runInWriteCommand(project: com.intellij.openapi.project.Project, body: () -> Unit) {
+        java.awt.EventQueue.invokeAndWait {
+            WriteCommandAction.runWriteCommandAction(project, COMMAND_NAME, null, Runnable(body))
+        }
+    }
+
+    /**
+     * 从文档 URI 取文件名；导入/包判定按文件名与路径走，取不到时给稳定占位名。
+     */
+    private fun lspFileNameOf(uri: String): String =
+        uri.substringAfterLast('/').substringBefore('?').ifEmpty { "document.cj" }
+
+    /**
+     * 旧补全实现：引用 variants 优先，缺省回落到文件作用域 + 全工作区声明扫描。
+     *
+     * 保留是为了对照（设计 §7.11.5）：按击键遍历工作区、类别一律 `Text`、无导入计划，
+     * 因此只在 `useLegacyCompletion` 打开时使用，不作为默认路径的一部分。
+     */
+    private fun legacyCompletion(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CompletionParams,
@@ -242,25 +570,25 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: HoverParams,
     ): Hover? = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val target = semanticSupport.findPrimaryTarget(document, snapshot.psiFile, params.position)
-            ?: return@analyzeSnapshot null
-        val declarationSymbol = target.toPublicSymbol(this, snapshot.psiFile) as? CaDeclarationSymbol
-            ?: return@analyzeSnapshot null
-
-        val rendered = declarationSymbol.render()
-        val documentation = documentationOf(declarationSymbol)
-        val hoverText = buildString {
-            append("```cangjie\n")
-            append(rendered)
-            append("\n```")
-            if (!documentation.isNullOrBlank()) {
-                append("\n\n")
-                append(documentation)
-            }
+        val origin = semanticSupport.findSemanticLeaf(document, snapshot.psiFile, params.position) ?: return@analyzeSnapshot null
+        val target = findCangJieDocumentationTarget(snapshot.psiFile, origin) ?: return@analyzeSnapshot null
+        val request = DocumentationRequest(
+            element = target,
+            origin = origin,
+            useSiteFile = snapshot.psiFile,
+            mode = DocumentationMode.FULL,
+        )
+        val content = when (val resolution = DefaultDocumentationService.resolve(request)) {
+            is DocumentationResolution.Resolved -> resolution.content
+            DocumentationResolution.NotTarget -> return@analyzeSnapshot null
+            DocumentationResolution.MissingUseSiteContext -> return@analyzeSnapshot null
+            DocumentationResolution.SymbolRecoveryFailed -> return@analyzeSnapshot null
         }
 
         Hover().apply {
-            contents = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, hoverText))
+            contents = Either.forRight(
+                MarkupContent(MarkupKind.MARKDOWN, MarkdownDocumentationRenderer().render(content)),
+            )
             range = semanticSupport.hoverRange(document, snapshot.psiFile, params.position)
         }
     }
@@ -337,7 +665,6 @@ class AnalysisApiCangjieAnalysisFacade(
             val target = resolveImplementationTarget(document, snapshot.psiFile, params.position)
                 ?: return@analyzeSnapshot emptyList()
             val targetPointer = target.createPointer()
-            val targetClassId = target.classId ?: return@analyzeSnapshot emptyList()
 
             val locations = linkedSetOf<Location>()
             semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
@@ -347,8 +674,7 @@ class AnalysisApiCangjieAnalysisFacade(
                     workspaceFile.psiFile.collectDescendantsOfType<CjClassLikeDeclaration>().forEach { declaration ->
                         val declarationSymbol = declaration.toPublicSymbol(this, workspaceFile.psiFile) as? CaClassSymbol
                             ?: return@forEach
-                        val declarationClassId = declarationSymbol.classId ?: return@forEach
-                        if (declarationClassId == targetClassId) return@forEach
+                        if (declarationSymbol == sessionTarget) return@forEach
 
                         val directlyTargetsSuperType = (declaration as? CjTypeStatement)
                             ?.superTypeListEntries
@@ -356,10 +682,10 @@ class AnalysisApiCangjieAnalysisFacade(
                             ?.mapNotNull(CjSuperTypeListEntry::typeAsUserType)
                             ?.mapNotNull(CjUserType::referenceExpression)
                             ?.mapNotNull { superTypeReference ->
-                                semanticSupport.run { targetKeyFor(superTypeReference) as? AnalysisApiLspTargetKey.ClassLike }
+                                semanticSupport.run { targetKeyFor(superTypeReference) }
                             }
-                            ?.any { superTypeTarget: AnalysisApiLspTargetKey.ClassLike ->
-                                superTypeTarget.classId == targetClassId
+                            ?.any { superTypeTarget ->
+                                superTypeTarget.restore(this) == sessionTarget
                             }
                             ?: false
                         val isSubClass = declarationSymbol.isSubClassOf(sessionTarget)
@@ -381,42 +707,62 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: ReferenceParams,
-    ): List<Location> {
+    ): List<Location> = ReadAction.compute<List<Location>, RuntimeException> {
         val targetKeys = semanticSupport.analyzeSnapshot(document) { snapshot ->
-            semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
-                .mapNotNull(semanticSupport::targetKeyFor)
-                .toSet()
+            val directReference = semanticSupport.referenceTargetKey(
+                session = this,
+                document = document,
+                file = snapshot.psiFile,
+                position = params.position,
+            )
+            if (directReference != null) {
+                setOf(directReference)
+            } else {
+                semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
+                    .mapNotNull { target -> semanticSupport.run { targetKeyFor(target) } }
+                    .toSet()
+            }
         }
         if (targetKeys.isEmpty()) {
-            return emptyList()
+            return@compute emptyList()
         }
 
         val locations = linkedSetOf<Location>()
+        val declarationLocations = linkedSetOf<Location>()
         semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
             semanticSupport.analyzeFile(workspaceFile.psiFile) {
                 semanticSupport.referenceLikeElements(workspaceFile.psiFile).forEach { referenceLike ->
-                    if (semanticSupport.run { targetKeyForReferenceLike(referenceLike) } in targetKeys) {
+                    val candidateKey = semanticSupport.run { targetKeyForReferenceLike(referenceLike) }
+                    if (targetKeys.any { it.matches(this, candidateKey) }) {
                         val locationElement = when (referenceLike) {
                             is CjSimpleNameExpression -> referenceLike.referencedNameElement
                             else -> referenceLike
                         }
                         semanticSupport.toLocation(locationElement)?.let(locations::add)
+                        if (params.context.isIncludeDeclaration) {
+                            semanticSupport.run { referenceDeclarationTargets(referenceLike, targetKeys) }
+                                .mapNotNull(semanticSupport::toLocation)
+                                .forEach(declarationLocations::add)
+                        }
                     }
                 }
             }
         }
 
         if (!params.context.isIncludeDeclaration) {
-            return locations.toList()
+            return@compute locations.toList()
         }
 
+        // binary 声明与生成声明不在工作区源码枚举中，位置来自成功解析协议。
+        locations.addAll(declarationLocations)
         val existingKeys = locations.mapTo(linkedSetOf()) { location ->
             "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
         }
         semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
             semanticSupport.analyzeFile(workspaceFile.psiFile) {
-                workspaceFile.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { declaration ->
-                    if (semanticSupport.targetKeyFor(declaration) !in targetKeys) return@forEach
+                semanticSupport.namedDeclarationElements(workspaceFile.psiFile).forEach { declaration ->
+                    val declarationKey = semanticSupport.run { targetKeyFor(declaration) }
+                    if (targetKeys.none { it.matches(this, declarationKey) }) return@forEach
                     val location = semanticSupport.toLocation(declaration.nameIdentifier ?: declaration) ?: return@forEach
                     val locationKey =
                         "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
@@ -427,7 +773,7 @@ class AnalysisApiCangjieAnalysisFacade(
             }
         }
 
-        return locations.toList()
+        return@compute locations.toList()
     }
 
     /**
@@ -438,14 +784,26 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: DocumentHighlightParams,
     ): List<DocumentHighlight> = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val targetKeys = semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
-            .mapNotNull(semanticSupport::targetKeyFor)
-            .toSet()
+        val directReference = semanticSupport.referenceTargetKey(
+            session = this,
+            document = document,
+            file = snapshot.psiFile,
+            position = params.position,
+        )
+        val targetKeys = if (directReference != null) {
+            setOf(directReference)
+        } else {
+            semanticSupport.findTargetElements(document, snapshot.psiFile, params.position)
+                .mapNotNull { target -> semanticSupport.run { targetKeyFor(target) } }
+                .toSet()
+        }
         if (targetKeys.isEmpty()) return@analyzeSnapshot emptyList()
 
+        val analysisSession = this
         buildList {
             semanticSupport.referenceLikeElements(snapshot.psiFile).forEach { referenceLike ->
-                if (semanticSupport.run { targetKeyForReferenceLike(referenceLike) } in targetKeys) {
+                val candidateKey = semanticSupport.run { targetKeyForReferenceLike(referenceLike) }
+                if (targetKeys.any { it.matches(analysisSession, candidateKey) }) {
                     val rangeSource = when (referenceLike) {
                         is CjSimpleNameExpression -> referenceLike.referencedNameElement
                         else -> referenceLike
@@ -462,8 +820,9 @@ class AnalysisApiCangjieAnalysisFacade(
                 }
             }
 
-            snapshot.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { namedDeclaration ->
-                if (semanticSupport.targetKeyFor(namedDeclaration) in targetKeys) {
+            semanticSupport.namedDeclarationElements(snapshot.psiFile).forEach { namedDeclaration ->
+                val declarationKey = semanticSupport.run { targetKeyFor(namedDeclaration) }
+                if (targetKeys.any { it.matches(analysisSession, declarationKey) }) {
                     val nameIdentifier = namedDeclaration.nameIdentifier ?: return@forEach
                     add(
                         DocumentHighlight().apply {
@@ -485,9 +844,29 @@ class AnalysisApiCangjieAnalysisFacade(
         params: DocumentSymbolParams,
     ): List<Either<SymbolInformation, DocumentSymbol>> {
         val snapshot = psiDocumentFactory.createAnalyzableSnapshot(document)
-        return snapshot.psiFile.declarations
+        val symbols = snapshot.psiFile.declarations
             .mapNotNull { declaration -> buildDocumentSymbol(document, declaration) }
-            .map(Either<SymbolInformation, DocumentSymbol>::forRight)
+        if (context.workspaceState.initializeParams()?.capabilities?.textDocument
+                ?.documentSymbol?.hierarchicalDocumentSymbolSupport == true
+        ) {
+            return symbols.map(Either<SymbolInformation, DocumentSymbol>::forRight)
+        }
+        // 未协商层级协议时逐层发布扁平符号；仍保留真实 kind、完整范围和直接容器。
+        val flatSymbols = buildList<SymbolInformation> {
+            fun appendSymbol(symbol: DocumentSymbol, parentName: String?) {
+                add(SymbolInformation().apply {
+                    name = symbol.name
+                    kind = symbol.kind
+                    location = Location(document.uri, symbol.range)
+                    containerName = parentName
+                    tags = symbol.tags
+                    deprecated = symbol.deprecated
+                })
+                symbol.children.orEmpty().forEach { child -> appendSymbol(child, symbol.name) }
+            }
+            symbols.forEach { symbol -> appendSymbol(symbol, null) }
+        }
+        return flatSymbols.map(Either<SymbolInformation, DocumentSymbol>::forLeft)
     }
 
     /**
@@ -517,13 +896,25 @@ class AnalysisApiCangjieAnalysisFacade(
     /**
      * 计算 code action。
      *
-     * 当前 Analysis API facade 尚未提供 code action，返回空列表。
+     * 列表经 quick-fix 框架过滤（仅暴露 LSP 侧存在 headless 应用路径的诊断），
+     * 编辑延迟到 `codeAction/resolve` 阶段计算——列表阶段绝不修改 PSI。
      */
     override fun codeActions(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CodeActionParams,
-    ): List<Either<Command, CodeAction>> = emptyList()
+    ): List<Either<Command, CodeAction>> = codeActionSupport.list(context, document, params)
+
+    /**
+     * 补齐 code action 的编辑（LSP `codeAction/resolve`）。
+     *
+     * 诊断定位失败或应用后无差异时返回原样，动作不消失。
+     */
+    override fun resolveCodeAction(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CodeAction,
+    ): CodeAction = codeActionSupport.resolve(context, document, params)
 
     /**
      * 计算整篇文档格式化编辑。
@@ -609,7 +1000,7 @@ class AnalysisApiCangjieAnalysisFacade(
         document: LspTextDocument,
         params: SemanticTokensParams,
     ): SemanticTokens? = semanticSupport.analyzeSnapshot(document) { snapshot ->
-        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile)
+        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile, this)
         SemanticTokens(encodeSemanticTokens(document, tokens))
     }
 
@@ -623,20 +1014,43 @@ class AnalysisApiCangjieAnalysisFacade(
     ): SemanticTokens? = semanticSupport.analyzeSnapshot(document) { snapshot ->
         val startOffset = document.analysisOffsetAt(params.range.start)
         val endOffset = document.analysisOffsetAt(params.range.end)
-        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile, TextRange(startOffset, endOffset))
+        val tokens = CangJieSemanticTokenCollector.collect(
+            snapshot.psiFile,
+            this,
+            TextRange(startOffset, endOffset),
+        )
         SemanticTokens(encodeSemanticTokens(document, tokens))
     }
 
     /**
      * 计算 inlay hints。
      *
-     * 当前未接入 inlay hint 语义，返回空列表。
+     * 与 foldingRanges 同构：位置在 `document -> snapshot -> session` 主链上解析，
+     * 提示文本在会话内渲染完成，出块后只剩纯文本，转换到 LSP 对象不依赖会话。
      */
     override fun inlayHints(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: InlayHintParams,
-    ): List<InlayHint> = emptyList()
+    ): List<InlayHint> {
+        // 取消闸门（前）：容器里 ProgressManager 不生效，必须直接查请求取消状态。
+        context.cancellation.throwIfCancelled()
+        val startOffset = document.analysisOffsetAt(params.range.start)
+        val endOffset = document.analysisOffsetAt(params.range.end)
+        val range = TextRange(startOffset, maxOf(startOffset, endOffset))
+        val hints = try {
+            semanticSupport.analyzeSnapshot(document) { snapshot ->
+                CangJieInlayHintCollector.collect(snapshot.psiFile, range, this, inlayHintOptions)
+            }
+        } catch (cancelled: ProcessCanceledException) {
+            // 取消不是失败：转成 LSP 的 RequestCancelled，客户端据此丢弃结果而不弹错。
+            context.cancellation.throwIfCancelled()
+            throw cancelled
+        }
+        // 取消闸门（后）：算完但用户已经不要了，就不要把结果送回去。
+        context.cancellation.throwIfCancelled()
+        return hints.map { hint -> CangjieLspInlayHintConverter.toInlayHint(document, hint) }
+    }
 
     /**
      * 打开文档的 PSI 快照必须先稳定落库，再交给 project structure 选择 overlay 或 dangling 语义。
@@ -656,11 +1070,24 @@ class AnalysisApiCangjieAnalysisFacade(
         position: Position,
     ): Either<List<Location>, List<LocationLink>> = Either.forLeft(
         semanticSupport.analyzeSnapshot(document) { snapshot ->
-            semanticSupport.findTargetElements(document, snapshot.psiFile, position)
-                .mapNotNull(semanticSupport::toLocation)
-                .distinctBy { location ->
-                    "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
+            val targets = semanticSupport.findTargetElements(document, snapshot.psiFile, position)
+            val directReference = semanticSupport.referenceTargetKey(this, document, snapshot.psiFile, position)
+            val targetKeys = if (directReference != null) {
+                listOf(directReference)
+            } else {
+                targets.mapNotNull { target -> semanticSupport.run { targetKeyFor(target) } }
+            }
+            val reference = snapshot.psiFile.findReferenceAt(document.analysisOffsetAt(position))
+            val navigationTargets = if (reference != null) {
+                // 平台 Symbol 返回规范声明；跳转位置来自同一成功解析的正式 navigation target。
+                semanticSupport.run { referenceNavigationTargets(reference.element, targetKeys) }
+            } else {
+                targets.filter { target ->
+                    val targetKey = semanticSupport.run { targetKeyFor(target) }
+                    targetKeys.any { it.matches(this, targetKey) }
                 }
+            }
+            navigationTargets.mapNotNull(semanticSupport::toLocation).distinct()
         },
     )
 
@@ -1087,71 +1514,33 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
     private fun CaSession.documentationOf(symbol: CaDeclarationSymbol): String? {
-        val declaration = symbol.psiSafe<CjDeclaration>() ?: return null
-        return declaration.findCDoc()?.renderToDocumentationString()
-    }
-
-    /**
-     * 将 CDoc 描述渲染为 LSP hover 可使用的 Markdown 文本。
-     */
-    @OptIn(CjNonPublicApi::class)
-    private fun CDocCommentDescriptor.renderToDocumentationString(): String? {
-        val rendered = buildString {
-            val primaryContent = primaryTag.getContent().trim()
-            if (primaryContent.isNotEmpty()) {
-                append(primaryContent)
-            }
-
-            collectRenderableTags().forEach { tag ->
-                val renderedTag = tag.renderTagLine()
-                if (renderedTag.isNotEmpty()) {
-                    if (isNotEmpty()) appendLine()
-                    append(renderedTag)
-                }
-            }
-        }
-
-        return rendered.ifBlank { null }
-    }
-
-    /**
-     * 收集可以渲染到 hover 文档中的 CDoc 标签。
-     */
-    @OptIn(CjNonPublicApi::class)
-    private fun CDocCommentDescriptor.collectRenderableTags(): List<CDocTag> {
-        return buildList {
-            (primaryTag as? CDocSection)
-                ?.getChildrenOfType<CDocTag>()
-                ?.filterTo(this) { tag -> tag.name != null }
-
-            additionalSections
-                .filterNot { section -> section == primaryTag }
-                .forEach { section ->
-                    section.getChildrenOfType<CDocTag>()
-                        .filterTo(this) { tag -> tag.name != null }
-                }
-        }
-    }
-
-    /**
-     * 将单个 CDoc 标签渲染为一行文档文本。
-     */
-    private fun CDocTag.renderTagLine(): String {
-        val tagName = name ?: return ""
-        val content = getContent().trim()
-        val subjectName = getSubjectName()
-
-        return buildString {
-            append("@")
-            append(tagName)
-            if (!subjectName.isNullOrBlank()) {
-                append(" ")
-                append(subjectName)
-            }
-            if (content.isNotEmpty()) {
-                append(" ")
-                append(content)
-            }
-        }
+        val descriptor = symbol.findCDoc() ?: return null
+        val typeParameterNames = (symbol as? CaTypeParameterOwnerSymbol)
+            ?.typeParameters
+            ?.map { it.name.asString() }
+            ?.toSet()
+            .orEmpty()
+        val body = DocumentationBody(
+            sections = buildDocumentationModel(descriptor, typeParameterNames),
+            description = buildDocumentationDescription(descriptor),
+        )
+        return MarkdownDocumentationRenderer().renderBody(body).takeIf(String::isNotBlank)
     }
 }
+
+/**
+ * 补全路径的日志记录器。
+ *
+ * 用于记录「不产出候选」的原因（服务未注册、位置不允许补全）：
+ * 这些情况在协议上都是空列表，不写日志就只剩「用户没看到候选」这一条线索。
+ */
+private val LOG: java.util.logging.Logger =
+    java.util.logging.Logger.getLogger("org.cangnova.cangjie.lsp.completion")
+
+/**
+ * dummy 修正所在的写命令名。
+ *
+ * 固定的命令名让 `UndoManager` 里这条修正可与插入区分——虽然它发生在**副本**上、
+ * 不进用户文档的撤销栈，但排查时能一眼认出。
+ */
+private const val COMMAND_NAME: String = "cangjie.completion.dummy-correction"

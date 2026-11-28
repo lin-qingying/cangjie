@@ -1,0 +1,70 @@
+FILE: constExpressions.cj
+    internal? let A: R|Int64| = ...
+        initializer:
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    INT(1)
+                arguments:
+                    INT(2)
+            }
+    internal? let B: R|Int64| = ...
+        initializer:
+            FUNCTION_CALL(*operator_times) {
+                receiver:
+                    INT(3)
+                arguments:
+                    INT(4)
+            }
+    internal? let C: R|String| = ...
+        initializer:
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    STRING("s")
+                arguments:
+                    STRING("t")
+            }
+    internal? let D: R|Bool| = ...
+        initializer:
+            BINARY_OP(AND) {
+                BOOLEAN(true)
+                BOOLEAN(false)
+            }
+    internal? let E: R|Float64| = ...
+        initializer:
+            FUNCTION_CALL(*operator_times) {
+                receiver:
+                    FLOAT(1.0)
+                arguments:
+                    FLOAT(2.0)
+            }
+    internal? let F: R|Int64| = ...
+        initializer:
+            INT(7)
+    internal? let G: R|Int64| = ...
+        initializer:
+            FUNCTION_CALL(*operator_times) {
+                receiver:
+                    NAMED_ACCESS(A)
+                arguments:
+                    NAMED_ACCESS(F)
+            }
+    internal? func constExpressions(): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(A)
+                                arguments:
+                                    NAMED_ACCESS(B)
+                            }
+                        arguments:
+                            NAMED_ACCESS(F)
+                    }
+                arguments:
+                    NAMED_ACCESS(G)
+            }
+        }
+    }

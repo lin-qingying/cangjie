@@ -225,7 +225,7 @@ class CfirDataFlowReadOnlyCapabilityTest {
             name = Name.identifier(text)
             symbol = CfirPatternBindingSymbol(CallableId(name))
             returnTypeRef = buildResolvedTypeRef { coneType = ConePrimitiveType.INT64 }
-            initializer = integer(value)
+            ownedInitializer = integer(value)
         }
 
         fun access(variable: CfirPatternBindingVariable) = buildNamedAccessExpression {

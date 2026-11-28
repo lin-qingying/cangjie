@@ -1,0 +1,7 @@
+FILE: enumTrailingPipe.cj
+    internal? enum TrailingPipe {
+        A
+        B
+        <anonymous-enum-constructor>
+        init()
+    }

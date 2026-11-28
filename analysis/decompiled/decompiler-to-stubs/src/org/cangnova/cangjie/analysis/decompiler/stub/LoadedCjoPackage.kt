@@ -38,4 +38,8 @@ data class LoadedCjoPackage(
 
     /** body 真正来源；可能不同于触发反编译的 binaryFile。旧的内存调用方默认不启用 sidecar。 */
     val sourcePath: java.nio.file.Path? = null,
+    /** actual reader 已绑定的 context；raw projection 由调用方显式提供 binding。 */
+    val deserializationContext: org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext? = null,
+    /** 稳定的实际 snapshot 身份，与 raw 内存 Package 的显式身份分别处理。 */
+    val snapshotIdentity: Any = deserializationContext?.snapshotIdentity ?: pkg,
 )

@@ -35,6 +35,31 @@ interface CaDecompiledBinaryIndex {
     fun getBuiltinsPackages(searchScope: GlobalSearchScope): Map<FqName, VirtualFile>
 
     /**
+     * 返回指定库模块在搜索作用域内的 package 与 binary 文件映射。
+     *
+     * 与 [getBuiltinsPackages] 对称：包名取自索引构建期已解析的 `.cjo` header，
+     * 上层不应再逐文件调用 [readPackageFqName] 重读二进制。
+     * 该映射即为该库模块全部可声明包的边界，映射外的 `.cjo` 不承载可读包名，
+     * 因此上层据此判断库内文件的包身份，而不是回退到 `CjFile.packageFqName`。
+     */
+    fun getLibraryPackages(
+        module: CaLibraryModule,
+        searchScope: GlobalSearchScope,
+    ): Map<FqName, VirtualFile>
+
+    /** 判定指定 `.cjo` 文件是否由本索引索引的库模块承载。 */
+    fun isIndexedLibraryBinary(module: CaLibraryModule, binaryFile: VirtualFile): Boolean
+
+    /**
+     * 反查库内某个已索引 `.cjo` 文件承载的包名。
+     *
+     * 供 declaration provider 在遍历库文件时按文件取包身份：
+     * 一次索引查询即可，不重新读取 `.cjo` 字节。
+     * 该文件不属于本模块索引时返回 `null`（库内 stub-origin 源文件即属此类）。
+     */
+    fun findLibraryPackageFqName(module: CaLibraryModule, binaryFile: VirtualFile): FqName?
+
+    /**
      * 直接从 `.cjo` binary 头读取真实包名。
      *
      * package provider 这类只需要 package facts 的上层，必须走这条轻量路径，

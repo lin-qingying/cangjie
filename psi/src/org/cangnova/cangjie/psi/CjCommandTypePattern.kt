@@ -26,6 +26,9 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.search.LocalSearchScope
+import com.intellij.psi.search.SearchScope
 import org.cangnova.cangjie.lexer.CjTokens
 
 /**
@@ -33,7 +36,17 @@ import org.cangnova.cangjie.lexer.CjTokens
  *
  * 它只服务于 `handle (...)`，因此单独建模，避免混入 match/catch 的通用 pattern 语义。
  */
-class CjCommandTypePattern(node: ASTNode) : CjElementImpl(node) {
+class CjCommandTypePattern(node: ASTNode) : CjElementImpl(node), PsiNameIdentifierOwner {
+    override fun getName(): String? = bindingName
+    override fun getNameIdentifier(): PsiElement? = bindingNameElement
+    override fun setName(name: String): PsiElement {
+        checkNotNull(bindingNameElement).replace(CjPsiFactory(project).createNameIdentifier(name))
+        return this
+    }
+
+    /** command 只在所属 handle 正文可见。 */
+    override fun getUseScope(): SearchScope =
+        LocalSearchScope(listOfNotNull((parent as? CjHandleClause)?.handleBody).toTypedArray())
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */

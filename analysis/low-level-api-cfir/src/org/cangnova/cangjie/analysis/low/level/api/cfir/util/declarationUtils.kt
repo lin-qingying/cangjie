@@ -5,9 +5,12 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.projectStructure.copyOrigin
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.findExtendDeclarationIn
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.containingDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
@@ -20,6 +23,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
@@ -37,7 +41,7 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
     cfirFileBuilder: LLCfirFileBuilder,
     provider: CfirProvider,
 ): CfirDeclaration = findSourceNonLocalCfirDeclaration(
-    cfirFileBuilder.buildRawCfirFileWithCaching(containingCjFile),
+    cfirFileBuilder.getOrBuildFileForResolution(containingCjFile),
     provider,
 )
 
@@ -47,7 +51,12 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
  * “Non-local” 表示非局部 class、函数、属性等声明。
  */
 internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile, provider: CfirProvider): CfirDeclaration {
-    val target = checkNotNull(cfirFile.llCfirResolvableSession).moduleComponents.cache.compilationElement(this) as? CjDeclaration
+    val components = checkNotNull(cfirFile.llCfirResolvableSession).moduleComponents
+    val snapshot = components.macroSemanticSnapshotStore.snapshot
+    if (snapshot != null && snapshot.fileForSource(containingCjFile) === cfirFile) {
+        snapshot.declarationForSource(this)?.let { return it }
+    }
+    val target = components.cache.compilationElement(this) as? CjDeclaration
         ?: errorWithCfirSpecificEntries("The source declaration has no current target grammar correspondence", psi = this, cfir = cfirFile)
     if (target !== this) return target.findSourceNonLocalCfirDeclaration(cfirFile, provider)
     // TODO test what way faster
@@ -59,16 +68,19 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
                 if (declaration is CjExtend) {
                     CfirElementFinder.findDeclaration(cfirFile, declaration)
                 } else if (declaration is CjClassLikeDeclaration) {
-                    declaration.findCfir(provider)
+                    CfirElementFinder.findDeclaration(cfirFile, declaration) as? CfirClassLikeDeclaration
+                        ?: declaration.findCfir(provider)
                 } else {
                     val containingTypeStatement = declaration.containingTypeStatement
                     val declarations = when (containingTypeStatement) {
                         is CjExtend -> {
-                            val containerExtendCfir = CfirElementFinder.findDeclaration(cfirFile, containingTypeStatement) as? CfirExtend
-                            containerExtendCfir?.declarations
+                            // extend 容器没有 ClassId，只能按 PSI 身份在文件结构中定位
+                            declaration.findExtendDeclarationIn(cfirFile)?.declarations
                         }
                         is CjClassLikeDeclaration -> {
-                            val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
+                            val containerClassLikeCfir =
+                                (CfirElementFinder.findDeclaration(cfirFile, containingTypeStatement) as? CfirClassLikeDeclaration)
+                                    ?: containingTypeStatement.findCfir(provider)
                             containerClassLikeCfir?.declarations
                         }
                         null -> cfirFile.declarations
@@ -146,6 +158,7 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
         is CjConstructor<*>,
         is CjEnumConstructor,
         is CjTypeAlias,
+        is CjEnumConstructor,
             -> firDeclarationProvider(this)
 
         is CjPropertyAccessor -> {
@@ -266,7 +279,7 @@ internal inline fun CfirFile.forEachDeclaration(action: (CfirDeclaration) -> Uni
  * 判断声明是否能作为直接声明容器。
  */
 internal val CfirDeclaration.isDeclarationContainer: Boolean
-    get() = this is CfirClassLikeDeclaration || this is CfirExtend || this is CfirFile
+    get() = this is CfirClassLikeDeclaration || this is CfirExtend || this is CfirFile || this is CfirPatternVariable
 
 /**
  * 根据声明容器类型遍历其直接子声明。
@@ -276,6 +289,7 @@ internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration)
         is CfirClassLikeDeclaration -> forEachDeclaration(action)
         is CfirExtend -> forEachDeclaration(action)
         is CfirFile -> forEachDeclaration(action)
+        is CfirPatternVariable -> pattern.bindingVariables().forEach(action)
         else -> errorWithCfirSpecificEntries("Unsupported declarations container", cfir = this)
     }
 }
@@ -338,9 +352,10 @@ val PsiElement.parentsCodeFragmentAware: Sequence<PsiElement>
 /**
  * 将复制 PSI 元素映射回原始文件中的对应元素。
  */
+@OptIn(CaExperimentalApi::class)
 internal fun <T : PsiElement> T.unwrapCopy(containingFile: PsiFile = this.containingFile): T? {
     val originalFile = (containingFile as? CjFile)?.originalCjFile
-        ?: containingFile.originalFile.takeUnless { it == containingFile }
+        ?: containingFile.copyOrigin
         ?: (containingFile as? CjFile)?.elementContext?.containingFile
         ?: return null
 

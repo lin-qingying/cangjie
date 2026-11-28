@@ -1,0 +1,13 @@
+FILE: forWithLetPattern.cj
+    internal? func forWithLetPattern(o: R|Option<R|Int64|>|): R|Unit| {
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                ERROR_EXPR(Missing for-in iterable)
+            body:
+        }
+        LAMBDA() {
+            FUNCTION_CALL(println) {
+                NAMED_ACCESS(x)
+            }
+        }
+    }

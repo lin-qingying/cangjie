@@ -2,6 +2,9 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
+import org.cangnova.cangjie.test.bindCjoFixture
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.DeclKind
 import PackageFormat.GenericTyInfo
 import PackageFormat.Package
@@ -309,10 +312,7 @@ class CjoTypeGraphDeserializationTest {
             val root = tempDir.resolve(if (typeFirst) "type-first" else "owner-first")
             val fixture = providerFixture(root, listOf(dependency, consumer))
             val loaded = fixture.manager.loadPackageSnapshots("consumer").single()
-            val context = CfirDeserializationContext(
-                loaded.pkg, loaded.header, fixture.module, fixture.manager, loaded.sourcePath,
-                declarationResolver = fixture.provider::deserializeCjoDeclaration,
-            )
+            val context = fixture.provider.deserializationBinding.contextForSnapshot(loaded, CjoDeserializationMode.FULL)
             val pairId = classId("dependency", "Pair")
             if (!typeFirst) fixture.provider.getClassLikeSymbolByClassId(pairId)
             val imported = CfirTypeDeserializer(context).deserializeType(0)
@@ -352,19 +352,20 @@ class CjoTypeGraphDeserializationTest {
                 CjoFormatVersionPolicy.DeferredToConsumerSession,
                 explicitCommonPartPaths = listOf(q1Path, q2Path),
             )
-            val q1 = Module("Q1")
-            val q2 = Module("Q2")
-            val bridge = Module("bridge", refinementDependencies = listOf(q2))
             val library = Module("library")
+            val q1 = Module("Q1", producerSession = library.session)
+            val q2 = Module("Q2", producerSession = library.session)
+            val bridge = Module("bridge", refinementDependencies = listOf(q2), producerSession = library.session)
             val p = Module("P", dependencies = when (selection) {
                 ParentSelection.Q2 -> listOf(q2)
                 ParentSelection.TRANSITIVE_REFINEMENT -> listOf(bridge)
                 ParentSelection.BOTH -> listOf(q1, q2)
                 ParentSelection.NONE -> emptyList()
-            })
+            }, producerSession = library.session)
             val moduleDataProvider = MultipleModuleDataProvider(
                 linkedMapOf(
                     library to LibraryPathFilter.RejectAll,
+                    p to LibraryPathFilter.RejectAll,
                     q1 to LibraryPathFilter.LibraryList(setOf(q1Path)),
                     q2 to LibraryPathFilter.LibraryList(setOf(q2Path)),
                 ),
@@ -374,7 +375,6 @@ class CjoTypeGraphDeserializationTest {
                 library.session, manager, CfirCangJieScopeProvider(), library, moduleDataProvider,
             )
             library.session.register(CfirSymbolProvider::class, provider)
-            p.session.register(CfirSymbolProvider::class, provider)
             val bytes = CjoPackageWriter.toByteArray(metadata("consumer", emptyList(), listOf(
                 CjoTypeMetadata(TypeKind.Generic, semanticInfo = CjoGenericTypeInfoMetadata(
                     0u, packageId = 0, declarationKey = "parent::Pair.T",
@@ -384,8 +384,9 @@ class CjoTypeGraphDeserializationTest {
             val pkg = Package.getRootAsPackage(ByteBuffer.wrap(bytes))
             val context = CfirDeserializationContext(
                 pkg, CjoPackageHeader.fromPackage(pkg), p, manager,
-                declarationResolver = provider::deserializeCjoDeclaration,
-                dependencySnapshotResolver = { provider.selectImportedSnapshot(p, it) },
+                classSymbolLookup = manager.deserializedSymbolLookups.forBinding(
+                    provider.deserializationBinding, p, CjoDeserializationMode.FULL,
+                ),
             )
             val snapshots = manager.loadPackageSnapshots("parent")
             assertEquals(listOf("Q1", "Q2"), snapshots.map { it.pkg.moduleName })
@@ -782,9 +783,12 @@ class CjoTypeGraphDeserializationTest {
             assertEquals(-2, info.declPtr?.pkgId)
             assertEquals((index + 1).toUInt(), info.declPtr?.index)
         }
+        val module = Module()
+        val manager = CjoManager(CjoSearchPath { null }, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
+        val binding = bindCjoFixture(module, manager, emptySet())
         return CfirDeserializationContext(
-            pkg, CjoPackageHeader.fromPackage(pkg), Module(),
-            CjoManager(CjoSearchPath { null }, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT)),
+            pkg, CjoPackageHeader.fromPackage(pkg), module, manager,
+            classSymbolLookup = manager.deserializedSymbolLookups.forBinding(binding, module, CjoDeserializationMode.FULL),
         )
     }
 
@@ -801,7 +805,10 @@ class CjoTypeGraphDeserializationTest {
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
         )
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.session.register(CfirSymbolProvider::class, provider)
         return ProviderFixture(module, manager, provider)
     }
@@ -818,6 +825,7 @@ class CjoTypeGraphDeserializationTest {
         moduleName: String = "cjo-type-graph-test",
         override val dependencies: List<CfirModuleData> = emptyList(),
         override val refinementDependencies: List<CfirModuleData> = emptyList(),
+        producerSession: CfirSession? = null,
     ) : CfirModuleData() {
         override val name = Name.identifier(moduleName)
         override val allRefinementDependencies = refinementDependencies
@@ -825,7 +833,7 @@ class CjoTypeGraphDeserializationTest {
         override val platform = CfirPlatform.DEFAULT
         override val isCommon = false
         override val stableModuleName = moduleName
-        override val session = object : CfirSession(Kind.Library) {}.also {
+        override val session = producerSession ?: object : CfirSession(Kind.Library) {}.also {
             it.register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT))
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
         }

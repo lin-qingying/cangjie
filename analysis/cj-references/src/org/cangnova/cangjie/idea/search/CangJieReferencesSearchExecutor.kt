@@ -9,10 +9,15 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiReference
+import com.intellij.psi.PsiPolyVariantReferenceBase
+import com.intellij.psi.ResolveResult
+import org.cangnova.cangjie.psi.CangJieResolveResult
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
+import com.intellij.openapi.util.TextRange
+import com.intellij.util.IncorrectOperationException
 import com.intellij.util.Processor
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.idea.references.CangJieReferenceSearchSupport
@@ -82,6 +87,32 @@ class CangJieReferencesSearchExecutor :
             }
 
             else -> return
+        }
+
+        for (provider in CjGeneratedReferenceSearchProvider.getInstances(target.project)) {
+            val shouldContinue = provider.processGeneratedReferences(target.project, effectiveScope) { generated ->
+                val file = generated.navigationElement.containingFile as? CjFile
+                    ?: return@processGeneratedReferences true
+                val searchNames = CangJieReferenceSearchSupport.searchNamesForFile(file, target, baseSearchNames)
+                if (!CangJieReferenceSearchSupport.mayResolveByName(generated.reference, searchNames)) {
+                    return@processGeneratedReferences true
+                }
+                val matchesTarget = CangJieReferenceSearchSupport.matchesResolvedTargets(
+                    setOf(generated.resolveResult.canonicalTarget), target,
+                )
+                if (!matchesTarget) {
+                    return@processGeneratedReferences true
+                }
+
+                consumer.process(
+                    MacroGeneratedUsageReference(
+                        generated.reference,
+                        generated.navigationElement,
+                        generated.resolveResult,
+                    ),
+                )
+            }
+            if (!shouldContinue) return
         }
     }
 
@@ -196,4 +227,32 @@ class CangJieReferencesSearchExecutor :
     private fun CjFile.mayContainAnyName(names: Set<String>): Boolean {
         return names.any(text::contains)
     }
+}
+
+/** 将不可编辑的生成引用映射为宏调用源码上的 Find Usages 结果。 */
+private class MacroGeneratedUsageReference(
+    private val generatedReference: PsiReference,
+    navigationElement: PsiElement,
+    private val resolveResult: CangJieResolveResult,
+) : PsiPolyVariantReferenceBase<PsiElement>(
+    navigationElement,
+    TextRange(0, navigationElement.textLength),
+    true,
+) {
+    override fun multiResolve(incompleteCode: Boolean): Array<ResolveResult> = arrayOf(resolveResult)
+
+    override fun resolve(): PsiElement? = resolveResult.element
+
+    override fun getCanonicalText(): String = generatedReference.canonicalText
+
+    override fun isReferenceTo(element: PsiElement): Boolean =
+        CangJieReferenceSearchSupport.matchesResolvedTargets(setOf(resolveResult.canonicalTarget), element)
+
+    override fun getVariants(): Array<Any> = generatedReference.variants
+
+    override fun handleElementRename(newElementName: String): PsiElement =
+        throw IncorrectOperationException("Generated macro references are read-only.")
+
+    override fun bindToElement(element: PsiElement): PsiElement =
+        throw IncorrectOperationException("Generated macro references are read-only.")
 }

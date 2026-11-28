@@ -107,10 +107,15 @@ class MacroSdkSelectionTest {
 
     @Test
     fun emptyInputSnapshotDoesNotDiscoverAmbientOrUserDirectoryInstallations() {
-        assertSame(MacroSdkSelection.Absent, MacroSdkSelector.select(MacroSdkSelectionInputs(null, null, null, null)))
         assertSame(
             MacroSdkSelection.Absent,
-            MacroSdkSelector.select(MacroSdkSelectionInputs(null, null, null, tempDir.resolve("missing-bin").toString())),
+            MacroSdkSelector.select(MacroSdkSelectionInputs(null, null, null, null, userHome = null)),
+        )
+        assertSame(
+            MacroSdkSelection.Absent,
+            MacroSdkSelector.select(MacroSdkSelectionInputs(
+                null, null, null, tempDir.resolve("missing-bin").toString(), userHome = null,
+            )),
         )
     }
 

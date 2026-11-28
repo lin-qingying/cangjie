@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
+import org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies
 
 /** 原生 Decl 的 linkage；与语言 visibility、COMMON/SPECIFIC 位相互独立。 */
 enum class CfirDeclarationLinkage {
@@ -40,7 +41,11 @@ data class CfirDeclarationExportFacts(
 )
 
 /** 原始事实由声明 attributes 拥有，随同 attributes 复制且在阶段发布前更新。 */
-internal object CfirDeclarationExportFactsKey : CfirDeclarationDataKey()
+internal object CfirDeclarationExportFactsKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy = CfirRawDeclarationDataPolicies.value<CfirDeclarationExportFacts>("declaration export facts") {
+        value, _ -> value.copy()
+    }
+}
 
 private var CfirDeclaration.exportFactsAttribute: CfirDeclarationExportFacts? by
     CfirDeclarationDataRegistry.data(CfirDeclarationExportFactsKey)

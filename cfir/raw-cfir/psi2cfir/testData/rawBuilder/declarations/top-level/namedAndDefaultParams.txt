@@ -1,0 +1,25 @@
+FILE: namedAndDefaultParams.cj
+    internal? func f(a: R|Int64|, b: R|Int64| = INT(2)
+    ): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? func use(): <implicit> {
+        local? let _: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(f) {
+                    INT(1)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(f) {
+                    INT(1)
+                    <element: CfirNamedArgumentExpression>
+                }
+    }

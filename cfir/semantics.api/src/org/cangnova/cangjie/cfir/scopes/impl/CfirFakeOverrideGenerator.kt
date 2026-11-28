@@ -201,6 +201,7 @@ object CfirFakeOverrideGenerator {
         } else null
         resolvePhase = origin.resolvePhaseForCopy
     }.apply {
+        originalForSubstitutionOverrideAttr = original
         defaultAssignmentSyntaxFacts = null
         defaultValueMetadata = if (copyDefaultValues) original.defaultValueMetadata?.copy(function = null) else null
     }
@@ -382,6 +383,7 @@ object CfirFakeOverrideGenerator {
         newReturnType: ConeCangJieType?,
         newParameterTypes: List<ConeCangJieType?>,
         newTypeParameters: List<CfirTypeParameterRef>,
+        deferredReturnTypeCalculation: DeferredCallableCopyReturnType? = null,
     ): CfirEnumConstructor = buildEnumConstructor {
         checkStatusIsResolved(baseConstructor)
         source = baseConstructor.source
@@ -395,7 +397,12 @@ object CfirFakeOverrideGenerator {
         dispatchReceiverType = newDispatchReceiverType
         attributes = baseConstructor.attributes.copy()
         annotations += baseConstructor.annotations
-        returnTypeRef = baseConstructor.returnTypeRef.withReplacedReturnType(newReturnType)
+        returnTypeRef = if (deferredReturnTypeCalculation == null) {
+            baseConstructor.returnTypeRef.withReplacedReturnType(newReturnType)
+        } else {
+            buildImplicitTypeRef()
+        }
+        attributes.deferredCallableCopyReturnType = deferredReturnTypeCalculation
         typeParameters += newTypeParameters
         require(newParameterTypes.size == baseConstructor.valueParameters.size)
         valueParameters += baseConstructor.valueParameters.zip(newParameterTypes) { parameter, type ->

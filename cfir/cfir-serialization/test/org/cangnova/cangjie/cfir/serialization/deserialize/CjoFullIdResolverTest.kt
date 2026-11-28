@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.ClassInfo
 import PackageFormat.CjoVersion
 import PackageFormat.CompositeTyInfo
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
@@ -28,7 +30,6 @@ import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolPr
 import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import java.nio.ByteBuffer
+import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -295,7 +297,7 @@ class CjoFullIdResolverTest {
                     }
                 }
                 val cjoManager = CjoManager(searchPath, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
-                return FullIdTestFixture(createContext(cjoManager))
+                return FullIdTestFixture(createContext(cjoManager, tempDir.toPath()))
             }
 
             /**
@@ -349,11 +351,11 @@ class CjoFullIdResolverTest {
                 }
                 val cjoManager = CjoManager(searchPath, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
 
-                return FullIdTestFixture(createContext(cjoManager))
+                return FullIdTestFixture(createContext(cjoManager, tempDir.toPath()))
             }
 
             /** 每个夹具持有自己的库会话；跨包类型使用同一 manager 所选快照的 canonical 声明。 */
-            private fun createContext(cjoManager: CjoManager): CfirDeserializationContext {
+            private fun createContext(cjoManager: CjoManager, ownedRoot: Path): CfirDeserializationContext {
                 val moduleData = TestModuleData()
                 val session = moduleData.session
                 val provider = CfirDeserializedSymbolProvider(
@@ -361,21 +363,15 @@ class CjoFullIdResolverTest {
                     cjoManager,
                     session.cangjieScopeProvider,
                     moduleData,
+                    moduleDataProvider = cjoFixtureModuleDataProvider(moduleData, setOf(ownedRoot)),
                 )
-                // builtin 查询仍由合成 provider 提供；FullId 物化直接消费真实 CJO provider。
+                // FullId 与正式 provider 使用同一份绑定和 package context。
                 session.register(
                     CfirSymbolProvider::class,
-                    CfirCompositeSymbolProvider(session, listOf(CfirBuiltinSymbolProvider(session), provider)),
+                    CfirCompositeSymbolProvider(session, listOf(CfirBuiltinSymbolProvider(session, moduleData), provider)),
                 )
-                val loaded = requireNotNull(provider.selectImportedSnapshot(moduleData, "main.pkg"))
-                return CfirDeserializationContext(
-                    pkg = loaded.pkg,
-                    header = loaded.header,
-                    moduleData = moduleData,
-                    cjoManager = cjoManager,
-                    sourcePath = loaded.sourcePath,
-                    declarationResolver = provider::deserializeCjoDeclaration,
-                    dependencySnapshotResolver = { provider.selectImportedSnapshot(moduleData, it) },
+                return requireNotNull(
+                    provider.getOwnPackageContext("main.pkg", CjoDeserializationMode.FULL),
                 )
             }
         }

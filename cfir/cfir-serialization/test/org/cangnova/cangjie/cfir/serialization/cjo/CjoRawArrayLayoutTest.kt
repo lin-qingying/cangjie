@@ -2,6 +2,10 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
+import org.cangnova.cangjie.test.bindCjoFixture
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import PackageFormat.Package
 import PackageFormat.TypeKind
 import org.cangnova.cangjie.cfir.common.CfirPlatform
@@ -65,12 +69,17 @@ class CjoRawArrayLayoutTest {
             ),
         ))
         val pkg = Package.getRootAsPackage(ByteBuffer.wrap(bytes))
-        val session = object : CfirSession(Kind.Library) {}
+        val session = object : CfirSession(Kind.Library) {}.apply {
+            register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT))
+        }
         val module = CfirSourceModuleData(Name.identifier("raw-layout"), emptyList(), emptyList(),
             CangJiePlatforms.defaultCangJiePlatform, CfirPlatform.DEFAULT).also { it.bindSession(session) }
-        return CfirTypeDeserializer(CfirDeserializationContext(
-            pkg, CjoPackageHeader.fromPackage(pkg), module,
-            CjoManager(CjoSearchPath { null }, CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT)),
-        ))
+        val manager = CjoManager(CjoSearchPath { null }, CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
+        val binding = bindCjoFixture(module, manager, emptySet())
+        val context = CfirDeserializationContext(
+            pkg, CjoPackageHeader.fromPackage(pkg), module, manager,
+            classSymbolLookup = manager.deserializedSymbolLookups.forBinding(binding, module, CjoDeserializationMode.FULL),
+        )
+        return CfirTypeDeserializer(context)
     }
 }

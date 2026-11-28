@@ -1,0 +1,31 @@
+FILE: numericEdges.cj
+    internal? func numericEdges(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FLOAT(12.0)
+        local? let b: <implicit> = ...
+            initializer:
+                FLOAT(0.5)
+        local? let c: <implicit> = ...
+            initializer:
+                FLOAT(1.0)
+        local? let d: <implicit> = ...
+            initializer:
+                INT(9223372036854775807i64)
+        local? let e: <implicit> = ...
+            initializer:
+                INT(18446744073709551615u64)
+        local? let f: <implicit> = ...
+            initializer:
+                INT(0xFFFF_FFFFu32)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(f)
+                }
+    }

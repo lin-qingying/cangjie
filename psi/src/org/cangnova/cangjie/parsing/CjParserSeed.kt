@@ -40,6 +40,7 @@ data class CjParserSeed(
     val diagnosticScope: CjParsingDiagnosticScope? = null,
     /** 本次编译调用的版本、后端与警告策略；子根不得重新取默认配置。 */
     val settings: CjParserSettings = CjParserSettings(),
+    val annotationModuleProvenance: ((Int) -> String?)? = null,
 ) {
     init {
         require(quotedSyntaxDepth >= 0)

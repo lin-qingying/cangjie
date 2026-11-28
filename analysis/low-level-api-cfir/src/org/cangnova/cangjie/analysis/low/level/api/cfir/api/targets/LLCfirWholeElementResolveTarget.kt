@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 
 /**
  * [LLCfirResolveTarget] representing all declarations in [target] recursively.
@@ -50,6 +51,11 @@ internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : L
                 element.forEachDeclaration {
                     visitTargetElement(it, visitor)
                 }
+            }
+
+            // 模式容器拥有声明条目，但不会为全局叶子额外创建词法作用域。
+            element is CfirPatternVariable -> element.forEachDeclaration {
+                visitTargetElement(it, visitor)
             }
 
             else -> errorWithCfirSpecificEntries("Unexpected declaration: ${element::class.simpleName}", cfir = element)

@@ -30,6 +30,37 @@ package org.cangnova.cangjie.psi.stubs
 object CangJieStubVersions {
 
     /**
+     * 217:
+     * - USER_TYPE 别名 ClassId 改用 `StubUtils.serializeClassId/deserializeClassId`（`writeName(null)`
+     *   表达缺失），替换 216 的空串哨兵；同一元数据段新增 `isThisType` 字节（cjo `isThisTy`）。
+     *
+     * 216:
+     * - USER_TYPE 反编译元数据：`typeAliasClassId` + `classifierKind`（CLASS/INTERFACE/STRUCT/ENUM）
+     *   一起序列化（`UTF` + 单字节 ordinal）。215 只写 classId，同一版本号下格式不一致会被
+     *   错位读取，因此递增版本。
+     * - `.cjo` type stub 为 CPointer 保存结构化类型实参，并按包段/顶层声明段恢复限定名。
+     *
+     * 215:
+     * - USER_TYPE stub 新增反编译元数据位（初始只有 `typeAliasClassId`）。stub 格式变化，
+     *   必须重建索引；该版本已被 216 取代，仅保留变更记录。
+     */
+
+    /**
+     * 214:
+     * - 宏调用 `@Macro(...)` 的 Tokens 输入补齐 `<<`/`>>`、`b'0'` 等运算符与字面量 token，
+     *   宏输入边界变化会改变 PSI 树与 stub 数量；与 213 是两次独立解析变更，必须再次重建索引
+     *
+     * 213:
+     * - 二元表达式换行续接对齐官方 `ParserImpl::SeeingExprOperator`：行首运算符（如 `+`）继续上一行表达式，
+     *   条件里换行后的 `let` 不再被当作语句边界。PSI 树形状发生变化，必须重建 stub 索引，
+     *   否则旧索引（例如把续行 `let` 索引成 VARIABLE）与新 AST（ENUM_PATTERN）会触发 stub 绑定断言。
+     */
+
+
+    /**
+     * 212:
+     * - extend stub 不再持久化 `ClassId`（extend 不属于公开类型标识体系，身份统一由 extendId 表达）
+     *
      * 210:
      * - common/specific 修饰符 token 进入 MODIFIER_KEYWORDS_ARRAY（尾部追加，存根掩码新增 2 位）
      */
@@ -96,7 +127,13 @@ object CangJieStubVersions {
     // 260：PSI raw转换归同一Visitor，指定声明复活区分真实enclosing父帧与forced target声明帧。
     // package/accessor 的 binary stub 补齐源码同构前缀，统一失效旧源码与 compiled stub 缓存。
     // 262：枚举构造项复用命名声明的去反引号/NFC身份，旧名称 stub 必须重新构建。
-    const val SOURCE_STUB_VERSION = 262
+    /**
+     * 220：追加同 binary declaration index 与真实 setter 参数事实。
+     * 219：modifier-list 追加 CJO 完整语义状态及真实访问器状态，source/binary/builtins 索引共同重建。
+     * 218：追加 const 修饰符编码位，并恢复 CJO 声明头的合法状态投影。
+     */
+    // 263：合入二进制声明槽与 CJMP 源码事实，重新构建两种来源的旧 stub。
+    const val SOURCE_STUB_VERSION = 263
 
     /**
      * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
@@ -109,9 +146,12 @@ object CangJieStubVersions {
     const val CLASSFILE_STUB_VERSION = BINARY_STUB_VERSION + 0
 
     /**
-     * 保存 `BUILTIN_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
+     * 218:
+     * - `.cjo` 错误类型不再把 `<error>` 占位名物化为用户类型（改为 delegatedType 或 `std.core.Any`），
+     *   保证反编译文本可被重新解析，stub 树与 AST 的 stubbed spine 节点数一致
      */
-    const val BUILTIN_STUB_VERSION = BINARY_STUB_VERSION + 4
+    const val BUILTIN_STUB_VERSION = BINARY_STUB_VERSION + 6
 
 
 }
+

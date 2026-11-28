@@ -14,7 +14,7 @@
 
 ## 关键约束
 
-- `raw-cfir-common` **不依赖** `:psi`——`AbstractRawCfirBuilder<T>` 是泛型抽象
+- `raw-cfir-common` 对 `:psi` 为 `implementation` 依赖（不传递暴露）——`AbstractRawCfirBuilder<T>` 是泛型抽象，消费方无需显式引用 `:psi`
 - PSI 专属逻辑只放在 `:cfir:raw-cfir:psi2cfir`
 - LightTree 实现共享 `raw-cfir-common` 的干净底座，不被 PSI 反向污染
 

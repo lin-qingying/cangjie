@@ -13,12 +13,12 @@ package b
 import a.Foo
 
 private interface I1 {
-    public func f1(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f1(): Unit
 }
 
 internal interface I2 {
-    public func f1(a: Int64): Unit
-    public func f2(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f1(a: Int64): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f2(): Unit
 }
 
 extend Foo <: I1 & I2 {

@@ -3,6 +3,8 @@ package org.cangnova.cangjie.cfir.types
 import org.cangnova.cangjie.cfir.render.ConeTypeRendererForDebugging
 import org.cangnova.cangjie.utils.SmartSet
 import org.cangnova.cangjie.utils.popLast
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
  * 判断当前类型树中是否存在满足 [predicate] 的类型节点。
@@ -57,6 +59,31 @@ inline fun ConeCangJieType.forEachType(
         val next = stack.popLast().let(prepareType)
         action(next)
         next.directComponentTypes().forEach { stack.add(it) }
+    }
+}
+
+/**
+ * 遍历类型的完整引用闭包，包括语义运算不展开的 error/alias/abbreviation/近似上界。
+ *
+ * 所有权检查与深复制必须使用引用身份去重，不能把结构相等的独立类型壳合并。
+ */
+fun ConeCangJieType.forEachTypeIncludingMetadata(action: (ConeCangJieType) -> Unit) {
+    val visited = Collections.newSetFromMap(IdentityHashMap<ConeCangJieType, Boolean>())
+    val pending = ArrayDeque<ConeCangJieType>().apply { addLast(this@forEachTypeIncludingMetadata) }
+    while (pending.isNotEmpty()) {
+        val type = pending.removeLast()
+        if (!visited.add(type)) continue
+        action(type)
+        pending.addAll(type.directComponentTypes())
+        when (type) {
+            is ConeErrorType -> type.delegatedType?.let(pending::addLast)
+            is ConeTypeAliasType -> type.expandedType?.let(pending::addLast)
+            is ConeIntersectionType -> type.upperBoundForApproximation?.let(pending::addLast)
+            else -> Unit
+        }
+        type.attributes.forEach { attribute ->
+            if (attribute is AbbreviatedTypeAttribute) pending.addLast(attribute.coneType)
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildConstructedClassTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.utils.constructedClassTypeParameterRefs
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
@@ -44,6 +45,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.CallableId
@@ -242,6 +245,54 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     }
 
     /**
+     * 成员列表中是否存在非静态构造器。
+     *
+     * 枚举构造项（[CfirEnumConstructor]）不是普通构造器，不参与该判定——它由
+     * [orderClassLikeDeclarations] 通过 [RawClassShape] 的 entries 单独处理。
+     */
+    protected fun List<CfirDeclaration>.hasNonStaticConstructor(): Boolean =
+        any { it is CfirConstructor && !it.status.isStatic }
+
+    /**
+     * class-like 声明的形状：与前端无关，由各前端在进入成员转换前一次性算出。
+     *
+     * 形状只描述"事实"，不描述"遍历结果"。成员顺序决策统一由
+     * [orderClassLikeDeclarations] 承担，两套前端不得各自实现。
+     *
+     * @property classKind class-like 的种类。
+     * @property hasExplicitPrimaryConstructor 源码是否已显式声明主构造器。
+     */
+    protected data class RawClassShape(
+        val classKind: CfirClassKind,
+        val hasExplicitPrimaryConstructor: Boolean,
+    )
+
+    /**
+     * 枚举构造项在普通成员之前。仅 class / struct 能合成隐式主构造器。
+     *
+     * 官方 `EnumDecl` 区分枚举构造项与普通成员，`AddDefaultCtor` 将隐式构造器
+     * 追加到 class / struct 的声明列表。
+     *
+     * @param shape 当前 class-like 的形状。
+     * @param entries 枚举构造项；非枚举时为空。
+     * @param members 普通成员。
+     * @param buildImplicitInit 合成隐式主构造器的回调。
+     */
+    protected fun orderClassLikeDeclarations(
+        shape: RawClassShape,
+        entries: List<CfirDeclaration>,
+        members: List<CfirDeclaration>,
+        buildImplicitInit: () -> CfirDeclaration,
+    ): List<CfirDeclaration> {
+        val implicitInit = when {
+            shape.classKind != CfirClassKind.CLASS && shape.classKind != CfirClassKind.STRUCT -> emptyList()
+            shape.hasExplicitPrimaryConstructor -> emptyList()
+            else -> listOf(buildImplicitInit())
+        }
+        return entries + members + implicitInit
+    }
+
+    /**
      * 仓颉只有顶层 class-like 声明具备稳定的 `ClassId`。
      * 一旦位于局部作用域或另一个 class-like 容器内，就不应再构造 `ClassId`。
      */
@@ -320,6 +371,24 @@ abstract class AbstractRawCfirBuilder<T : Any>(
 
 
 
+    /**
+     * 从实际被构造类型的参数声明创建非 owning 引用。
+     *
+     * 对齐 Kotlin AbstractRawFirBuilder.constructorTypeParametersFromConstructedClass；
+     * refs 继续指向 owner 的原 symbol，不能在 constructor 下重复绑定该声明。
+     */
+    protected fun constructorTypeParametersFromConstructedClass(
+        ownerTypeParameters: List<CfirTypeParameterRef>,
+    ): List<CfirTypeParameterRef> {
+        return ownerTypeParameters.mapNotNull {
+            val declaredTypeParameter = (it as? CfirTypeParameter) ?: return@mapNotNull null
+            buildConstructedClassTypeParameterRef {
+                source = declaredTypeParameter.source?.fakeElement(CjFakeSourceElementKind.ConstructorTypeParameter)
+                symbol = declaredTypeParameter.symbol
+            }
+        }
+    }
+
     /** 将语法节点转换为 CFIR source element。 */
     abstract fun T.toSourceElement(): AbstractCjSourceElement
 
@@ -374,6 +443,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         isDefault: Boolean = false,
         isCommon: Boolean = false,
         isSpecific: Boolean = false,
+        bodyPresence: CfirBodyPresence = CfirBodyPresence.UNKNOWN,
+        isDeclarationFile: Boolean = false,
     ): CfirDeclarationStatus {
         val status = CfirDeclarationStatusImpl(
             visibility = visibility,
@@ -382,6 +453,18 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         status.isAbstract = isAbstract
         status.isOpen = isOpen
         status.isSealed = isSealed
+        status.visibilityExplicitness = if (isVisibilityExplicit) {
+            CfirModifierExplicitness.EXPLICIT
+        } else {
+            CfirModifierExplicitness.IMPLICIT
+        }
+        status.modalityExplicitness = if (status.modality == null) {
+            CfirModifierExplicitness.UNKNOWN
+        } else if (isModalityExplicit) {
+            CfirModifierExplicitness.EXPLICIT
+        } else {
+            CfirModifierExplicitness.IMPLICIT
+        }
         status.isVisibilityExplicit = isVisibilityExplicit
         status.isModalityExplicit = isModalityExplicit
         status.isAbstractExplicit = isAbstractExplicit
@@ -398,6 +481,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         // （冲突/作用域规则由 checker 侧 ModifierCheckerTargets 与 CjmpGate 负责）
         status.isCommon = isCommon
         status.isSpecific = isSpecific
+        status.bodyPresence = bodyPresence
+        status.isDeclarationFile = isDeclarationFile
         return status
     }
 
@@ -515,6 +600,21 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
             dispatchReceiverType = null
             body = null
+        }
+    }
+
+    /**
+     * 官方 ParseMacroBody 在省略返回类型时补入 Tokens 名称引用。
+     * 仍由文件 import/type scope 解析该引用，不在 raw builder 绑定 ClassId 或推断宏正文。
+     */
+    protected fun buildDefaultMacroReturnTypeRef(source: CjSourceElement): CfirTypeRef {
+        val implicitSource = source.fakeElement(CjFakeSourceElementKind.ImplicitFunctionReturnType)
+        return buildUserTypeRef {
+            this.source = implicitSource
+            qualifier += buildQualifierPart {
+                this.source = implicitSource
+                name = StandardNames.TOKENS
+            }
         }
     }
 

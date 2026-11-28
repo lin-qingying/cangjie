@@ -1,6 +1,6 @@
 # compiler/ — 编译器驱动与可选后端
 
-承载编译器**驱动层**（配置、阶段管理、参数、前端协调、插件）与**可选后端**（CHIR、CodeGen）。本目录是聚合命名空间。
+承载编译器**驱动层**（配置、阶段管理、参数、CLI、前端协调、插件）与**可选后端**（CHIR、CodeGen、JVM codegen）。本目录是聚合命名空间。
 
 ## 子模块
 
@@ -12,6 +12,8 @@
 | `phaser` | 阶段管理框架（`CompilerPhase` / `PhaseSet` / `PhaserState`） |
 | `arguments` | 命令行参数定义 |
 | `frontend-arguments-generator` | 参数代码生成器 |
+| `cli` | 编译器 CLI 执行层（`CangJieCLICompiler` / `CangJieFrontendCLICompiler`，详见 `cli/README.md`） |
+| `cli/cli-base` | CLI 参数解析基础层（`parseCommandLineArguments`，详见 `cli/cli-base/README.md`） |
 | `frontend` | 前端基础设施与编译管线协调（详见 `frontend/README.md`） |
 | `plugin` | 编译器插件加载占位（阶段 1 LOAD_PLUGINS） |
 
@@ -21,6 +23,7 @@
 |---|---|
 | `:chir:chir-tree` | CHIR（Cangjie High-level IR）数据模型与 pass 框架（见 [`../chir/README.md`](../chir/README.md)） |
 | `codegen` | CHIR → LLVM IR 代码生成后端（详见 `codegen/README.md`） |
+| `jvm-codegen` | CHIR → JVM 字节码后端（详见 `jvm-codegen/README.md`） |
 
 ## 与管线对应
 

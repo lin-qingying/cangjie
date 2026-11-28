@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCInteropComponent
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCompletionCandidateChecker
+import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCompletionExtensionCandidateChecker
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirDataFlowProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirDefaultImportsProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirDiagnosticProvider
@@ -16,12 +17,14 @@ import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirEvaluator
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirExpressionInformationProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirExpressionTypeProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirImportOptimizer
+import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirMacroExpansionMappingProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirInternalCacheStorage
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirOriginalPsiProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirReferenceShortener
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirRenderer
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirResolver
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirScopeProvider
+import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirTypeScopeProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSourceProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSubstitutorProvider
@@ -82,10 +85,13 @@ internal class CaCfirSession private constructor(
     symbolInformationProvider = CaCfirSymbolInformationProvider(analysisSessionProvider),
     diagnosticProvider = CaCfirDiagnosticProvider(analysisSessionProvider),
     scopeProvider = CaCfirScopeProvider(analysisSessionProvider),
+    typeScopeProvider = CaCfirTypeScopeProvider(analysisSessionProvider),
     analysisScopeProvider = CaCfirAnalysisScopeProvider(analysisSessionProvider,useSiteScope),
     defaultImportProvider = CaCfirDefaultImportsProvider( ),
     completionCandidateChecker = CaCfirCompletionCandidateChecker(analysisSessionProvider),
+    completionExtensionCandidateChecker = CaCfirCompletionExtensionCandidateChecker(analysisSessionProvider),
     expressionTypeProvider = CaCfirExpressionTypeProvider(analysisSessionProvider),
+    macroExpansionMappingProvider = CaCfirMacroExpansionMappingProvider(analysisSessionProvider),
     expressionInformationProvider = CaCfirExpressionInformationProvider(analysisSessionProvider),
     evaluator = CaCfirEvaluator(analysisSessionProvider),
     dataFlowProvider = CaCfirDataFlowProvider(analysisSessionProvider),

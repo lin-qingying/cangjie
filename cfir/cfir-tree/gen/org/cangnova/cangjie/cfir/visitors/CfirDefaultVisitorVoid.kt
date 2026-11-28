@@ -123,6 +123,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitVariable(fieldVariable)
     }
 
+    override fun visitResourceVariable(resourceVariable: CfirResourceVariable) {
+        visitVariable(resourceVariable)
+    }
+
     override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
         visitVariable(patternVariable)
     }
@@ -295,14 +299,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(letPatternExpression)
     }
 
-    override fun visitIfExpression(ifExpression: CfirIfExpression) {
-        visitExpression(ifExpression)
-    }
-
-    override fun visitMatchExpression(matchExpression: CfirMatchExpression) {
-        visitExpression(matchExpression)
-    }
-
     override fun visitOrPattern(orPattern: CfirOrPattern) {
         visitPattern(orPattern)
     }
@@ -337,10 +333,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
 
     override fun visitForInExpression(forInExpression: CfirForInExpression) {
         visitExpression(forInExpression)
-    }
-
-    override fun visitTryExpression(tryExpression: CfirTryExpression) {
-        visitExpression(tryExpression)
     }
 
     override fun visitThrowExpression(throwExpression: CfirThrowExpression) {

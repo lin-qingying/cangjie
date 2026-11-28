@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.DeclKind
 import PackageFormat.Package
 import PackageFormat.TypeKind
@@ -264,14 +266,8 @@ class CjoSourcePositionResolverTest {
             register(CfirCjmpSettingsComponent::class, CfirCjmpSettingsComponent())
         }
         module.bindSession(session)
-        return CfirDeserializationContext(
-            pkg = loaded.pkg,
-            header = loaded.header,
-            moduleData = module,
-            cjoManager = manager,
-            sourcePath = loaded.sourcePath,
-            implicitSystemAnnotations = emptySet(),
-        )
+        val binding = bindCjoFixture(module, manager, setOf(tempDir))
+        return binding.contextForSnapshot(loaded, CjoDeserializationMode.FULL)
     }
 
     private fun functionDeclaration(

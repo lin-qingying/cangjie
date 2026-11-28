@@ -1,0 +1,47 @@
+FILE: typeCheckForms.cj
+    internal? open class A {
+        init() {
+        }
+    }
+    internal? class B <: R|A| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+    }
+    internal? func typeCheckForms(x: R|Any|, a: R|A|): R|Unit| {
+        local? let b: <implicit> = ...
+            initializer:
+                TYPE_OP(IS, R|A|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                TYPE_OP(AS, R|A|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                TYPE_OP(IS, R|Option<R|A|>|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                TYPE_OP(IS, R|B|) {
+                    NAMED_ACCESS(a)
+                }
+        local? let g: <implicit> = ...
+            initializer:
+                TYPE_OP(AS, R|Option<R|A|>|) {
+                    NAMED_ACCESS(x)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(g)
+                }
+    }

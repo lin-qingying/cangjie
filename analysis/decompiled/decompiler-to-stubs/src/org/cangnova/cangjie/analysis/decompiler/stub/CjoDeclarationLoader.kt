@@ -25,11 +25,15 @@ object CjoDeclarationLoader {
         loadedPackage: LoadedCjoPackage,
         moduleData: CfirModuleData,
     ): List<CfirDeclaration> {
-        val context = CfirDeserializationContext(
-            pkg = loadedPackage.pkg,
-            header = loadedPackage.header,
-            moduleData = moduleData,
+        val context = loadedPackage.deserializationContext?.also {
+            check(it.moduleData === moduleData) { "CJO reader has a different module owner" }
+            check(it.snapshotIdentity === loadedPackage.snapshotIdentity && it.header === loadedPackage.header && it.sourcePath == loadedPackage.sourcePath) {
+                "CJO reader context and snapshot have different sources"
+            }
+        } ?: CfirDeserializationContext(
+            pkg = loadedPackage.pkg, header = loadedPackage.header, moduleData = moduleData,
             cjoManager = loadedPackage.cjoManager,
+            classSymbolLookup = loadedPackage.cjoManager.deserializedSymbolLookups.forModuleData(moduleData),
             sourcePath = loadedPackage.sourcePath,
         )
         val typeDeserializer = CfirTypeDeserializer(context)

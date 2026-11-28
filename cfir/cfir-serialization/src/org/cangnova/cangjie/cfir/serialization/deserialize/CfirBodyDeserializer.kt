@@ -84,11 +84,11 @@ internal class CfirBodyDeserializer(private val context: CfirDeserializationCont
         val index = context.declarations.entries.single { it.value === variable }.key
         val wire = checkNotNull(context.pkg.allDecls(index))
         val reference = when (wire.kind) {
-            PackageFormat.DeclKind.VarDecl -> (wire.info(PackageFormat.VarInfo()) as PackageFormat.VarInfo).initializer
+            PackageFormat.DeclKind.VarDecl -> (wire.info(PackageFormat.VarInfo()) as? PackageFormat.VarInfo)?.initializer ?: 0u
             PackageFormat.DeclKind.VarWithPatternDecl -> (wire.info(PackageFormat.VarWithPatternInfo()) as PackageFormat.VarWithPatternInfo).initializer
             else -> error("SOURCE initializer requires its actual variable declaration")
         }
-        if (reference == 0u) null else deserializeExpression(reference,
+        if (reference == 0u || reference == UInt.MAX_VALUE) null else deserializeExpression(reference,
             CjoSourceContentRoot.Initializer((index + 1).toUInt())).also { context.publishInitializer(variable, it) }
     }
 

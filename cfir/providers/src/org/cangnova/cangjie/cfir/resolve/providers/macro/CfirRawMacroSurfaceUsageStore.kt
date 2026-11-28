@@ -16,32 +16,93 @@ import java.util.IdentityHashMap
 
 /** Raw macro 使用事实与 annotation registry 共用所属 session 的锁，提交/恢复期间读者不能看到半个产品。 */
 class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSessionComponent {
-    private class Entry(val file: CfirFile, val slots: MutableMap<CfirRawMacroUsageSlot, List<MacroSurfaceExpr>>)
+    private class Entry(val file: CfirFile, val slots: MutableMap<CfirRawMacroUsageSlot, List<MacroSurface>>)
     private val entries: MutableMap<Any, Entry> = IdentityHashMap()
 
-    fun recordExpressionSurfaces(file: CfirFile, surfaces: List<MacroSurfaceExpr>): Unit = synchronized(session) {
-        require(file.moduleData.session === session)
-        check(entries[file] == null) { "A raw file generation can register its usage entry only once." }
-        entries[file] = createEntry(file, surfaces)
-    }
+    fun recordSurfaces(file: CfirFile, surfaces: List<MacroSurface>): Unit =
+        recordSurfaces(file, emptyList<Any>(), surfaces)
 
     /** 文件与调用方实际来源身份共享同一份槽位记录。 */
-    fun recordExpressionSurfaces(file: CfirFile, sourceFileIdentity: Any, surfaces: List<MacroSurfaceExpr>): Unit =
+    fun recordSurfaces(file: CfirFile, sourceFileIdentity: Any, surfaces: List<MacroSurface>): Unit =
+        recordSurfaces(file, listOf(sourceFileIdentity), surfaces)
+
+    /** 一次安装当前解析目标和其原编辑入口，读者不会观察到半个 raw 代次。 */
+    fun recordSurfaces(file: CfirFile, sourceFileIdentities: List<Any>, surfaces: List<MacroSurface>): Unit =
         synchronized(session) {
-            require(file.moduleData.session === session)
-            check(entries[file] == null) { "A raw file generation can register its usage entry only once." }
-            val entry = createEntry(file, surfaces)
-            entries[file] = entry
-            entries[sourceFileIdentity] = entry
+            val publication = prepareFilePublication(file, sourceFileIdentities, surfaces)
+            try {
+                publication.commit()
+            } catch (failure: Throwable) {
+                publication.restore()
+                throw failure
+            }
         }
 
-    fun expressionSurfaces(file: CfirFile): List<MacroSurfaceExpr> = synchronized(session) {
+    /** 准备实际文件和其 PSI 入口的用途索引，与宏语义快照及 annotation 同事务提交。 */
+    fun prepareFilePublication(
+        file: CfirFile,
+        sourceFileIdentities: List<Any>,
+        surfaces: List<MacroSurface>,
+    ): CfirRawMacroUsagePublication = synchronized(session) {
+        require(file.moduleData.session === session)
+        check(entries[file] == null) { "A raw file generation can register its usage entry only once." }
+        val entry = createEntry(file, surfaces)
+        val previous = IdentityHashMap<Any, Entry?>()
+        for (identity in listOf(file) + sourceFileIdentities) {
+            previous[identity] = entries[identity]
+        }
+        object : CfirRawMacroUsagePublication {
+            private var state = PublicationState.PREPARED
+
+            override fun validate(): Unit = synchronized(session) {
+                check(state == PublicationState.PREPARED)
+                check(previous.all { (identity, owner) -> entries[identity] === owner }) {
+                    "Raw usage source ownership changed before the file was published."
+                }
+            }
+
+            override fun commit(): Unit = synchronized(session) {
+                validate()
+                state = PublicationState.COMMITTING
+                previous.keys.forEach { entries[it] = entry }
+                state = PublicationState.COMMITTED
+            }
+
+            override fun restore(): Unit = synchronized(session) {
+                if (state == PublicationState.RESTORED) return@synchronized
+                if (state != PublicationState.PREPARED) {
+                    for ((identity, owner) in previous) {
+                        val current = entries[identity]
+                        check(current === entry || current === owner) {
+                            "Raw usage source ownership changed outside the file publication."
+                        }
+                        if (owner == null) entries.remove(identity) else entries[identity] = owner
+                    }
+                }
+                state = PublicationState.RESTORED
+            }
+        }
+    }
+
+    fun recordExpressionSurfaces(file: CfirFile, surfaces: List<MacroSurfaceExpr>): Unit =
+        recordSurfaces(file, surfaces)
+
+    fun recordExpressionSurfaces(file: CfirFile, sourceFileIdentity: Any, surfaces: List<MacroSurfaceExpr>): Unit =
+        recordSurfaces(file, sourceFileIdentity, surfaces)
+
+    fun surfaces(file: CfirFile): List<MacroSurface> = synchronized(session) {
         allSurfaces(entries[file])
     }
 
-    fun expressionSurfacesForSourceFile(sourceFileIdentity: Any): List<MacroSurfaceExpr> = synchronized(session) {
+    fun surfacesForSourceFile(sourceFileIdentity: Any): List<MacroSurface> = synchronized(session) {
         allSurfaces(entries[sourceFileIdentity])
     }
+
+    fun expressionSurfaces(file: CfirFile): List<MacroSurfaceExpr> =
+        surfaces(file).filterIsInstance<MacroSurfaceExpr>()
+
+    fun expressionSurfacesForSourceFile(sourceFileIdentity: Any): List<MacroSurfaceExpr> =
+        surfacesForSourceFile(sourceFileIdentity).filterIsInstance<MacroSurfaceExpr>()
 
     /** 原编辑入口和当前target同时属于同一CFIR产品；显式登记身份，不按路径回查或补造记录。 */
     fun bindSourceFileIdentity(file: CfirFile, sourceFileIdentity: Any): Unit = synchronized(session) {
@@ -63,7 +124,7 @@ class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSess
         previous: Any,
         replacement: Any,
         discardedSlots: Set<CfirRawMacroUsageSlot>,
-        mapSurface: (MacroSurfaceExpr) -> MacroSurfaceExpr,
+        mapSurface: (MacroSurface) -> MacroSurface,
     ): CfirSourceGenerationUpdate = synchronized(session) {
         validateSourceFileReplacement(file, previous, replacement)
         val entry = entries.getValue(file)
@@ -103,7 +164,7 @@ class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSess
     fun prepareExpressionSurfacePublication(
         file: CfirFile,
         slots: List<CfirRawMacroUsageSlot>,
-        surfaces: List<MacroSurfaceExpr>,
+        surfaces: List<MacroSurface>,
     ): CfirRawMacroUsagePublication = synchronized(session) {
         val entry = checkedEntry(file, slots)
         val previous = slots.associateWith { entry.slots.getValue(it) }
@@ -138,8 +199,8 @@ class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSess
     private inner class Publication(
         private val file: CfirFile,
         private val entry: Entry,
-        private val previous: Map<CfirRawMacroUsageSlot, List<MacroSurfaceExpr>>,
-        private val next: Map<CfirRawMacroUsageSlot, List<MacroSurfaceExpr>>,
+        private val previous: Map<CfirRawMacroUsageSlot, List<MacroSurface>>,
+        private val next: Map<CfirRawMacroUsageSlot, List<MacroSurface>>,
         private val roots: Map<CfirRawMacroUsageSlot, CfirElement?>,
     ) : CfirRawMacroUsagePublication {
         private var state = PublicationState.PREPARED
@@ -173,7 +234,7 @@ class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSess
             state = PublicationState.RESTORED
         }
     }
-    private fun createEntry(file: CfirFile, surfaces: List<MacroSurfaceExpr>): Entry {
+    private fun createEntry(file: CfirFile, surfaces: List<MacroSurface>): Entry {
         val slots = mutableListOf<CfirRawMacroUsageSlot>()
         // 需要按语义父类分派：扁平 VisitorVoid 的 visitNamedFunction 不调用 visitFunction。
         val visitor = object : CfirDefaultVisitorVoid() {
@@ -200,7 +261,7 @@ class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSess
         }
         file.accept(visitor)
         val assigned = assignSurfaces(slots, surfaces)
-        val assignedIdentities = Collections.newSetFromMap(IdentityHashMap<MacroSurfaceExpr, Boolean>())
+        val assignedIdentities = Collections.newSetFromMap(IdentityHashMap<MacroSurface, Boolean>())
         assigned.values.forEach(assignedIdentities::addAll)
         // 文件header不是body替换槽位，采用正文时不撤销其中的原始使用事实。
         assigned[CfirRawMacroUsageSlot(file, CfirRawMacroUsageSlot.Kind.HEADER)] =
@@ -210,13 +271,13 @@ class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSess
 
     private fun assignSurfaces(
         slots: List<CfirRawMacroUsageSlot>,
-        surfaces: List<MacroSurfaceExpr>,
-    ): MutableMap<CfirRawMacroUsageSlot, List<MacroSurfaceExpr>> {
+        surfaces: List<MacroSurface>,
+    ): MutableMap<CfirRawMacroUsageSlot, List<MacroSurface>> {
         val roots = slots.associateWith { reachable(it.currentRootOrNull()) }
-        val result = slots.associateWithTo(LinkedHashMap()) { mutableListOf<MacroSurfaceExpr>() }
+        val result = slots.associateWithTo(LinkedHashMap()) { mutableListOf<MacroSurface>() }
         val carriers = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())
         for (surface in surfaces) {
-            val carrier = surface.replaceHandle.carrier
+            val carrier = surface.replaceHandle.annotationCarrier?.originalAnnotation ?: surface.replaceHandle.carrier
             val owners = roots.filterValues { carrier != null && carrier in it }.keys
             require(owners.size <= 1) { "A macro carrier must belong to one actual replacement slot." }
             if (owners.isEmpty()) continue // 私有重建中未被采用的head/参数carrier不进入提交槽位。
@@ -239,7 +300,7 @@ class CfirRawMacroSurfaceUsageStore(private val session: CfirSession) : CfirSess
         return visited
     }
 
-    private fun allSurfaces(entry: Entry?): List<MacroSurfaceExpr> =
+    private fun allSurfaces(entry: Entry?): List<MacroSurface> =
         immutable(entry?.slots?.values?.flatten().orEmpty())
 
     private fun <T> immutable(values: Collection<T>): List<T> = Collections.unmodifiableList(ArrayList(values))

@@ -1,17 +1,32 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.psi.PsiDocumentManager
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
+import org.cangnova.cangjie.analysis.api.permissions.allowAnalysisOnEdt
+import org.cangnova.cangjie.analysis.api.permissions.forbidAnalysis
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.idea.references.mainReference
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
+import org.cangnova.cangjie.psi.CjClass
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjInterface
 import org.cangnova.cangjie.psi.CjNamedDeclaration
+import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CjValueArgumentName
+import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -72,6 +87,64 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         assertEquals("greet", resolvedDeclaration?.name)
     }
 
+    /** 两种解析顺序在显式许可的 EDT 上共享缓存；缓存命中不得重新进入语义分析。 */
+    @Test
+    fun resolveAndMultiResolveShareCacheOnPermittedEdt(mainFile: CjFile, testServices: TestServices) {
+        val target = mainFile.declarations.filterIsInstance<CjNamedFunction>().single { it.name == "greet" }
+        val markers = testServices.expressionMarkerProvider
+        val multiFirst = markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(mainFile, "multiFirst").mainReference
+        val singleFirst = markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(mainFile, "singleFirst").mainReference
+        val application = ApplicationManager.getApplication()
+
+        application.invokeAndWait {
+            assertTrue(application.isDispatchThread, "该用例必须实际进入 EDT")
+            ReadAction.run<RuntimeException> {
+                allowAnalysisOnEdt {
+                    assertSame(target, multiFirst.multiResolve(false).single().element)
+                    forbidAnalysis("multiResolve 已缓存该引用；resolve 必须直接复用缓存") {
+                        assertSame(target, multiFirst.resolve())
+                        assertSame(target, multiFirst.multiResolve(false).single().element)
+                    }
+
+                    assertSame(target, singleFirst.resolve())
+                    forbidAnalysis("resolve 已缓存该引用；multiResolve 必须直接复用缓存") {
+                        assertSame(target, singleFirst.multiResolve(false).single().element)
+                        assertSame(target, singleFirst.resolve())
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 命名实参标签必须解析到所属调用映射出的形参声明，包含普通函数与构造函数调用。
+     */
+    @Test
+    fun namedArgumentReference(mainFile: CjFile) {
+        val argumentNames = PsiTreeUtil.findChildrenOfType(mainFile, CjValueArgumentName::class.java)
+
+        val repeatLabel = argumentNames.single { it.asName.asString() == "repeat" }
+        val repeatParameter = repeatLabel.referenceExpression.mainReference.resolve() as? CjParameter
+        assertNotNull(repeatParameter, "命名实参 `repeat:` 必须导航到函数形参")
+        assertEquals("repeat", repeatParameter?.name)
+
+        val valueLabel = argumentNames.single { it.asName.asString() == "value" }
+        val valueParameter = valueLabel.referenceExpression.mainReference.resolve() as? CjParameter
+        assertNotNull(valueParameter, "构造函数命名实参 `value:` 必须导航到构造函数形参")
+        assertEquals("value", valueParameter?.name)
+    }
+
+    /** 自定义注解标签复用 CFIR 已发布的 annotation argument → constructor parameter 映射。 */
+    @Test
+    fun namedAnnotationArgumentReference(mainFile: CjFile) {
+        val repeatLabel = PsiTreeUtil.findChildrenOfType(mainFile, CjValueArgumentName::class.java)
+            .single { it.asName.asString() == "repeat" }
+
+        val resolvedParameter = repeatLabel.referenceExpression.mainReference.resolve() as? CjParameter
+        assertNotNull(resolvedParameter, "自定义注解标签 `repeat:` 必须导航到 const init 形参")
+        assertEquals("repeat", resolvedParameter?.name)
+    }
+
     /**
      * 验证类型位置 simple-name 节点也能通过引用服务解析到类型声明。
      */
@@ -90,6 +163,105 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         assertNotNull(resolvedDeclaration, "type-position 引用未解析成功")
         assertEquals("Box", resolvedDeclaration?.name)
     }
+
+    /**
+     * 验证 `extend` 声明的接收者类型名是引用位置，可导航到被扩展类型声明。
+     *
+     * `CjExtend` 会把接收者类型的标识符当成 `nameIdentifier` 暴露（用于展示/重命名），
+     * reference service 不能把它按声明名过滤掉，否则「从扩展声明导航到被扩展类型」恒为空。
+     */
+    @Test
+    fun extendReceiverReference(mainFile: CjFile) {
+        val extend = PsiTreeUtil.findChildrenOfType(mainFile, CjExtend::class.java).single()
+        val receiverName = PsiTreeUtil.findChildrenOfType(
+            extend.receiverTypeReceiver,
+            CjSimpleNameExpression::class.java,
+        ).single { it.referencedName == "Document" }
+
+        val references = CangJieReferenceProvidersService.getReferencesFromProviders(receiverName)
+        assertFalse(references.isEmpty(), "extend 的接收者类型名没有拿到引用实现")
+
+        val resolved = receiverName.mainReference.resolve() as? CjClass
+        assertNotNull(resolved, "extend 的接收者类型名必须能导航到类型声明")
+        assertEquals("Document", resolved?.name)
+
+        // 同一 extend 的父类型名（`extend Document <: Printable` 的 `Printable`）同样必须可导航。
+        val superTypeName = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .single { it.referencedName == "Printable" }
+        val superTypeResolved = superTypeName.mainReference.resolve() as? CjInterface
+        assertNotNull(superTypeResolved, "extend 的父类型名必须能导航到接口声明")
+        assertEquals("Printable", superTypeResolved?.name)
+    }
+
+    /**
+     * 真实 `mariadb-driver` 夹具：`extend X <: SqlParameter` 的每一处父类型名都必须能导航。
+     *
+     * 该文件同时包含 `?Any`、primitive、`Array<Byte>` 与库类型接收者，用来锁住真实工程形态。
+     */
+    @Test
+    fun sqlParameterReferences(mainFile: CjFile) {
+        // 先取 extend 符号的被扩展类型（冷文件路径，模拟 Ctrl+Hover），再解析引用。
+        analyzeForTest(mainFile) {
+            val int8Extend = mainFile.declarations
+                .filterIsInstance<CjExtend>()
+                .first { extend -> extend.receiverTypeReceiver?.text == "Int8" }
+            val extendedType = int8Extend.symbol.extendedType
+            assertTrue(
+                extendedType.toString().contains("Int8"),
+                "extend Int8 的 extendedType 必须是 Int8，实际 $extendedType",
+            )
+        }
+
+        val names = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .filter { it.referencedName == "SqlParameter" }
+        assertTrue(names.size >= 2, "夹具必须包含 SqlParameter 引用，实际 ${names.size}")
+
+        val resolved = names.mapNotNull { name -> name.mainReference.resolve() }
+        assertTrue(resolved.size >= 2, "SqlParameter 引用必须拿到解析目标，实际 ${resolved.size}")
+        for (target in resolved) {
+            assertTrue(
+                target is CjInterface,
+                "SqlParameter 必须解析到接口声明，实际 ${target.javaClass.simpleName}",
+            )
+        }
+
+        // 复现 IDE 反馈的“改一处后其它引用失效”：改名往返后重新解析全部引用。
+        val project = mainFile.project
+        val document = PsiDocumentManager.getInstance(project).getDocument(mainFile)
+            ?: error("No document for ${mainFile.name}")
+
+        fun renameOccurrence(from: String, to: String) {
+            val text = document.text
+            val declarationIndex = text.indexOf("interface $from")
+            val index = text.indexOf("<: $from", startIndex = declarationIndex + 1)
+            check(index >= 0) { "Cannot locate `<: $from` in ${mainFile.name}" }
+            val nameStart = index + "<: ".length
+            ApplicationManager.getApplication().invokeAndWait {
+                WriteCommandAction.runWriteCommandAction(project) {
+                    document.replaceString(nameStart, nameStart + from.length, to)
+                }
+                PsiDocumentManager.getInstance(project).commitAllDocuments()
+            }
+        }
+
+        renameOccurrence("SqlParameter", "SqlParameter1")
+        renameOccurrence("SqlParameter1", "SqlParameter")
+
+        val afterEdit = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .filter { it.referencedName == "SqlParameter" }
+        val resolvedAfterEdit = afterEdit.mapNotNull { name -> name.mainReference.resolve() }
+        assertEquals(
+            afterEdit.size, resolvedAfterEdit.size,
+            "改名往返后每个 SqlParameter 引用都必须仍然可解析，names=${afterEdit.size}, resolved=${resolvedAfterEdit.size}",
+        )
+        for (target in resolvedAfterEdit) {
+            assertTrue(
+                target is CjInterface,
+                "改名往返后 SqlParameter 必须解析到接口声明，实际 ${target.javaClass.simpleName}",
+            )
+        }
+    }
+
 
     /**
      * 验证未解析的简单名不会触发符号构造异常，也不会解析到任何目标。

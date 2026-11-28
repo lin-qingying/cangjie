@@ -73,6 +73,9 @@ internal object LLCfirPhaseUpdater {
             is CfirFunction -> {
                 updateFunctionSignatureBody(target)
             }
+            is CfirEnumConstructor -> {
+                target.valueParameters.forEach { it.defaultValue?.accept(LocalElementPhaseUpdatingTransformer) }
+            }
 
             is CfirProperty -> {
                 target.getter?.let(::updateFunctionSignatureBody)
@@ -102,6 +105,8 @@ internal object LLCfirPhaseUpdater {
      * 这里只处理类型参数、值参数、访问器等不会单独发布阶段事件的关联声明。
      */
     private fun updatePhaseForNonLocals(element: CfirElementWithResolveState, newPhase: CfirResolvePhase, isTargetDeclaration: Boolean) {
+        // 注意：这里不能直接对齐 Kotlin 的 `>=`。我们的目标声明阶段可能已由发布事件提前置为
+        // newPhase，若相等就返回会跳过访问器/参数等子结构的阶段更新（property accessor 会停在 TYPES）。
         if (element.resolvePhase > newPhase) return
         if (!isTargetDeclaration) {
             // phase update for target declaration happens as a declaration publication event after resolve is finished
@@ -140,6 +145,10 @@ private object LocalElementPhaseUpdatingTransformer : CfirVisitorVoid() {
      * 更新当前 [element] 的解析状态后继续访问其子节点。
      */
     override fun visitElement(element: CfirElement) {
+        if (element is CfirPatternBindingVariable) {
+            // local phase 发布在完整 completion 后执行，Deferred 不能被误标为 BODY_RESOLVE。
+            org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefIsResolved(element)
+        }
         if (element is CfirElementWithResolveState) {
             @OptIn(ResolveStateAccess::class)
             element.resolveState = CfirResolvePhase.BODY_RESOLVE.asResolveState()

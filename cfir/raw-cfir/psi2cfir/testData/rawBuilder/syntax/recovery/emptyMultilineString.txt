@@ -1,0 +1,17 @@
+FILE: emptyMultilineString.cj
+    internal? func emptyMultilineStrings(): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                STRING("")
+        local? let b: <implicit> = ...
+            initializer:
+                STRING("")
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }

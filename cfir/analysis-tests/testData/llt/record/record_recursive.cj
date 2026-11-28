@@ -1,14 +1,14 @@
 
 
 
-<!VALUE_TYPE_RECURSIVE!>s<!>truct A {
+<!VALUE_TYPE_RECURSIVE!>struct A {
     public let <!CLASS_UNINITIALIZED_FIELD!>x<!>: A
-}
+}<!>
 
-<!VALUE_TYPE_RECURSIVE!>s<!>truct B {
+<!VALUE_TYPE_RECURSIVE!>struct B {
     public let <!CLASS_UNINITIALIZED_FIELD!>x<!>: C
     public let <!CLASS_UNINITIALIZED_FIELD!>y<!>: Int32
-}
+}<!>
 
 struct C {
     public let <!CLASS_UNINITIALIZED_FIELD!>x<!>: D

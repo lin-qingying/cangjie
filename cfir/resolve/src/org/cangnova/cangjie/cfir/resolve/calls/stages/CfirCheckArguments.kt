@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.interopInfo
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.NonGenericFunctionWithTypeArguments
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
@@ -48,6 +49,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.inoutArgumentTargetOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.prepareArgumentType
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
+import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
@@ -188,6 +190,15 @@ private fun Candidate.prepareExpectedType(
         return substituteExplicitTypeArgumentConstraints(system.buildCurrentSubstitutor().safeSubstitute(system, declared).asCone())
     }
     if (parameter == null) return null
+    /*
+     * 形参类型引用可能尚未解析——lazy resolve 期间它仍是非解析的 `CfirBasicTypeRefImpl`，
+     * 而 `getExpectedType` 消费的是严格视图 `CfirTypeRef.coneType`，读到未解析引用会抛内部
+     * 错误而不是给出正常结论。
+     *
+     * 这里就地判定该位置是否还有期望类型可消费，不推进任何阶段：在调用解析入口强制推进相位
+     * 会让惰性解析的分步观测失效（低层 API 按阶段探测解析进度的用例依赖这一点）。
+     */
+    if (parameter.returnTypeRef.coneTypeOrNull == null) return null
     val declaredExpectedType = argument.getExpectedType(
         session,
         parameter,
@@ -248,6 +259,14 @@ private fun Candidate.selectVariadicExpectedType(
     )
     if (matchesNormalArrayParameter) return null
 
+    // 正常类型检查失败的诊断与解糖尝试分别保存。变参候选失败时，官方回放正常调用诊断。
+    // 固定前缀已经失败时，不再把最后一个实参激活成变参并覆盖前缀的根错误。
+    if (diagnostics.any { !it.isSuccess }) return null
+    if (cangjieVariadicRegularCallDiagnostics.isEmpty()) {
+        initializeCangjieVariadicRegularCallDiagnostics(
+            listOf(ArgumentTypeMismatch(normalExpectedType, preparedArgumentType, argument, false))
+        )
+    }
     // 官方 cjc 会在普通调用匹配失败后把这部分位置实参收束成 ArrayLit。
     return markVariadicArgument(atom)
 }

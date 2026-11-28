@@ -1,0 +1,11 @@
+FILE: stringInterpolation.cj
+    internal? class Holder {
+        init()
+        internal? var field: R|Int64|
+    }
+    internal? func compute(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func interpolation(name: R|String|, h: R|Holder|, xs: R|Array<R|Int64|>|, x: R|Int64|): R|String| {
+        <element: CfirLazyBlock>
+    }

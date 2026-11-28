@@ -1,0 +1,14 @@
+FILE: varrayRefTypeArg.cj
+    internal? interface Box<T> {
+        public? abstract? func value(): R|T|
+    }
+    internal? func varrayRefTypeArg(): R|Unit| {
+        local? let a: R|VArray<R|Box<R|Int64|>|, 2>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    FUNCTION_CALL(Box<R|Int64|>) {
+                    }
+                    FUNCTION_CALL(Box<R|Int64|>) {
+                    }
+                }
+    }

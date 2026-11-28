@@ -52,10 +52,16 @@ open class SourceFileProvider(
      */
     val preprocessors: List<SourceFilePreprocessor> = emptyList(),
 ) : TestService {
+    private data class SyntheticFileKey(
+        val originalPath: String,
+        val relativePath: String,
+        val startLineNumberInOriginalFile: Int,
+    )
+
     /**
      * 保存 `syntheticFiles`，供测试服务在测试执行期间读取或传递。
      */
-    private val syntheticFiles = ConcurrentHashMap<String, File>()
+    private val syntheticFiles = ConcurrentHashMap<SyntheticFileKey, File>()
 
     /**
      * 提供 `getContentOfSourceFile` 对应的测试服务流程，维持测试框架的阶段契约。
@@ -71,7 +77,12 @@ open class SourceFileProvider(
      */
     open fun getOrCreateRealFileForSourceFile(file: TestFile): File {
         if (preprocessors.isEmpty()) return file.originalFile
-        val key = file.originalFile.canonicalPath
+        // 多文件 fixture 会把同一个物理测试文件拆成多个 TestFile；缓存身份还需包含片段路径和起始行。
+        val key = SyntheticFileKey(
+            originalPath = file.originalFile.canonicalPath,
+            relativePath = file.relativePath,
+            startLineNumberInOriginalFile = file.startLineNumberInOriginalFile,
+        )
         return syntheticFiles.computeIfAbsent(key) {
             val originalExtension = file.originalFile.extension
             val suffix = if (originalExtension.isBlank()) ".cj" else ".${originalExtension.lowercase()}"

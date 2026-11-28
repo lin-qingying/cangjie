@@ -1,5 +1,5 @@
 CjDeclaration: CjStruct Record
 annotations: [
   @sample.annotations.First
-  @sample.annotations.Second[value = 3i64]
+  @sample.annotations.Second[level = 3i64]
 ]

@@ -1,0 +1,69 @@
+FILE: powerOperatorForms.cj
+    internal? func powerOperatorForms(a: R|Int64|, b: R|UInt64|): R|Int64| {
+        local? let p: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let q: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_exponentiation) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                NAMED_ACCESS(b)
+                        }
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let r: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(1)
+                        }
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(p)
+                        arguments:
+                            NAMED_ACCESS(q)
+                    }
+                arguments:
+                    NAMED_ACCESS(r)
+            }
+        }
+    }
+    internal? class P {
+        init() {
+        }
+        public operator func *operator_exponentiation(o: R|P|): R|P| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+    }
+    internal? func powerOverload(x: R|P|, y: R|P|): R|P| {
+        RETURN {
+            FUNCTION_CALL(*operator_exponentiation) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }

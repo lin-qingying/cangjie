@@ -22,9 +22,29 @@ class RawCfirBuilderSourceElementMappingTestGenerated : AbstractRawCfirBuilderSo
         assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping")
     }
 
+    @TestMetadata("binaryExpr.cj")
+    fun testBinaryExpr() {
+        runTest("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping/binaryExpr.cj")
+    }
+
     @TestMetadata("callArgExpr.cj")
     fun testCallArgExpr() {
         runTest("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping/callArgExpr.cj")
+    }
+
+    @TestMetadata("ifExpr.cj")
+    fun testIfExpr() {
+        runTest("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping/ifExpr.cj")
+    }
+
+    @TestMetadata("indexExpr.cj")
+    fun testIndexExpr() {
+        runTest("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping/indexExpr.cj")
+    }
+
+    @TestMetadata("lambdaExpr.cj")
+    fun testLambdaExpr() {
+        runTest("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping/lambdaExpr.cj")
     }
 
     @TestMetadata("memberLikeAccessExpr.cj")
@@ -35,6 +55,11 @@ class RawCfirBuilderSourceElementMappingTestGenerated : AbstractRawCfirBuilderSo
     @TestMetadata("simpleExpr.cj")
     fun testSimpleExpr() {
         runTest("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping/simpleExpr.cj")
+    }
+
+    @TestMetadata("stringTemplate.cj")
+    fun testStringTemplate() {
+        runTest("cfir/raw-cfir/psi2cfir/testData/sourceElementMapping/stringTemplate.cj")
     }
 
 }

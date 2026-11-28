@@ -1,0 +1,63 @@
+name: publish-preview
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - "intellij-ide/**"
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: publish-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  commit-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate commit subjects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/check_commits.py --pr --base "$BASE_SHA" --head "$HEAD_SHA"
+  test:
+    needs: commit-check
+    runs-on: ubuntu-24.04
+    outputs:
+      base_version: ${{ steps.version.outputs.base_version }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve base version
+        id: version
+        shell: bash
+        run: |
+          version=$(sed -n 's/^cangjieVersion=//p' gradle.properties | head -n1)
+          echo "base_version=${version}" >> "$GITHUB_OUTPUT"
+          echo "lsp_version=${version}-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x ./gradlew && ./gradlew test --continue --no-daemon --stacktrace
+      - name: Build LSP distribution
+        run: ./gradlew :lsp:distZip --no-daemon --stacktrace -PcangjieVersion="${{ steps.version.outputs.lsp_version }}"
+      - name: Upload LSP distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: cangjie-lsp-${{ steps.version.outputs.lsp_version }}
+          path: lsp/build/distributions/*.zip
+          if-no-files-found: error
+          retention-days: 90
+  publish:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: test
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      version: ${{ needs.test.outputs.base_version }}-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}
+    permissions:
+      contents: read
+      packages: write

@@ -1,0 +1,26 @@
+FILE: extendAliasAndStdlibType.cj
+    internal? typealias MyInt = R|Int64|
+    extend R|MyInt| {
+        internal? func twice(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                    arguments:
+                        INT(2)
+                }
+            }
+        }
+    }
+    extend R|String| {
+        internal? func shouted(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                    arguments:
+                        STRING("!")
+                }
+            }
+        }
+    }

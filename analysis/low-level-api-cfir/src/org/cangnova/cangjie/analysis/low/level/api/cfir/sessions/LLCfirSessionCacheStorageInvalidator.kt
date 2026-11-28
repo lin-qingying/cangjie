@@ -10,6 +10,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.psi.impl.source.resolve.ResolveCache
 import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinCodeFragmentContextModificationEvent
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinGlobalModuleStateModificationEvent
@@ -21,7 +22,6 @@ import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleState
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieAnchorModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.*
-import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
 
 /**
@@ -45,7 +45,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirB
  * - An invalidation operation might be composed of several, independent cache removal operations. The invalidator uses
  *   [withIndependentRemoval] to ensure that all removal operations run even if one of them throws an exception.
  */
-@LLCfirInternals
 class LLCfirSessionCacheStorageInvalidator(
     /**
      * 当前 invalidator 所属工程。
@@ -75,7 +74,11 @@ class LLCfirSessionCacheStorageInvalidator(
                         invalidateAll(includeLibraryModules = true, "builtins module state modification")
                     }
                     is CaLibraryModule -> {
+                        // CJO 的 binary session 可以持有其他库的真实 record；先记录闭包，再失效目标与实际消费者。
+                        val cjoDependents = org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
+                            .getInstance(project).cjoDependentModules(module)
                         invalidate(module)
+                        cjoDependents.forEach { invalidate(it) }
 
                         // A modification to a library module is also a (likely) modification of any fallback dependency module.
                         invalidateFallbackDependencies()
@@ -128,6 +131,19 @@ class LLCfirSessionCacheStorageInvalidator(
             } else {
                 removeAllDanglingFileSessions()
             }
+        }
+    }
+
+    /**
+     * 宏替换视图发布后只退役语义依赖方，保留 producing session 的已发布快照。
+     * 复用平台实际依赖图与既有 dependent 移除规则，不改变源码/root revision。
+     */
+    internal fun invalidateDependentsAfterMacroPublication(module: CaModule) = performInvalidation {
+        ApplicationManager.getApplication().assertWriteAccessAllowed()
+        sessionInvalidationEventPublisher.collectSessionsAndPublishInvalidationEvent {
+            CangJieModuleDependentsProvider.getInstance(project)
+                .getTransitiveDependents(module)
+                .forEach(::invalidateDependent)
         }
     }
 
@@ -256,7 +272,13 @@ class LLCfirSessionCacheStorageInvalidator(
             // Note that this does not prevent all cancellation exceptions, for example, when awaiting on an external cancellable resource.
             // However, it covers all known cases of such exceptions occurring during session invalidation.
             ProgressManager.getInstance().executeNonCancelableSection {
-                block()
+                try {
+                    block()
+                } finally {
+                    // LL 模块/全局/游离会话失效未必修改 PSI；旧 EMPTY 没有 symbol 可在读取时检查有效性。
+                    // 平台只暴露整组 maps 清理接口，必须连 physical 与 non-physical 引用一起撤销。
+                    ResolveCache.getInstance(project).clearCache(true)
+                }
             }
         }
     }

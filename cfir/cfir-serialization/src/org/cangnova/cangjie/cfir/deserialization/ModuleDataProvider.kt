@@ -62,6 +62,9 @@ abstract class LibraryPathFilter {
     /** 判定是否接受给定路径。 */
     abstract fun accepts(path: Path?): Boolean
 
+    /** 供反查和最具体来源判定共用的绝对登记路径。 */
+    internal open val registeredPaths: Set<Path>? get() = null
+
     /** 接受所有库路径的过滤器，用于单模块或无需路径隔离的反序列化场景。 */
     object TakeAll : LibraryPathFilter() {
         /** 始终返回 true，表示当前模块数据对任意库路径可见。 */
@@ -74,17 +77,17 @@ abstract class LibraryPathFilter {
         override fun accepts(path: Path?): Boolean = false
     }
 
-    /** 仅接受给定路径集合中的库文件，路径比较前会转换为绝对规范路径。 */
+    /** 接受显式文件或登记目录内的来源，路径比较前会转换为绝对规范路径。 */
     class LibraryList(
         /** 当前模块数据允许绑定的库路径集合。 */
         paths: Set<Path>,
     ) : LibraryPathFilter() {
-        private val normalizedPaths = paths.mapTo(linkedSetOf()) { it.toAbsolutePath().normalize() }
+        override val registeredPaths = paths.mapTo(linkedSetOf()) { it.toAbsolutePath().normalize() }
 
-        /** 将输入路径转换为绝对规范路径，再检查其是否属于模块。 */
+        /** 对显式文件和登记目录使用同一 Path 边界。 */
         override fun accepts(path: Path?): Boolean {
             val normalizedPath = path?.toAbsolutePath()?.normalize() ?: return false
-            return normalizedPath in normalizedPaths
+            return registeredPaths.any(normalizedPath::startsWith)
         }
     }
 
@@ -93,10 +96,10 @@ abstract class LibraryPathFilter {
         /** 当前模块拥有的文件或目录根。 */
         roots: Collection<Path>,
     ) : LibraryPathFilter() {
-        private val normalizedRoots = roots.mapTo(linkedSetOf()) { it.toAbsolutePath().normalize() }
+        override val registeredPaths = roots.mapTo(linkedSetOf()) { it.toAbsolutePath().normalize() }
 
         init {
-            require(normalizedRoots.isNotEmpty()) {
+            require(registeredPaths.isNotEmpty()) {
                 "LibraryRoots must contain at least one root"
             }
         }
@@ -104,7 +107,7 @@ abstract class LibraryPathFilter {
         /** 路径必须位于其中一个模块二进制根内。 */
         override fun accepts(path: Path?): Boolean {
             val normalizedPath = path?.toAbsolutePath()?.normalize() ?: return false
-            return normalizedRoots.any { normalizedPath == it || normalizedPath.startsWith(it) }
+            return registeredPaths.any(normalizedPath::startsWith)
         }
     }
 
@@ -117,6 +120,8 @@ abstract class LibraryPathFilter {
     ) : LibraryPathFilter() {
         private val normalizedPaths = paths.mapTo(linkedSetOf()) { it.toAbsolutePath().normalize() }
         private val normalizedRoots = roots.mapTo(linkedSetOf()) { it.toAbsolutePath().normalize() }
+
+        override val registeredPaths: Set<Path> = normalizedPaths + normalizedRoots
 
         /** 路径属于精确文件集合或任一模块根。 */
         override fun accepts(path: Path?): Boolean {
@@ -155,14 +160,26 @@ class MultipleModuleDataProvider(
     override val allModuleData: Collection<CfirModuleData>
         get() = moduleDataWithFilters.keys
 
-    /** 按构建方确定的模块优先级匹配路径，不在读取阶段重排模块归属。 */
     override fun getModuleData(path: Path?): CfirModuleData? {
-        val normalizedPath = path?.normalize()
-        for ((moduleData, filter) in moduleDataWithFilters) {
-            if (filter.accepts(normalizedPath)) {
-                return moduleData
-            }
+        val normalizedPath = path?.toAbsolutePath()?.normalize()
+        // CJMP 的父模块带显式依赖顺序。TakeAll 仅用于调用方主动提供的有序映射。
+        if (dependsOnDependenciesModuleData.isNotEmpty() || LibraryPathFilter.TakeAll in moduleDataWithFilters.values) {
+            return moduleDataWithFilters.entries.firstOrNull { it.value.accepts(normalizedPath) }?.key
         }
-        return null
+
+        normalizedPath ?: return null
+        val matches = moduleDataWithFilters.entries.filter { it.value.accepts(normalizedPath) }
+        if (matches.size <= 1) return matches.singleOrNull()?.key
+        // 普通库可以嵌套登记目录。最具体的来源决定归属，同一深度的不同 owner 必须拒绝。
+        val ownersByDepth = matches.groupBy { (_, filter) ->
+            checkNotNull(filter.registeredPaths) { "Overlapping library filters have no explicit root ownership" }
+                .filter(normalizedPath::startsWith).maxOf { it.nameCount }
+        }
+        val owners = ownersByDepth.getValue(ownersByDepth.keys.max())
+        check(owners.size == 1) { "Multiple module owners for CJO $normalizedPath: ${owners.map { it.key }}" }
+        return owners.single().key
     }
+
+    override fun getModuleDataPaths(moduleData: CfirModuleData): Set<Path>? =
+        moduleDataWithFilters[moduleData]?.registeredPaths
 }

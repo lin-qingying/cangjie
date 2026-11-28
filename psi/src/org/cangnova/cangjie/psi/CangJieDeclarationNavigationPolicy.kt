@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.psi
 
+import com.intellij.openapi.application.ApplicationManager
+import org.cangnova.cangjie.macro.file.CjMacroCallFile
 
 /**
  * 定义 `CangJieDeclarationNavigationPolicy` 接口，约束仓颉 PSI节点或服务需要暴露的结构能力。
@@ -37,4 +39,13 @@ interface CangJieDeclarationNavigationPolicy {
      * 提供 `getNavigationElement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun getNavigationElement(declaration: CjDeclaration): CjElement
+
+    /** 将已发布的生成声明投影到产生它的物理宏调用。 */
+    fun getMacroNavigationElement(element: CjElement): CjElement?
+}
+
+internal fun CjElement.findMacroNavigationElement(): CjElement? {
+    if (!isValid || containingFile !is CjMacroCallFile) return null
+    return ApplicationManager.getApplication().getService(CangJieDeclarationNavigationPolicy::class.java)
+        ?.getMacroNavigationElement(this)
 }

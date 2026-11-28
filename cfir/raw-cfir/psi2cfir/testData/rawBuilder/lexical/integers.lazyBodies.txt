@@ -1,0 +1,4 @@
+FILE: integers.cj
+    internal? func integerLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

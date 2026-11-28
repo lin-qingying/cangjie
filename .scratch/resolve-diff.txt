@@ -1,0 +1,871 @@
+diff --git a/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt b/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt
+index 937f252e9..fd0c743dc 100644
+--- a/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt
++++ b/cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt
+@@ -2108,7 +2108,6 @@ class CfirDeclDeserializer private constructor(
+             dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
+             status = status,
+             deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
+-            initializer = null,
+             isVar = outerIsVar,
+             isTypeImplicit = false,
+             symbol = symbol,
+diff --git a/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt b/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt
+index 7aa7a4912..d0c6cb395 100644
+--- a/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt
++++ b/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternBindingUtils.kt
+@@ -1,8 +1,12 @@
+ package org.cangnova.cangjie.cfir.patterns
+ 
+ import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
++import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
++import org.cangnova.cangjie.cfir.CfirElement
+ import org.cangnova.cangjie.name.Name
+ import org.cangnova.cangjie.source.CjSourceElement
++import java.util.Collections
++import java.util.IdentityHashMap
+ 
+ /**
+  * 模式绑定出现位置。
+@@ -61,6 +65,10 @@ fun CfirPattern.bindingOccurrences(): List<CfirPatternBindingOccurrence> = when
+ fun CfirPattern.bindingVariables(): List<CfirPatternBindingVariable> =
+     bindingOccurrences().mapNotNull(CfirPatternBindingOccurrence::variable)
+ 
++/** 供生成源码调用的模式绑定集合入口。 */
++internal fun patternBindingVariables(pattern: CfirPattern): List<CfirPatternBindingVariable> =
++    pattern.bindingVariables()
++
+ /**
+  * 返回可进入局部作用域/局部重定义检查的模式绑定。
+  *
+@@ -73,6 +81,211 @@ fun CfirPattern.visibleBindingVariables(): List<CfirPatternBindingVariable> = wh
+     else -> bindingVariables()
+ }
+ 
++/**
++ * 返回 binding 唯一 owner 的完整 initializer。拆分、嵌套模式和脱离 owner 的 binding 均无此值。
++ */
++fun wholeValueInitializer(
++    owner: CfirPatternTreeOwner?,
++    binding: CfirPatternBindingVariable,
++) = (owner as? CfirPatternVariable)
++    ?.takeIf { it.pattern.wholeValueBindingOrNull() === binding }
++    ?.initializer
++
++/** 一棵模式子树在 owner 变更前的节点身份快照。 */
++internal data class CfirPatternTreeSnapshot(
++    val nodes: List<CfirPatternTreeNode>,
++)
++
++/** 捕获任何 CFIR 模式宿主的整棵模式树，包括 catch/handle 专用模式节点。 */
++internal fun capturePatternTree(root: CfirElement): CfirPatternTreeSnapshot {
++    val nodes = mutableListOf<CfirPatternTreeNode>()
++    val visited = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeNode, Boolean>())
++
++    fun visit(element: CfirElement) {
++        val node = element as? CfirPatternTreeNode
++            ?: error("Pattern tree contains a node without CfirPatternTreeNode ownership support: ${element::class.qualifiedName}")
++        require(visited.add(node)) {
++            "A CFIR pattern tree cannot contain a cycle or share the same tree node more than once."
++        }
++        nodes += node
++        for (binding in immediatePatternBindings(element)) {
++            require(visited.add(binding)) {
++                "A CFIR pattern tree cannot contain a cycle or share the same tree node more than once."
++            }
++            nodes += binding
++        }
++        when (element) {
++            is CfirCatchPattern -> Unit
++            is CfirPattern -> element.childPatterns().forEach(::visit)
++            is CfirCommandTypePattern -> Unit
++            else -> error("Unsupported CFIR pattern tree root: ${element::class.qualifiedName}")
++        }
++    }
++
++    visit(root)
++    return CfirPatternTreeSnapshot(nodes)
++}
++
++/** 返回当前模式节点直接声明的 binding；嵌套模式由树遍历分别访问。 */
++private fun immediatePatternBindings(element: CfirElement): List<CfirPatternBindingVariable> = when (element) {
++    is CfirBindingPattern -> listOfNotNull(element.bindingVariable)
++    is CfirVarOrEnumPattern -> listOfNotNull(element.bindingVariable)
++    is CfirTypePattern -> listOfNotNull(element.bindingVariable)
++    is CfirCatchPattern -> listOfNotNull(element.bindingVariable)
++    else -> emptyList()
++}
++
++private fun CfirPattern.childPatterns(): List<CfirPattern> = when (this) {
++    is CfirBindingPattern -> listOfNotNull(nestedPattern)
++    is CfirTuplePattern -> elements
++    is CfirEnumPattern -> arguments
++    is CfirOrPattern -> alternatives
++    is CfirConstPattern,
++    is CfirWildcardPattern,
++    is CfirVarOrEnumPattern,
++    is CfirTypePattern,
++    is CfirExpressionPattern,
++    -> emptyList()
++}
++
++/** 校验任意模式树节点的反向 owner 引用只随真实子树关系建立和解除。 */
++internal fun validatePatternTreeNodeOwnerChange(
++    node: CfirPatternTreeNode,
++    previousOwner: CfirPatternTreeOwner?,
++    newOwner: CfirPatternTreeOwner?,
++) {
++    if (previousOwner === newOwner) return
++
++    require(previousOwner == null || newOwner == null) {
++        "A pattern tree node cannot be transferred directly between owners."
++    }
++    if (previousOwner != null) {
++        require(capturePatternTree(previousOwner.patternTreeRoot()).nodes.none { it === node }) {
++            "A pattern tree node cannot detach while its owner tree still contains it."
++        }
++    }
++    if (newOwner != null) {
++        require(capturePatternTree(newOwner.patternTreeRoot()).nodes.any { it === node }) {
++            "A pattern tree owner can only claim a node contained in its tree."
++        }
++    }
++}
++
++/**
++ * 在 pattern 写入前验证所有 binding 均可由该 owner 持有。
++ *
++ * 使用身份集合拒绝同一 binding 在一棵 CFIR pattern 中重复出现，保证 pattern 是树而非共享子图。
++ */
++private fun validatePatternTreeContents(root: CfirElement, owner: CfirPatternTreeOwner?) {
++    val snapshot = capturePatternTree(root)
++    val seenNodes = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeNode, Boolean>())
++    for (node in snapshot.nodes) {
++        require(seenNodes.add(node)) {
++            "A CFIR pattern tree cannot contain the same tree node more than once."
++        }
++        require(node.patternTreeOwner == null || node.patternTreeOwner === owner) {
++            "A CFIR pattern tree cannot be shared by different owners."
++        }
++    }
++
++}
++
++/** 在任意模式宿主安装新的根节点前验证整棵新树的节点和 binding 身份。 */
++internal fun validatePatternTreeReplacement(owner: CfirPatternTreeOwner, pattern: CfirElement) =
++    validatePatternTreeContents(pattern, owner)
++
++/** 校验暂时没有模式宿主的独立模式树不引用其他 owner 的节点。 */
++internal fun validateDetachedPatternTree(pattern: CfirElement) =
++    validatePatternTreeContents(pattern, owner = null)
++
++/**
++ * 原子恢复一个解析快照中的全部模式根。
++ *
++ * 候选解析期间允许旧根先从一个 owner 脱离，再由另一个 owner 接管；逐个恢复会受 owner 遍历顺序影响。
++ * 这里先验证整组根和节点，再暂存根字段，最后统一重建每个节点的唯一反向 owner 链接。
++ */
++fun restorePatternTreeRoots(roots: List<Pair<CfirPatternTreeOwner, CfirElement>>) {
++    val rootsSnapshot = roots.toList()
++    if (rootsSnapshot.isEmpty()) return
++
++    val owners = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeOwner, Boolean>())
++    for ((owner, restoredRoot) in rootsSnapshot) {
++        require(owners.add(owner)) {
++            "A pattern tree snapshot cannot contain the same owner more than once."
++        }
++        owner.validatePatternTreeRoot(restoredRoot)
++    }
++
++    val affectedNodes = Collections.newSetFromMap(IdentityHashMap<CfirPatternTreeNode, Boolean>())
++    val restoredOwnerByNode = IdentityHashMap<CfirPatternTreeNode, CfirPatternTreeOwner>()
++
++    for ((owner, restoredRoot) in rootsSnapshot) {
++        affectedNodes.addAll(capturePatternTree(owner.patternTreeRoot()).nodes)
++        for (node in capturePatternTree(restoredRoot).nodes) {
++            require(restoredOwnerByNode.put(node, owner) == null) {
++                "A restored CFIR pattern node cannot be shared by different owners."
++            }
++            affectedNodes += node
++        }
++    }
++
++    for (node in affectedNodes) {
++        val currentOwner = node.patternTreeOwner
++        require(currentOwner == null || currentOwner in owners) {
++            "A pattern tree snapshot cannot restore a node currently owned outside the captured owner set."
++        }
++    }
++
++    withPatternTreeRootRestore {
++        for ((owner, restoredRoot) in rootsSnapshot) {
++            owner.replacePatternTreeRoot(restoredRoot)
++        }
++        for (node in affectedNodes) {
++            node.replacePatternTreeOwner(restoredOwnerByNode[node])
++        }
++    }
++}
++
++/** 将原树身份快照与 owner 当前的根节点协调，先完整验证，再解除旧链接和建立新链接。 */
++internal fun reconcilePatternTree(
++    owner: CfirPatternTreeOwner,
++    previousTree: CfirPatternTreeSnapshot,
++    newPattern: CfirElement,
++) {
++    require(owner.patternTreeRoot() === newPattern) {
++        "Pattern tree reconciliation requires the owner's current root node."
++    }
++    validatePatternTreeReplacement(owner, newPattern)
++    val newTree = capturePatternTree(newPattern)
++
++    for (node in previousTree.nodes) {
++        require(node.patternTreeOwner == null || node.patternTreeOwner === owner) {
++            "A previous pattern tree node is owned by a different owner."
++        }
++        if (node.patternTreeOwner === owner && newTree.nodes.none { it === node }) {
++            node.replacePatternTreeOwner(null)
++        }
++    }
++    for (node in newTree.nodes) {
++        if (node.patternTreeOwner == null) node.replacePatternTreeOwner(owner)
++    }
++}
++
++/** 为新构造的模式宿主建立根节点和全部子节点的双向 owner 关系。 */
++internal fun bindPatternTree(owner: CfirPatternTreeOwner, pattern: CfirElement) {
++    require(owner.patternTreeRoot() === pattern) {
++        "Pattern tree nodes can only be bound after the owner has installed its root."
++    }
++    reconcilePatternTree(owner, CfirPatternTreeSnapshot(emptyList()), pattern)
++}
++
++private fun CfirPattern.wholeValueBindingOrNull(): CfirPatternBindingVariable? = when (this) {
++    is CfirBindingPattern if nestedPattern == null -> bindingVariable
++    is CfirVarOrEnumPattern -> bindingVariable
++    is CfirTypePattern -> bindingVariable
++    else -> null
++}
++
+ /**
+  * 收集 type-pattern 产生的绑定变量。
+  *
+diff --git a/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternMutableState.kt b/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternMutableState.kt
+index 9b160c955..708036144 100644
+--- a/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternMutableState.kt
++++ b/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/patterns/CfirPatternMutableState.kt
+@@ -1,9 +1,6 @@
+ package org.cangnova.cangjie.cfir.patterns
+ 
+ import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+-import org.cangnova.cangjie.cfir.patterns.impl.CfirBindingPatternImpl
+-import org.cangnova.cangjie.cfir.patterns.impl.CfirTypePatternImpl
+-import org.cangnova.cangjie.cfir.patterns.impl.CfirVarOrEnumPatternImpl
+ import org.cangnova.cangjie.cfir.types.CfirTypeRef
+ 
+ /**
+@@ -28,33 +25,27 @@ interface CfirPatternMutableState {
+          */
+         fun capture(pattern: CfirPattern): CfirPatternMutableState? = when (pattern) {
+             is CfirBindingPattern -> {
+-                val impl = pattern as? CfirBindingPatternImpl
+-                    ?: error("CfirBindingPattern must be backed by generated implementation")
+                 CfirBindingPatternMutableState(
+-                    pattern = impl,
+-                    typeRef = impl.typeRef,
+-                    bindingVariable = impl.bindingVariable,
+-                    nestedPattern = impl.nestedPattern,
++                    pattern = pattern,
++                    typeRef = pattern.typeRef,
++                    bindingVariable = pattern.bindingVariable,
++                    nestedPattern = pattern.nestedPattern,
+                 )
+             }
+ 
+             is CfirTypePattern -> {
+-                val impl = pattern as? CfirTypePatternImpl
+-                    ?: error("CfirTypePattern must be backed by generated implementation")
+                 CfirTypePatternMutableState(
+-                    pattern = impl,
+-                    typeRef = impl.typeRef,
+-                    bindingVariable = impl.bindingVariable,
+-                    matchingKind = impl.matchingKind,
++                    pattern = pattern,
++                    typeRef = pattern.typeRef,
++                    bindingVariable = pattern.bindingVariable,
++                    matchingKind = pattern.matchingKind,
+                 )
+             }
+ 
+             is CfirVarOrEnumPattern -> {
+-                val impl = pattern as? CfirVarOrEnumPatternImpl
+-                    ?: error("CfirVarOrEnumPattern must be backed by generated implementation")
+                 CfirVarOrEnumPatternMutableState(
+-                    pattern = impl,
+-                    bindingVariable = impl.bindingVariable,
++                    pattern = pattern,
++                    bindingVariable = pattern.bindingVariable,
+                 )
+             }
+ 
+@@ -70,7 +61,7 @@ private class CfirBindingPatternMutableState(
+     /**
+      * 被恢复的 binding pattern 实现节点。
+      */
+-    private val pattern: CfirBindingPatternImpl,
++    private val pattern: CfirBindingPattern,
+     /**
+      * 捕获时的类型引用。
+      */
+@@ -88,9 +79,9 @@ private class CfirBindingPatternMutableState(
+      * 恢复 binding pattern 的类型引用、绑定变量和嵌套 pattern。
+      */
+     override fun restore() {
+-        pattern.typeRef = typeRef
+-        pattern.bindingVariable = bindingVariable
+-        pattern.nestedPattern = nestedPattern
++        pattern.replaceTypeRef(typeRef)
++        pattern.replaceBindingVariable(bindingVariable)
++        pattern.replaceNestedPattern(nestedPattern)
+     }
+ }
+ 
+@@ -101,7 +92,7 @@ private class CfirTypePatternMutableState(
+     /**
+      * 被恢复的 type pattern 实现节点。
+      */
+-    private val pattern: CfirTypePatternImpl,
++    private val pattern: CfirTypePattern,
+     /**
+      * 捕获时的类型引用。
+      */
+@@ -117,8 +108,8 @@ private class CfirTypePatternMutableState(
+      * 恢复 type pattern 的类型引用、绑定变量和判定形式。
+      */
+     override fun restore() {
+-        pattern.typeRef = typeRef
+-        pattern.bindingVariable = bindingVariable
++        pattern.replaceTypeRef(typeRef)
++        pattern.replaceBindingVariable(bindingVariable)
+         pattern.replaceMatchingKind(matchingKind)
+     }
+ }
+@@ -130,7 +121,7 @@ private class CfirVarOrEnumPatternMutableState(
+     /**
+      * 被恢复的 var-or-enum pattern 实现节点。
+      */
+-    private val pattern: CfirVarOrEnumPatternImpl,
++    private val pattern: CfirVarOrEnumPattern,
+     /**
+      * 捕获时的绑定变量。
+      */
+@@ -140,6 +131,6 @@ private class CfirVarOrEnumPatternMutableState(
+      * 恢复 var-or-enum pattern 的绑定变量。
+      */
+     override fun restore() {
+-        pattern.bindingVariable = bindingVariable
++        pattern.replaceBindingVariable(bindingVariable)
+     }
+ }
+diff --git a/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt b/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt
+index c3d6397dd..40cf40cf3 100644
+--- a/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt
++++ b/cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt
+@@ -3409,7 +3409,6 @@ class LightTreeRawCfirDeclarationBuilder(
+                 this.isLocal = isLocal
+                 dispatchReceiverType = null
+                 this.status = bindingStatus
+-                initializer = null
+                 this.isVar = isVar
+                 this.returnTypeRef = returnTypeRef
+                 this.name = name
+diff --git a/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt b/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt
+index 0b309b94c..6396f90ba 100644
+--- a/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt
++++ b/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt
+@@ -3756,7 +3756,6 @@ class PsiRawCfirBuilder(
+                     this.isLocal = isLocal
+                     dispatchReceiverType = null
+                     this.status = bindingStatus
+-                    initializer = null
+                     this.isVar = isVar
+                     this.returnTypeRef = returnTypeRef
+                     this.name = name
+diff --git a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshot.kt b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshot.kt
+index f628e01ab..2b7c4c852 100644
+--- a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshot.kt
++++ b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshot.kt
+@@ -20,11 +20,9 @@ import org.cangnova.cangjie.cfir.CfirElement
+ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+ import org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner
+-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+ import org.cangnova.cangjie.cfir.declarations.CfirResolveState
+ import org.cangnova.cangjie.cfir.declarations.CfirVariable
+ import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
+-import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
+ import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
+ import org.cangnova.cangjie.cfir.declarations.isInsideFailedArgumentMapping
+ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+@@ -33,15 +31,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
+ import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
+ import org.cangnova.cangjie.cfir.expressions.CfirExpression
+ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+ import org.cangnova.cangjie.cfir.expressions.CfirStatement
+ import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+-import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl
+ import org.cangnova.cangjie.cfir.patterns.CfirPattern
+ import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+ import org.cangnova.cangjie.cfir.patterns.CfirPatternMutableState
++import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
++import org.cangnova.cangjie.cfir.patterns.CfirPatternTypeReferences
++import org.cangnova.cangjie.cfir.patterns.restorePatternTreeRoots
+ import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+ import org.cangnova.cangjie.cfir.references.CfirReference
+ import org.cangnova.cangjie.cfir.types.CfirTypeRef
+@@ -81,14 +80,14 @@ internal class CfirResolutionSnapshot private constructor(
+     private val variableTypes: IdentityHashMap<CfirVariable, CfirTypeRef>,
+     /** block 语句列表快照。 */
+     private val blockStatements: IdentityHashMap<CfirBlock, List<CfirStatement>>,
+-    /** 模式变量当前 pattern 快照。 */
+-    private val patternVariablePatterns: IdentityHashMap<CfirPatternVariable, CfirPattern>,
+-    /** match branch 当前 pattern 快照。 */
+-    private val matchBranchPatterns: IdentityHashMap<CfirMatchBranch, CfirPattern>,
++    /** 所有模式宿主当前根节点快照，覆盖声明、表达式、match、catch 与 handle。 */
++    private val patternTreeRoots: List<Pair<CfirPatternTreeOwner, CfirElement>>,
+     /** pattern 内部可变状态快照。 */
+     private val patternStates: IdentityHashMap<CfirPattern, CfirPatternMutableState>,
+-    /** catch 模式的声明类型与整体语义类型必须一起回滚，避免候选试跑污染后续分析。 */
+-    private val catchPatternStates: IdentityHashMap<CfirCatchPattern, CatchPatternState>,
++    /** catch 与 handle 共用的声明类型引用状态。 */
++    private val patternTypeReferences: IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>,
++    /** catch 模式整体语义类型必须和源码类型引用一起回滚。 */
++    private val catchPatternResolvedTypes: IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>,
+     /** 下标语法节点与已解析 get/set 调用的关联必须随候选试跑一起回滚。 */
+     private val subscriptCallStates: IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>,
+     /** qualified access 接收者与类型实参快照。 */
+@@ -130,22 +129,15 @@ internal class CfirResolutionSnapshot private constructor(
+         for ((function, body) in anonymousFunctionBodies) {
+             function.replaceBody(body)
+         }
+-        for ((patternVariable, pattern) in patternVariablePatterns) {
+-            val impl = patternVariable as? CfirPatternVariableImpl
+-                ?: error("CfirPatternVariable must be backed by generated implementation")
+-            impl.pattern = pattern
+-        }
+-        for ((branch, pattern) in matchBranchPatterns) {
+-            val impl = branch as? CfirMatchBranchImpl
+-                ?: error("CfirMatchBranch must be backed by generated implementation")
+-            impl.pattern = pattern
+-        }
++        restorePatternTreeRoots(patternTreeRoots)
+         for ((_, state) in patternStates) {
+             state.restore()
+         }
+-        for ((pattern, state) in catchPatternStates) {
+-            pattern.replaceTypeRefs(state.typeRefs)
+-            pattern.replaceResolvedTypeRef(state.resolvedTypeRef)
++        for ((pattern, typeRefs) in patternTypeReferences) {
++            pattern.replaceTypeRefs(typeRefs)
++        }
++        for ((pattern, resolvedTypeRef) in catchPatternResolvedTypes) {
++            pattern.replaceResolvedTypeRef(resolvedTypeRef)
+         }
+         for ((subscript, state) in subscriptCallStates) {
+             subscript.replaceResolvedGetCall(state.getCall)
+@@ -182,11 +174,6 @@ internal class CfirResolutionSnapshot private constructor(
+         val typeArguments: List<CfirTypeRef>,
+     )
+ 
+-    private data class CatchPatternState(
+-        val typeRefs: List<CfirTypeRef>,
+-        val resolvedTypeRef: CfirResolvedTypeRef?,
+-    )
+-
+     private data class SubscriptCallState(
+         val getCall: CfirFunctionCall?,
+         val setCall: CfirFunctionCall?,
+@@ -208,10 +195,10 @@ internal class CfirResolutionSnapshot private constructor(
+             val anonymousFunctionBodies = IdentityHashMap<CfirAnonymousFunction, CfirBlock?>()
+             val variableTypes = IdentityHashMap<CfirVariable, CfirTypeRef>()
+             val blockStatements = IdentityHashMap<CfirBlock, List<CfirStatement>>()
+-            val patternVariablePatterns = IdentityHashMap<CfirPatternVariable, CfirPattern>()
+-            val matchBranchPatterns = IdentityHashMap<CfirMatchBranch, CfirPattern>()
++            val patternTreeRoots = mutableListOf<Pair<CfirPatternTreeOwner, CfirElement>>()
+             val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
+-            val catchPatternStates = IdentityHashMap<CfirCatchPattern, CatchPatternState>()
++            val patternTypeReferences = IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>()
++            val catchPatternResolvedTypes = IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>()
+             val subscriptCallStates = IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>()
+             // set 的 RHS 可以引用同一个 get 节点；语义调用引用因此形成共享图而非纯树。
+             val visitedElements = java.util.Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
+@@ -256,19 +243,19 @@ internal class CfirResolutionSnapshot private constructor(
+                         if (element is CfirBlock) {
+                             blockStatements[element] = element.statements.toList()
+                         }
+-                        if (element is CfirPatternVariable) {
+-                            patternVariablePatterns[element] = element.pattern
+-                        }
+-                        if (element is CfirMatchBranch) {
+-                            matchBranchPatterns[element] = element.pattern
++                        if (element is CfirPatternTreeOwner) {
++                            patternTreeRoots += element to element.patternTreeRoot()
+                         }
+                         if (element is CfirPattern) {
+                             CfirPatternMutableState.capture(element)?.let { patternState ->
+                                 patternStates[element] = patternState
+                             }
+                         }
++                        if (element is CfirPatternTypeReferences) {
++                            patternTypeReferences[element] = element.typeRefs.toList()
++                        }
+                         if (element is CfirCatchPattern) {
+-                            catchPatternStates[element] = CatchPatternState(element.typeRefs.toList(), element.resolvedTypeRef)
++                            catchPatternResolvedTypes[element] = element.resolvedTypeRef
+                         }
+                         if (element is CfirSubscriptExpression) {
+                             subscriptCallStates[element] = SubscriptCallState(element.resolvedGetCall, element.resolvedSetCall)
+@@ -305,10 +292,10 @@ internal class CfirResolutionSnapshot private constructor(
+                 anonymousFunctionBodies,
+                 variableTypes,
+                 blockStatements,
+-                patternVariablePatterns,
+-                matchBranchPatterns,
++                patternTreeRoots,
+                 patternStates,
+-                catchPatternStates,
++                patternTypeReferences,
++                catchPatternResolvedTypes,
+                 subscriptCallStates,
+                 qualifiedAccessStates,
+                 functionCallArgumentLists,
+diff --git a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirDeclarationsResolveTransformer.kt b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirDeclarationsResolveTransformer.kt
+index c35c6505b..a7ecaafda 100644
+--- a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirDeclarationsResolveTransformer.kt
++++ b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirDeclarationsResolveTransformer.kt
+@@ -999,8 +999,6 @@ dataFlowAnalyzer.enterFunction(constructor)
+             }
+ 
+             patternVariable.resolveImplicitReturnTypeFromInitializer()
+-            propagateWholeInitializerToSimplePatternBinding(patternVariable.pattern, patternVariable.initializer)
+-
+             resolvePatternValueExpressions(patternVariable.pattern, patternVariable.returnTypeRef.coneTypeOrNull)
+             resolvePatternBindingTypes(
+                 pattern = patternVariable.pattern,
+diff --git a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt
+index 76525506b..d2b43eb74 100644
+--- a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt
++++ b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt
+@@ -2989,9 +2989,7 @@ open class CfirExpressionsResolveTransformer(
+         return withNewLocalScope {
+             components.dataFlowAnalyzer.enterMatchBranchCondition(branch)
+             resolvePatternValueExpressions(branch.pattern, subjectType)
+-            if (branch is org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl) {
+-                branch.pattern = resolveDeferredMatchPattern(branch.pattern, subjectType)
+-            }
++            branch.replacePattern(resolveDeferredMatchPattern(branch.pattern, subjectType))
+             val patternError = resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
+             val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body), subjectType)
+ 
+@@ -3521,12 +3519,12 @@ open class CfirExpressionsResolveTransformer(
+             pattern = letPatternExpression.pattern,
+             initializerType = letPatternExpression.initializer.coneTypeOrNull,
+         ) ?: letPatternExpression.initializer.coneTypeOrNull
+-        if (letPatternExpression is org.cangnova.cangjie.cfir.expressions.impl.CfirLetPatternExpressionImpl) {
+-            letPatternExpression.pattern = resolveDeferredMatchPattern(
++        letPatternExpression.replacePattern(
++            resolveDeferredMatchPattern(
+                 pattern = letPatternExpression.pattern,
+                 expectedType = patternExpectedType,
+-            )
+-        }
++            ),
++        )
+         val patternError = resolvePatternBindingTypes(
+             pattern = letPatternExpression.pattern,
+             expectedType = patternExpectedType,
+@@ -5598,10 +5596,10 @@ open class CfirExpressionsResolveTransformer(
+ 
+         resolvePatternValueExpressions(varDecl.pattern, varDecl.returnTypeRef.coneTypeOrNull)
+         if (varDecl is org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl) {
+-            varDecl.pattern = resolveDeferredMatchPattern(
++            varDecl.replacePattern(resolveDeferredMatchPattern(
+                 pattern = varDecl.pattern,
+                 expectedType = varDecl.returnTypeRef.coneTypeOrNull ?: iterVarType,
+-            )
++            ))
+         }
+         resolvePatternBindingTypes(
+             pattern = varDecl.pattern,
+diff --git a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt
+index 59b3893ea..500868f4a 100644
+--- a/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt
++++ b/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirPatternBindingResolution.kt
+@@ -234,25 +234,6 @@ internal fun CfirPartialBodyResolveTransformer.registerPatternBindings(pattern:
+     }
+ }
+ 
+-/**
+- * 简单 `let/var x = initializer` 中，名字解析指向内层 binding variable，
+- * 但 initializer 归属于外层 pattern variable。这里把“整个绑定值”的来源同步到
+- * 内层变量，供后续数据流、可达性和诊断按普通局部变量读取。
+- */
+-internal fun propagateWholeInitializerToSimplePatternBinding(
+-    pattern: CfirPattern,
+-    initializer: CfirExpression?,
+-) {
+-    if (initializer == null) return
+-    val binding = when (pattern) {
+-        is CfirBindingPattern if pattern.nestedPattern == null -> pattern.bindingVariable
+-        is CfirVarOrEnumPattern -> pattern.bindingVariable
+-        is CfirTypePattern -> pattern.bindingVariable
+-        else -> null
+-    } ?: return
+-    binding.replaceInitializer(initializer)
+-}
+-
+ /**
+  * 解析 pattern 显式类型引用；已解析或隐式类型引用直接复用。
+  */
+diff --git a/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshotTest.kt b/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshotTest.kt
+index 7b0531a93..3097e07b5 100644
+--- a/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshotTest.kt
++++ b/cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshotTest.kt
+@@ -7,12 +7,29 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
+ import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
+ import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+ import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
++import org.cangnova.cangjie.cfir.expressions.builder.buildHandleClause
++import org.cangnova.cangjie.cfir.expressions.builder.buildLetPatternExpression
+ import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
++import org.cangnova.cangjie.cfir.expressions.builder.buildMatchBranch
++import org.cangnova.cangjie.cfir.expressions.builder.buildMatchExpression
+ import org.cangnova.cangjie.cfir.expressions.builder.buildOptionalExpression
+ import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
++import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
++import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
++import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
++import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
++import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
++import org.cangnova.cangjie.cfir.declarations.builder.buildPatternBindingVariable
++import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+ import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
++import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
++import org.cangnova.cangjie.name.CallableId
+ import org.cangnova.cangjie.name.Name
+ import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
++import org.cangnova.cangjie.cfir.patterns.builder.buildCommandTypePattern
++import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
++import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
++import org.cangnova.cangjie.cfir.patterns.restorePatternTreeRoots
+ import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
+ import org.cangnova.cangjie.cfir.types.ConeErrorType
+ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+@@ -20,6 +37,7 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
+ import org.junit.jupiter.api.Assertions.assertEquals
+ import org.junit.jupiter.api.Assertions.assertSame
+ import org.junit.jupiter.api.Assertions.assertNull
++import org.junit.jupiter.api.Assertions.assertThrows
+ import org.junit.jupiter.api.Test
+ 
+ /** 快照恢复真实可变类型状态，不向错误表达式的派生类型 getter 写回。 */
+@@ -85,6 +103,196 @@ class CfirResolutionSnapshotTest {
+         }
+     }
+ 
++    /** 延迟解析替换的 let pattern 根必须在失败候选回滚时恢复，并重新绑定原树。 */
++    @Test
++    fun `restore reinstates the let pattern root and owner`() {
++        val originalPattern = buildWildcardPattern()
++        val letExpression = buildLetPatternExpression {
++            initializer = buildLiteralExpression {
++                kind = CfirLiteralKind.INT
++                value = 1
++            }
++            pattern = originalPattern
++        }
++        val snapshot = CfirResolutionSnapshot.capture(letExpression)
++        val candidatePattern = buildWildcardPattern()
++
++        letExpression.replacePattern(candidatePattern)
++        snapshot.restore()
++
++        assertSame(originalPattern, letExpression.pattern)
++        assertSame(letExpression, originalPattern.patternTreeOwner)
++        assertNull(candidatePattern.patternTreeOwner)
++    }
++
++    /** Handle 的命令类型引用和 owner 根都属于候选 body 的可变 CFIR 状态。 */
++    @Test
++    fun `restore reinstates handle pattern root and command type references`() {
++        val originalTypeRef = ConePrimitiveType.INT64.toCfirResolvedTypeRef()
++        val originalPattern = buildCommandTypePattern {
++            bindingName = Name.identifier("value")
++            isWildcard = false
++            typeRefs += originalTypeRef
++        }
++        val handleClause = buildHandleClause {
++            commandPattern = originalPattern
++            body = buildBlock()
++        }
++        val snapshot = CfirResolutionSnapshot.capture(handleClause)
++        val candidateTypeRef = ConePrimitiveType.INT32.toCfirResolvedTypeRef()
++        val candidatePattern = buildCommandTypePattern {
++            isWildcard = true
++        }
++
++        originalPattern.replaceTypeRefs(listOf(candidateTypeRef))
++        handleClause.replaceCommandPattern(candidatePattern)
++        snapshot.restore()
++
++        assertSame(originalPattern, handleClause.commandPattern)
++        assertSame(handleClause, originalPattern.patternTreeOwner)
++        assertNull(candidatePattern.patternTreeOwner)
++        assertSame(originalTypeRef, originalPattern.typeRefs.single())
++    }
++
++    /** 从外层表达式捕获多个 owner；跨 owner 接管后的根与反向链接必须整体恢复。 */
++    @Test
++    fun `restore reinstates multiple nested roots after a pattern tree transfer`() {
++        val firstPattern = buildBindingPattern { name = Name.identifier("first") }
++        val secondPattern = buildBindingPattern { name = Name.identifier("second") }
++        val firstBinding = createPatternBindingVariable("first")
++        val secondBinding = createPatternBindingVariable("second")
++        firstPattern.replaceBindingVariable(firstBinding)
++        secondPattern.replaceBindingVariable(secondBinding)
++        val firstBranch = buildMatchBranch {
++            pattern = firstPattern
++            body = buildBlock()
++        }
++        val secondBranch = buildMatchBranch {
++            pattern = secondPattern
++            body = buildBlock()
++        }
++        val match = buildMatchExpression {
++            branches += firstBranch
++            branches += secondBranch
++        }
++        val snapshot = CfirResolutionSnapshot.capture(match)
++        val candidatePattern = buildBindingPattern { name = Name.identifier("candidate") }
++
++        firstBranch.replacePattern(candidatePattern)
++        secondBranch.replacePattern(firstPattern)
++        assertSame(secondBranch, firstBinding.patternTreeOwner)
++        assertNull(secondBinding.patternTreeOwner)
++        assertSame(firstBranch, candidatePattern.patternTreeOwner)
++        snapshot.restore()
++
++        assertSame(firstPattern, firstBranch.pattern)
++        assertSame(firstBranch, firstPattern.patternTreeOwner)
++        assertSame(firstBranch, firstBinding.patternTreeOwner)
++        assertSame(secondPattern, secondBranch.pattern)
++        assertSame(secondBranch, secondPattern.patternTreeOwner)
++        assertSame(secondBranch, secondBinding.patternTreeOwner)
++        assertNull(candidatePattern.patternTreeOwner)
++    }
++
++    /** 所有根类型必须在事务开始前验证，避免较早的 owner 已被部分恢复。 */
++    @Test
++    fun `restore validates every owner root type before changing any owner`() {
++        val originalBranchPattern = buildWildcardPattern()
++        val branch = buildMatchBranch {
++            pattern = originalBranchPattern
++            body = buildBlock()
++        }
++        val originalHandlePattern = buildCommandTypePattern { isWildcard = true }
++        val handle = buildHandleClause {
++            commandPattern = originalHandlePattern
++            body = buildBlock()
++        }
++        val candidateBranchPattern = buildWildcardPattern()
++        val invalidHandlePattern = buildWildcardPattern()
++
++        assertThrows(IllegalArgumentException::class.java) {
++            restorePatternTreeRoots(
++                listOf(
++                    branch to candidateBranchPattern,
++                    handle to invalidHandlePattern,
++                ),
++            )
++        }
++
++        assertSame(originalBranchPattern, branch.pattern)
++        assertSame(originalHandlePattern, handle.commandPattern)
++        assertNull(candidateBranchPattern.patternTreeOwner)
++        assertNull(invalidHandlePattern.patternTreeOwner)
++    }
++
++    /** 恢复输入不能重复声明同一 owner，否则根字段顺序会产生歧义。 */
++    @Test
++    fun `restore rejects duplicate owners before changing roots`() {
++        val originalPattern = buildWildcardPattern()
++        val branch = buildMatchBranch {
++            pattern = originalPattern
++            body = buildBlock()
++        }
++        val firstCandidate = buildWildcardPattern()
++        val secondCandidate = buildWildcardPattern()
++
++        assertThrows(IllegalArgumentException::class.java) {
++            restorePatternTreeRoots(
++                listOf(
++                    branch to firstCandidate,
++                    branch to secondCandidate,
++                ),
++            )
++        }
++
++        assertSame(originalPattern, branch.pattern)
++        assertNull(firstCandidate.patternTreeOwner)
++        assertNull(secondCandidate.patternTreeOwner)
++    }
++
++    /** 不同 owner 的目标根不能共享同一模式节点，验证失败必须保持当前图不变。 */
++    @Test
++    fun `restore rejects a pattern node shared by different target owners`() {
++        val firstOriginal = buildWildcardPattern()
++        val secondOriginal = buildWildcardPattern()
++        val firstBranch = buildMatchBranch {
++            pattern = firstOriginal
++            body = buildBlock()
++        }
++        val secondBranch = buildMatchBranch {
++            pattern = secondOriginal
++            body = buildBlock()
++        }
++        val sharedTarget = buildWildcardPattern()
++
++        assertThrows(IllegalArgumentException::class.java) {
++            restorePatternTreeRoots(
++                listOf(
++                    firstBranch to sharedTarget,
++                    secondBranch to sharedTarget,
++                ),
++            )
++        }
++
++        assertSame(firstOriginal, firstBranch.pattern)
++        assertSame(secondOriginal, secondBranch.pattern)
++        assertNull(sharedTarget.patternTreeOwner)
++    }
++
++    private fun createPatternBindingVariable(name: String): CfirPatternBindingVariable =
++        buildPatternBindingVariable {
++            moduleData = CfirBinaryDependenciesModuleData(Name.identifier("pattern-snapshot-test"))
++            resolvePhase = CfirResolvePhase.RAW_CFIR
++            origin = CfirDeclarationOrigin.Synthetic.Default
++            attributes = CfirDeclarationAttributes.EMPTY
++            isLocal = true
++            status = CfirDeclarationStatusImpl()
++            isVar = false
++            symbol = CfirPatternBindingSymbol(CallableId(Name.identifier(name)))
++            returnTypeRef = ConePrimitiveType.INT32.toCfirResolvedTypeRef()
++            this.name = Name.identifier(name)
++        }
++
+     @Test
+     fun `restore keeps a fixed error diagnostic and restores sibling types`() {
+         val diagnostic = ConeSimpleDiagnostic("unexpanded macro")

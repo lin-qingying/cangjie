@@ -32,7 +32,6 @@ fun interface CaTypeParameterSymbolRenderer {
 
             printer{
                 " ".separated(
-                    { declarationRenderer.annotationRenderer.renderAnnotations(session, symbol, printer) },
                     { declarationRenderer.modifiersRenderer.renderDeclarationModifiers(session, symbol, printer) },
                     { declarationRenderer.nameRenderer.renderName(session, symbol,declarationRenderer, printer) },
 

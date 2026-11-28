@@ -59,9 +59,14 @@ internal sealed class FileStructureElementDiagnosticRetriever(
         }
 
         return withSourceCodeAnalysisExceptionUnwrapping {
-            collectForStructureElement(declaration, checkerComponents, filter, mppCheckerKind) { components ->
-                createVisitor(context, components)
-            }
+            collectForStructureElement(
+                declaration,
+                checkerComponents,
+                filter,
+                mppCheckerKind,
+                createVisitor = { components -> createVisitor(context, components) },
+                diagnosticsStatistics = moduleComponents.globalResolveComponents.diagnosticsStatistics,
+            )
         }
     }
 
@@ -124,18 +129,23 @@ internal class ClassDiagnosticRetriever(
      * 创建忽略子结构元素声明的 class diagnostics visitor。
      */
     override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
-        return Visitor(declaration as CfirClassLikeDeclaration, context, components)
+        val regularClass = declaration as CfirClassLikeDeclaration
+        return Visitor(
+            regularClass.declarationsToIgnore(moduleComponents.macroSemanticSnapshotStore.snapshot),
+            context,
+            components,
+        )
     }
 
     /**
      * class-like 容器 diagnostics visitor。
      */
     private class Visitor(
-        regularClass: CfirClassLikeDeclaration,
+        declarationsToIgnore: Set<CfirDeclaration>,
         context: CheckerContextForProvider,
         components: DiagnosticCollectorComponents,
     ) : LLCfirContainerDiagnosticVisitor(
-        declarationsToIgnore = regularClass.declarationsToIgnore,
+        declarationsToIgnore = declarationsToIgnore,
         context = context,
         components = components,
     )
@@ -150,6 +160,43 @@ internal class ClassDiagnosticRetriever(
             else -> false
         }
     }
+}
+
+/**
+ * extend 声明对应的 structure element diagnostics retriever。
+ *
+ * 与 [ClassDiagnosticRetriever] 同形：extend 成员各自是独立的 structure element，
+ * 收集 extend 自身 diagnostics 时必须跳过成员，否则同一成员会被访问两次。
+ */
+internal class ExtendDiagnosticRetriever(
+    declaration: CfirExtend,
+    file: CfirFile,
+    moduleComponents: LLCfirModuleResolveComponents,
+) : FileStructureElementDiagnosticRetriever(declaration, file, moduleComponents) {
+    /**
+     * 创建忽略成员声明的 extend diagnostics visitor。
+     */
+    override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
+        val extend = declaration as CfirExtend
+        return Visitor(
+            extend.declarationsToIgnore(moduleComponents.macroSemanticSnapshotStore.snapshot),
+            context,
+            components,
+        )
+    }
+
+    /**
+     * extend 容器 diagnostics visitor。
+     */
+    private class Visitor(
+        declarationsToIgnore: Set<CfirDeclaration>,
+        context: CheckerContextForProvider,
+        components: DiagnosticCollectorComponents,
+    ) : LLCfirContainerDiagnosticVisitor(
+        declarationsToIgnore = declarationsToIgnore,
+        context = context,
+        components = components,
+    )
 }
 
 /**
@@ -196,13 +243,14 @@ internal class SingleNonLocalDeclarationDiagnosticRetriever(
  */
 internal class FileDiagnosticRetriever(
     file: CfirFile,
+    private val declarationsToIgnore: Set<CfirDeclaration>,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElementDiagnosticRetriever(file, file, moduleComponents) {
     /**
      * 创建忽略子结构元素声明的 file diagnostics visitor。
      */
     override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
-        return Visitor(declaration as CfirFile, context, components)
+        return Visitor(declaration as CfirFile, declarationsToIgnore, context, components)
     }
 
     /**
@@ -210,10 +258,11 @@ internal class FileDiagnosticRetriever(
      */
     private class Visitor(
         file: CfirFile,
+        declarationsToIgnore: Set<CfirDeclaration>,
         context: CheckerContextForProvider,
         components: DiagnosticCollectorComponents,
     ) : LLCfirContainerDiagnosticVisitor(
-        declarationsToIgnore = file.declarationsToIgnore,
+        declarationsToIgnore = declarationsToIgnore,
         context = context,
         components = components,
     )

@@ -1,0 +1,7 @@
+FILE: varrayRefTypeArg.cj
+    internal? interface Box<T> {
+        public? abstract? func value(): R|T|
+    }
+    internal? func varrayRefTypeArg(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

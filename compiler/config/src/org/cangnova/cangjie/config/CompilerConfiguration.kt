@@ -138,10 +138,22 @@ class CompilerConfiguration {
         list.addAll(index, values)
     }
 
-    /** 复制配置。 */
+    /**
+     * 复制配置并复制集合容器，避免副本的集合写入污染源配置。
+     */
     fun copy(): CompilerConfiguration {
         @OptIn(Internals::class)
-        return CompilerConfiguration().also { it.map.putAll(map) }
+        return CompilerConfiguration().also { copy ->
+            for ((key, value) in map) {
+                copy.map[key] = when (value) {
+                    is Map<*, *> -> LinkedHashMap(value)
+                    is Set<*> -> value.toMutableSet()
+                    is List<*> -> value.toMutableList()
+                    is Collection<*> -> value.toMutableList()
+                    else -> value
+                }
+            }
+        }
     }
 
     /** 读取底层值。 */

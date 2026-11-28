@@ -1,0 +1,4 @@
+FILE: boolsAndUnit.cj
+    internal? func boolAndUnit(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

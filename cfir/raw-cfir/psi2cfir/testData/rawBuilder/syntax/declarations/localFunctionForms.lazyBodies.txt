@@ -1,0 +1,60 @@
+FILE: localFunctionForms.cj
+    internal? func localFunctionFormsPlain(seed: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? class LocalFunctionFormsHolder {
+        private var value: R|Int64|
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        public func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class LocalFunctionFormsProps {
+        init()
+        private var store: R|Int64|
+        internal? prop doubled: R|Int64|
+        internal? mut prop value: R|Int64|
+    }
+    internal? func localFunctionFormsRecursion(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsCapture(seed: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsShadowTarget(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsShadow(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsWithVars(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsApply(f: R|(R|Int64|) -> R|Int64||, v: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsHigherOrder(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsNested(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsInControlFlow(flag: R|Bool|, n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? enum LocalFunctionFormsChoice {
+        First
+        Second
+        init()
+    }
+    internal? func localFunctionFormsInTry(choice: R|LocalFunctionFormsChoice|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsGenericAndConst(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func localFunctionFormsEscapeLetCapture(): R|(R|Int64|) -> R|Int64|| {
+        <element: CfirLazyBlock>
+    }

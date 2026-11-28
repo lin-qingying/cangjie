@@ -1,0 +1,7 @@
+FILE: letPatternBinding.cj
+    internal? func destructure(t: R|(R|Int64|, R|String|)|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func destructureOption(o: R|Option<R|(R|Int64|, R|String|)|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

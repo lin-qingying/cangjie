@@ -21,6 +21,9 @@
 
 `CfirProviderImpl` 通过正式 construction 产品完成一次性文件登记并封口，源码符号与声明归属索引来自同一批产品。依赖 symbol provider 与本模块源码 provider 组合，保留各自的名称、文件和声明身份。
 
+- `:cfir:cfir-tree`、`:cfir:cfir-cones`
+- `:common`、`:util`、`:resolution.common`
+
 内建声明创建时发布 resolved 状态。共同签名复制要求已完成的状态值，参数副本拥有独立 symbol 和 callable owner；状态解析仍由其生产阶段负责。
 
 `CfirExportAnalysis` 与 `CfirExportAnalysisInputSnapshot` 捕获完整声明、类型、来源边、实际参数／binding 向量、CJO origin 和文件归属。发布前核验同代身份；SOURCE 正文根查询严格要求当前捕获的源码归属。CJO loader 的导入事实与原始序列化属性分别保存，库声明的原始 `IMPORTED=false` 不授予 SOURCE 资格。

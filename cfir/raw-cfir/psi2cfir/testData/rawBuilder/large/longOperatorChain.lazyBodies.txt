@@ -1,0 +1,25 @@
+FILE: longOperatorChain.cj
+    internal? class ChainHost {
+        private let values: R|Array<R|Int64|>|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func at(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public func next(i: R|Int64|): R|ChainHost| {
+            <element: CfirLazyBlock>
+        }
+        public static func of(i: R|Int64|): R|ChainHost| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func longOperatorChain(flag: R|Bool|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func valuesOf(): R|Array<R|Int64|>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func longConditionChain(a: R|Int64|, b: R|Int64|, c: R|Int64|, d: R|Int64|, e: R|Int64|, f: R|Int64|): R|Bool| {
+        <element: CfirLazyBlock>
+    }

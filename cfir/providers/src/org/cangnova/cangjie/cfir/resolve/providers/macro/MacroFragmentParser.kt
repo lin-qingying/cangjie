@@ -1,8 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.messages.ParsingDiagnostic
 import org.cangnova.cangjie.messages.CjParsingDiagnosticPublication
+import org.cangnova.cangjie.messages.ParsingDiagnostic
 import org.cangnova.cangjie.parsing.ParsingFileFacts
 
 /**
@@ -72,6 +73,17 @@ interface MacroFragmentParser {
 }
 
 /**
+ * 声明宏重解析阶段的完整输出序列。
+ *
+ * 该对象只存在于 construction/splice 边界：声明宏可以合法地产生零个、一个或多个
+ * 声明，不能把 fragment 收窄成单个声明或额外塞入一个语义 CFIR 包装节点。
+ */
+data class MacroDeclarationFragment(
+    /** 按宏输出源码顺序排列的全部重解析声明。 */
+    val declarations: List<CfirDeclaration>,
+)
+
+/**
  * fragment parser 的完整输入。
  *
  * @property node 当前正在解析的 macro forest 节点。
@@ -92,6 +104,14 @@ data class MacroFragmentInput(
     val fileFacts: ParsingFileFacts? = null,
     /** 当前片段只可写入所属宿主文件的私有事务，不能从 session 猜测活动 writer。 */
     val annotationMetadata: CfirAnnotationMetadataBuilder,
+    /** parser 复扫后生成的稳定文本坐标表；只有 reparse 回调消费它。 */
+    val sourceMap: MacroFragmentSourceMap? = null,
+    /** source factory 确认的来源，随后由 registry/snapshot 消费。 */
+    val sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
+    /** 原宏位置的前置普通注解，仅供声明重解析，不能回流到父宏的 executor token 通道。 */
+    val inheritedAnnotationTokens: List<MacroSurfaceToken> = emptyList(),
+    /** 与前置 token 同一原槽位的解析模块 provenance。 */
+    val inheritedAnnotationSnapshots: List<CfirAnnotationSlotSnapshot> = emptyList(),
 ) {
     /** 从最终 routing 决策投影出的解析模式。 */
     val mode: MacroFragmentParser.Mode
@@ -126,7 +146,7 @@ sealed class MacroFragmentResult {
         override val diagnosticPublication: CjParsingDiagnosticPublication,
         override val parsedFileFacts: ParsingFileFacts? = null,
         /** 片段 parser 范围到原始 token 来源的映射。 */
-        val sourceMap: MacroFragmentSourceMap? = null,
+        val sourceMap: MacroParserDiagnosticSourceMap? = null,
     ) : MacroFragmentResult() {
         val diagnostics: List<ParsingDiagnostic> get() = diagnosticPublication.diagnostics
     }
@@ -150,8 +170,10 @@ sealed class MacroFragmentResult {
         val payload: MacroFragmentPayload = MacroFragmentPayload.EMPTY,
         override val parsedFileFacts: ParsingFileFacts? = null,
         /** 重新解析节点的 source 区间到原始 token 来源的映射。 */
-        val sourceMap: MacroFragmentSourceMap? = null,
+        val sourceMap: MacroParserDiagnosticSourceMap? = null,
         override val diagnosticPublication: CjParsingDiagnosticPublication = CjParsingDiagnosticPublication.EMPTY,
+        /** 与 payload 同批构造的原输入/生成来源，不重扫 PSI 恢复。 */
+        val sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
     ) : MacroFragmentResult()
 
     /**
@@ -170,8 +192,9 @@ sealed class MacroFragmentResult {
         val tokens: List<MacroSurfaceToken>,
         override val parsedFileFacts: ParsingFileFacts? = null,
         /** 注解实参中重解析语法节点到原始注解 token 的来源映射。 */
-        val sourceMap: MacroFragmentSourceMap? = null,
+        val sourceMap: MacroParserDiagnosticSourceMap? = null,
         override val diagnosticPublication: CjParsingDiagnosticPublication = CjParsingDiagnosticPublication.EMPTY,
+        val sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
     ) : MacroFragmentResult()
 
     /**
@@ -220,12 +243,10 @@ sealed interface MacroFragmentReparseResult {
  * Baseline 第 7 节"replace slots" 与第 8 节"stable splice"：splice 必须
  * 通过 handle 完成，禁止退化为 source offset fallback。
  *
- * Batch 8 阶段 slot 仅保存 handle id 与待 splice 的 fragment；
- * Batch 10 接通 owner / source / scope / symbol 修复时会在此扩展。
- *
  * @property handle stable splice 必须使用的 replace handle。
  * @property origin 产生该替换槽位的原始 macro surface。
  * @property fragment 将要写入槽位的 fragment 结果。
+ * @property embeddedSurfaceIds 其展开 token 已被本 fragment 重新解析并包含在其中的后代 surface。
  */
 data class MacroReplaceSlot(
     /** stable splice 必须使用的 replace handle。 */
@@ -236,6 +257,48 @@ data class MacroReplaceSlot(
     val fragment: MacroFragmentResult,
     /** 槽位实际所属文件事务；splice 的 owner/index 变化必须在同一次操作中登记。 */
     val annotationMetadata: CfirAnnotationMetadataBuilder,
+    /** 后代 surface 的展开结果已进入本 fragment，因而不再对应原始 final-CFIR 载体。 */
+    val embeddedSurfaceIds: Set<Long> = emptySet(),
+)
+
+/**
+ * 记录 stable splice 实际应用的一条声明替换关系。
+ *
+ * Cangjie 声明宏和参数宏会把一个 carrier 替换成零个、一个或多个声明；每个 replacement
+ * 都保留与原始 carrier 的对象身份关系，供 Analysis/IDE 构建源码结构和语义快照使用。
+ */
+data class MacroAppliedDeclarationReplacement(
+    /** 被宏替换的原始声明或参数 carrier。 */
+    val carrier: org.cangnova.cangjie.cfir.declarations.CfirDeclaration,
+    /** 本次 splice 在 carrier 槽位中写入的全部声明；空列表表示声明宏删除了 carrier。 */
+    val replacements: List<org.cangnova.cangjie.cfir.declarations.CfirDeclaration>,
+    /** 产生此次替换的原始宏 surface。 */
+    val surfaceId: Long,
+)
+
+/**
+ * 记录表达式宏 stable splice 实际写入的精确表达式身份关系。
+ *
+ * carrier 是 raw CFIR 中的 construction-only 表达式，replacement 是同一最终文件树中的语义表达式。
+ * Analysis/IDE 通过这条关系把物理宏调用 PSI 映射到展开后的表达式，而不根据文本或偏移猜测节点。
+ */
+data class MacroAppliedExpressionReplacement(
+    /** 被宏替换的 raw 表达式 carrier。 */
+    val carrier: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+    /** 本次 splice 在 carrier 槽位中写入的最终表达式。 */
+    val replacement: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+    /** 产生此次替换的原始宏 surface。 */
+    val surfaceId: Long,
+)
+
+/** stable splice 的最终 CFIR 与精确声明/参数来源关系。 */
+data class MacroStableSpliceResult(
+    /** 执行完所有 stable replacements 的文件。 */
+    val files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>,
+    /** 仅包含实际应用的声明和参数替换，不包含 embedded surface 或 annotation-only 替换。 */
+    val declarationReplacements: List<MacroAppliedDeclarationReplacement>,
+    /** 仅包含实际应用的表达式替换，不包含由父 surface 重新解析吸收的 embedded surface。 */
+    val expressionReplacements: List<MacroAppliedExpressionReplacement> = emptyList(),
 )
 
 /**
@@ -246,9 +309,14 @@ data class MacroReplaceSlot(
  */
 interface MacroStableSplicer {
     /**
-     * 应用 [slots] 到 [files]，返回替换后的 file 列表。
+     * 应用 [slots] 到 [files]，并同时返回替换后的文件与实际声明替换来源。
+     *
+     * 来源关系必须在按 replace-handle carrier 身份完成替换时产生；调用方不得从名称、文本或偏移反推。
      */
-    fun applySlices(files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>, slots: List<MacroReplaceSlot>): List<org.cangnova.cangjie.cfir.declarations.CfirFile>
+    fun applySlices(
+        files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>,
+        slots: List<MacroReplaceSlot>,
+    ): MacroStableSpliceResult
 }
 
 /**
@@ -317,7 +385,12 @@ object MacroTokenReEvaluator {
         return if (text.isEmpty()) {
             emptyList()
         } else {
-            listOf(MacroSurfaceToken(text = text, startOffset = 0, endOffset = text.length))
+            val sourceMap = MacroFragmentSourceMap.materialize(tokens)
+            listOf(MacroSurfaceToken(
+                text = text, startOffset = 0, endOffset = text.length,
+                sourceSpans = sourceMap.spansForRange(0, text.length),
+                isTrivia = tokens.all { it.isTrivia },
+            ))
         }
     }
 }

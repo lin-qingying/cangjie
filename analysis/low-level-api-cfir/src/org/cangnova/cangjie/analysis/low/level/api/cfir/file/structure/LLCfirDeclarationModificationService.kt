@@ -29,6 +29,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirFileSourceGeneration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirFileSourceReplacement
@@ -183,6 +184,11 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
             // If there is no `CjElement` ancestor, we have a non-CangJie file. Whitespace changes in such files are invisible to CangJie.
             val affectedElement = element.parentOfType<CjElement>() ?: return LLModificationLocality.Invisible
 
+            if (affectedElement.hasPublishedMacroSemanticSnapshot()) {
+                // 快照包含整模块的 source range 和 CFIR PSI 映射；空白变化也会使这些来源位置过期。
+                return LLModificationLocality.OutOfBlock
+            }
+
             return LLModificationLocality.Whitespace(affectedElement, project)
         }
 
@@ -196,6 +202,11 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
         if (inBlockModificationOwner is CjCodeFragment) {
             // All code fragment content is local
             return LLModificationLocality.InBlock(inBlockModificationOwner, project)
+        }
+
+        if (inBlockModificationOwner is CjDeclaration && inBlockModificationOwner.hasPublishedMacroSemanticSnapshot()) {
+            // 已发布快照持有整模块 CFIR 文件树；任何函数体局部失效都会使该代文件体与诊断变旧。
+            return LLModificationLocality.OutOfBlock
         }
 
         val isOutOfBlockChange = inBlockModificationOwner is CjAnnotated && (
@@ -343,7 +354,10 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
     /**
      * @see org.cangnova.cangjie.analysis.api.platform.modification.CaSourceModificationService.ancestorAffectedByInBlockModification
      */
-    fun ancestorAffectedByInBlockModification(changedElement: PsiElement): PsiElement? = nonLocalDeclarationForLocalChange(changedElement)
+    fun ancestorAffectedByInBlockModification(changedElement: PsiElement): PsiElement? {
+        if (changedElement.language is CangJieLanguage && changedElement.hasPublishedMacroSemanticSnapshot()) return null
+        return nonLocalDeclarationForLocalChange(changedElement)
+    }
 
     /**
      * 释放服务生命周期。
@@ -580,6 +594,14 @@ internal fun PsiElement.getNonLocalReanalyzableContainingDeclaration(): CjDeclar
     }
 }
 
+/** 读取现有源码 session 的快照状态；分类 PSI 修改时不得因此创建新 session 或启动宏构造。 */
+private fun PsiElement.hasPublishedMacroSemanticSnapshot(): Boolean {
+    val module = CangJieProjectStructureProvider.getModule(project, this, useSiteModule = null)
+    return LLCfirSessionCache.getInstance(project)
+        .getCachedResolvableSession(module)
+        ?.macroSemanticSnapshot != null
+}
+
 /**
  * # Regular access
  *
@@ -661,8 +683,10 @@ private fun isElementInsideBody(declaration: CjDeclarationWithBody, child: PsiEl
 /**
  * 判断命名函数是否具备稳定签名，使函数体变化可以按块内修改处理。
  *
- * 仓颉块体同样参与返回类型推断，空块变为非空块也会改变 raw 签名。
- * 只有显式返回类型才能保证 body 修改不改变对外类型契约。
+ * 仓颉具名函数体一律是块体，`hasBlockBody()` 对具名函数恒真，不构成"返回类型已固定"的证据；
+ * 该判据是从 Kotlin 的块体函数规则照搬来的，在本仓颉前端不成立。省略返回类型的函数，其返回类型
+ * 由函数体推导，改 body 就等于改签名，必须升级为块外修改；只有源码显式声明返回类型的函数，body
+ * 变化才不改变对外类型契约，可以只失效 body。
  */
 private fun CjNamedFunction.isReanalyzableContainer(): Boolean = typeReference != null
 

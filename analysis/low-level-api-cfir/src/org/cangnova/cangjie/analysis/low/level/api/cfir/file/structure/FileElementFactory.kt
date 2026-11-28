@@ -22,13 +22,14 @@ internal object FileElementFactory {
         cfirDeclaration: CfirDeclaration,
         cfirFile: CfirFile,
         moduleComponents: LLCfirModuleResolveComponents,
+        additionalMappings: Map<org.cangnova.cangjie.psi.CjElement, org.cangnova.cangjie.cfir.CfirElement> = emptyMap(),
     ): FileStructureElement {
         return when (cfirDeclaration) {
             is CfirClassLikeDeclaration -> {
                 cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
 
                 lazyResolveClassGeneratedMembersIfNeeded(cfirDeclaration)
-                ClassDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
+                ClassDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents, additionalMappings)
             }
 
             is CfirExtend -> {
@@ -36,7 +37,7 @@ internal object FileElementFactory {
                 cfirDeclaration.declarations.forEach { declaration ->
                     declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
                 }
-                ExtendDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
+                ExtendDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents, additionalMappings)
             }
 
             else -> {
@@ -50,7 +51,7 @@ internal object FileElementFactory {
                     cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
                 }
 
-                DeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
+                DeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents, additionalMappings)
             }
         }
     }

@@ -1,0 +1,11 @@
+FILE: unclosedParen.cj
+    internal? func unclosedParen(): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    INT(1)
+                arguments:
+                    INT(2)
+            }
+        }
+    }

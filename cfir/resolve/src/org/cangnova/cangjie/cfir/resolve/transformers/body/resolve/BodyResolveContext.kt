@@ -24,10 +24,9 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers.body.resolve
 
+import java.util.EnumMap
+import java.util.IdentityHashMap
 import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
-
-import org.cangnova.cangjie.cfir.types.asCone
-
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.calls.ImplicitExtensionReceiverValue
@@ -36,22 +35,19 @@ import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
 import org.cangnova.cangjie.cfir.isMemberParameter
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.body.*
 import org.cangnova.cangjie.cfir.resolve.body.asTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.collectTowerDataElementsForClass
 import org.cangnova.cangjie.cfir.resolve.body.typeParametersForTower
-import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
-import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.CfirImplicitTypeComputationScope
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole
+import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
-import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
@@ -60,10 +56,6 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassifierType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeTypeVariable
-import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.coneType
@@ -72,40 +64,7 @@ import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
-import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
-import org.cangnova.cangjie.resolve.calls.inference.addEqualityConstraintIfCompatible
-import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
-import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
-import org.cangnova.cangjie.resolve.calls.inference.model.ReceiverConstraintPosition
-import org.cangnova.cangjie.type.AbstractTypeChecker
-import org.cangnova.cangjie.type.model.TypeConstructorMarker
-import org.cangnova.cangjie.type.model.TypeVariableMarker
 import org.cangnova.cangjie.util.PrivateForInline
-import java.util.EnumMap
-import java.util.IdentityHashMap
-import kotlin.collections.ArrayDeque
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.List
-import kotlin.collections.MutableList
-import kotlin.collections.MutableMap
-import kotlin.collections.MutableSet
-import kotlin.collections.Set
-import kotlin.collections.emptySet
-import kotlin.collections.filterIsInstance
-import kotlin.collections.firstOrNull
-import kotlin.collections.fold
-import kotlin.collections.hashMapOf
-import kotlin.collections.isNotEmpty
-import kotlin.collections.lastOrNull
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableSetOf
-import kotlin.collections.set
-import kotlin.collections.toList
 
 /**
  * Body resolve 阶段的中心上下文。
@@ -197,6 +156,36 @@ class BodyResolveContext(
     /** 当前调用推断会话。 */
     @set:PrivateForInline
     var inferenceSession: CfirInferenceSession = CfirInferenceSession.DEFAULT
+
+    /** 资源试算与正式 replay 的词法访问域；DEFAULT 推断会话不持有可变全局状态。 */
+    internal var implicitTypeComputationScope: CfirImplicitTypeComputationScope? = null
+
+    internal fun <T> withImplicitTypeComputationScope(scope: CfirImplicitTypeComputationScope, block: () -> T): T {
+        val previous = implicitTypeComputationScope
+        implicitTypeComputationScope = scope
+        return try {
+            block()
+        } finally {
+            implicitTypeComputationScope = previous
+        }
+    }
+
+    internal fun <V : ConeTypeVariable> createInferenceVariable(
+        owner: CfirElement,
+        role: CfirInferenceVariableRole,
+        index: Int = 0,
+        create: () -> V,
+    ): V {
+        val scope = implicitTypeComputationScope ?: return create()
+        return scope.graph.variable(scope, null, owner, role, index, create)
+    }
+
+    /** 真实语义采用点显式传入类型；没有 retained 槽时无需新的分配或推断。 */
+    internal fun consumeInferenceType(owner: CfirElement, role: CfirInferenceVariableRole, type: ConeCangJieType, index: Int = 0) {
+        val scope = implicitTypeComputationScope ?: return
+        scope.graph.consumeExpressionType(scope, owner, role, index, type,
+            (inferenceSession as? org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession)?.currentCommonSystem)
+    }
 
     /**
      * 所有临时 ResolutionContext 共享同一个候选阶段边界。
@@ -1247,6 +1236,53 @@ class BodyResolveContext(
         specialTowerDataContexts.restore(snapshot)
     }
 
+    /**
+     * 捕获 DFA/CFG 上下文，用于 speculative lambda body 重检后的候选级回滚。
+     *
+     * 对位 Kotlin FIR 的 data-flow snapshot 角色：候选试跑可以构造 CFG、记录 return
+     * 表达式和赋值状态，但这些状态只有在最终选中的候选提交时才能保留。
+     */
+    fun captureDataFlowAnalyzerContext(): CfirDataFlowAnalyzerContextSnapshot =
+        dataFlowAnalyzerContext.createSnapshot(IdentitySnapshotCfirMapper)
+
+    /** 从快照恢复 DFA/CFG 上下文。 */
+    fun restoreDataFlowAnalyzerContext(snapshot: CfirDataFlowAnalyzerContextSnapshot) {
+        dataFlowAnalyzerContext.resetFrom(snapshot.context)
+    }
+
+    /**
+     * 保存局部声明的词法入口，供资源依赖跳转从同一准备点开始计算。
+     *
+     * 变量 initializer 的分组帧、字段排除、声明容器、泛型归属、循环边界与入口流事实均保留。
+     * 新声明的 expected-type/candidate 根帧和表达式解析深度由其自身建立，调用者的原帧不被替换。
+     */
+    @OptIn(PrivateForInline::class)
+    internal fun createLocalDeclarationContext(returnTypeCalculator: ReturnTypeCalculator): BodyResolveContext =
+        BodyResolveContext(
+            returnTypeCalculator,
+            captureDataFlowAnalyzerContext().context,
+            isContextCollectorMode,
+        ).also { copy ->
+            copy.file = file
+            copy.fileImportsScope.addAll(fileImportsScope)
+            copy.regularTowerDataContexts = regularTowerDataContexts.createSnapshot(keepMutable = true)
+            copy.specialTowerDataContexts.restore(specialTowerDataContexts.capture())
+            copy.containers = ArrayDeque(containers)
+            copy.loopJumpScopes.addAll(loopJumpScopes)
+            copy.containingRegularClass = containingRegularClass
+            copy.containingClassDeclarations = ArrayDeque(containingClassDeclarations)
+            copy.variableInitializerStack.addAll(variableInitializerStack)
+            copy.fieldInitializerStack.addAll(fieldInitializerStack)
+            copy.inferenceSession = inferenceSession
+            copy.implicitTypeComputationScope = implicitTypeComputationScope
+            copy.candidateProcessingMode = candidateProcessingMode
+            copy.publicApiInlineFunction = publicApiInlineFunction
+            copy.targetedLocalClasses = targetedLocalClasses
+            copy.anonymousFunctionsAnalyzedInDependentContext.addAll(anonymousFunctionsAnalyzedInDependentContext)
+            copy.outerLocalClassForNested.putAll(outerLocalClassForNested)
+            copy.isInsideAnnotationContext = isInsideAnnotationContext
+        }
+
     // ── Inference / expectations ──────────────────────────────────────────
 
     /** 在指定推断会话中执行 [block]，结束后恢复旧会话。 */
@@ -1555,6 +1591,18 @@ class CfirRegularTowerDataContexts private constructor(
         )
     }
 
+    /** 保存全部 tower 模式，并保留原本共享同一 context 的模式之间的身份关系。 */
+    internal fun createSnapshot(keepMutable: Boolean): CfirRegularTowerDataContexts {
+        val snapshots = IdentityHashMap<CfirTowerDataContext, CfirTowerDataContext>()
+        val modes = EnumMap<CfirTowerDataMode, CfirTowerDataContext>(CfirTowerDataMode::class.java)
+        modeMap.forEach { (mode, context) ->
+            modes[mode] = snapshots.getOrPut(context) { context.createSnapshot(keepMutable) }
+        }
+        return CfirRegularTowerDataContexts(
+            modes, primaryConstructorPureParametersScope, primaryConstructorAllParametersScope, activeMode,
+        )
+    }
+
     companion object {
         /** 构造完整的 mode -> context 映射。 */
         private fun enumMap(
@@ -1672,894 +1720,6 @@ private object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
     override fun <T : CfirElement> mapElement(element: T): T = element
 }
 
-/**
- * body resolve 期间可插拔的调用推断会话。
- *
- * 默认实现不共享约束系统；PCLA 等高级模式通过子类改写候选基础约束和 lambda 完成策略。
- */
-abstract class CfirInferenceSession {
-    /** 当前会话正在使用的约束系统是否已失败。 */
-    open val hasCurrentConstraintContradiction: Boolean
-        get() = false
-
-    /** 返回指定候选应复用的基础约束存储。 */
-    open fun baseConstraintStorageForCandidate(
-        candidate: org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate,
-        bodyResolveContext: BodyResolveContext,
-    ): ConstraintStorage? = null
-
-    /** 返回指定调用应使用的自定义完成模式；null 表示执行普通 full completion。 */
-    open fun customCompletionModeInsteadOfFull(call: org.cangnova.cangjie.cfir.expressions.CfirResolvable): ConstraintSystemCompletionMode? =
-        null
-
-    /** 处理一次部分解析调用的回调。 */
-    open fun <T> processPartiallyResolvedCall(
-        call: T,
-        resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
-        completionMode: ConstraintSystemCompletionMode,
-    ) where T : org.cangnova.cangjie.cfir.expressions.CfirResolvable, T : org.cangnova.cangjie.cfir.expressions.CfirExpression {
-    }
-
-    /** 在当前推断会话内执行 lambda completion。 */
-    open fun runLambdaCompletion(
-        candidate: org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate,
-        forOverloadByLambdaReturnType: Boolean,
-        block: () -> Unit,
-    ): ConstraintStorage? {
-        block()
-        return null
-    }
-
-    /** 在兼容时向指定系统添加 subtype 约束。 */
-    open fun addSubtypeConstraintIfCompatible(
-        lowerType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
-        upperType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
-    ) {
-    }
-
-    /** 在当前推断会话的共享系统中添加 equality 约束。 */
-    open fun addEqualityConstraintIfCompatible(
-        firstType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
-        secondType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
-    ): Boolean = false
-
-    /** 在兼容时向指定系统添加 subtype 约束。 */
-    open fun addSubtypeConstraintIfCompatible(
-        lowerType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
-        upperType: org.cangnova.cangjie.cfir.types.ConeCangJieType,
-        system: ConstraintSystemImpl,
-    ) {
-        addSubtypeConstraintIfCompatible(lowerType, upperType)
-    }
-
-    /** 在当前推断会话中注册结构化表达式推断产生的类型变量。 */
-    open fun registerInferenceVariable(variable: TypeVariableMarker) {
-    }
-
-    /**
-     * 判断类型中是否含当前推断会话系统已登记的推断变量。
-     *
-     * fresh lambda receiver 的成员候选会在 fresh-variable 阶段为 owner 泛型参数创建
-     * 占位变量（官方 `ConstrainByCtor` 的 T-Fly）；这些变量属于 lambda 的求解系统，
-     * 由同一 lambda 函数体的约束在定义点完成阶段定型。含这类变量的类型不能作为「单 owner 收敛」的
-     * 硬界写回（`x <: Array<T-Fly>` 会把形参定型成含未解变量的非 proper 类型），
-     * 默认会话不维护变量登记，恒为 false。
-     */
-    open fun containsRegisteredInferenceVariable(type: ConeCangJieType): Boolean = false
-
-    /**
-     * 收窄 fresh lambda receiver 的成员 owner 候选集合。
-     *
-     * 默认推断会话不维护跨表达式候选集合；PCLA 会话用它模拟官方 `TryInferFromSyntaxInfo`
-     * 中同一 lambda 参数成员候选集合的交集。
-     */
-    open fun refineFreshReceiverCandidateOwners(
-        receiverTypeConstructor: TypeConstructorMarker,
-        ownerTypes: List<ConeCangJieType>,
-    ): Set<ConeCangJieType>? = null
-
-    /**
-     * fresh lambda 形参在当前会话中的已知类型界。
-     *
-     * 官方 `ChkLambda` 逐语句分析，前序语句的调用完成即固定形参类型，后续成员访问
-     * 按已固定的具体类型解析。CFIR 的 PCLA_POSTPONED_CALL 把参数检查推迟到 body
-     * 转换之后，前序约束不会出现在共享系统的即时视图里；PCLA 会话通过读取已排队
-     * postponed 调用的参数映射补足同一信息（如 `getB19(x)` 的映射携带 `x -> B19`），
-     * 使后续 `x.foo19(y)` 的 owner 收窄与官方一致。
-     */
-    open fun knownBoundsForFreshReceiver(
-        receiverTypeConstructor: TypeConstructorMarker,
-    ): List<ConeCangJieType> = emptyList()
-
-    /**
-     * 记录一次 fresh lambda receiver 成员访问暴露的「owner -> 成员返回类型」形状。
-     *
-     * 官方 `TryInitializeBaseSum` 播种候选 owner 集时同时保留每个 owner 下可调用的成员
-     * 签名；PCLA 会话用这些形状支撑实参侧过滤——外部被调方的形参类型作为目标时
-     * （官方 `FilterSumUpperbound`），需要逐 owner 检查该成员的返回类型是否满足上界。
-     * 默认无操作。
-     */
-    open fun recordFreshReceiverMemberAccessShapes(
-        receiverTypeConstructor: TypeConstructorMarker,
-        shapes: List<FreshReceiverMemberAccessShape>,
-    ) {
-    }
-
-    /**
-     * 返回 fresh lambda receiver 当前维护的候选 owner 类型集合；无记录时返回空列表。
-     *
-     * 操作符内建签名筛选（官方播种 sum 被操作符可用性收窄的场景）用它读取既有
-     * owner-sum 证据；默认推断会话不维护集合，恒为空。
-     */
-    open fun knownCandidateOwnerTypesForFreshReceiver(
-        receiverTypeConstructor: TypeConstructorMarker,
-    ): List<ConeCangJieType> = emptyList()
-
-    /**
-     * 用「成员返回类型 <: 上界」过滤 fresh receiver 的候选 owner 并并入交集语义。
-     *
-     * 对应官方实参侧 `FilterSumUpperbound`：外部被调方的形参声明类型作为目标，
-     * 逐 owner 检查该成员在其上的返回类型是否满足上界（如 `{x => g29(x.v)}` 中
-     * g29 形参 String 把 sum={A29,B29} 收窄到唯一 B29）；幸存者经
-     * [refineFreshReceiverCandidateOwners] 与既有集合相交并在单一收敛时写入约束。
-     * 默认无操作。
-     */
-    open fun refineFreshReceiverOwnersByMemberReturnBound(
-        receiverTypeConstructor: TypeConstructorMarker,
-        memberName: Name,
-        returnTypeUpperBound: ConeCangJieType,
-    ) {
-    }
-
-    /**
-     * 语句级推断边界：块内每条语句解析完成后回调。
-     *
-     * 官方 `ChkLambda`/`SynLamExpr` 按语句顺序分析 lambda body，前序语句完成即固定
-     * 已有唯一解的形参 tyvar，后续语句按具体类型解析。CFIR 的 PCLA_POSTPONED_CALL
-     * 把调用参数检查推迟到 body 转换之后，该回调给推断会话一个在语句边界即时消化
-     * 本语句排队 postponed 调用的机会。默认无操作，仅 synthetic 顶层 lambda 的 PCLA
-     * 会话启用逐语句处理。
-     */
-    open fun onStatementResolved(statement: CfirStatement) {
-    }
-
-    companion object {
-        /** 默认推断会话，不改变普通调用解析行为。 */
-        val DEFAULT: CfirInferenceSession = object : CfirInferenceSession() {}
-
-        /** 基于外层系统构造一个共享基础约束系统。 */
-        @JvmStatic
-        protected fun prepareSharedBaseSystem(
-            outerSystem: ConstraintSystemImpl,
-            components: InferenceComponents,
-        ): ConstraintSystemImpl {
-            return components.createConstraintSystem().apply {
-                addOuterSystem(outerSystem.currentStorage())
-            }
-        }
-    }
-}
-
-/**
- * fresh lambda receiver 成员访问在单个 owner 下暴露的可调用形状。
- *
- * 官方播种候选 owner 集时每个 owner 都伴随自己的成员签名；实参侧
- * `FilterSumUpperbound` 需要按「该成员在 owner 上的返回类型」逐 owner 淘汰，
- * 因此形状必须绑定成员名称与具体 owner，避免不同成员的返回类型互相污染过滤结果。
- */
-data class FreshReceiverMemberAccessShape(
-    /** 被访问成员的名称。 */
-    val memberName: Name,
-    /** 该成员所属的候选 owner 类型。 */
-    val ownerType: ConeCangJieType,
-    /** 按当前约束系统归一化后的成员返回类型。 */
-    val returnType: ConeCangJieType,
-)
-
-/**
- * PCLA 推断会话。
- *
- * 该会话维护一个与外层候选共享的 common constraint system，
- * 让 postponed call / lambda body 能在候选试跑期间累积并最终提交约束。
- */
-class CfirPCLAInferenceSession(
-    /** 外层候选，最终会接收 PCLA 推断结果。 */
-    private val outerCandidate: Candidate,
-    /** 构造约束系统和访问会话类型上下文所需的推断组件。 */
-    private val inferenceComponents: InferenceComponents,
-    /**
-     * 启用逐语句 postponed 处理时所属的 lambda（synthetic 顶层 lambda 的首轮与重算路径）。
-     *
-     * 官方 `ChkLambda` 对该类 lambda 按语句顺序分析并在 tyvar 有解时立即替换；
-     * 非 null 时 [onStatementResolved] 会在每条语句完成后消化本语句排队的调用，
-     * 把已有唯一解的形参占位写回具体类型。默认 null 保持既有批处理语义。
-     */
-    private val statementProcessingOwnerLambda: CfirAnonymousFunction? = null,
-) : CfirInferenceSession() {
-    /** 当前 PCLA 共享 common constraint system。 */
-    private var currentCommonSystem: ConstraintSystemImpl = prepareSharedBaseSystem(outerCandidate.system, inferenceComponents)
-    /** 当前 PCLA common system 是否已经出现约束矛盾。 */
-    override val hasCurrentConstraintContradiction: Boolean
-        get() = currentCommonSystem.hasContradiction
-    /** fresh lambda receiver 对应的候选 owner 集合。 */
-    private val freshReceiverCandidateOwnersByTypeVariable =
-        linkedMapOf<TypeConstructorMarker, MutableList<ConeCangJieType>>()
-    /** fresh lambda receiver 成员访问记录的「owner -> 成员返回类型」形状。 */
-    private val freshReceiverMemberShapesByTypeVariable =
-        linkedMapOf<TypeConstructorMarker, MutableList<FreshReceiverMemberAccessShape>>()
-    /** 逐语句处理已消费的 postponed 调用队列水位；从会话创建时的队列长度起步，只消化本会话新增的调用。 */
-    private var processedPostponedCallsCount = outerCandidate.postponedPCLACalls.size
-
-    /** 返回当前候选应使用的共享基础约束存储。 */
-    override fun baseConstraintStorageForCandidate(
-        candidate: Candidate,
-        bodyResolveContext: BodyResolveContext,
-    ): ConstraintStorage? {
-        if (candidate.mightBeAnalyzedAndCompletedIndependently(bodyResolveContext)) return null
-        return currentCommonSystem.currentStorage()
-    }
-
-    /** 对使用外层约束系统的 postponed call 改用 PCLA postponed completion。 */
-    override fun customCompletionModeInsteadOfFull(
-        call: CfirResolvable,
-    ): ConstraintSystemCompletionMode? = when {
-        call.candidate()?.usedOuterCs == true -> ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL
-        else -> null
-    }
-
-    /** 处理部分解析调用，并在需要时把候选系统写回 common system。 */
-    override fun <T> processPartiallyResolvedCall(
-        call: T,
-        resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
-        completionMode: ConstraintSystemCompletionMode,
-    ) where T : CfirResolvable, T : CfirExpression {
-        call.updateReturnTypeWithCurrentSubstitutor(resolutionMode)
-
-        val candidate = call.candidate()
-        if (candidate?.usedOuterCs != true) return
-        currentCommonSystem.replaceContentWith(candidate.system.currentStorage())
-        candidate.freshReceiverConstraintToDrop?.let { constraintToDrop ->
-            currentCommonSystem.removeConstraintsForVariable(constraintToDrop.receiverTypeConstructor) { constraint ->
-                val position = constraint.position.from
-                position is ReceiverConstraintPosition<*> &&
-                    position.argument === constraintToDrop.receiverExpression
-            }
-            candidate.freshReceiverConstraintToDrop = null
-        }
-
-        if (completionMode == ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL) {
-            outerCandidate.postponedPCLACalls += ConeAtomWithCandidate(call, candidate)
-        }
-    }
-
-    /** 在 PCLA 共享系统或候选系统中运行 lambda completion。 */
-    override fun runLambdaCompletion(
-        candidate: Candidate,
-        forOverloadByLambdaReturnType: Boolean,
-        block: () -> Unit,
-    ): ConstraintStorage? {
-        if (forOverloadByLambdaReturnType) {
-            val constraintAccumulatorForLambda = inferenceComponents.createConstraintSystem().apply {
-                setBaseSystem(currentCommonSystem.currentStorage())
-            }
-
-            runWithSpecifiedCurrentCommonSystem(constraintAccumulatorForLambda, block)
-            return constraintAccumulatorForLambda.currentStorage()
-        }
-
-        runWithSpecifiedCurrentCommonSystem(candidate.system, block)
-        return null
-    }
-
-    /** 临时切换当前 common system 执行 [block]。 */
-    private fun <T> runWithSpecifiedCurrentCommonSystem(newSystem: ConstraintSystemImpl, block: () -> T): T {
-        val previous = currentCommonSystem
-        return try {
-            currentCommonSystem = newSystem
-            block()
-        } finally {
-            currentCommonSystem = previous
-        }
-    }
-
-    /** 将 PCLA common system 的最终结果提交回外层候选。 */
-    fun applyResultsToMainCandidate() {
-        outerCandidate.system.replaceContentWith(currentCommonSystem.currentStorage())
-    }
-
-    /**
-     * 从已排队 postponed 调用中提取 fresh 形参的已知类型界。
-     *
-     * 每个排队调用的参数映射里，凡以该 receiver 变量为实参的参数位都给出一个
-     * `变量 <: 参数类型` 上界（按该候选自己的当前替换结果换算）；候选系统内已记录
-     * 的显式约束与固定解也一并返回。
-     */
-    override fun knownBoundsForFreshReceiver(
-        receiverTypeConstructor: TypeConstructorMarker,
-    ): List<ConeCangJieType> {
-        val bounds = mutableListOf<ConeCangJieType>()
-        for (atom in outerCandidate.postponedPCLACalls.filterIsInstance<ConeAtomWithCandidate>()) {
-            val candidate = atom.candidate
-            // 「自身就是对该 fresh receiver 的成员访问」的排队调用不提供硬界：
-            // 其 argumentMapping 与 receiver 约束表达的是 owner-sum 集合事实
-            // （官方 TryInitializeBaseSum 的候选 owner 集合），不是类型硬界；
-            // 当作硬界会在 `{x => x.v30_2; x.v30_3}` 这类多 owner 交集场景误杀合法候选。
-            if (candidate.isFreshReceiverMemberAccessOn(receiverTypeConstructor)) continue
-            if (candidate.argumentMappingInitialized) {
-                val substitutor = candidate.system.currentStorage()
-                    .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
-                    .asCone()
-                for ((argument, parameter) in candidate.argumentMapping) {
-                    val argumentType = argument.expression.coneTypeOrNull as? ConeTypeVariableType ?: continue
-                    if (argumentType.typeConstructor != receiverTypeConstructor) continue
-                    val parameterType = parameter.returnTypeRef.coneTypeOrNull?.let { declared ->
-                        substitutor.substituteOrNull(declared) ?: declared
-                    } ?: continue
-                    if (parameterType is ConeErrorType) continue
-                    bounds += parameterType
-                }
-            }
-
-            val constraints = candidate.system.currentStorage()
-                .notFixedTypeVariables[receiverTypeConstructor]?.constraints.orEmpty()
-            for (constraint in constraints) {
-                if (constraint.kind != ConstraintKind.UPPER &&
-                    constraint.kind != ConstraintKind.LOWER &&
-                    constraint.kind != ConstraintKind.EQUALITY
-                ) continue
-                val constraintType = constraint.type as? ConeCangJieType ?: continue
-                if (constraintType is ConeErrorType) continue
-                bounds += constraintType
-            }
-            (candidate.system.currentStorage().fixedTypeVariables[receiverTypeConstructor]
-                as? ConeCangJieType)?.let { fixedType ->
-                if (fixedType !is ConeErrorType) bounds += fixedType
-            }
-        }
-        return bounds.distinctBy { it.toString() }
-    }
-
-    /** 判断排队调用的 dispatch/extension receiver 是否正是查询中的 fresh lambda 形参变量。 */
-    private fun Candidate.isFreshReceiverMemberAccessOn(
-        receiverTypeConstructor: TypeConstructorMarker,
-    ): Boolean {
-        val receiverExpression = dispatchReceiver?.expression
-            ?: givenExtensionReceiver?.expression
-            ?: return false
-        val receiverType = receiverExpression.coneTypeOrNull as? ConeTypeVariableType ?: return false
-        return receiverType.typeConstructor == receiverTypeConstructor
-    }
-
-    /**
-     * synthetic 顶层 lambda 的逐语句 postponed 处理。
-     *
-     * 每条语句解析完成后消化该语句排队的 postponed 调用：从新增调用的 argumentMapping
-     * 提取「形参变量 -> 参数类型」硬界，对已有唯一解的形参占位按官方 `ChkLambda`
-     * 「tyvar 有解立即替换」语义写回具体类型，使后续语句的成员查找直接按具体类型解析。
-     */
-    override fun onStatementResolved(statement: CfirStatement) {
-        if (statementProcessingOwnerLambda == null) return
-
-        val queueSize = outerCandidate.postponedPCLACalls.size
-        val fromIndex = processedPostponedCallsCount.coerceAtMost(queueSize)
-        processedPostponedCallsCount = queueSize
-        val newAtoms = outerCandidate.postponedPCLACalls
-            .subList(fromIndex, queueSize)
-            .filterIsInstance<ConeAtomWithCandidate>()
-        for (parameter in statementProcessingOwnerLambda.valueParameters) {
-            fixLambdaParameterFromHardBounds(parameter, newAtoms)
-        }
-    }
-
-    /**
-     * 用语句边界内累积的硬界求解并写回 lambda 形参类型引用。
-     *
-     * 只处理仍为 fresh 占位的形参；多个硬界迭代求交，交集失败、解含未固定推断变量或与
-     * common system 既有约束冲突时放弃固定，交由既有诊断路径报告真实错误。
-     */
-    private fun fixLambdaParameterFromHardBounds(
-        parameter: CfirValueParameter,
-        newAtoms: List<ConeAtomWithCandidate>,
-    ) {
-        val placeholderType = parameter.returnTypeRef.coneTypeOrNull as? ConeTypeVariableType ?: return
-        val variableConstructor = placeholderType.typeConstructor
-        // 外层调用的实参若是对该形参变量的成员访问（如 g29(x.v) 的 x.v），实参类型不是裸
-        // tyvar，硬界提取拿不到信息；官方此时用外层被调形参类型执行 FilterSumUpperbound
-        // 收窄 owner-sum，这里先消化同一证据再做硬界求解。
-        refineOwnersFromOuterParameterBounds(variableConstructor, newAtoms)
-        val hardBounds = collectHardBoundsForVariable(variableConstructor, newAtoms) +
-                collectProperDirectConstraintBounds(variableConstructor) +
-                convergedFreshReceiverOwnerBounds(variableConstructor)
-        if (hardBounds.isEmpty()) return
-        val solution = solveUniqueSolution(variableConstructor, hardBounds) ?: return
-        parameter.replaceReturnTypeRef(
-            solution.toCfirResolvedTypeRef(parameter.returnTypeRef.source, parameter.returnTypeRef),
-        )
-    }
-
-    /**
-     * 读取当前 common system 中直接挂在 lambda 形参上的可用上界。
-     *
-     * 模式 initializer 的约束不经过 postponed call 的 argumentMapping：例如
-     * `let (Some(x), y) <- (a, b)` 会直接产生 `a <: Option<T>`。这里不能只看调用
-     * 队列，否则这种约束永远到不了形参定型路径。先使用当前 substitutor 替换已经
-     * 求出的嵌套变量；只有替换后成为 proper type 的约束才可以作为本语句边界的定型
-     * 证据，避免把 `Option<T-Fly>` 泄漏到后续 body 解析。
-     */
-    private fun collectProperDirectConstraintBounds(
-        variableConstructor: TypeConstructorMarker,
-    ): List<ConeCangJieType> {
-        val storage = currentCommonSystem.currentStorage()
-        val variableConstraints = storage.notFixedTypeVariables[variableConstructor]?.constraints.orEmpty()
-        if (variableConstraints.isEmpty()) return emptyList()
-
-        val substitutor = storage
-            .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
-            .asCone()
-        return variableConstraints
-            .asSequence()
-            .filter { constraint ->
-                constraint.kind == ConstraintKind.UPPER || constraint.kind == ConstraintKind.EQUALITY
-            }
-            .mapNotNull { constraint ->
-                val constraintType = constraint.type as? ConeCangJieType ?: return@mapNotNull null
-                val substitutedType = substitutor.substituteOrNull(constraintType) ?: constraintType
-                if (substitutedType is ConeErrorType || substitutedType.containsNotFixedVariable(storage)) {
-                    null
-                } else {
-                    substitutedType
-                }
-            }
-            .distinctBy { it.toString() }
-            .toList()
-    }
-
-    /**
-     * owner-sum 收敛到唯一候选时把它作为该形参变量的硬界。
-     *
-     * 官方在候选集归一到**单个类**（而非并集）后执行 `TryEnforceCandidate`，写 eq 约束
-     * 把形参定死为该 owner（如 `{x => g29(x.v)}` 经 `FilterSumUpperbound` 淘汰 A29 后
-     * 固定 `x := B29`）。CFIR 这一侧此前只把收敛结果写成 common system 的 subtype 约束，
-     * 没有任何通路把它变成形参类型，导致体内成员访问始终停留在歧义状态。
-     *
-     * 仍含未定类型变量的表示（泛型 owner 的未替换轮，如 `B31<TypeVariable(T)>`）不作硬界，
-     * 等替换轮给出具体形式后再定型；集合未收敛到单一 owner 时同样不提供硬界。
-     */
-    private fun convergedFreshReceiverOwnerBounds(
-        variableConstructor: TypeConstructorMarker,
-    ): List<ConeCangJieType> {
-        val ownerType = freshReceiverCandidateOwnersByTypeVariable[variableConstructor]?.singleOrNull()
-            ?: return emptyList()
-        if (ownerType is ConeErrorType) return emptyList()
-        if (ownerType.hasUndeterminedTypeVariableArgument()) return emptyList()
-        return listOf(ownerType)
-    }
-
-    /**
-     * 从语句边界排队调用的实参侧提取 owner-sum 过滤证据。
-     *
-     * 识别 argumentMapping 中「实参表达式自身是对目标形参变量的成员访问」的排队调用：
-     * 实参是 qualified access 且其显式 receiver 正是形参 tyvar（如 g29(x.v) 的 x.v）。
-     * 该实参的引用在多 owner 形状不等价时已退化为错误引用、不带原成员候选，因此这里
-     * 用 receiver 的结构形态与引用名称识别，不依赖候选存活。此时以外层被调方该参数位
-     * 的声明类型（按候选当前替换结果换算）为上界触发 [refineFreshReceiverOwnersByMemberReturnBound]；
-     * 「调用自身就是对形参的成员访问」的排队调用不提供此类证据——那仍是 owner-sum 集合事实。
-     */
-    private fun refineOwnersFromOuterParameterBounds(
-        variableConstructor: TypeConstructorMarker,
-        atoms: List<ConeAtomWithCandidate>,
-    ) {
-        for (atom in atoms) {
-            val candidate = atom.candidate
-            if (candidate.isFreshReceiverMemberAccessOn(variableConstructor)) continue
-            if (!candidate.argumentMappingInitialized) continue
-            val substitutor = candidate.system.currentStorage()
-                .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
-                .asCone()
-            for ((argument, parameter) in candidate.argumentMapping) {
-                refineOwnersFromOuterParameterBound(
-                    variableConstructor,
-                    argument.expression,
-                    parameter,
-                    substitutor,
-                )
-            }
-        }
-    }
-
-    /**
-     * 处理单个「外层调用实参位」提供的 owner 过滤证据。
-     *
-     * 逐项判定：实参必须是 qualified access、其显式 receiver 必须是目标形参 tyvar、
-     * 成员名与被调形参声明界必须可读；任一不满足则该实参位不提供证据。
-     */
-    private fun refineOwnersFromOuterParameterBound(
-        variableConstructor: TypeConstructorMarker,
-        expression: CfirExpression,
-        parameter: CfirValueParameter,
-        substitutor: ConeSubstitutor,
-    ) {
-        val access = expression as? CfirQualifiedAccessExpression ?: return
-        val receiverType = access.explicitReceiver?.coneTypeOrNull as? ConeTypeVariableType ?: return
-        if (receiverType.typeConstructor != variableConstructor) return
-        val memberName = (access.calleeReference as? CfirNamedReference)?.name ?: return
-        val declaredBound = parameter.returnTypeRef.coneTypeOrNull ?: return
-        val boundType = substitutor.substituteOrNull(declaredBound) ?: declaredBound
-        refineFreshReceiverOwnersByMemberReturnBound(variableConstructor, memberName, boundType)
-    }
-
-    /**
-     * 从语句边界内新增排队调用提取指定形参变量的硬界。
-     *
-     * 仅消费 argumentMapping（实参按候选自身替换结果换算到形参声明类型）；
-     * 自身就是对该变量的成员访问的调用不提供硬界——那是 owner-sum 集合事实。
-     */
-    private fun collectHardBoundsForVariable(
-        variableConstructor: TypeConstructorMarker,
-        atoms: List<ConeAtomWithCandidate>,
-    ): List<ConeCangJieType> {
-        val bounds = mutableListOf<ConeCangJieType>()
-        for (atom in atoms) {
-            val candidate = atom.candidate
-            if (candidate.isFreshReceiverMemberAccessOn(variableConstructor)) continue
-            if (!candidate.argumentMappingInitialized) continue
-            val substitutor = candidate.system.currentStorage()
-                .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap())
-                .asCone()
-            for ((argument, parameter) in candidate.argumentMapping) {
-                val argumentType = argument.expression.coneTypeOrNull as? ConeTypeVariableType ?: continue
-                if (argumentType.typeConstructor != variableConstructor) continue
-                val parameterType = parameter.returnTypeRef.coneTypeOrNull?.let { declared ->
-                    substitutor.substituteOrNull(declared) ?: declared
-                } ?: continue
-                if (parameterType is ConeErrorType) continue
-                bounds += parameterType
-            }
-        }
-        return bounds.distinctBy { it.toString() }
-    }
-
-    /**
-     * 判断一组硬界是否存在唯一确定解。
-     *
-     * 解为全部硬界的交集；交集为 error、仍含未固定推断变量，或与 common system 中
-     * 该变量的既有约束矛盾时返回 null（保守放弃，不制造新的错误路径）。
-     */
-    private fun solveUniqueSolution(
-        variableConstructor: TypeConstructorMarker,
-        hardBounds: List<ConeCangJieType>,
-    ): ConeCangJieType? {
-        val typeContext = inferenceComponents.session.typeContext
-        val solution = org.cangnova.cangjie.cfir.types.ConeTypeIntersector.intersectTypes(typeContext, hardBounds)
-        if (solution is ConeErrorType) return null
-        val storage = currentCommonSystem.currentStorage()
-        if (solution.containsNotFixedVariable(storage)) {
-            return null
-        }
-        val substitutor = storage
-            .buildCurrentSubstitutor(typeContext, emptyMap())
-            .asCone()
-        for (constraint in storage.notFixedTypeVariables[variableConstructor]?.constraints.orEmpty()) {
-            val rawConstraintType = constraint.type as? ConeCangJieType ?: continue
-            val constraintType = substitutor.substituteOrNull(rawConstraintType) ?: rawConstraintType
-            if (constraintType is ConeErrorType) continue
-            val compatible = when (constraint.kind) {
-                ConstraintKind.UPPER -> AbstractTypeChecker.isSubtypeOf(typeContext, solution, constraintType)
-                ConstraintKind.LOWER -> AbstractTypeChecker.isSubtypeOf(typeContext, constraintType, solution)
-                ConstraintKind.EQUALITY -> AbstractTypeChecker.equalTypes(typeContext, solution, constraintType)
-
-            }
-            if (!compatible) return null
-        }
-        return solution
-    }
-
-    /** 判断类型是否仍引用当前 common system 中未固定的推断变量。 */
-    private fun ConeCangJieType.containsNotFixedVariable(storage: ConstraintStorage): Boolean =
-        contains { type ->
-            type is ConeTypeVariableType && type.typeConstructor in storage.notFixedTypeVariables
-        }
-
-    /** 把 expected-type subtype 约束加入当前 common system。 */
-    override fun addSubtypeConstraintIfCompatible(
-        lowerType: ConeCangJieType,
-        upperType: ConeCangJieType,
-    ) {
-        currentCommonSystem.addSubtypeConstraintIfCompatible(
-            lowerType,
-            upperType,
-            ConeExpectedTypeConstraintPosition,
-        )
-    }
-
-    /** 将模式构造器 equality 约束写入 PCLA common system。 */
-    override fun addEqualityConstraintIfCompatible(
-        firstType: ConeCangJieType,
-        secondType: ConeCangJieType,
-    ): Boolean {
-        val accepted = currentCommonSystem.addEqualityConstraintIfCompatible(
-            firstType,
-            secondType,
-            ConeExpectedTypeConstraintPosition,
-        )
-        return accepted
-    }
-
-    /**
-     * 把重算后的末表达式类型约束到返回占位，返回该约束是否被接受。
-     *
-     * `false` 表示与共享系统既有约束冲突而被丢弃——这正是返回占位以
-     * TypeVariable 泄漏给外层调用的直接来源。
-     */
-    fun constrainLambdaReturnPlaceholder(
-        lowerType: ConeCangJieType,
-        upperPlaceholder: ConeCangJieType,
-    ): Boolean {
-        return currentCommonSystem.addSubtypeConstraintIfCompatible(
-            lowerType,
-            upperPlaceholder,
-            ConeExpectedTypeConstraintPosition,
-        )
-    }
-
-    /** 把 PCLA body 内部新建的结构化推断变量纳入当前 common system。 */
-    override fun registerInferenceVariable(variable: TypeVariableMarker) {
-        currentCommonSystem.registerVariable(variable)
-        /*
-         * ConstraintSystemCompleter 收集需要固定的变量时，除了候选自身的 fresh
-         * variables，还会读取 additionalCompletionVariables。模式推断创建的
-         * Option<T> 元素变量不属于 callable 声明参数，若只登记到 common system，
-         * 它们会留在约束表中却永远不进入 fixation 队列。
-         */
-        (variable as? ConeTypeVariable)?.let { typeVariable ->
-            outerCandidate.additionalCompletionVariables += typeVariable.typeConstructor
-        }
-    }
-
-    /** 判断类型中是否含当前 PCLA 公共系统已登记的推断变量。 */
-    override fun containsRegisteredInferenceVariable(type: ConeCangJieType): Boolean =
-        type.contains { it is ConeTypeVariableType && it.typeConstructor in currentCommonSystem.currentStorage().allTypeVariables }
-
-    /**
-     * 按官方 `SynLamExpr` 的语法候选收窄规则维护 fresh receiver owner 集合。
-     *
-     * 官方 `TryInitializeBaseSum` **只在 sum 还是 {Any} 时播种**，之后每次成员访问只在
-     * 既有 sum 上做过滤。因此首次访问取本次候选集，后续访问一律取交集；交集为空说明本次
-     * 候选与既有 sum 矛盾（如 `{x => x.foo34(); x + x}` 中 `x + x` 只推导出声明者 A36，
-     * 与 foo34 播下的 {Unit, Int64} 无交集），此时**保留既有集合**——绝不能采纳矛盾的新
-     * 集合，否则单元素的新集合会被当成收敛结果写死错误的形参约束（`x <: A36`）。
-     *
-     * 泛型 owner 会经历「未替换类型实参」与「替换后」两轮解析（body 级重转通道），
-     * 两轮交错共享本集合：严格 equalTypes 会把 `B31<TypeVariable(T)>` 与 `B31<Int64>`
-     * 判为不同导致交集永远为空、集合无法收敛，因此跨轮比较按
-     * [ConeCangJieType.isSameFreshReceiverOwnerCandidate] 的构造器近似语义执行，
-     * 幸存时保留更具体一侧的表示。
-     */
-    override fun refineFreshReceiverCandidateOwners(
-        receiverTypeConstructor: TypeConstructorMarker,
-        ownerTypes: List<ConeCangJieType>,
-    ): Set<ConeCangJieType>? {
-        val distinctOwnerTypes = ownerTypes.distinctByConeType()
-        if (distinctOwnerTypes.isEmpty()) return null
-
-        val previous = freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor]
-        val refined = when (previous) {
-            null -> distinctOwnerTypes
-            else -> buildList {
-                for (ownerType in distinctOwnerTypes) {
-                    val matchedPrevious = previous.firstOrNull { previousOwner ->
-                        previousOwner.isSameFreshReceiverOwnerCandidate(ownerType)
-                    } ?: continue
-                    add(matchedPrevious.mergeSameOwnerRepresentation(ownerType))
-                }
-            }.ifEmpty { previous }
-        }
-
-        freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor] = refined.toMutableList()
-        addFreshReceiverOwnerConstraintIfSingle(receiverTypeConstructor, refined)
-        return refined.toSet()
-    }
-
-    /**
-     * 判断两个 owner 类型是否指向同一候选声明。
-     *
-     * 严格相等优先；仅一侧仍含未定类型变量实参时（未替换轮 vs 替换轮），退化为按
-     * 顶层 lookup tag 近似相等——同一泛型声明的两轮表示指同一个候选；两侧都已具体化
-     * 则必须严格相等，避免把同类不同实参的真实差异合并掉。
-     */
-    private fun ConeCangJieType.isSameFreshReceiverOwnerCandidate(other: ConeCangJieType): Boolean {
-        if (isSameConeType(other)) return true
-        if (!hasUndeterminedTypeVariableArgument() && !other.hasUndeterminedTypeVariableArgument()) return false
-        val thisTag = (this as? ConeClassifierType)?.lookupTag ?: return false
-        val otherTag = (other as? ConeClassifierType)?.lookupTag ?: return false
-        return thisTag == otherTag
-    }
-
-    /**
-     * 合并同一 owner 候选的两轮表示，优先保留不含未定类型变量的具体形式；
-     * 双方都未具体化时取新一轮表示即可，二者近似等价。
-     */
-    private fun ConeCangJieType.mergeSameOwnerRepresentation(other: ConeCangJieType): ConeCangJieType =
-        if (hasUndeterminedTypeVariableArgument()) other else this
-
-    /** 类型自身或其类型实参中是否仍含未定类型变量（替换前轮次的标志）。 */
-    private fun ConeCangJieType.hasUndeterminedTypeVariableArgument(): Boolean =
-        contains { it is ConeTypeVariableType }
-
-    /** 记录 resolver 在成员访问解析时暴露的各 owner 成员返回类型形状。 */
-    override fun recordFreshReceiverMemberAccessShapes(
-        receiverTypeConstructor: TypeConstructorMarker,
-        shapes: List<FreshReceiverMemberAccessShape>,
-    ) {
-        val existing = freshReceiverMemberShapesByTypeVariable.getOrPut(receiverTypeConstructor) { mutableListOf() }
-        for (shape in shapes) {
-            if (existing.none { it == shape }) existing += shape
-        }
-    }
-
-    /** 返回该 fresh receiver 当前维护的 owner 候选集合副本。 */
-    override fun knownCandidateOwnerTypesForFreshReceiver(
-        receiverTypeConstructor: TypeConstructorMarker,
-    ): List<ConeCangJieType> =
-        freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor].orEmpty().toList()
-
-    /**
-     * 用外部被调方形参类型作目标过滤 owner 集并并入交集语义（官方 FilterSumUpperbound）。
-     *
-     * 仅当存在同名成员形状记录时执行：逐 owner 检查该成员返回类型是否为上界子类型，
-     * 全部淘汰说明上界与既有集合矛盾，保守维持现状交由普通诊断报告；无新增信息
-     * （幸存者不变少）时也直接跳过。幸存集合经 [refineFreshReceiverCandidateOwners]
-     * 与既有集合作交，单一收敛时写入真正的形参约束。
-     */
-    override fun refineFreshReceiverOwnersByMemberReturnBound(
-        receiverTypeConstructor: TypeConstructorMarker,
-        memberName: Name,
-        returnTypeUpperBound: ConeCangJieType,
-    ) {
-        if (returnTypeUpperBound is ConeErrorType) return
-        val currentOwners = freshReceiverCandidateOwnersByTypeVariable[receiverTypeConstructor] ?: return
-        val shapes = freshReceiverMemberShapesByTypeVariable[receiverTypeConstructor]
-            ?.filter { it.memberName == memberName }
-            ?.takeIf { it.isNotEmpty() }
-            ?: return
-        val typeContext = inferenceComponents.session.typeContext
-        val survivors = currentOwners.filter { owner ->
-            shapes.any { shape ->
-                shape.ownerType.isSameConeType(owner) &&
-                        AbstractTypeChecker.isSubtypeOf(typeContext, shape.returnType, returnTypeUpperBound)
-            }
-        }
-        // 全部淘汰说明上界与既有集合矛盾，保守维持现状；幸存者不变少则没有新信息。
-        if (survivors.isEmpty() || survivors.size == currentOwners.size) return
-        refineFreshReceiverCandidateOwners(receiverTypeConstructor, survivors)
-    }
-
-    /**
-     * owner 候选集合收敛到单一类型时，把它转成真正的 PCLA 约束。
-     *
-     * 官方 `TryEnforceCandidate` 会在能确定唯一 owner 构造器时约束 placeholder；
-     * CFIR 的在线成员候选规约在多候选阶段只维护 owner-sum，直到交集变为单一候选再
-     * 写入 common system，避免第一条成员访问过早把等价候选中的代表类型固定下来。
-     */
-    private fun addFreshReceiverOwnerConstraintIfSingle(
-        receiverTypeConstructor: TypeConstructorMarker,
-        ownerTypes: List<ConeCangJieType>,
-    ) {
-        val ownerType = ownerTypes.singleOrNull() ?: return
-        // 候选的 fresh 变量只随被选中的候选系统进入 PCLA，不能从 owner 集合另造变量。
-        // 泛型形状由成员候选自身的 receiver 约束保存；这里只提交已确定的 owner 类型。
-        if (ownerType.hasUndeterminedTypeVariableArgument()) return
-        val receiverType = (currentCommonSystem.currentStorage().allTypeVariables[receiverTypeConstructor] as? ConeTypeVariable)
-            ?.defaultType
-            ?: return
-        currentCommonSystem.addSubtypeConstraintIfCompatible(
-            receiverType,
-            ownerType,
-            ConeExpectedTypeConstraintPosition,
-        )
-    }
-
-    /** 按当前 session 类型等价关系去重，避免类型实参结构相同但对象不同导致集合无法相交。 */
-    private fun List<ConeCangJieType>.distinctByConeType(): List<ConeCangJieType> {
-        val result = mutableListOf<ConeCangJieType>()
-        for (type in this) {
-            if (result.none { existing -> existing.isSameConeType(type) }) {
-                result += type
-            }
-        }
-        return result
-    }
-
-    /** 判断两个 Cone 类型是否为同一个 owner 候选。 */
-    private fun ConeCangJieType.isSameConeType(other: ConeCangJieType): Boolean =
-        AbstractTypeChecker.equalTypes(inferenceComponents.session.typeContext, this, other)
-
-    /** 使用当前约束系统 substitutor 更新表达式返回类型。 */
-    private fun CfirExpression.updateReturnTypeWithCurrentSubstitutor(
-        resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
-    ) {
-        val system = (this as? CfirResolvable)?.candidate()?.system ?: currentCommonSystem
-        val substitutor = system.currentStorage()
-            .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap<TypeConstructorMarker, org.cangnova.cangjie.type.model.CangJieTypeMarker>())
-            .asCone()
-        val currentType = coneTypeOrNull ?: return
-        val updatedType = substitutor.substituteOrNull(currentType) ?: return
-        replaceConeTypeOrNull(updatedType)
-    }
-
-    /** 从可解析表达式上读取当前候选。 */
-    private fun CfirResolvable.candidate(): Candidate? =
-        (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
-
-    /** 判断候选是否可以脱离 PCLA common system 独立分析并完成。 */
-    private fun Candidate.mightBeAnalyzedAndCompletedIndependently(bodyResolveContext: BodyResolveContext): Boolean {
-        when (val mode = callInfo.resolutionMode) {
-            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.WithExpectedType -> {
-                if (mode.expectedType.containsNotFixedTypeVariables()) return false
-            }
-
-            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.WithStatus,
-            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.UpdateImplicitTypeRef,
-            -> error("$this call should not be analyzed in ${callInfo.resolutionMode}")
-
-            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextDependent,
-            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextIndependent,
-            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ReceiverResolution,
-            -> {
-            }
-        }
-
-        val callSite = callInfo.callSite
-        if (callSite is CfirAnnotationCall) return true
-        if (callSite is CfirArrayLiteral) return bodyResolveContext.isInsideAnnotationContext
-        if (callSite !is CfirResolvable) return false
-
-        if (dispatchReceiver?.expression?.isReceiverPostponed() == true) return false
-        if (givenExtensionReceiver?.expression?.isReceiverPostponed() == true) return false
-
-        val returnType = (symbol as? CfirCallableSymbol<*>)?.cfir
-            ?.let { it as? CfirCallableDeclaration }
-            ?.let(bodyResolveContext.returnTypeCalculator::tryCalculateReturnType)
-        if (returnType?.coneType?.containsNotFixedTypeVariables() == true) return false
-
-        if (callInfo.arguments.any { !it.isTrivialArgument() }) return false
-        return true
-    }
-
-    /** 判断表达式是否是不会向 PCLA common system 注入新约束的简单实参。 */
-    private fun CfirExpression.isTrivialArgument(): Boolean = when (this) {
-        is CfirArrayLiteral -> false
-        is CfirResolvable -> when (val candidate = candidate()) {
-            null -> coneTypeOrNull?.containsNotFixedTypeVariables() != true
-            else -> !candidate.usedOuterCs
-        }
-
-        is CfirWrappedExpression -> expression.isTrivialArgument()
-        is CfirFunctionCall -> argumentList.arguments.all { it.isTrivialArgument() }
-        is CfirBinaryOp -> left.isTrivialArgument() && right.isTrivialArgument()
-        is CfirComparisonExpression -> left.isTrivialArgument() && right.isTrivialArgument()
-        is CfirBlock -> (statements.lastOrNull() as? CfirExpression)?.isTrivialArgument() ?: true
-        is CfirTupleLiteral -> elements.all { it.isTrivialArgument() }
-        is CfirStringInterpolation -> parts.all { it.isTrivialArgument() }
-        is CfirLiteralExpression -> true
-        else -> false
-    }
-
-    /** 判断接收者表达式是否仍依赖 postponed 或未固定类型变量。 */
-    private fun CfirExpression.isReceiverPostponed(): Boolean {
-        return when {
-            coneTypeOrNull?.containsNotFixedTypeVariables() == true -> true
-            (this as? CfirResolvable)?.candidate()?.usedOuterCs == true -> true
-            else -> false
-        }
-    }
-
-    /** 判断类型中是否包含当前 common system 尚未固定的类型变量。 */
-    private fun ConeCangJieType.containsNotFixedTypeVariables(): Boolean =
-        contains {
-            it is ConeTypeVariableType && it.typeConstructor in currentCommonSystem.allTypeVariables
-        }
-}
 
 /** 把普通 scope 包装成 tower data element。 */
 private fun CfirScope.asTowerDataElement(isLocal: Boolean): CfirTowerDataElement =

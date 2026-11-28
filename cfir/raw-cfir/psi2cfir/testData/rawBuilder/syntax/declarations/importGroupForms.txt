@@ -1,0 +1,177 @@
+FILE: importGroupForms.cj
+    package importgroupforms
+    import std.collection.ArrayList
+    import std.collection.HashMap
+    import std.collection.HashSet
+    import std.collection.ArrayList as L
+    import std.collection.HashMap as M
+    import std.math.sqrt
+    import std.fs.Path
+    import std.collection.ArrayList as TA
+    import std.collection.HashMap as TB
+    import std.collection.HashSet as TC
+    import std.fs.File
+    import std.collection.ArrayList as WL
+    import std.collection.HashMap as WM
+    import std.collection.ArrayList as IL
+    internal? func useImportGroups(path: R|Path|): R|Float64| {
+        local? let plain: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(ArrayList<R|Int64|>) {
+                }
+        local? let grouped: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(HashMap<R|String|, R|Int64|>) {
+                }
+        local? let one: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(HashSet<R|Int64|>) {
+                }
+        local? let aliased: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(L<R|Int64|>) {
+                }
+        local? let aliasedMap: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(M<R|String|, R|Int64|>) {
+                }
+        local? let comma: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(TA<R|Int64|>) {
+                }
+        local? let commaMap: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(TB<R|String|, R|Int64|>) {
+                }
+        local? let commaSet: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(TC<R|Int64|>) {
+                }
+        local? let winAliased: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(WL<R|Int64|>) {
+                }
+        local? let winAliasedMap: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(WM<R|String|, R|Int64|>) {
+                }
+        local? let internalAliased: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(IL<R|Int64|>) {
+                }
+        local? let fi: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(create) {
+                    receiver:
+                        NAMED_ACCESS(File)
+                    arguments:
+                        STRING("./t.txt")
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(fi)
+        FUNCTION_CALL(add) {
+            receiver:
+                NAMED_ACCESS(plain)
+            arguments:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(size) {
+                                            receiver:
+                                                NAMED_ACCESS(grouped)
+                                        }
+                                    arguments:
+                                        NAMED_ACCESS(size) {
+                                            receiver:
+                                                NAMED_ACCESS(one)
+                                        }
+                                }
+                            arguments:
+                                NAMED_ACCESS(size) {
+                                    receiver:
+                                        NAMED_ACCESS(aliased)
+                                }
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(aliasedMap)
+                        }
+                }
+        }
+        FUNCTION_CALL(add) {
+            receiver:
+                NAMED_ACCESS(plain)
+            arguments:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(size) {
+                                            receiver:
+                                                NAMED_ACCESS(comma)
+                                        }
+                                    arguments:
+                                        NAMED_ACCESS(size) {
+                                            receiver:
+                                                NAMED_ACCESS(commaMap)
+                                        }
+                                }
+                            arguments:
+                                NAMED_ACCESS(size) {
+                                    receiver:
+                                        NAMED_ACCESS(commaSet)
+                                }
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                FUNCTION_CALL(toString) {
+                                    receiver:
+                                        NAMED_ACCESS(path)
+                                }
+                        }
+                }
+        }
+        FUNCTION_CALL(add) {
+            receiver:
+                NAMED_ACCESS(plain)
+            arguments:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(size) {
+                                    receiver:
+                                        NAMED_ACCESS(winAliased)
+                                }
+                            arguments:
+                                NAMED_ACCESS(size) {
+                                    receiver:
+                                        NAMED_ACCESS(winAliasedMap)
+                                }
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(internalAliased)
+                        }
+                }
+        }
+        RETURN {
+            FUNCTION_CALL(sqrt) {
+                TYPE_CONVERSION(R|Float64|) {
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(plain)
+                    }
+                }
+            }
+        }
+    }

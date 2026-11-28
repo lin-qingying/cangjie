@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -9,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.name.OperatorNameConventions
 
 /**
@@ -61,6 +63,25 @@ internal fun Candidate.cangjieVariadicCallShapeOrNull(
     return CangjieVariadicCallShape(parameter, elementType, parameterIndex)
 }
 
+/**
+ * 从声明本身识别仓颉普通变参参数。
+ *
+ * **这是本语言「变长参数」判定的唯一出口**：调用解析（`Candidate` 路径）与分析层
+ * （`CaValueParameterSymbol.isVararg`）都走这里，避免「最后一个非命名 Array 形参」这条规则
+ * 在两边各写一份后漂移（历史上分析层用的是整表的最后一位，且缺 enum/运算符例外）。
+ *
+ * 不解构声明形状的调用方（已有 `List<CfirValueParameter>`）直接用下面的列表重载。
+ */
+fun CfirDeclaration.cangjieVariadicParameterOrNull(): CfirValueParameter? {
+    val parameters = when (this) {
+        is CfirFunction -> valueParameters
+        is CfirConstructor -> valueParameters
+        is CfirEnumConstructor -> valueParameters
+        else -> return null
+    }
+    return parameters.cangjieVariadicParameterOrNull(this)
+}
+
 /** 从参数列表和声明形态中识别仓颉普通变参参数。 */
 internal fun List<CfirValueParameter>.cangjieVariadicParameterOrNull(
     declaration: CfirDeclaration?,
@@ -75,9 +96,20 @@ internal fun List<CfirValueParameter>.cangjieVariadicParameterOrNull(
     return parameter.takeIf { it.cangjieVariadicElementTypeOrNull() != null }
 }
 
-/** 如果参数类型是 `Array<T>`，返回其元素类型 `T`。 */
-internal fun CfirValueParameter.cangjieVariadicElementTypeOrNull(): ConeCangJieType? =
-    returnTypeRef.coneTypeOrNull?.arrayElementType
+/**
+ * 如果参数类型是 `Array<T>`，返回其元素类型 `T`；否则返回 `null`。
+ *
+ * 官方 `IsFuncDeclPossibleVariadic`（`src/Sema/TypeCheckCall.cpp:385-402`）以
+ * `(*iter)->GetTy().IsCorrect()` 为**前提**，而 invalid 沿类型实参树**递归传播**：
+ * `StructTy` 只要类型实参含 `InvalidTy` 就整体 `invalid`（`src/AST/Types.cpp:230-239`，
+ * 元组/函数类型同理）。因此判定必须看整棵树——只看根节点或直接元素会漏掉
+ * `Array<Array<Undefined>>`、`Array<(Int, Undefined)>` 这类嵌套形态，它们同样不是变参。
+ */
+internal fun CfirValueParameter.cangjieVariadicElementTypeOrNull(): ConeCangJieType? {
+    val parameterType = returnTypeRef.coneTypeOrNull ?: return null
+    if (parameterType.containsErrorType()) return null
+    return parameterType.arrayElementType
+}
 
 /** 判断 operator 函数是否明确不允许按普通变参规则处理。 */
 private fun CfirFunction.isNonVariadicOperator(): Boolean {

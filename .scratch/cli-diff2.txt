@@ -1,0 +1,23 @@
+diff --git a/compiler/cli/cli-base/src/org/cangnova/cangjie/cli/common/arguments/parseCommandLineArguments.kt b/compiler/cli/cli-base/src/org/cangnova/cangjie/cli/common/arguments/parseCommandLineArguments.kt
+index b1fb5517f..9be36354f 100644
+--- a/compiler/cli/cli-base/src/org/cangnova/cangjie/cli/common/arguments/parseCommandLineArguments.kt
++++ b/compiler/cli/cli-base/src/org/cangnova/cangjie/cli/common/arguments/parseCommandLineArguments.kt
+@@ -111,7 +111,7 @@ public fun <A : Any> parseCommandLineArguments(
+ 
+             val binding = option.binding
+             val argument = binding.argument
+-            if (option.kind == OptionNameKind.SHORT && valueSeparatorIndex >= 0) {
++            if (option.kind == OptionNameKind.SHORT && valueSeparatorIndex >= 0 && argument.valueType !is BooleanType) {
+                 issues += CangJieArgumentParseIssue("Invalid argument: $rawArgument", isError = true)
+                 continue
+             }
+@@ -278,6 +278,9 @@ public fun <A : Any> parseCommandLineArguments(
+ 
+     private fun optionName(name: String): String = when {
+         name.startsWith('-') -> name
++        // `-W` 前缀的告警组参数（-Won/-Woff）是仓颉既定的多字符短选项形态，
++        // 不能按"多字符即长选项"的规则展开成 --Won。
++        name.startsWith('W') && name.length > 1 -> "-$name"
+         name.startsWith('X') -> "-$name"
+         name.length == 1 -> "-$name"
+         else -> "--$name"

@@ -12,13 +12,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.cjmpHasCommonDefault
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.publishParsingFileFacts
+import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.parsingFileFacts
+import org.cangnova.cangjie.cfir.declarations.publishParsingFileFacts
 import org.cangnova.cangjie.parsing.CjmpFileRole
 import org.cangnova.cangjie.parsing.ParsingFileFacts
-import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildFileCopy
+import org.cangnova.cangjie.cfir.declarations.builder.buildClass
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
@@ -66,6 +67,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroParameterSignature
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroRawOwnerSnapshot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSpliceResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
@@ -79,16 +81,18 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.bindMacroImports
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildMacroSymbolIndex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.session.cjmpSettings
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
-import org.cangnova.cangjie.psi.CjPsiFactory
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
@@ -108,6 +112,7 @@ import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.messages.CjParsingDiagnosticCollector
 import org.cangnova.cangjie.messages.ParsingDiagnostic
 import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CjParameterGrammar
@@ -991,6 +996,56 @@ class FrontendMacroConstructionExecutionTest {
         assertInstanceOf(CfirErrorExpression::class.java, statement)
     }
 
+    /** 空的 `[]` 仍选择 attribute wrapper，并通过 executor 协议保留属性存在标志。 */
+    @Test
+    fun emptyAttributeDelimiterUsesAttributeMacroWrapper() {
+        val fixture = macroExpressionCarrierFixture()
+        val surface = (fixture.pre.allSurfaces.single() as MacroSurfaceExpr).copy(hasAttr = true)
+        val file = fixture.pre.files.single()
+        val pre = buildPreMacroRawFiles(
+            session = fixture.pre.session,
+            files = listOf(PreMacroCfirFile(
+                cfirFile = file.cfirFile,
+                surfaces = listOf(surface),
+                annotationMetadata = file.annotationMetadata,
+                parsingDiagnosticPublication = file.parsingDiagnosticPublication,
+                parserSettings = file.parserSettings,
+                sourceFileIdentity = file.sourceFileIdentity,
+            )),
+        )
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(
+                tokens = listOf(org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), "expanded")),
+                "expanded",
+            ),
+        )
+        val parser = object : MacroFragmentParser {
+            override fun parse(input: MacroFragmentInput): MacroFragmentResult = MacroFragmentResult.Success(
+                originNode = input.node,
+                tokens = input.tokens,
+                mode = input.mode,
+                payload = MacroFragmentPayload.single(buildErrorExpression {
+                    diagnostic = ConeSimpleDiagnostic("expanded macro payload")
+                }),
+            )
+        }
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { parser }
+        }
+
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+            pre = pre,
+            context = contextWithArtifact(pre, "Generated"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(result is MacroConstructionResult.Success)
+        val call = executor.calls.single()
+        assertTrue(call.hasAttrs)
+        assertTrue(call.methodName.startsWith("macroCall_a_"))
+    }
+
     /**
      * 验证默认稳定 splicer 会用解析出的声明 payload 替换声明 carrier。
      */
@@ -1096,7 +1151,7 @@ class FrontendMacroConstructionExecutionTest {
             mode = MacroConstructionService.Mode.STRICT,
         )
 
-        assertTrue(result is MacroConstructionResult.Success)
+        assertTrue(result is MacroConstructionResult.Success, "Construction failed: $result; diagnostics=${result.registry.diagnostics}")
         assertEquals(listOf(replacement, siblingReplacement), file.declarations)
         assertEquals(listOf(reparsedAnnotation, retainedFragmentAnnotation), replacement.annotations)
         assertEquals(CfirAnnotationReplaceCarrier(replacement, 0, reparsedAnnotation), metadata.currentSlot(originalCarrier))
@@ -1111,6 +1166,73 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals(0, published.snapshot(reparsedAnnotation)?.annotationIndex)
         assertSame(replacement, published.snapshot(retainedFragmentAnnotation)?.owner)
         assertEquals(1, published.snapshot(retainedFragmentAnnotation)?.annotationIndex)
+    }
+
+    /**
+     * 父声明宏重新解析已展开的子宏 token 后，稳定 splice 不能再查找已脱离 final CFIR 的旧子载体。
+     */
+    @Test
+    fun parentDeclarationExpansionConsumesNestedMacroCarriers() {
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        val moduleData = TestModuleData(session)
+        session.register(CfirModuleData::class, moduleData)
+        val packageFqName = FqName("sample")
+        val originalMember = namedFunction(moduleData, packageFqName, "originalMember")
+        val expandedMember = namedFunction(moduleData, packageFqName, "expandedMember")
+        val originalClass = namedClass(moduleData, packageFqName, "Outer", listOf(originalMember))
+        val expandedClass = namedClass(moduleData, packageFqName, "Outer", listOf(expandedMember))
+        val file = fileWithDeclarations(moduleData, packageFqName, originalClass)
+        val parentSurfaceId = 3108L
+        val childSurfaceId = 3109L
+        val parentSurface = declarationSurface(
+            surfaceId = parentSurfaceId,
+            qualifiedName = FqName("macros.ReplaceClass"),
+            packageFqName = packageFqName,
+            carrier = originalClass,
+        ).copy(
+            inputTokens = listOf(MacroSurfaceToken("@ReplaceMember", 20, 30)),
+            sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 0, endOffset = 100),
+        )
+        val childSurface = declarationSurface(
+            surfaceId = childSurfaceId,
+            qualifiedName = FqName("macros.ReplaceMember"),
+            packageFqName = packageFqName,
+            carrier = originalMember,
+        ).copy(
+            sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 20, endOffset = 30),
+        )
+        val pre = buildPreMacroRawFiles(
+            session = session,
+            files = listOf(PreMacroCfirFile(file, listOf(parentSurface, childSurface), CfirAnnotationMetadataBuilder())),
+        )
+        val parser = object : MacroFragmentParser {
+            override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+                val payload = when (input.node.surface.surfaceId) {
+                    parentSurfaceId -> MacroFragmentPayload.single(expandedClass)
+                    childSurfaceId -> MacroFragmentPayload.single(expandedMember)
+                    else -> error("Unexpected macro surface ${input.node.surface.surfaceId}")
+                }
+                return MacroFragmentResult.Success(input.node, input.tokens, input.mode, payload)
+            }
+        }
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(listOf(tokenInfo("expanded")), "expanded"),
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { parser }
+        }
+
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+            pre = pre,
+            context = contextWithArtifacts(pre, "ReplaceClass", "ReplaceMember"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(result is MacroConstructionResult.Success, "Construction failed: $result; diagnostics=${result.registry.diagnostics}")
+        assertSame(expandedClass, file.declarations.single())
+        assertSame(expandedMember, (file.declarations.single() as CfirClass).declarations.single())
+        assertEquals(2, executor.calls.size)
     }
 
     /**
@@ -1164,6 +1286,10 @@ class FrontendMacroConstructionExecutionTest {
         )
 
         assertTrue(result is MacroConstructionResult.Success)
+        val parameterReplacement = result.registry.appliedDeclarationReplacements.single()
+        assertSame(original, parameterReplacement.carrier)
+        assertEquals(listOf(replacement, siblingReplacement), parameterReplacement.replacements)
+        assertEquals(surface.surfaceId, parameterReplacement.surfaceId)
         assertEquals(listOf(replacement, siblingReplacement), function.valueParameters)
     }
 
@@ -1267,10 +1393,10 @@ class FrontendMacroConstructionExecutionTest {
     }
 
     /**
-     * 验证 parser 不可用时 DEGRADED 模式会构造声明和参数占位符。
+     * 验证 parser 不可用时 DEGRADED 模式保留声明 carrier，并为参数构造类型化占位符。
      */
     @Test
-    fun degradedModeBuildsTypedDeclarationAndParameterPlaceholdersWhenParserIsUnavailable() {
+    fun degradedModePreservesDeclarationAndBuildsParameterPlaceholderWhenParserIsUnavailable() {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
         val moduleData = TestModuleData(session)
         session.register(CfirModuleData::class, moduleData)
@@ -1329,27 +1455,25 @@ class FrontendMacroConstructionExecutionTest {
         )
 
         assertTrue(result is MacroConstructionResult.Degraded)
-        assertInstanceOf(CfirErrorFunction::class.java, file.declarations.first())
+        assertSame(declarationCarrier, file.declarations.first())
+        assertInstanceOf(CfirNamedFunction::class.java, file.declarations.first())
         val parameterPlaceholder = (file.declarations[1] as CfirNamedFunction).valueParameters.single()
         assertInstanceOf(CfirErrorExpression::class.java, parameterPlaceholder.defaultValue)
         assertEquals(
-            surfaces.map { it.surfaceId }.toSet(),
+            setOf(surfaces.last().surfaceId),
             (result as MacroConstructionResult.Degraded).registry.placeholderOriginById.keys,
         )
-        val declarationPlaceholder = file.declarations.first()
-        assertNotSame(declarationCarrier, declarationPlaceholder)
         assertNotSame(parameterCarrier, parameterPlaceholder)
-        assertNotSame(declarationCarrier.attributes, declarationPlaceholder.attributes)
         assertNotSame(parameterCarrier.attributes, parameterPlaceholder.attributes)
-        assertSame(declarationAnnotation, declarationPlaceholder.annotations.single())
+        assertSame(declarationAnnotation, declarationCarrier.annotations.single())
         assertSame(parameterAnnotation, parameterPlaceholder.annotations.single())
         assertSame(functionSymbol, parameterAnnotation.containingDeclarationSymbol)
         assertNull(publishedMetadata.snapshot(declarationAnnotation), "封闭产品不能在显式 publish 前进入 session 索引")
         assertNull(publishedMetadata.snapshot(parameterAnnotation))
         publishedMetadata.publishAll(result.recordableFiles.annotationMetadata)
-        assertEquals(declarationMetadata.copy(owner = declarationPlaceholder), publishedMetadata.snapshot(declarationAnnotation))
+        assertEquals(declarationMetadata, publishedMetadata.snapshot(declarationAnnotation))
         assertEquals(parameterMetadata.copy(owner = parameterPlaceholder), publishedMetadata.snapshot(parameterAnnotation))
-        assertSame(declarationPlaceholder, publishedMetadata.snapshot(declarationAnnotation)?.owner)
+        assertSame(declarationCarrier, publishedMetadata.snapshot(declarationAnnotation)?.owner)
         assertSame(parameterPlaceholder, publishedMetadata.snapshot(parameterAnnotation)?.owner)
     }
 
@@ -1462,7 +1586,9 @@ class FrontendMacroConstructionExecutionTest {
             )
             val configuration = CompilerConfiguration().apply {
                 macroExecutorFactory = MacroExecutorFactory { executor }
-                macroFragmentParserFactory = MacroFragmentParserFactory { StaticPayloadParser(replacement) }
+                macroFragmentParserFactory = MacroFragmentParserFactory {
+                    StaticPayloadParser(replacement)
+                }
             }
 
             val result = FrontendMacroConstructionService(configuration).expandWithClassification(
@@ -1471,7 +1597,7 @@ class FrontendMacroConstructionExecutionTest {
                 mode = MacroConstructionService.Mode.STRICT,
             )
 
-            assertTrue(result is MacroConstructionResult.Success)
+            assertTrue(result is MacroConstructionResult.Success, "Construction failed: $result; diagnostics=${result.registry.diagnostics}")
             assertTrue(result.registry.diagnostics.isEmpty())
             assertEquals("Generated", executor.calls.single().idName)
             assertSame(replacement, file.declarations.single())
@@ -1488,6 +1614,7 @@ class FrontendMacroConstructionExecutionTest {
         val differentQualification = constructCacheKey(parserModule = "", qualified = true)
         val differentAnnotationModule = constructCacheKey(parserModule = "", qualified = false, annotationModule = "std")
 
+        assertEquals(MacroConstructionService.ALGORITHM_VERSION, original.constructionAlgorithmVersion)
         assertEquals(original, constructCacheKey(parserModule = "", qualified = false))
         for (changed in listOf(differentModule, differentQualification, differentAnnotationModule)) {
             assertEquals(original.sourceContentHash, changed.sourceContentHash)
@@ -1703,7 +1830,7 @@ class FrontendMacroConstructionExecutionTest {
         assertTrue(result is MacroConstructionResult.Success)
         assertEquals(listOf("ChildOne", "ChildTwo", "Parent"), executor.calls.map { it.idName })
         assertEquals(
-            listOf("left", " ", "expandedOne", " ", "middle", " ", "expandedTwo", " ", "right"),
+            listOf("left", "expandedOne", "middle", "expandedTwo", "right"),
             executor.calls.single { it.idName == "Parent" }.argTokens.map { it.value },
         )
         val parentArguments = executor.calls.single { it.idName == "Parent" }.argTokens
@@ -1765,7 +1892,7 @@ class FrontendMacroConstructionExecutionTest {
         assertTrue(result is MacroConstructionResult.Success)
         assertEquals(listOf("Child", "Parent"), executor.calls.map { it.idName })
         assertEquals(
-            listOf("#[", "expandedChild", "]"),
+            listOf("#", "[", "expandedChild", "]"),
             executor.calls.single { it.idName == "Parent" }.attrTokens.map { it.value },
         )
         assertEquals(
@@ -2467,6 +2594,24 @@ class FrontendMacroConstructionExecutionTest {
     /** metadata fixture 使用独立语义来源，不伪造 PSI 或借宿主源码推导注解语义。 */
     private class MetadataFixtureSource(text: String) : CjBinarySourceElement(text, null, text)
 
+    /** 构造带可替换成员列表的测试 class 宏载体。 */
+    private fun namedClass(
+        moduleData: CfirModuleData,
+        packageFqName: FqName,
+        name: String,
+        declarations: List<CfirDeclaration>,
+    ): CfirClass = buildClass {
+        this.moduleData = moduleData
+        resolvePhase = CfirResolvePhase.RAW_CFIR
+        origin = CfirDeclarationOrigin.Synthetic.Error
+        attributes = CfirDeclarationAttributes.EMPTY
+        scopeProvider = CfirCangJieScopeProvider()
+        status = CfirDeclarationStatusImpl()
+        symbol = CfirClassSymbol(ClassId(packageFqName, Name.identifier(name)))
+        this.name = Name.identifier(name)
+        this.declarations += declarations
+    }
+
     /**
      * 构造测试用值参数声明。
      *
@@ -2542,6 +2687,7 @@ class FrontendMacroConstructionExecutionTest {
         ),
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("arg", 0, 3, isSourceToken = true)),
         sourceRange = sourceRange,
         scopeContext = MacroSurfaceScopeContext(
@@ -2572,7 +2718,7 @@ class FrontendMacroConstructionExecutionTest {
         surfaceId: Long,
         qualifiedName: FqName,
         packageFqName: FqName,
-        carrier: CfirNamedFunction,
+        carrier: CfirDeclaration,
     ): MacroSurfaceDecl = MacroSurfaceDecl(
         surfaceId = surfaceId,
         qualifiedName = qualifiedName,
@@ -2587,6 +2733,7 @@ class FrontendMacroConstructionExecutionTest {
         ),
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("decl", 0, 4, isSourceToken = true)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(
@@ -2632,6 +2779,7 @@ class FrontendMacroConstructionExecutionTest {
         ),
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("param", 0, 5, isSourceToken = true)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(
@@ -2917,9 +3065,9 @@ class FrontendMacroConstructionExecutionTest {
         /**
          * 记录槽位并返回原文件列表，避免测试关注点扩散到真实拼接实现。
          */
-        override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
+        override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult {
             this.slots += slots
-            return files
+            return MacroStableSpliceResult(files, emptyList())
         }
     }
 

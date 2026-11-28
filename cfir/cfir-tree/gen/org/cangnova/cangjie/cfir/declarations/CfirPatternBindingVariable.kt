@@ -11,6 +11,8 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeNode
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -22,7 +24,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.patternBindingVariable]
  */
-abstract class CfirPatternBindingVariable : CfirVariable(), CfirTypeParametersOwner {
+abstract class CfirPatternBindingVariable : CfirVariable(), CfirTypeParametersOwner, CfirPatternTreeNode {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
@@ -33,11 +35,23 @@ abstract class CfirPatternBindingVariable : CfirVariable(), CfirTypeParametersOw
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val status: CfirDeclarationStatus
     abstract override val contentSource: CfirContentSource
-    abstract override val initializer: CfirExpression?
     abstract override val isVar: Boolean
     abstract override val isTypeImplicit: Boolean
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val symbol: CfirPatternBindingSymbol
+    /**
+     * 整体查询可读取独立保存槽或宿主模式的整值视图；此属性本身不拥有表达式子树。
+     */
+    abstract override val initializer: CfirExpression?
+    /**
+     * 实际拥有的初始化表达式，例如从 CJO 完成产品读取的 RANGE/STRING For 绑定存储槽。
+     */
+    abstract val ownedInitializer: CfirExpression?
+    /**
+     * 唯一包含该 binding 的模式树宿主。该反向语义引用不是 CFIR 子节点。
+     * 只有宿主为 CfirPatternVariable 且绑定形状匹配时才派生整个 initializer。
+     */
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract override val returnTypeRef: CfirTypeRef
     abstract val name: Name
 
@@ -46,8 +60,8 @@ abstract class CfirPatternBindingVariable : CfirVariable(), CfirTypeParametersOw
     override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         status.accept(visitor, data)
-        initializer?.accept(visitor, data)
         typeParameters.forEach { it.accept(visitor, data) }
+        ownedInitializer?.accept(visitor, data)
         returnTypeRef.accept(visitor, data)
     }
 
@@ -65,9 +79,15 @@ abstract class CfirPatternBindingVariable : CfirVariable(), CfirTypeParametersOw
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract override fun replaceInitializer(newInitializer: CfirExpression?)
+
+    abstract fun replaceOwnedInitializer(newOwnedInitializer: CfirExpression?)
+
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
 
@@ -75,9 +95,11 @@ abstract class CfirPatternBindingVariable : CfirVariable(), CfirTypeParametersOw
 
     abstract override fun <D> transformStatus(transformer: CfirTransformer<D>, data: D): CfirPatternBindingVariable
 
+    abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPatternBindingVariable
+
     abstract override fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirPatternBindingVariable
 
-    abstract override fun <D> transformTypeParameters(transformer: CfirTransformer<D>, data: D): CfirPatternBindingVariable
+    abstract fun <D> transformOwnedInitializer(transformer: CfirTransformer<D>, data: D): CfirPatternBindingVariable
 
     abstract override fun <D> transformReturnTypeRef(transformer: CfirTransformer<D>, data: D): CfirPatternBindingVariable
 }

@@ -1,0 +1,16 @@
+FILE: constructorDelegation.cj
+    internal? open class DelegBase {
+        public var v: R|Int64|
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class DelegDerived <: R|DelegBase| {
+        internal? var w: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(y: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }

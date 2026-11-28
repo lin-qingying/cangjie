@@ -1,0 +1,12 @@
+FILE: extendAliasAndStdlibType.cj
+    internal? typealias MyInt = R|Int64|
+    extend R|MyInt| {
+        internal? func twice(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|String| {
+        internal? func shouted(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }

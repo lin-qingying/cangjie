@@ -1181,6 +1181,11 @@ class CfirDeclarationInheritanceScopeTest {
             specificRole: Boolean = false, commonDefault: Boolean = false): CfirResolvedDeclarationStatus = buildResolvedDeclarationStatus {
             this.visibility = visibility
             modality = if (isAbstract) Modality.ABSTRACT else if (isOpen) Modality.OPEN else Modality.FINAL
+            visibilityExplicitness = CfirModifierExplicitness.EXPLICIT
+            modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+            bodyPresence = CfirBodyPresence.UNKNOWN
+            isDeclarationFile = false
+            isFromCommonPart = commonRole
             isVisibilityExplicit = true
             isModalityExplicit = false
             isAbstractExplicit = false

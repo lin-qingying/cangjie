@@ -9,8 +9,8 @@
 |---|---|
 | `cangjie.utils` | 字符串 / 集合 / 打印工具 |
 | `cangjie.utils.concurrent` | 并发原语 |
-| `cangjie.utils.concurrent.block` | 阻塞队列、锁工具 |
-| `cangjie.utils.exceptions` | 异常框架，含 `CangJieExceptionWithAttachments`（可附加附件的异常） |
+| `cangjie.utils.concurrent.block` | 可锁定且可清除的延迟初始化值 `LockedClearableLazyValue` |
+| `cangjie.utils.exceptions` | 异常框架：附件异常接口 `ICangJieExceptionWithAttachments` 与 `ExceptionAttachmentBuilder`（具体实现 `CangJieExceptionWithAttachments` 位于 `cangjie.utils` 包） |
 
 ## 提供的关键工具
 

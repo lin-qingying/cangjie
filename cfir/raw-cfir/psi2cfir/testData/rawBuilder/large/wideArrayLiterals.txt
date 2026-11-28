@@ -1,0 +1,439 @@
+FILE: wideArrayLiterals.cj
+    internal? func wideArrayLiterals(): R|Int64| {
+        local? let flat: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    INT(1)
+                    INT(2)
+                    INT(3)
+                    INT(4)
+                    INT(5)
+                    INT(6)
+                    INT(7)
+                    INT(8)
+                    INT(9)
+                    INT(10)
+                    INT(11)
+                    INT(12)
+                    INT(13)
+                    INT(14)
+                    INT(15)
+                    INT(16)
+                    INT(17)
+                    INT(18)
+                    INT(19)
+                    INT(20)
+                    INT(21)
+                    INT(22)
+                    INT(23)
+                    INT(24)
+                    INT(25)
+                    INT(26)
+                    INT(27)
+                    INT(28)
+                    INT(29)
+                    INT(30)
+                    INT(31)
+                    INT(32)
+                    INT(33)
+                    INT(34)
+                    INT(35)
+                    INT(36)
+                    INT(37)
+                    INT(38)
+                    INT(39)
+                    INT(40)
+                    INT(41)
+                    INT(42)
+                    INT(43)
+                    INT(44)
+                    INT(45)
+                    INT(46)
+                    INT(47)
+                    INT(48)
+                    INT(49)
+                    INT(50)
+                    INT(51)
+                    INT(52)
+                    INT(53)
+                    INT(54)
+                    INT(55)
+                    INT(56)
+                    INT(57)
+                    INT(58)
+                    INT(59)
+                    INT(60)
+                    INT(61)
+                    INT(62)
+                    INT(63)
+                    INT(64)
+                    INT(65)
+                    INT(66)
+                    INT(67)
+                    INT(68)
+                    INT(69)
+                    INT(70)
+                    INT(71)
+                    INT(72)
+                    INT(73)
+                    INT(74)
+                    INT(75)
+                    INT(76)
+                    INT(77)
+                    INT(78)
+                    INT(79)
+                    INT(80)
+                    INT(81)
+                    INT(82)
+                    INT(83)
+                    INT(84)
+                    INT(85)
+                    INT(86)
+                    INT(87)
+                    INT(88)
+                    INT(89)
+                    INT(90)
+                    INT(91)
+                    INT(92)
+                    INT(93)
+                    INT(94)
+                    INT(95)
+                    INT(96)
+                    INT(97)
+                    INT(98)
+                    INT(99)
+                    INT(100)
+                }
+        local? let grid: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    ARRAY_LITERAL {
+                        INT(11)
+                        INT(12)
+                        INT(13)
+                        INT(14)
+                        INT(15)
+                        INT(16)
+                        INT(17)
+                        INT(18)
+                        INT(19)
+                        INT(20)
+                    }
+                    ARRAY_LITERAL {
+                        INT(21)
+                        INT(22)
+                        INT(23)
+                        INT(24)
+                        INT(25)
+                        INT(26)
+                        INT(27)
+                        INT(28)
+                        INT(29)
+                        INT(30)
+                    }
+                    ARRAY_LITERAL {
+                        INT(31)
+                        INT(32)
+                        INT(33)
+                        INT(34)
+                        INT(35)
+                        INT(36)
+                        INT(37)
+                        INT(38)
+                        INT(39)
+                        INT(40)
+                    }
+                    ARRAY_LITERAL {
+                        INT(41)
+                        INT(42)
+                        INT(43)
+                        INT(44)
+                        INT(45)
+                        INT(46)
+                        INT(47)
+                        INT(48)
+                        INT(49)
+                        INT(50)
+                    }
+                    ARRAY_LITERAL {
+                        INT(51)
+                        INT(52)
+                        INT(53)
+                        INT(54)
+                        INT(55)
+                        INT(56)
+                        INT(57)
+                        INT(58)
+                        INT(59)
+                        INT(60)
+                    }
+                    ARRAY_LITERAL {
+                        INT(61)
+                        INT(62)
+                        INT(63)
+                        INT(64)
+                        INT(65)
+                        INT(66)
+                        INT(67)
+                        INT(68)
+                        INT(69)
+                        INT(70)
+                    }
+                    ARRAY_LITERAL {
+                        INT(71)
+                        INT(72)
+                        INT(73)
+                        INT(74)
+                        INT(75)
+                        INT(76)
+                        INT(77)
+                        INT(78)
+                        INT(79)
+                        INT(80)
+                    }
+                    ARRAY_LITERAL {
+                        INT(81)
+                        INT(82)
+                        INT(83)
+                        INT(84)
+                        INT(85)
+                        INT(86)
+                        INT(87)
+                        INT(88)
+                        INT(89)
+                        INT(90)
+                    }
+                    ARRAY_LITERAL {
+                        INT(91)
+                        INT(92)
+                        INT(93)
+                        INT(94)
+                        INT(95)
+                        INT(96)
+                        INT(97)
+                        INT(98)
+                        INT(99)
+                        INT(100)
+                    }
+                    ARRAY_LITERAL {
+                        INT(101)
+                        INT(102)
+                        INT(103)
+                        INT(104)
+                        INT(105)
+                        INT(106)
+                        INT(107)
+                        INT(108)
+                        INT(109)
+                        INT(110)
+                    }
+                }
+        local? let texts: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    STRING("ssssssssssssssssssss1")
+                    STRING("ssssssssssssssssssss2")
+                    STRING("ssssssssssssssssssss3")
+                    STRING("ssssssssssssssssssss4")
+                    STRING("ssssssssssssssssssss5")
+                    STRING("ssssssssssssssssssss6")
+                    STRING("ssssssssssssssssssss7")
+                    STRING("ssssssssssssssssssss8")
+                    STRING("ssssssssssssssssssss9")
+                    STRING("ssssssssssssssssssss10")
+                    STRING("ssssssssssssssssssss11")
+                    STRING("ssssssssssssssssssss12")
+                    STRING("ssssssssssssssssssss13")
+                    STRING("ssssssssssssssssssss14")
+                    STRING("ssssssssssssssssssss15")
+                    STRING("ssssssssssssssssssss16")
+                    STRING("ssssssssssssssssssss17")
+                    STRING("ssssssssssssssssssss18")
+                    STRING("ssssssssssssssssssss19")
+                    STRING("ssssssssssssssssssss20")
+                    STRING("ssssssssssssssssssss21")
+                    STRING("ssssssssssssssssssss22")
+                    STRING("ssssssssssssssssssss23")
+                    STRING("ssssssssssssssssssss24")
+                    STRING("ssssssssssssssssssss25")
+                    STRING("ssssssssssssssssssss26")
+                    STRING("ssssssssssssssssssss27")
+                    STRING("ssssssssssssssssssss28")
+                    STRING("ssssssssssssssssssss29")
+                    STRING("ssssssssssssssssssss30")
+                }
+        local? let cube: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    ARRAY_LITERAL {
+                        ARRAY_LITERAL {
+                            ARRAY_LITERAL {
+                                INT(111)
+                                INT(112)
+                                INT(113)
+                                INT(114)
+                            }
+                            ARRAY_LITERAL {
+                                INT(121)
+                                INT(122)
+                                INT(123)
+                                INT(124)
+                            }
+                            ARRAY_LITERAL {
+                                INT(131)
+                                INT(132)
+                                INT(133)
+                                INT(134)
+                            }
+                        }
+                        ARRAY_LITERAL {
+                            ARRAY_LITERAL {
+                                INT(211)
+                                INT(212)
+                                INT(213)
+                                INT(214)
+                            }
+                            ARRAY_LITERAL {
+                                INT(221)
+                                INT(222)
+                                INT(223)
+                                INT(224)
+                            }
+                            ARRAY_LITERAL {
+                                INT(231)
+                                INT(232)
+                                INT(233)
+                                INT(234)
+                            }
+                        }
+                        ARRAY_LITERAL {
+                            ARRAY_LITERAL {
+                                INT(311)
+                                INT(312)
+                                INT(313)
+                                INT(314)
+                            }
+                            ARRAY_LITERAL {
+                                INT(321)
+                                INT(322)
+                                INT(323)
+                                INT(324)
+                            }
+                            ARRAY_LITERAL {
+                                INT(331)
+                                INT(332)
+                                INT(333)
+                                INT(334)
+                            }
+                        }
+                        ARRAY_LITERAL {
+                            ARRAY_LITERAL {
+                                INT(411)
+                                INT(412)
+                                INT(413)
+                                INT(414)
+                            }
+                            ARRAY_LITERAL {
+                                INT(421)
+                                INT(422)
+                                INT(423)
+                                INT(424)
+                            }
+                            ARRAY_LITERAL {
+                                INT(431)
+                                INT(432)
+                                INT(433)
+                                INT(434)
+                            }
+                        }
+                        ARRAY_LITERAL {
+                            ARRAY_LITERAL {
+                                INT(511)
+                                INT(512)
+                                INT(513)
+                                INT(514)
+                            }
+                            ARRAY_LITERAL {
+                                INT(521)
+                                INT(522)
+                                INT(523)
+                                INT(524)
+                            }
+                            ARRAY_LITERAL {
+                                INT(531)
+                                INT(532)
+                                INT(533)
+                                INT(534)
+                            }
+                        }
+                    }
+                }
+        local? let cubeCell: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(cube)
+                    indices:
+                        INT(0)
+                }
+        local? let firstCell: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(flat)
+                    indices:
+                        INT(0)
+                }
+        local? let lastCell: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(flat)
+                    indices:
+                        INT(99)
+                }
+        local? let sum: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                SUBSCRIPT {
+                                                    receiver:
+                                                        NAMED_ACCESS(flat)
+                                                    indices:
+                                                        INT(0)
+                                                }
+                                            arguments:
+                                                SUBSCRIPT {
+                                                    receiver:
+                                                        NAMED_ACCESS(flat)
+                                                    indices:
+                                                        INT(99)
+                                                }
+                                        }
+                                    arguments:
+                                        NAMED_ACCESS(firstCell)
+                                }
+                            arguments:
+                                NAMED_ACCESS(lastCell)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                SUBSCRIPT {
+                                    receiver:
+                                        NAMED_ACCESS(texts)
+                                    indices:
+                                        INT(29)
+                                }
+                        }
+                }
+        RETURN {
+            NAMED_ACCESS(sum)
+        }
+    }

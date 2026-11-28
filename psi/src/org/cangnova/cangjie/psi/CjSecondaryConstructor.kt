@@ -55,7 +55,7 @@ class CjSecondaryConstructor : CjConstructor<CjSecondaryConstructor> {
     /**
      * 实现 `getContainingTypeStatement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun getContainingTypeStatement() = parent?.parent as CjTypeStatement
+    override fun getContainingTypeStatement() = containingCjTypeStatement()
 
     /**
      * 暴露 `isConst`，实现仓颉 PSI节点对上层接口的属性契约。

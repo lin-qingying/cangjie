@@ -51,3 +51,18 @@ inline fun buildHandleClause(init: CfirHandleClauseBuilder.() -> Unit): CfirHand
     }
     return CfirHandleClauseBuilder().apply(init).build()
 }
+
+@OptIn(ExperimentalContracts::class)
+inline fun buildHandleClauseCopy(original: CfirHandleClause, init: CfirHandleClauseBuilder.() -> Unit): CfirHandleClause {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+    val copyBuilder = CfirHandleClauseBuilder()
+    copyBuilder.source = original.source
+    copyBuilder.annotations.addAll(original.annotations)
+    copyBuilder.coneTypeOrNull = original.coneTypeOrNull
+    copyBuilder.mappedExpression = original.mappedExpression
+    copyBuilder.overflowStrategy = original.overflowStrategy
+    copyBuilder.body = original.body
+    return copyBuilder.apply(init).build()
+}

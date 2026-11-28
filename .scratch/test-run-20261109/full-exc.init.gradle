@@ -1,0 +1,8 @@
+allprojects {
+    tasks.withType(Test).configureEach {
+        testLogging {
+            events "failed"
+            exceptionFormat "full"
+        }
+    }
+}

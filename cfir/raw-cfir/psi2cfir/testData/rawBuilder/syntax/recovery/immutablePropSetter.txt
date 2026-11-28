@@ -1,0 +1,9 @@
+FILE: immutablePropSetter.cj
+    internal? class C {
+        private var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        public prop p: R|Int64|
+        init() {
+        }
+    }

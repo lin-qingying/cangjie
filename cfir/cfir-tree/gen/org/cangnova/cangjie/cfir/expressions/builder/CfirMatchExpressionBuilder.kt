@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchExpressionImpl
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -24,6 +25,7 @@ class CfirMatchExpressionBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     var mappedExpression: CfirExpression? = null
     var overflowStrategy: CangjieOverflowStrategy? = null
+    var calleeReference: CfirReference = org.cangnova.cangjie.cfir.references.CfirStubReference
     var subject: CfirExpression? = null
     val branches: MutableList<CfirMatchBranch> = mutableListOf()
     var exhaustiveness: CfirMatchExhaustivenessStatus = CfirMatchExhaustivenessStatus.Unknown
@@ -36,6 +38,7 @@ class CfirMatchExpressionBuilder {
             coneTypeOrNull,
             mappedExpression,
             overflowStrategy,
+            calleeReference,
             subject,
             branches,
             exhaustiveness,
@@ -63,6 +66,7 @@ inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMat
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.mappedExpression = original.mappedExpression
     copyBuilder.overflowStrategy = original.overflowStrategy
+    copyBuilder.calleeReference = original.calleeReference
     copyBuilder.subject = original.subject
     copyBuilder.branches.addAll(original.branches)
     copyBuilder.exhaustiveness = original.exhaustiveness

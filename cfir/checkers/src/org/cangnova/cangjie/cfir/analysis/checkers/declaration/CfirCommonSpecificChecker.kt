@@ -43,7 +43,6 @@ import org.cangnova.cangjie.cfir.session.cjmpSettings
 import org.cangnova.cangjie.cfir.declarations.cjmpHasCommonDefault
 import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
-import org.cangnova.cangjie.cfir.session.CfirCjmpCommonSideFacts
 import org.cangnova.cangjie.cfir.session.defaultCfirCjmpCommonSideFacts
 import org.cangnova.cangjie.cfir.session.CfirCjmpCandidateDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirCjmpFamilySnapshot
@@ -556,7 +555,8 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker(MppCheckerKind.Plat
             return
         }
         reporter.reportOn(
-            source = declaration.cjmpVariableDiagnosticOwner().source,
+            source = declaration.cjmpVariableDiagnosticOwner().wholeDeclarationDiagnosticSource()
+                ?: declaration.cjmpVariableDiagnosticOwner().source,
             factory = CfirErrors.NOT_MATCHED,
             a = CfirCjmpDiagnosticArgument.Side(CfirCjmpSide.SPECIFIC),
             b = CfirCjmpDiagnosticArgument.NotMatchedDeclaration(declaration, null),
@@ -624,7 +624,7 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker(MppCheckerKind.Plat
                 )
 
                 CjmpCompatibilityIssue.ReturnType -> reporter.reportOn(
-                    source = specific.source,
+                    source = specific.wholeDeclarationDiagnosticSource() ?: specific.source,
                     factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
                     a = (specific as CfirCallableDeclaration).symbol.name,
                 )

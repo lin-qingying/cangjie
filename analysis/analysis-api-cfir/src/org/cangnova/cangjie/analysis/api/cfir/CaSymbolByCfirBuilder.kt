@@ -89,6 +89,10 @@ import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirResourceVariableSymbol
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -218,6 +222,7 @@ companion object{
      * 按 CFIR 符号实际种类分派构造公开 Analysis API 符号。
      */
     fun buildSymbol(symbol: CfirBasedSymbol<*>): CaSymbol = when (symbol) {
+        is CfirPatternVariableSymbol -> CaCfirPatternVariableSymbol(symbol, analysisSession)
         is CfirClassLikeSymbol<*> -> classifierBuilder.buildClassLikeSymbol(symbol)
         is CfirCallableSymbol<*> -> callableBuilder.buildCallableSymbol(symbol)
         is CfirTypeParameterSymbol -> classifierBuilder.buildTypeParameterSymbol(symbol)
@@ -498,11 +503,19 @@ companion object{
         fun buildVariableSymbol(symbol: CfirCallableSymbol<*>): CaVariableSymbol = when (symbol) {
             is CfirPropertySymbol -> CaCfirPropertySymbol(symbol, analysisSession)
             is CfirFieldVariableSymbol -> CaCfirFieldSymbol(symbol, analysisSession)
-            is CfirPatternVariableSymbol -> CaCfirPatternVariableSymbol(symbol, analysisSession)
-            is CfirPatternBindingSymbol -> CaCfirPatternBindingSymbol(symbol, analysisSession)
+            is CfirPatternBindingSymbol -> when (symbol.cfir.patternTreeOwner) {
+                is CfirCatch, is CfirHandleClause -> buildLocalVariableSymbol(symbol)
+                else -> CaCfirPatternBindingSymbol(symbol, analysisSession)
+            }
+            is CfirResourceVariableSymbol -> buildLocalVariableSymbol(symbol)
             is CfirValueParameterSymbol -> buildValueParameterSymbol(symbol)
             else -> error("Unsupported variable public symbol mapping for `${symbol::class.simpleName}`")
         }
+
+        private fun buildLocalVariableSymbol(symbol: CfirCallableSymbol<*>): CaVariableSymbol =
+            org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirLocalVariableSymbol(
+                symbol, analysisSession, symbol.llCfirModuleData.caModule, analysisSession.token,
+            )
 
         /**
          * 构造值参数符号，并在参数来自 substitution override 时映射回原始参数。

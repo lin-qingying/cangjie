@@ -19,7 +19,11 @@ import org.cangnova.cangjie.psi.CjExpression
  *
  * 对齐 Kotlin Analysis API 的 `KaCall`。
  */
-sealed interface CaCall : CaLifetimeOwner
+sealed interface CaCall : CaLifetimeOwner {
+    /** 当前调用是否通过函数值触发隐式 `invoke`。 */
+    val isFunctionValueCall: Boolean
+        get() = this is CaFunctionValueCall
+}
 
 /**
  * 对函数的调用,或对变量/属性的简单/复合访问的视图。

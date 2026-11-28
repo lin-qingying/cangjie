@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveCompo
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.cfir.psi
 import java.util.concurrent.ConcurrentMap
+import kotlin.time.TimeSource
 
 /**
  * Caches [FileStructure] instances for an [LLResolutionFacade][org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade].
@@ -27,21 +28,40 @@ internal class FileStructureCache(private val moduleResolveComponents: LLCfirMod
      * 返回指定 PSI 文件的 file structure，缺失时构建并缓存。
      */
     fun getFileStructure(cjFile: CjFile): FileStructure {
-        val cfirFile = moduleResolveComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        val cfirFile = moduleResolveComponents.cfirFileBuilder.getOrBuildFileForResolution(cjFile)
         val targetFile = checkNotNull(cfirFile.psi as? CjFile)
-        return cache.computeIfAbsent(targetFile) { FileStructure.build(targetFile, moduleResolveComponents) }
+        return cache.computeIfAbsent(targetFile) {
+        val statistics = moduleResolveComponents.globalResolveComponents.diagnosticsStatistics
+        if (statistics == null) return@computeIfAbsent FileStructure.build(targetFile, moduleResolveComponents)
+
+        // 只在缓存未命中时计时：命中意味着结构早已建好，把它算进本次请求会虚增结构构建成本。
+        statistics.onStructureBuildStarted()
+        val startedAt = TimeSource.Monotonic.markNow()
+        try {
+            FileStructure.build(targetFile, moduleResolveComponents)
+        } finally {
+            statistics.onStructureBuildFinished(startedAt.elapsedNow().inWholeNanoseconds)
+        }
+        }
     }
 
     /**
      * 返回已缓存的 file structure，不触发构建。
      */
     fun getCachedFileStructure(cjFile: CjFile): FileStructure? {
-        val cfirFile = moduleResolveComponents.cache.getCachedCfirFile(cjFile) ?: return null
+        val snapshot = moduleResolveComponents.macroSemanticSnapshotStore.snapshot
+        val cfirFile = snapshot?.fileForSource(cjFile) ?: snapshot?.fileForReparsedPsi(cjFile)
+            ?: moduleResolveComponents.cache.getCachedCfirFile(cjFile) ?: return null
         return cache[cfirFile.psi as CjFile]
     }
 
     /** target 整树换代时，声明、表达式、partial mapper 和诊断均属于旧结构产品，整体淘汰。 */
     fun invalidateFile(cjFile: CjFile) {
         cache.remove(cjFile)
+    }
+
+    /** 清除基于旧物理 CFIR 构造的 PSI 到 CFIR 映射。 */
+    fun clear() {
+        cache.clear()
     }
 }

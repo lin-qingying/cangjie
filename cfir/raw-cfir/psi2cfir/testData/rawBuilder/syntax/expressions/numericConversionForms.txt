@@ -1,0 +1,39 @@
+FILE: numericConversionForms.cj
+    internal? func numericConversionForms(i: R|Int64|, u: R|UInt8|, fl: R|Float64|, r: R|Rune|, s: R|String|, b: R|Bool|): R|Unit| {
+        local? let a: R|Int64| = ...
+            initializer:
+                TYPE_CONVERSION(R|Int64|) {
+                    NAMED_ACCESS(u)
+                }
+        local? let b2: R|Float64| = ...
+            initializer:
+                FLOAT(1.0)
+        local? let c: R|Int64| = ...
+            initializer:
+                TYPE_CONVERSION(R|Int64|) {
+                    NAMED_ACCESS(fl)
+                }
+        local? let d: R|Rune| = ...
+            initializer:
+                RUNE('r'x'')
+        local? let e: R|String| = ...
+            initializer:
+                NAMED_ACCESS(s)
+        local? let g: R|Bool| = ...
+            initializer:
+                NAMED_ACCESS(b)
+        local? let h: R|Int64| = ...
+            initializer:
+                NAMED_ACCESS(i)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b2)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(g)
+                    NAMED_ACCESS(h)
+                }
+    }

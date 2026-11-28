@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 
 /**
@@ -24,7 +25,7 @@ fun interface CaRendererVisibilityModifierProvider {
          * 默认 `public` 等隐式可见性会被省略。
          */
         val NO_IMPLICIT_VISIBILITY: CaRendererVisibilityModifierProvider = CaRendererVisibilityModifierProvider { symbol ->
-            if (!symbol.isVisibilityExplicit) return@CaRendererVisibilityModifierProvider null
+            if (symbol.visibilityExplicitness != CaModifierExplicitness.EXPLICIT) return@CaRendererVisibilityModifierProvider null
             when (symbol.visibility) {
                 CaSymbolVisibility.PRIVATE -> "private"
                 CaSymbolVisibility.PRIVATE_TO_THIS -> "private"
@@ -58,9 +59,8 @@ fun interface CaRendererVisibilityModifierProvider {
                 CaSymbolVisibility.PROTECTED -> "protected"
                 CaSymbolVisibility.INTERNAL -> "internal"
                 CaSymbolVisibility.LOCAL -> null
-                CaSymbolVisibility.PUBLIC,
-                CaSymbolVisibility.UNKNOWN,
-                -> "public"
+                CaSymbolVisibility.PUBLIC -> "public"
+                CaSymbolVisibility.UNKNOWN -> null
             }
         }
     }

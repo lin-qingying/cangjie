@@ -1,0 +1,6 @@
+presentation: Int64
+qualified: Int64
+short: Int64
+abbreviation: null
+fullyExpanded: Int64
+classLikeSymbol: null

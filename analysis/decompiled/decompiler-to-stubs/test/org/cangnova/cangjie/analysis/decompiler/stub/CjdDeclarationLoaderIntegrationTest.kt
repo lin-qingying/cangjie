@@ -1,9 +1,12 @@
 package org.cangnova.cangjie.analysis.decompiler.stub
 
+import org.cangnova.cangjie.test.bindCjoFixture
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.Decl
 import PackageFormat.DeclKind
 import PackageFormat.Package
 import com.google.flatbuffers.FlatBufferBuilder
+import com.intellij.psi.stubs.StubElement
 import com.intellij.testFramework.LightVirtualFile
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
@@ -11,6 +14,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.serialization.cjd.CjdSidecarLocator
 import org.cangnova.cangjie.cfir.serialization.cjd.cjdAnnotationProvenance
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
@@ -18,6 +22,9 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -25,6 +32,10 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -77,14 +88,17 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
         )
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)))
         module.session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider::class, provider)
         val classId = ClassId.topLevel(FqName("test.pkg.Box"))
         val fromProvider = assertIs<CfirClass>(kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(classId)).cfir)
         // 触发用 VirtualFile 故意不同名，sidecar 必须取实际选中 CJO 的 sibling。
         val input = LoadedCjoPackage(LightVirtualFile("unrelated.cjo"), FqName("test.pkg"), loaded.pkg,
             loaded.header, manager, true, loaded.sourcePath)
-        val fromDecompiler = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input, Module()).single())
+        val decompilerModule = Module()
+        bindCjoFixture(decompilerModule, manager, setOf(root))
+        val fromDecompiler = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input, decompilerModule).single())
         fun annotationValues(declaration: CfirClass) = declaration.annotations.map { annotation ->
             val call = assertIs<CfirAnnotationCall>(annotation)
             Triple(call.annotationSourceName,
@@ -98,11 +112,15 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
         assertSame(fromProvider, provider.getClassLikeSymbolByClassId(classId)!!.cfir)
         assertEquals(3, fromProvider.annotations.size)
         // 旧的纯内存入口不凭虚拟文件名推导磁盘路径。
-        val withoutPath = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input.copy(sourcePath = null), Module()).single())
+        val memoryModule = Module()
+        bindCjoFixture(memoryModule, manager, setOf(root))
+        val withoutPath = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input.copy(sourcePath = null), memoryModule).single())
         assertTrue(withoutPath.annotations.isEmpty())
 
         // 验证生产 CJO → stub 的结果，不借用源码 PSI 或仍持有 AST 的 source stub。
-        val fileStub = CjoFileStubBuilder.buildFileStub(input, Module())
+        val stubModule = Module()
+        bindCjoFixture(stubModule, manager, setOf(root))
+        val fileStub = CjoFileStubBuilder.buildFileStub(input, stubModule)
         val classStub = fileStub.findChildStubByType(
             org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.CLASS,
         )
@@ -114,6 +132,77 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
             "CJO annotation stub must contain its argument subtree").arguments.single()
         assertEquals("message", argument.getArgumentName()?.asName?.asString())
         kotlin.test.assertNotNull(argument.getArgumentExpression(), "CJO annotation argument must retain its expression")
+    }
+
+    /**
+     * 指针类型必须保留为标准 CPointer 泛型 PSI，且包路径段不能被误写成类段。
+     */
+    @Test
+    fun pointerTypeStubPreservesPointeeAndQualifiedSegments() {
+        val fileStub = CangJieFileStubImpl(
+            file = null,
+            kind = CangJieFileStubKindImpl.File(FqName("sample")),
+        )
+        val pointeeType = ConeStructType(
+            ConeClassLikeLookupTagImpl(ClassId.topLevel(FqName("std.env.ProcessInfo"))),
+        )
+        TypeCjoStubBuilder().createTypeReferenceStub(
+            fileStub,
+            buildResolvedTypeRef { coneType = ConePointerType(pointeeType) },
+        )
+
+        val stubs = mutableListOf<StubElement<*>>()
+        fun collect(stub: StubElement<*>) {
+            stubs += stub
+            stub.childrenStubs.forEach(::collect)
+        }
+        collect(fileStub)
+
+        val references = stubs.filterIsInstance<CangJieNameReferenceExpressionStubImpl>()
+        assertEquals(
+            listOf(
+                "std" to false,
+                "core" to false,
+                "CPointer" to true,
+                "std" to false,
+                "env" to false,
+                "ProcessInfo" to true,
+            ),
+            references.map { it.getReferencedName() to it.isClassRef },
+        )
+        assertEquals(1, stubs.count { it.stubType == CjStubElementTypes.TYPE_ARGUMENT_LIST })
+    }
+
+    @Test
+    fun renderedQualifiedTypeStubSeparatesPackageAndDeclarationSegments() {
+        val fileStub = CangJieFileStubImpl(
+            file = null,
+            kind = CangJieFileStubKindImpl.File(FqName("sample")),
+        )
+        TypeCjoStubBuilder().createRenderedTypeReferenceStub(
+            fileStub,
+            "sample.pkg.Box<other.pkg.Item>",
+        )
+
+        val stubs = mutableListOf<StubElement<*>>()
+        fun collect(stub: StubElement<*>) {
+            stubs += stub
+            stub.childrenStubs.forEach(::collect)
+        }
+        collect(fileStub)
+
+        val references = stubs.filterIsInstance<CangJieNameReferenceExpressionStubImpl>()
+        assertEquals(
+            listOf(
+                "sample" to false,
+                "pkg" to false,
+                "Box" to true,
+                "other" to false,
+                "pkg" to false,
+                "Item" to true,
+            ),
+            references.map { it.getReferencedName() to it.isClassRef },
+        )
     }
 
     private class Module : CfirModuleData() {

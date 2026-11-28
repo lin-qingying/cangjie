@@ -9,148 +9,130 @@ import std.collection.*
 import std.core.*
 import std.deriving.resolve.Types
 
-class ArbitraryDeriving <: std.core.Object & std.deriving.api.Deriving {
-    @Annotation
-    override prop name: std.core.String {
+internal class ArbitraryDeriving <: std.core.Object & std.deriving.api.Deriving {
+    public override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop description: std.core.String {
+    public override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
+    public override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
 
-    override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
+    public override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
 
-    override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
+    public override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func commaSeparated<T>(things: std.core.Iterable<T>): std.ast.Tokens { /* compiled code */ }
+internal func commaSeparated<T>(things: std.core.Iterable<T>): std.ast.Tokens { /* compiled code */ }
 
-class ComparableDeriving <: std.core.Object & std.deriving.api.Deriving {
-    @Annotation
-    override prop name: std.core.String {
+internal class ComparableDeriving <: std.core.Object & std.deriving.api.Deriving {
+    public override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop description: std.core.String {
+    public override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
+    public override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
 
-    override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
+    public override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
 
-    override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
+    public override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-class EquatableDeriving <: std.core.Object & std.deriving.api.Deriving {
-    @Annotation
-    override prop name: std.core.String {
+internal class EquatableDeriving <: std.core.Object & std.deriving.api.Deriving {
+    public override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop description: std.core.String {
+    public override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
+    public override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
 
-    override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
+    public override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
 
-    override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
+    public override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-class HashableDeriving <: std.core.Object & std.deriving.api.Deriving {
-    @Annotation
-    override prop name: std.core.String {
+internal class HashableDeriving <: std.core.Object & std.deriving.api.Deriving {
+    public override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop description: std.core.String {
+    public override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
+    public override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
 
-    override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
+    public override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
 
-    override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
+    public override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-class ShrinkDeriving <: std.core.Object & std.deriving.api.Deriving {
-    @Annotation
-    override prop name: std.core.String {
+internal class ShrinkDeriving <: std.core.Object & std.deriving.api.Deriving {
+    public override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop description: std.core.String {
+    public override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
+    public override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
 
-    override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
+    public override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
 
-    override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
+    public override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-class ToStringDeriving <: std.core.Object & std.deriving.api.Deriving {
-    @Annotation
-    override prop name: std.core.String {
+internal class ToStringDeriving <: std.core.Object & std.deriving.api.Deriving {
+    public override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop description: std.core.String {
+    public override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
+    public override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
 
-    override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
+    public override func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
 
-    override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
+    public override func derive(_: std.ast.Tokens, target: std.deriving.api.DerivingTarget, _: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func destructEnumCase(enumCase: std.deriving.api.TargetEnumCase, prefix: std.core.String): std.ast.Tokens { /* compiled code */ }
+internal func destructEnumCase(enumCase: std.deriving.api.TargetEnumCase, prefix: std.core.String): std.ast.Tokens { /* compiled code */ }
 
-func enumFallback(target: std.deriving.api.DerivingTarget): std.ast.Tokens { /* compiled code */ }
+internal func enumFallback(target: std.deriving.api.DerivingTarget): std.ast.Tokens { /* compiled code */ }
 
-func isEnumHasEllipsis(target: std.deriving.api.DerivingTarget): Bool { /* compiled code */ }
+internal func isEnumHasEllipsis(target: std.deriving.api.DerivingTarget): Bool { /* compiled code */ }

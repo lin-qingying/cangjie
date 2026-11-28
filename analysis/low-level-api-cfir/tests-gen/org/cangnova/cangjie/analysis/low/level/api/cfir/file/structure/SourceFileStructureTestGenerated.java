@@ -25,6 +25,12 @@ public class SourceFileStructureTestGenerated extends AbstractSourceFileStructur
   }
 
   @Test
+  @TestMetadata("extendMember.cj")
+  public void testExtendMember() {
+    run("extendMember.cj");
+  }
+
+  @Test
   @TestMetadata("interfaceStatus.cj")
   public void testInterfaceStatus() {
     run("interfaceStatus.cj");

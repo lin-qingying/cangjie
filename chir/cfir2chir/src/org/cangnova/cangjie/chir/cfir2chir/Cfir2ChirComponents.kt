@@ -1,16 +1,17 @@
 package org.cangnova.cangjie.chir.cfir2chir
 
-import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
-import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
-import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirThisOwnerSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
+import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
+import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 
 /**
@@ -30,6 +31,14 @@ class Cfir2ChirComponents(
     val typeMapper: Cfir2ChirTypeMapper = Cfir2ChirTypeMapper(),
     /** 跨包 actualization 提供的声明身份事实。 */
     val semanticIdentityProvider: Cfir2ChirSemanticIdentityProvider = Cfir2ChirSemanticIdentityProvider { null },
+    /**
+     * 函数体转换期间产出的辅助函数声明收集器。
+     *
+     * 匿名函数与局部函数的 body 只在引用点被触发转换，转换产物不在
+     * CFIR 文件顶层声明列表中；这里按生成顺序登记，最终由包组装阶段
+     * 附加到 module 声明列表，保证函数值引用的目标真实存在。
+     */
+    val auxiliaryFunctions: Cfir2ChirAuxiliaryFunctionCollector = Cfir2ChirAuxiliaryFunctionCollector(),
 )
 
 /** 为声明选择跨包身份；未被 actualization 覆盖的声明继续使用本地 CFIR 身份。 */
@@ -67,3 +76,31 @@ internal fun Cfir2ChirComponents.ownerType(owner: CfirThisOwnerSymbol<*>): ChirT
             owner.cfir,
         )
     }
+/**
+ * 辅助函数声明的按需收集器。
+ *
+ * 同一符号只收集一次：调用方以 `Cfir2ChirDeclarationStorage.hasFunction`
+ * 的幂等性保证不重复转换。
+ */
+class Cfir2ChirAuxiliaryFunctionCollector {
+    /**
+     * 按生成顺序累积的辅助函数声明。
+     */
+    private val collected = mutableListOf<DefaultChirFunctionDeclaration>()
+
+    /**
+     * 登记一个函数体转换产出的辅助函数声明。
+     */
+    fun register(declaration: DefaultChirFunctionDeclaration) {
+        collected += declaration
+    }
+
+    /**
+     * 取出并清空当前累积的全部辅助函数声明。
+     */
+    fun drain(): List<DefaultChirFunctionDeclaration> {
+        val result = collected.toList()
+        collected.clear()
+        return result
+    }
+}

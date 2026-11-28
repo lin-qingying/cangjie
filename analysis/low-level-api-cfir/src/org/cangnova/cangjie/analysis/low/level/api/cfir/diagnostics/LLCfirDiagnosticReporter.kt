@@ -10,12 +10,14 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.addValueFor
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.impl.CfirDiagnosticCommitPolicy
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakePsiSourceElement
-import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
+import org.cangnova.cangjie.source.withRange
 
 /**
  * low-level CFIR diagnostics 收集使用的 pending reporter。
@@ -25,6 +27,11 @@ internal class LLCfirDiagnosticReporter(
      * 将宏展开等生成源码位置映射回原始源码位置的函数。
      */
     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
+    /**
+     * 提交期裁决策略；必须与编译管线的 `PendingDiagnosticsReporterImpl` 保持一致，
+     * 否则同一源码在 IDE 与 CLI 中得到不同的诊断集合。
+     */
+    private val commitPolicy: DiagnosticCommitPolicy = CfirDiagnosticCommitPolicy,
 ) : PendingDiagnosticReporter() {
     /**
      * 尚未提交到最终结果的 diagnostics，按 PSI 元素归组。
@@ -73,21 +80,30 @@ internal class LLCfirDiagnosticReporter(
         // So as a temporary solution we filter out related diagnostics here.
         if (diagnostic.isAboutImplicitImport()) return
 
-        val psiDiagnostic = diagnostic.toPsiDiagnostic()
+        val psiDiagnostic = diagnostic.toPsiDiagnosticOrNull()
+            ?: diagnostic.toContainerBackedPsiDiagnostic(context)
+            ?: return
         pendingDiagnostics.addValueFor(psiDiagnostic.psiElement, psiDiagnostic)
     }
 
     /**
-     * 将任意 CFIR diagnostic 转换为 PSI diagnostic，并应用 source mapper。
+     * 将任意 CFIR diagnostic 转换为 PSI diagnostic，并应用 source mapper；没有 PSI 源时返回 `null`。
+     *
+     * 部分 checker 只持有 offsets-only 源（`CjOffsetsOnlyDiagnostic`）：这在 headless 批处理路径
+     * 合法，但 IDE/LL 路径要求 PSI 锚点。这里不再 `error()`——单个元素缺锚点会中断整份文件的
+     * 诊断收集（真实项目 `server_auth_more_data.cj` 即此形态），改由调用方降级或丢弃。
      */
-    private fun CjDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
+    private fun CjDiagnostic.toPsiDiagnosticOrNull(): CjPsiDiagnostic? {
         val currentElement = when (this) {
             is CjPsiDiagnostic -> element
             is CjDiagnosticWithSource -> element
+            is CjOffsetsOnlyDiagnostic -> element
             else -> error("Unknown diagnostic type ${this::class.simpleName}")
         }
-        val mappedSource = sourceMapper(currentElement) ?: currentElement
-        if (mappedSource is CjPsiSourceElement && mappedSource != currentElement) {
+        val mappedElement = sourceMapper(currentElement)
+        if (mappedElement != null && mappedElement != currentElement) {
+            val mappedSource = mappedElement.toPsiSourceElementPreservingRange()
+                ?: return null
             if (this is CjOffsetsOnlyDiagnostic) {
                 val ranges = textRanges
                 val fixedRanges = object : AbstractSourceElementPositioningStrategy() {
@@ -121,8 +137,24 @@ internal class LLCfirDiagnosticReporter(
                 }
                 toPsiDiagnosticAt(psiAnchor, fixedRanges)
             }
-            else -> error("Unknown diagnostic type ${this::class.simpleName}")
+            else -> currentElement.toPsiSourceElementPreservingRange()?.let { toPsiDiagnosticAt(it) }
         }
+    }
+
+    /**
+     * 把没有 PSI 源的诊断降级到最近的 PSI-backed 容器。
+     *
+     * 官方/IDE 语义要求诊断有 PSI 锚点；offsets-only 源只能定位到偏移，无法投影为 PSI 诊断。
+     * 这里取当前遍历栈（[org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext]）
+     * 里最内层的 PSI-backed 容器作为替代锚点，保证诊断仍可见；完全没有容器时才丢弃。
+     */
+    private fun CjDiagnostic.toContainerBackedPsiDiagnostic(context: DiagnosticContext): CjPsiDiagnostic? {
+        val checkerContext = context as? org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+            ?: return null
+        val containerSource = checkerContext.containingElements.asReversed()
+            .firstNotNullOfOrNull { element -> element.source?.toPsiSourceElementPreservingRange() }
+            ?: return null
+        return toPsiDiagnosticAt(containerSource)
     }
 
     /**
@@ -146,12 +178,39 @@ internal class LLCfirDiagnosticReporter(
                     }
                     diagnostic.element == commitSource || commitEverything -> {
                         iterator.remove()
+                        val coreDiagnostic = diagnostic as CjDiagnostic
+                        if (commitPolicy.isSupersededByMoreSpecific(
+                                diagnostic = coreDiagnostic,
+                                pending = pendingDiagnostics.diagnosticsInFileOf(diagnosticElement),
+                                committed = _committedDiagnostics.diagnosticsInFileOf(diagnosticElement),
+                            )
+                        ) {
+                            continue
+                        }
+                        if (commitPolicy.isDuplicateOfCommitted(
+                                diagnostic = coreDiagnostic,
+                                committed = _committedDiagnostics.diagnosticsInFileOf(diagnosticElement),
+                            )
+                        ) {
+                            continue
+                        }
                         committedList += diagnostic
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * 返回与 [anchor] 同一 PSI 文件的诊断序列；与编译管线一致，提交期裁决按文件进行。
+ */
+private fun Map<PsiElement, List<CjPsiDiagnostic>>.diagnosticsInFileOf(anchor: PsiElement): Sequence<CjDiagnostic> {
+    val file = anchor.containingFile
+    return asSequence()
+        .filter { (element, _) -> element.containingFile == file }
+        .flatMap { (_, diagnostics) -> diagnostics.asSequence() }
+        .map { it as CjDiagnostic }
 }
 
 /**
@@ -168,9 +227,25 @@ private fun CjDiagnostic.isAboutImplicitImport(): Boolean {
  * 将 light diagnostic 解包为 IDE 路径需要的 PSI diagnostic。
  */
 private fun CjLightDiagnostic.toPsiDiagnosticFromLight(): CjPsiDiagnostic {
-    val psiSourceElement = element.unwrapToCjPsiSourceElement()
+    val psiSourceElement = element.toPsiSourceElementPreservingRange()
         ?: error("Diagnostic should be created from PSI in IDE")
     return (this as CjDiagnostic).toPsiDiagnosticAt(psiSourceElement)
+}
+
+/** 将 PSI-backed LightTree source 转成 IDE source，并保留其自定义文本范围。 */
+private fun AbstractCjSourceElement.toPsiSourceElementPreservingRange(): CjPsiSourceElement? {
+    return when (this) {
+        is CjPsiSourceElement -> this
+        is CjLightSourceElement -> {
+            val unwrapped = unwrapToCjPsiSourceElement() ?: return null
+            if (unwrapped.kind == kind && unwrapped.startOffset == startOffset && unwrapped.endOffset == endOffset) {
+                unwrapped
+            } else {
+                unwrapped.withRange(startOffset, endOffset) as CjPsiSourceElement
+            }
+        }
+        else -> null
+    }
 }
 
 /**

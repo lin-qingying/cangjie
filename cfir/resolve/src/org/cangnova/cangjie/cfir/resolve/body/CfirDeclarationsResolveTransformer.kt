@@ -664,7 +664,7 @@ protected open fun transformFunctionContent(
         val owningClass = context.containerIfAny as? CfirClass
         owningClass?.let { ensureDefaultSuperConstructorCall(constructor, it) }
 
-dataFlowAnalyzer.enterFunction(constructor)
+        dataFlowAnalyzer.enterFunction(constructor)
         context.loopJumpScopes.addLast(LoopJumpScope.FunctionBoundary)
         try {
             context.forConstructor(constructor) {
@@ -692,6 +692,8 @@ dataFlowAnalyzer.enterFunction(constructor)
 
     /**
      * 解析构造器 body 中第一条委托构造调用。
+     *
+     * partial body 路径同样需要调用，否则委托调用的 callee 会停在 `CfirNamedReferenceImpl`。
      */
     private fun ensureDefaultSuperConstructorCall(constructor: CfirConstructor, owner: CfirClass) {
         if (constructor.status.isStatic || owner.symbol.classId == StdlibClassIds.Object) return
@@ -719,11 +721,11 @@ dataFlowAnalyzer.enterFunction(constructor)
     }
 
     /** 解析真实首委托，生成与显式语法均经同一个调用解析生命周期。 */
-    private fun transformDelegatedConstructorCall(
+    protected fun transformDelegatedConstructorCall(
         constructor: CfirConstructor,
         data: ResolutionMode,
     ) {
-        val call = constructor.body?.statements?.firstOrNull()?.delegatedConstructorCallOrNull() ?: return
+        val call = constructor.delegatedConstructor ?: return
         call.transform<CfirExpression, ResolutionMode>(transformer, data)
     }
 
@@ -942,14 +944,18 @@ dataFlowAnalyzer.enterFunction(constructor)
             }
         }
 
-        // 局部变量在 initializer 完成解析后才进入作用域。
-        // 这样同名引用会继续查找外层变量、分类器或 enum constructor，
-        // 而真正不存在外层声明的递归自引用仍由普通名称解析报告 unresolved。
-        context.storeVariable(variable, session)
+        // 资源绑定已由 try 宿主统一发布；普通局部变量在 initializer 完成后进入作用域。
+        // 两者的自身 initializer 都由 withVariableInitializer 排除当前声明后继续查找外层。
+        if (variable !is CfirResourceVariable) {
+            context.storeVariable(variable, session)
+        }
         dataFlowAnalyzer.exitVariableDeclaration(variable)
 
-        bumpPhase(variable)
-        publishCompletedBodyRootPhases(variable)
+        // Resource 的阶段由正式类型/回调完成协议发布，preview 不推进 BODY。
+        if (variable !is CfirResourceVariable) {
+            bumpPhase(variable)
+            publishCompletedBodyRootPhases(variable)
+        }
         return variable
     }
 
@@ -1189,7 +1195,10 @@ dataFlowAnalyzer.enterFunction(constructor)
     }
 
     /**
-     * 解析模式绑定变量显式类型并推进 phase。
+     * 解析模式绑定变量的显式类型与声明注解。
+     *
+     * 叶子可能在 owner 的模式遍历中被访问，不能在这里发布独立声明的解析阶段。
+     * 非局部叶子由自己的目标锁发布，局部叶子随完整正文的阶段更新统一发布。
      */
     protected open fun transformPatternBindingVariableContent(
         patternBindingVariable: CfirPatternBindingVariable,
@@ -1202,7 +1211,6 @@ dataFlowAnalyzer.enterFunction(constructor)
             resolveDeclarationAnnotations(patternBindingVariable, data)
         }
         if (patternBindingVariable.isLocal) patternBindingVariable.transformStatus(this, patternBindingVariable.resolveStatus().mode())
-        bumpPhase(patternBindingVariable)
         return patternBindingVariable
     }
 
@@ -1264,21 +1272,20 @@ dataFlowAnalyzer.enterFunction(constructor)
             }
 
             patternVariable.resolveImplicitReturnTypeFromInitializer()
-            propagateWholeInitializerToSimplePatternBinding(patternVariable.pattern, patternVariable.initializer)
-
             resolvePatternValueExpressions(patternVariable.pattern, patternVariable.returnTypeRef.coneTypeOrNull)
-            resolvePatternBindingTypes(
-                pattern = patternVariable.pattern,
-                expectedType = patternVariable.returnTypeRef.coneTypeOrNull,
-                typeResolver = specificTypeResolverTransformer,
+            transformer.expressionsTransformer.completePatternBindingProjection(
+                owner = patternVariable,
+                expectedType = patternVariable.returnTypeRef.coneType,
             )
             registerPatternBindings(patternVariable.pattern)
         } finally {
             bindingVariables.forEach(dataFlowAnalyzer::exitPatternBindingDeclaration)
         }
 
-        bumpPhase(patternVariable)
-        publishCompletedBodyRootPhases(patternVariable)
+        if (patternVariable.pattern.bindingVariables().all { it.returnTypeRef is CfirResolvedTypeRef }) {
+            bumpPhase(patternVariable)
+            publishCompletedBodyRootPhases(patternVariable)
+        }
         return patternVariable
     }
 
@@ -1329,21 +1336,26 @@ dataFlowAnalyzer.enterFunction(constructor)
      * 后续隐式类型缓存或 checker 继续看到裸 `CfirImplicitTypeRef`。
      */
     private fun CfirVariable.resolveImplicitReturnTypeFromInitializer() {
-        val implicitTypeRef = returnTypeRef as? CfirImplicitTypeRef ?: return
+        if (returnTypeRef !is CfirImplicitTypeRef) return
+        replaceReturnTypeRef(inferVariableTypeFromInitializer(this, initializer))
+    }
+
+    /** 推断 initializer 的声明类型；类型试算调用该纯结果入口，不向原声明发布阶段或类型。 */
+    internal fun inferVariableTypeFromInitializer(variable: CfirVariable, initializer: CfirExpression?): CfirResolvedTypeRef {
+        val implicitTypeRef = variable.returnTypeRef as CfirImplicitTypeRef
         val initType = initializer?.coneTypeOrNull
-        val resolvedTypeRef = if (initType != null) {
+        return if (initType != null) {
             val resolvedType = IdealTypeResolver.replaceIdealTypes(initType).approximateThisTypeForDeclaration()
             implicitTypeRef.resolvedTypeFromPrototype(resolvedType, implicitTypeRef.source)
         } else {
             buildErrorTypeRef {
-                source = implicitTypeRef.source ?: this@resolveImplicitReturnTypeFromInitializer.source
+                source = implicitTypeRef.source ?: variable.source
                 diagnostic = ConeSimpleDiagnostic(
                     "Cannot infer variable type without an initializer",
                     DiagnosticKind.InferenceError,
                 )
             }
         }
-        replaceReturnTypeRef(resolvedTypeRef)
     }
 
     // ── Named function ────────────────────────────────────────────────────

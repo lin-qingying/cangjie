@@ -1,0 +1,23 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package generated_declaration_conflict
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    import generated_declaration_conflict.GenerateDuplicate
+    internal? func ideTarget(): R|Int64| {
+        RETURN {
+            INT(42)
+        }
+    }
+    public func ideTarget(): R|Int64| {
+        RETURN {
+            INT(7)
+        }
+    }
+    <element: CfirMainFunction>

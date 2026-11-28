@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -83,6 +84,27 @@ interface CaScope : CaScopeLike {
      */
     val classifiers: Sequence<CaClassifierSymbol>
         get() = classifiers { true }
+
+    /**
+     * 返回作用域中的**类型参数**序列。
+     *
+     * 类型参数必须走独立通道，不能经 [classifiers]：底层 `CfirTypeParameterScopeImpl`
+     * 的 `processClassifiersByName` 是**空实现**（类型参数不是 class-like），
+     * 而 `getClassifierNames()` 却报告了它们——两条通道对同一批名字给出不同结果，
+     * 按 [classifiers] 取就永远拿不到 `T`。
+     *
+     * 非类型参数作用域（文件、包、成员、局部）返回空序列。
+     */
+    val typeParameters: Sequence<CaTypeParameterSymbol>
+        get() = typeParameters { true }
+
+    /**
+     * 返回作用域中名字满足 [nameFilter] 的类型参数序列。
+     *
+     * 实现需先取类型参数名再逐个处理；已知候选名字集合时用
+     * [typeParameters] 的名称过滤形式。
+     */
+    fun typeParameters(nameFilter: (Name) -> Boolean): Sequence<CaTypeParameterSymbol>
 
     /**
      * 返回作用域中名字满足 [nameFilter] 的 classifier 序列。

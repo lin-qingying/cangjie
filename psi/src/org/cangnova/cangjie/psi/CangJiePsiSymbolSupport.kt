@@ -64,7 +64,8 @@ internal fun PsiElement.cangJieOwnReferences(): Collection<PsiSymbolReference> {
  * 提供 `cangJieOwnDeclarations` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
  */
 internal fun PsiElement.cangJieOwnDeclarations(): Collection<PsiSymbolDeclaration> {
-    val declaration = this as? PsiNameIdentifierOwner ?: return emptyList()
+    val declaration = CangJieReferenceProvidersService.getInstance(project)
+        .getNamedDeclarationTarget(this) ?: return emptyList()
     val nameIdentifier = declaration.nameIdentifier ?: return emptyList()
     return listOf(CangJiePsiSymbolDeclaration(declaration, nameIdentifier))
 }
@@ -125,8 +126,7 @@ private fun PsiElement.cangJieReferenceBridgeOwners(): List<PsiElement> {
  * 执行 `asCangJieSymbolReferences` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
  */
 private fun Array<PsiReference>.asCangJieSymbolReferences(): List<PsiSymbolReference> {
-    val symbolService = PsiSymbolService.getInstance()
-    return map(symbolService::asSymbolReference)
+    return map { reference -> CangJiePsiSymbolReferenceBridge(reference.element, reference) }
 }
 
 /**
@@ -146,11 +146,6 @@ private class CangJiePsiSymbolReferenceBridge(
     private val delegate: PsiReference,
 ) : PsiSymbolReference {
     /**
-     * 保存 `delegateReference` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
-     */
-    private val delegateReference = PsiSymbolService.getInstance().asSymbolReference(delegate)
-
-    /**
      * 实现 `getElement` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun getElement(): PsiElement = host
@@ -167,6 +162,7 @@ private class CangJiePsiSymbolReferenceBridge(
      * 实现 `resolveReference` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun resolveReference(): Collection<Symbol> {
-        return delegateReference.resolveReference()
+        val symbolService = PsiSymbolService.getInstance()
+        return delegate.cangJieCanonicalTargets().map(symbolService::asSymbol)
     }
 }

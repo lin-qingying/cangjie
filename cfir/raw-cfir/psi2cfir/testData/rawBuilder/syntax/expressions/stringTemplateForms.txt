@@ -1,0 +1,141 @@
+FILE: stringTemplateForms.cj
+    internal? class User {
+        init()
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("cj")
+        internal? func greet(): R|String| {
+            RETURN {
+                STRING_INTERPOLATION {
+                    STRING("hi ")
+                    NAMED_ACCESS(name)
+                }
+            }
+        }
+    }
+    internal? func stringTemplateForms(u: R|User|, xs: R|Array<R|String|>|, n: R|Int64|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        STRING("a")
+                    arguments:
+                        STRING("b")
+                }
+        local? let eq: <implicit> = ...
+            initializer:
+                COMPARISON(EQ) {
+                    STRING("a")
+                    STRING("b")
+                }
+        local? let ne: <implicit> = ...
+            initializer:
+                COMPARISON(NE) {
+                    STRING("a")
+                    STRING("b")
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("sum ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(1)
+                    }
+                    STRING(" count ")
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(xs)
+                    }
+                    STRING(" first ")
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(xs)
+                        indices:
+                            INT(0)
+                    }
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("
+")
+                    STRING("        name ")
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            NAMED_ACCESS(u)
+                    }
+                    STRING(", greet ")
+                    FUNCTION_CALL(greet) {
+                        receiver:
+                            NAMED_ACCESS(u)
+                    }
+                    STRING("
+")
+                    STRING("    ")
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                STRING("raw ${n}")
+        local? let f: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(e)
+                    arguments:
+                        STRING("plain")
+                }
+        local? let g: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("chain ")
+                    FUNCTION_CALL(greet) {
+                        receiver:
+                            NAMED_ACCESS(u)
+                    }
+                    STRING("!")
+                }
+        local? let h: <implicit> = ...
+            initializer:
+                IF {
+                    condition:
+                        BINARY_OP(OR) {
+                            NAMED_ACCESS(eq)
+                            NAMED_ACCESS(ne)
+                        }
+                    then:
+                        STRING("!")
+                    else:
+                        STRING("?")
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            FUNCTION_CALL(*operator_plus) {
+                                                receiver:
+                                                    NAMED_ACCESS(a)
+                                                arguments:
+                                                    NAMED_ACCESS(c)
+                                            }
+                                        arguments:
+                                            NAMED_ACCESS(d)
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(f)
+                            }
+                        arguments:
+                            NAMED_ACCESS(g)
+                    }
+                arguments:
+                    NAMED_ACCESS(h)
+            }
+        }
+    }

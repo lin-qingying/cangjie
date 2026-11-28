@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.components
 
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
@@ -9,6 +10,8 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 
 /**
@@ -25,6 +28,7 @@ import org.cangnova.cangjie.psi.CjFile
  *
  * 对齐 Kotlin Analysis API 的 `KaScopeProvider`。
  */
+@CaExperimentalApi
 interface CaScopeProvider : CaLifetimeOwner {
     /**
      * 获取该文件可见的作用域,包含顶层声明与 import。
@@ -69,8 +73,85 @@ interface CaScopeProvider : CaLifetimeOwner {
 
     /**
      * 通过该类型可访问到的成员作用域;不可计算时(例如错误类型)返回 `null`。
+     *
+     * 覆盖全部接收者形状:基本类型、typealias、内建泛型目标(`CPointer`)、
+     * 受上界约束的类型参数与普通 class-like。成员签名按接收者实际类型实参
+     * 替换;需要声明侧(未替换)对照视图的消费方走
+     * [org.cangnova.cangjie.analysis.api.components.CaTypeScopeProvider] 的
+     * `typeScope.declarationScope`。
      */
     val CaType.scope: CaScope?
+
+    /**
+     * 通过该类型的**实例**可访问到的成员作用域（含继承链与适用 extend）；非 class-like 或错误类型返回 `null`。
+     *
+     * 与 [CaType.scope] 的区别：本入口只包含需要接收者才能访问的成员，
+     * 适合 `receiver.member` 位置的补全。
+     */
+    @CaExperimentalApi
+    val CaType.instanceMemberScope: CaScope?
+
+    /**
+     * 通过该类型的**类型名**可访问到的静态成员作用域；非 class-like 或没有静态成员时返回 `null`。
+     *
+     * 「没有静态成员」返回 `null` 而非空作用域：调用方据此判断是否需要提示
+     * 「类型名访问了实例成员」，而不是拿到一个必然为空的候选集合。
+     */
+    @CaExperimentalApi
+    val CaType.staticMemberScope: CaScope?
+
+    /**
+     * 按使用点形态给出该类型的成员作用域查询列表。
+     *
+     * 返回**按优先级排列**的多个视图而不是单一作用域：
+     * `Type.member` 需要同时考虑静态通道与（用于诊断的）实例通道，
+     * 而 `receiver.member` 只考虑实例通道。把两种形态压成一个 `CaScope`
+     * 会让补全无法区分「补出来能用」与「补出来只能报错」。
+     */
+    @CaExperimentalApi
+    fun CaType.memberScopeQueries(accessKind: CaTypeAccessKind): List<CaMemberScopeQuery>
+
+    /**
+     * 取得 [position] 处的词法作用域上下文。
+     *
+     * 返回的作用域来自 CFIR 解析塔投影，保留真实查找顺序、结构性来源和可用隐式接收者；
+     * 禁止由调用方用 PSI 祖先遍历自行推导词法作用域。
+     * [position] 可以是使用点元素本身或其后代；文件顶层位置得到导入上下文。
+     */
+    fun CjFile.scopeContext(position: CjElement): CaScopeContext
+
+    /**
+     * 取得该文件的导入/包/顶层声明上下文。
+     *
+     * 只包含本文件顶层声明、同包成员、显式导入和语言默认导入，不含局部声明；
+     * 该视图独立于 [getFileScope]，不会扩大文件声明作用域的既有结果集合。
+     */
+    val CjFile.importingScopeContext: CaScopeContext
+
+    /**
+     * 取得代码片段**自身**的顶层声明作用域。
+     *
+     * 对位 Kotlin `KaScopeProvider` 的同类入口，但语义不同：Kotlin 侧服务 `.kts` 脚本，
+     * 仓颉没有脚本文件，这里建模的是「片段自身写下的顶层声明」。
+     *
+     * 只有**块片段**有自身顶层声明；表达式 / 类型片段返回 `null`——那不是「找不到」，
+     * 而是没有这类声明。宿主文件的顶层声明不在本作用域内，需经 [scopeContext] 取。
+     */
+    @CaExperimentalApi
+    val CjCodeFragment.fragmentMemberScope: CaScope?
+
+    /**
+     * 把多个作用域组合为单一名称查询视图，保持入参顺序与全部符号身份。
+     *
+     * 组合不会按显示名去重：同名重载、导入别名和成员各自保留。
+     * [filter] 用于只取特定来源的子集，默认保留全部。
+     */
+    fun List<CaScope>.asCompositeScope(filter: (CaScope) -> Boolean = { true }): CaScope
+
+    /**
+     * 按 [CaScopeKind] 过滤合成单一作用域视图，保持 [CaScopeContext.scopes] 的优先级顺序。
+     */
+    fun CaScopeContext.compositeScope(filter: (CaScopeKind) -> Boolean = { true }): CaScope
 }
 
 /**

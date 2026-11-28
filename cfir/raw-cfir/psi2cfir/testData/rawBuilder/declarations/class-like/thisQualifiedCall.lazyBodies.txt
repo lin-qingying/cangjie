@@ -1,0 +1,10 @@
+FILE: thisQualifiedCall.cj
+    internal? class A {
+        init()
+        internal? func m(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? func n(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

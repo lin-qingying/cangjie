@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.dsl
 
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactory
-import org.jetbrains.kotlin.generators.dsl.TestGroupSuite
+import org.cangnova.cangjie.test.generators.dsl.TestGroupSuite
 
 /**
  * Analysis API generated tests 的顶层生成入口。

@@ -1,0 +1,4 @@
+FILE: varraySliceNotSupported.cj
+    internal? func varraySliceNotSupported(a: R|VArray<R|Int64|, 3>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

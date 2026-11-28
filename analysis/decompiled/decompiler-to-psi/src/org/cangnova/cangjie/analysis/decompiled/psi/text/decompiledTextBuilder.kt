@@ -40,6 +40,7 @@ import org.cangnova.cangjie.psi.CjPrimaryConstructor
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
+import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeConstraint
 import org.cangnova.cangjie.psi.CjTypeConstraintList
@@ -492,28 +493,11 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(property.name?.let(::renderIdentifier).orEmpty())
             withPrefix(": ") { property.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             val accessors = property.accessors
-            if (accessors.isNotEmpty()) {
-                appendLine(" {")
-                withIndent {
-                    printCollection(accessors, separator = "\n") {
-                        it.accept(explicitThis)
-                    }
-                }
-                appendLine()
-                append("}")
-                return
-            }
-
-            if (!shouldRenderCompiledPropertyBody(property)) {
-                return
-            }
-
+            if (accessors.isEmpty()) return
             appendLine(" {")
             withIndent {
-                renderCompiledPropertyAccessor(isGetter = true)
-                if (property.isVar) {
-                    appendLine()
-                    renderCompiledPropertyAccessor(isGetter = false)
+                printCollection(accessors, separator = "\n") {
+                    it.accept(explicitThis)
                 }
             }
             appendLine()
@@ -569,8 +553,12 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitParameter(parameter: CjParameter) {
             withSuffix(" ") { parameter.modifierList?.accept(this) }
             append(parameter.name?.let(::renderIdentifier).orEmpty())
+            if (parameter.isNamed) append("!")
             append(": ")
             parameter.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append)
+            if (parameter.hasDefaultValue()) {
+                renderCompiledInitializer()
+            }
         }
 
         override fun visitTypeParameterList(list: CjTypeParameterList) {
@@ -624,16 +612,6 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(DECOMPILED_CODE_COMMENT)
         }
 
-        private fun shouldRenderCompiledPropertyBody(property: CjProperty): Boolean {
-            return !property.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
-                !property.hasModifier(CjTokens.FOREIGN_KEYWORD)
-        }
-
-        private fun renderCompiledPropertyAccessor(isGetter: Boolean) {
-            append(if (isGetter) "get()" else "set(value)")
-            printBody(hasBody = true)
-        }
-
         private fun printPropertyAccessorParameterList(accessor: CjPropertyAccessor) {
             if (accessor.isGetter) {
                 append("()")
@@ -653,14 +631,10 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             list: CjModifierList,
             excludedModifiers: Set<CjKeywordToken> = emptySet(),
         ): String {
-            val modifiers = CjTokens.MODIFIER_KEYWORDS_ARRAY
+            return ModifierMaskUtils.modifierKeywords
                 .filter { modifier -> modifier !in excludedModifiers && list.hasModifier(modifier) }
                 .map { modifier -> modifier.value }
-                .toMutableList()
-            if (CjTokens.FOREIGN_KEYWORD !in excludedModifiers && list.hasModifier(CjTokens.FOREIGN_KEYWORD)) {
-                modifiers += CjTokens.FOREIGN_KEYWORD.value
-            }
-            return modifiers.joinToString(" ")
+                .joinToString(" ")
         }
     }
 

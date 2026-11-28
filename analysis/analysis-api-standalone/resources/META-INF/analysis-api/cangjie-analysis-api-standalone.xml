@@ -46,6 +46,10 @@
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneSessionInvalidationService"
     />
     <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexQueryService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.index.CaStandaloneSymbolIndexQueryService"
+    />
+    <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory"
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderFactory"
     />

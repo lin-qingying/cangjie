@@ -1,0 +1,56 @@
+FILE: whereConstraints.cj
+    internal? interface A {
+    }
+    internal? interface B {
+    }
+    internal? func <T>single(x: R|T|): R|T| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    internal? func <T, U>multiple(a: R|T|, b: R|U|): R|T| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? class ClassBound<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+        internal? func get(): R|T| {
+            RETURN {
+                NAMED_ACCESS(value)
+            }
+        }
+    }
+    internal? interface InterfaceBound<T> {
+        public? abstract? func f(): R|T|
+    }
+    internal? struct StructBound<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+        internal? func get(): R|T| {
+            RETURN {
+                NAMED_ACCESS(value)
+            }
+        }
+    }

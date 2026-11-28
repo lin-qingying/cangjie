@@ -56,7 +56,7 @@ public interface Interface_1731854046694_121<T0, T1> <: Interface_1731854046694_
         } catch (e: Exception) { // block id: 3000
             var_1731854046694_1073 |= var_1731854046694_1073
             Float64(-12.0);
-            var_1731854046694_2266
+            <!DEPRECATED_WARNING!>var_1731854046694_2266<!>
         }) {
             ((UInt64(UInt64(90)) & 127)..(UInt64(UInt64(233)) & 127) : (Int64(4) | 1))
         } else {

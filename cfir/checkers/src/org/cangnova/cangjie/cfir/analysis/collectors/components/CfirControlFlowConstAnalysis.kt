@@ -5,7 +5,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
+import org.cangnova.cangjie.cfir.declarations.constructorNameOrNull
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -38,6 +38,8 @@ import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableRefe
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.BlockExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphCompletionPath
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraphCompletionTraversal
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.EdgeLabel
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IncrementDecrementNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchConditionEnterNode
@@ -45,6 +47,9 @@ import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchGuardEnterNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailure
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailureNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchSuccess
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IfBranchTrue
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IfBranchFalse
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IfConditionExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchResultExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchEnterNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchExitNode
@@ -64,6 +69,7 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.isIntegerType
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteral
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -97,32 +103,13 @@ internal class CfirControlFlowConstAnalysis {
 
     /** 返回由 CFG 常量分支效应证明不可达的 pattern source。 */
     fun collectUnreachablePatterns(graph: ControlFlowGraph): Set<CfirPattern> {
-        val incomingStates = IdentityHashMap<CFGNode<*>, ConstState>()
-        val worklist = ArrayDeque<CFGNode<*>>()
-        incomingStates[graph.enterNode] = ConstState.EMPTY
-        worklist += graph.enterNode
-
-        while (worklist.isNotEmpty()) {
-            val node = worklist.removeFirst()
-            val input = incomingStates[node] ?: continue
-            val output = input.transfer(node)
-            val target = node.constantTargetSuccessor(output)
-
-            for (successor in node.followingNodes) {
-                val edge = node.edgeTo(successor)
-                if (!edge.kind.usedInCfa || edge.kind.isDead) continue
-
-                if (target != null && successor !== target) {
-                    continue
-                }
-
-                val merged = incomingStates[successor]?.join(output) ?: output
-                if (incomingStates[successor] != merged) {
-                    incomingStates[successor] = merged
-                    worklist += successor
-                }
-            }
-        }
+        val traversal = ControlFlowGraphCompletionTraversal(graph)
+        val incomingStates = traversal.collect(
+            initial = ConstState.EMPTY,
+            transfer = { node, input -> input.transfer(node) },
+            join = ConstState::join,
+            selectSuccessor = { node, output -> node.constantTargetSuccessor(output) },
+        )
 
         /*
          * 先求到不动点，再读取被拒绝边。循环首轮可能用 `i = 0` 暂时裁掉一个 case，
@@ -131,17 +118,23 @@ internal class CfirControlFlowConstAnalysis {
          * 消费最终 CFG 常量事实。
          */
         val unreachablePatterns = Collections.newSetFromMap(IdentityHashMap<CfirPattern, Boolean>())
-        for ((node, input) in incomingStates) {
-            val target = node.constantTargetSuccessor(input.transfer(node)) ?: continue
+        // 一个 source 在不同 completion 下可执行；只有所有可达状态都拒绝该边才报告。
+        for ((node, paths) in incomingStates.entries.groupBy { it.key.node }) {
             val decisionNode = node as? MatchPatternDecisionNode ?: continue
+            val targets = paths.map { (_, input) -> node.constantTargetSuccessor(input.transfer(node)) }
             for (successor in node.followingNodes) {
                 val edge = node.edgeTo(successor)
-                if (!edge.kind.usedInCfa || edge.kind.isDead || successor === target) continue
-                decisionNode.recordRejectedSuccessor(
-                    edgeLabel = edge.label,
-                    rejectedSuccessor = successor,
-                    destination = unreachablePatterns,
-                )
+                if (!edge.kind.usedInCfa || edge.kind.isDead) continue
+                if (targets.any { it == null || it === successor }) continue
+                for ((path, _) in paths) {
+                    val rejected = traversal.successors(path).singleOrNull { it.node === successor } ?: continue
+                    decisionNode.recordRejectedSuccessor(
+                        edgeLabel = edge.label,
+                        rejectedSuccessor = rejected,
+                        traversal = traversal,
+                        destination = unreachablePatterns,
+                    )
+                }
             }
         }
         return unreachablePatterns
@@ -156,6 +149,11 @@ internal class CfirControlFlowConstAnalysis {
     private fun CFGNode<*>.constantTargetSuccessor(
         state: ConstState,
     ): CFGNode<*>? {
+        if (this is IfConditionExitNode) {
+            val condition = fir.condition.constantBoolean(state) ?: return null
+            val label = if (condition) IfBranchTrue else IfBranchFalse
+            return followingNodes.singleOrNull { edgeTo(it).label == label }
+        }
         val decisionNode = this as? MatchPatternDecisionNode ?: return null
         val guard = decisionNode.guard
         val decision = if (guard != null) {
@@ -193,17 +191,18 @@ internal class CfirControlFlowConstAnalysis {
      */
     private fun MatchPatternDecisionNode.recordRejectedSuccessor(
         edgeLabel: EdgeLabel,
-        rejectedSuccessor: CFGNode<*>,
+        rejectedSuccessor: ControlFlowGraphCompletionPath,
+        traversal: ControlFlowGraphCompletionTraversal,
         destination: MutableSet<CfirPattern>,
     ) {
         if (edgeLabel == MatchBranchSuccess) {
             successReportSource?.let { destination += it }
         }
-        rejectedSuccessor.collectDeadRegionPatterns(matchExpression, destination, patternOrigin = guard == null)
+        rejectedSuccessor.collectDeadRegionPatterns(matchExpression, traversal, destination, patternOrigin = guard == null)
     }
 
     /** 前驱终结符决定当前块是否属于 pattern 警告；guard 的 Branch 来源是 OTHER。 */
-    private data class DeadRegionStep(val node: CFGNode<*>, val patternOrigin: Boolean)
+    private data class DeadRegionStep(val path: ControlFlowGraphCompletionPath, val patternOrigin: Boolean)
 
     /**
      * 从被杀死的 successor 出发收集死区内承载模式位置的节点。
@@ -213,36 +212,38 @@ internal class CfirControlFlowConstAnalysis {
      * 与 match 出口都由无条件跳转进入，递归到此为止，因此不会把仍可执行的分支体误判
      * 为不可达。
      */
-    private fun CFGNode<*>.collectDeadRegionPatterns(
+    private fun ControlFlowGraphCompletionPath.collectDeadRegionPatterns(
         owner: CfirMatchExpression,
+        traversal: ControlFlowGraphCompletionTraversal,
         destination: MutableSet<CfirPattern>,
         patternOrigin: Boolean,
     ) {
-        val visited = Collections.newSetFromMap(IdentityHashMap<CFGNode<*>, Boolean>())
+        val visited = mutableSetOf<ControlFlowGraphCompletionPath>()
         val worklist = ArrayDeque<DeadRegionStep>()
         worklist += DeadRegionStep(this, patternOrigin)
         while (worklist.isNotEmpty()) {
-            val (node, reportPattern) = worklist.removeLast()
-            if (!visited.add(node)) continue
+            val (path, reportPattern) = worklist.removeLast()
+            if (!visited.add(path)) continue
+            val node = path.node
             if (reportPattern) node.deadRegionPatternOrNull(owner)?.let { pattern -> destination += pattern }
             if (!node.continuesDeadRegion(owner)) continue
             val decision = node as? MatchPatternDecisionNode
             val successorPatternOrigin = decision?.let { it.guard == null } ?: reportPattern
-            node.followingNodes.asReversed().forEach { successor ->
+            traversal.successors(path, includeDead = true).asReversed().forEach { successorPath ->
+                val successor = successorPath.node
                 val edge = node.edgeTo(successor)
-                if (!edge.kind.usedInCfa) return@forEach
                 if (decision?.isAlwaysSuccessful == true) {
                     // 中间 wildcard 不生成指令；最后一个 wildcard/binding 通过 GoTo 进入无位置的成功块。
                     if (edge.label == MatchBranchSuccess && successor is MatchPatternDecisionNode &&
                         successor.guard == null && successor.reportSource === decision.reportSource
                     ) {
-                        worklist += DeadRegionStep(successor, reportPattern)
+                        worklist += DeadRegionStep(successorPath, reportPattern)
                     }
                 } else {
                     if (edge.label == MatchBranchSuccess && successorPatternOrigin) {
                         decision?.successReportSource?.let { destination += it }
                     }
-                    worklist += DeadRegionStep(successor, successorPatternOrigin)
+                    worklist += DeadRegionStep(successorPath, successorPatternOrigin)
                 }
             }
         }
@@ -349,13 +350,8 @@ internal class CfirControlFlowConstAnalysis {
         return when (this) {
             is CfirEnumPattern -> {
                 val enumValue = value as? ConstValue.Enum ?: return null
-                val resolvedConstructor = constructorReference?.resolvedEnumConstructorSymbolOrNull()
-                if (resolvedConstructor != null && resolvedConstructor != enumValue.constructor) return false
-                if (resolvedConstructor == null &&
-                    constructorReference?.enumPatternConstructorAccessOrNull()?.constructorName != enumValue.constructor.name
-                ) return false
-                if (resolvedConstructor == null && constructorReference?.enumPatternConstructorAccessOrNull() == null) return null
-                true
+                val resolvedConstructor = constructorReference?.resolvedEnumConstructorSymbolOrNull() ?: return null
+                resolvedConstructor == enumValue.constructor
             }
 
             is CfirConstPattern -> expression.matchesConstantExpression(value, state)
@@ -578,9 +574,18 @@ internal class CfirControlFlowConstAnalysis {
         else -> null
     }
 
-    /** 读取完成前后引用中已确定的 enum constructor。 */
-    private fun CfirReference.resolvedEnumConstructorSymbolOrNull(): CfirEnumConstructorSymbol? =
-        resolvedSymbolOrNull() as? CfirEnumConstructorSymbol
+    /**
+     * 读取完成前后引用中已确定的 enum constructor，并归一到 enum 声明处的原始符号。
+     *
+     * 泛型 enum 的 use-site（`E<Int64>.A(1)`）经 substitution scope 解析到的是 substitution override
+     * 副本，而 pattern 的 constructor 引用指向 enum 声明里的原始符号。常量域按 constructor 符号身份
+     * 比较 tag，表达式与 pattern 两侧必须落在同一个符号上，否则同一个 constructor 会被判成不匹配、
+     * 把可达分支误报为 unreachable。
+     */
+    private fun CfirReference.resolvedEnumConstructorSymbolOrNull(): CfirEnumConstructorSymbol? {
+        val symbol = resolvedSymbolOrNull() as? CfirEnumConstructorSymbol ?: return null
+        return if (symbol.isBound) symbol.unwrapSubstitutionOverrides() else symbol
+    }
 
     /** CFG 传播使用的常量抽象域。 */
     private sealed interface ConstValue {

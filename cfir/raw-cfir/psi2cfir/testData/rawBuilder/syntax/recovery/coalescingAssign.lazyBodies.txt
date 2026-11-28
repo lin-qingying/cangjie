@@ -1,0 +1,4 @@
+FILE: coalescingAssign.cj
+    internal? func coalescingAssign(o: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

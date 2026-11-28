@@ -1,0 +1,2 @@
+FILE: mainArgsSize.cj
+    <element: CfirMainFunction>

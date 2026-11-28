@@ -1,0 +1,4 @@
+FILE: varPatternInMatch.cj
+    internal? func varPatternInMatch(x: R|Any|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

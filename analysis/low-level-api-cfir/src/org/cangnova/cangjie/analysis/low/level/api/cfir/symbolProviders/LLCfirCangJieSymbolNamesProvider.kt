@@ -64,7 +64,8 @@ internal open class LLCfirCangJieSymbolNamesProvider(
      * 返回指定 [packageFqName] 内的顶层 callable 简名集合。
      */
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> =
-        declarationProvider.getTopLevelCallableNamesInPackage(packageFqName).ifEmpty { emptySet() }
+        declarationProvider.getTopLevelCallableNamesInPackage(packageFqName) +
+            declarationProvider.getTopLevelEnumConstructorNamesInPackage(packageFqName)
 
     companion object {
         /**

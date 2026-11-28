@@ -19,7 +19,7 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
      */
     override fun doRawCfirTest(filePath: String) {
         val resolvedFilePath = resolveTestDataPath(filePath).path
-        val sourceText = File(resolvedFilePath).readText()
+        val sourceText = loadFile(resolvedFilePath)
         val fallbackToAst = isDirectiveDefined(sourceText, "// STUB_FALLBACK_TO_AST:")
         if (fallbackToAst) {
             val file = createPsiFile(File(resolvedFilePath).nameWithoutExtension, sourceText) as CjFile
@@ -48,7 +48,7 @@ abstract class AbstractRawCfirBuilderLazyBodiesByStubTest : AbstractRawCfirBuild
      */
     override fun createFileForLazyMode(filePath: String): CjFile {
         val originalFile = super.createFileForLazyMode(filePath)
-        val sourceText = File(filePath).readText()
+        val sourceText = loadFile(filePath)
         val allowAstFallback = isDirectiveDefined(sourceText, "// STUB_FALLBACK_TO_AST:")
         val originalProvider = originalFile.viewProvider
         val virtualFile = originalProvider.virtualFile

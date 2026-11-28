@@ -1,0 +1,13 @@
+FILE: operatorNotOverloadable.cj
+    internal? class NotOverloadable {
+        init()
+        public operator func <no name provided>(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public operator func <no name provided>(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public operator func <no name provided>(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

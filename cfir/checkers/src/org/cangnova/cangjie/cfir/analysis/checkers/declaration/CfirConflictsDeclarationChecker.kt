@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.declarations.declarationOverloadabilityHelper
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.diagnostics.withRelatedInformation
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
@@ -50,6 +51,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -59,7 +64,9 @@ import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.utils.SmartSet
+import java.util.IdentityHashMap
 
 /**
  * 平台可替换的声明冲突诊断分发器。
@@ -186,6 +193,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
     /**
      * 根据冲突图报告声明冲突诊断。
      */
+    @OptIn(InternalDiagnosticFactoryMethod::class)
     context(reporter: DiagnosticReporter, context: CheckerContext)
     private fun reportConflicts(
         declarationConflictingSymbols: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
@@ -193,26 +201,60 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
         reportAllFunctionConflictParticipants: Boolean = false,
         reportLogicalMemberRedeclarationPeerInformation: Boolean = false,
     ) {
+        val sourceOrder = CfirDeclarationConflictSourceOrder(context.session)
+        val functionConflictGroups = CfirFunctionConflictGroups(declarationConflictingSymbols)
+        val groupRepresentativesByGroup = IdentityHashMap<CfirFunctionConflictGroup, Set<CfirBasedSymbol<*>>>()
+        val functionConflictReportState = reporter.getOrCreateCollectionState(CfirFunctionConflictReportState.KEY) {
+            CfirFunctionConflictReportState()
+        }
+        functionConflictGroups.groups.forEach { group ->
+            selectFunctionConflictRepresentative(
+                group = group,
+                container = container,
+                conflictMapKeys = declarationConflictingSymbols.keys,
+                sourceOrder = sourceOrder,
+            )?.let { groupRepresentativesByGroup[group] = it }
+        }
+
         declarationConflictingSymbols.forEach { (conflictingDeclaration, symbols) ->
             // Duplicate intrinsic declarations are owned by the parser-level
             // intrinsic checker; suppress the generic conflict graph result.
             if (conflictingDeclaration.isIntrinsicFunction() && symbols.any { it.isIntrinsicFunction() }) {
                 return@forEach
             }
-            // 同签名函数簇只由较晚的声明承载 CONFLICTING_OVERLOADS。但本声明若同时与非函数式
-            // 声明（如 let/prop/class）同名，官方仍会在本声明上单独报 sema_redefinition，
-            // 因此只有在不存在此类非函数式冲突时才整体跳过本声明。
-            val isOverloadClusterPredecessor =
-                !reportAllFunctionConflictParticipants &&
-                    conflictingDeclaration.hasLaterFunctionConflictRepresentative(declarationConflictingSymbols)
-            if (isOverloadClusterPredecessor && symbols.all { it.isFunctionLikeRedeclaration() }) {
-                return@forEach
-            }
 
+            val functionConflictGroup = functionConflictGroups.groupFor(conflictingDeclaration)
+            val functionConflictRepresentatives = functionConflictGroup?.let(groupRepresentativesByGroup::get)
+            val hasAmbiguousFunctionConflictRepresentative =
+                !reportAllFunctionConflictParticipants && functionConflictRepresentatives.orEmpty().size > 1
+            val isAmbiguousFunctionConflictRepresentative =
+                hasAmbiguousFunctionConflictRepresentative &&
+                    conflictingDeclaration in functionConflictRepresentatives.orEmpty()
+            val isOverloadClusterPredecessor =
+                functionConflictGroup != null &&
+                    !reportAllFunctionConflictParticipants &&
+                    conflictingDeclaration !in functionConflictRepresentatives.orEmpty()
+            val reportSymbols = when {
+                functionConflictGroup == null -> symbols
+                isOverloadClusterPredecessor || functionConflictRepresentatives == null ->
+                    SmartSet.create<CfirBasedSymbol<*>>().also { remaining ->
+                        symbols.filterNot { functionConflictGroups.groupFor(it) === functionConflictGroup }
+                            .forEach(remaining::add)
+                    }
+                conflictingDeclaration in functionConflictRepresentatives ||
+                    reportAllFunctionConflictParticipants ->
+                    SmartSet.create<CfirBasedSymbol<*>>().also { completeCluster ->
+                        symbols.forEach(completeCluster::add)
+                        functionConflictGroup.members.asSequence()
+                            .filter { it !== conflictingDeclaration }
+                            .forEach(completeCluster::add)
+                    }
+                else -> SmartSet.create()
+            }
+            if (reportSymbols.isEmpty()) return@forEach
             if (
-                symbols.isEmpty() ||
-                (conflictingDeclaration as? CfirConstructorSymbol)?.cfir?.isPrimary == true &&
-                symbols.all { (it as? CfirConstructorSymbol)?.cfir?.isPrimary == true }
+                conflictingDeclaration.isPrimaryConstructor() &&
+                reportSymbols.all { it.isPrimaryConstructor() }
             ) {
                 return@forEach
             }
@@ -223,7 +265,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
                 // 重载簇诊断已由较晚的同签名声明承载，本声明此处只剩与非函数式声明的同名冲突。
                 CfirErrors.REDECLARATION
             } else {
-                dispatcher.getDiagnostic(conflictingDeclaration, symbols) ?: return@forEach
+                dispatcher.getDiagnostic(conflictingDeclaration, reportSymbols) ?: return@forEach
             }
             val diagnosticDeclaration = if (
                 factory == CfirErrors.REDECLARATION && reportLogicalMemberRedeclarationPeerInformation &&
@@ -231,30 +273,24 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
                     ?.takeIf { it.isBound }
                     ?.cfir is CfirFieldVariable
             ) {
-                symbols.firstOrNull { symbol ->
+                reportSymbols.firstOrNull { symbol ->
                     symbol is CfirPropertySymbol && symbol.isBound
                 } ?: conflictingDeclaration
             } else {
                 conflictingDeclaration
             }
-            val finalizer = (diagnosticDeclaration as? CfirCallableSymbol<*>)
-                ?.takeIf { it.isBound }
-                ?.cfir as? CfirFinalizer
-            val source = when {
-                diagnosticDeclaration !is CfirCallableSymbol<*> -> diagnosticDeclaration.boundSourceOrNull()
-                !diagnosticDeclaration.isBound -> container.source
-                finalizer != null -> finalizer.finalizerNameDiagnosticSource()
-                diagnosticDeclaration.origin == CfirDeclarationOrigin.Source -> diagnosticDeclaration.boundSourceOrNull()
-                diagnosticDeclaration.origin == CfirDeclarationOrigin.Library && reportLogicalMemberRedeclarationPeerInformation ->
-                    ((diagnosticDeclaration.cfir as? CfirDeclaration)?.cjoDeclarationSourceElement
-                        ?.identifierSourceElementOrNull())
-                        ?: diagnosticDeclaration.boundSourceOrNull()
-                        ?: return@forEach
-                diagnosticDeclaration.origin == CfirDeclarationOrigin.Library -> return@forEach
-                else -> container.source
+            val diagnosticSource = if (isAmbiguousFunctionConflictRepresentative) {
+                container.source
+            } else if (diagnosticDeclaration.isBound && diagnosticDeclaration.origin == CfirDeclarationOrigin.Library &&
+                reportLogicalMemberRedeclarationPeerInformation
+            ) {
+                (diagnosticDeclaration.cfir as? CfirDeclaration)?.cjoDeclarationSourceElement?.identifierSourceElementOrNull()
+                    ?: diagnosticDeclaration.boundSourceOrNull()
+            } else {
+                diagnosticDeclaration.conflictDiagnosticSource(container)
             }
             val relatedInformation = when {
-                factory == CfirErrors.CONFLICTING_OVERLOADS -> symbols.asSequence()
+                factory == CfirErrors.CONFLICTING_OVERLOADS -> reportSymbols.asSequence()
                     .filter { it.isBound }
                     .mapNotNull { symbol ->
                         (symbol.cfir as? CfirDeclaration)?.relatedInformation("conflict with the declaration")
@@ -263,7 +299,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
                     .toList()
 
                 factory == CfirErrors.REDECLARATION && reportLogicalMemberRedeclarationPeerInformation ->
-                    (if (diagnosticDeclaration === conflictingDeclaration) symbols.asSequence() else sequenceOf(conflictingDeclaration))
+                    (if (diagnosticDeclaration === conflictingDeclaration) reportSymbols.asSequence() else sequenceOf(conflictingDeclaration))
                         .filter { it.isBound }
                         .mapNotNull { symbol ->
                             val name = CfirRedeclarationPresenter.diagnosticName(symbol) ?: return@mapNotNull null
@@ -276,7 +312,7 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
                 else -> emptyList()
             }
             val sourceContext = if (reportLogicalMemberRedeclarationPeerInformation) {
-                context.forDiagnosticSourceOwner(diagnosticDeclaration, source)
+                context.forDiagnosticSourceOwner(diagnosticDeclaration, diagnosticSource)
             } else {
                 context
             }
@@ -285,8 +321,10 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
             } else {
                 sourceContext.withRelatedInformation(relatedInformation)
             }
-            val renderedNames = symbols.renderNames()
-            val patternVariable = (conflictingDeclaration as? CfirCallableSymbol<*>)?.cfir as? CfirPatternVariable
+            val renderedNames = reportSymbols.renderNames()
+            val patternVariable = (conflictingDeclaration as? CfirCallableSymbol<*>)
+                ?.takeIf { it.isBound }
+                ?.cfir as? CfirPatternVariable
             if (patternVariable != null) {
                 val conflictingNameSet = renderedNames.toSet()
                 val bindingSources = patternVariable.pattern.bindingOccurrences()
@@ -303,8 +341,17 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker(MppCheckerK
                 }
             }
 
-            source ?: return@forEach
-            reporter.reportOn(source, factory, renderedNames, context = reportContext)
+            val source = diagnosticSource ?: return@forEach
+            val diagnostic = factory.on(source, renderedNames, null, reportContext) ?: return@forEach
+            if (reportContext.isDiagnosticSuppressed(diagnostic)) return@forEach
+            if (
+                isAmbiguousFunctionConflictRepresentative &&
+                functionConflictGroup != null &&
+                !functionConflictReportState.tryMarkReported(functionConflictGroup.members)
+            ) {
+                return@forEach
+            }
+            reporter.report(diagnostic, reportContext)
         }
     }
 
@@ -336,21 +383,124 @@ private fun CfirBasedSymbol<*>.boundSourceOrNull(): CjSourceElement? =
     if (isBound) cfir.source else null
 
 /**
- * 仓颉官方编译器对同签名函数冲突只选择冲突簇中的一个声明承载
- * `sema_overload_conflicts`，其他声明作为 note。这里保留冲突图用于渲染，
- * 但避免把同一函数签名簇中的较早声明也报告为独立诊断。
+ * 从完整同签名冲突簇中选择唯一诊断代表。
+ *
+ * Source 声明优先承载主诊断；synthetic 与继承成员继续留在簇中作为语义参与者和 notes。
+ * 只有簇内没有源码 owner 时，当前 collector 自己的 synthetic key 才能用容器 source 报告。
  */
-private fun CfirBasedSymbol<*>.hasLaterFunctionConflictRepresentative(
-    declarationConflictingSymbols: Map<CfirBasedSymbol<*>, SmartSet<CfirBasedSymbol<*>>>,
-): Boolean {
-    if (!isFunctionLikeRedeclaration()) return false
+private fun selectFunctionConflictRepresentative(
+    group: CfirFunctionConflictGroup,
+    container: CfirDeclaration,
+    conflictMapKeys: Set<CfirBasedSymbol<*>>,
+    sourceOrder: CfirDeclarationConflictSourceOrder,
+): Set<CfirBasedSymbol<*>>? {
+    val scopeOwners = group.members.filter { it.isFunctionConflictOwner(container) }
+    val sourceOwners = scopeOwners.filter { it.hasSourceConflictDeclaration() }
+    val candidates = when {
+        sourceOwners.isNotEmpty() -> sourceOwners
+        scopeOwners.isNotEmpty() -> scopeOwners.filter { it.conflictDiagnosticSource(container) != null }
+        else -> group.members.filter { member ->
+            conflictMapKeys.any { it === member } &&
+                !member.isBound &&
+                member.conflictDiagnosticSource(container) != null
+        }
+    }
+    if (candidates.isEmpty()) return null
 
-    return declarationConflictingSymbols.any { (otherDeclaration, otherConflicts) ->
-        otherDeclaration != this &&
-            otherDeclaration.isFunctionLikeRedeclaration() &&
-            otherConflicts.contains(this)
+    val representatives = identitySymbolSet()
+    candidates.forEach { candidate ->
+        val hasLaterCandidate = candidates.any { other ->
+            other !== candidate && sourceOrder.compareForDiagnosticRepresentative(candidate, other) < 0
+        }
+        if (!hasLaterCandidate) representatives += candidate
+    }
+    if (representatives.isEmpty()) representatives.addAll(candidates)
+    return representatives
+}
+
+/**
+ * 判断函数簇成员是否属于当前声明容器的 owner 范围。
+ *
+ * 同名 ClassId 不能替代 class symbol identity；嵌套 class 构造器只在该精确嵌套声明由当前
+ * class 直接拥有时作为报告候选。继承成员保留为冲突参与者，但不能代表当前 class 的源码成员。
+ */
+private fun CfirBasedSymbol<*>.isFunctionConflictOwner(container: CfirDeclaration): Boolean {
+    if (!isFunctionLikeRedeclaration() || !isBound || origin == CfirDeclarationOrigin.Library) return false
+    val callable = this as? CfirCallableSymbol<*> ?: return false
+    val sourceDeclaration = sourceDeclarationForConflict()
+
+    return when (container) {
+        is CfirFile -> {
+            val ownerFile = sourceDeclaration.getContainingFile() ?: getContainingFile() ?: return false
+            val hasTopLevelOwner = if (sourceDeclaration !== this) {
+                true
+            } else {
+                callable.getContainingClass() == null && callable.getContainingExtend() == null
+            }
+            hasTopLevelOwner &&
+                ownerFile.moduleData.session === container.moduleData.session &&
+                ownerFile.packageDirective.packageFqName == container.packageDirective.packageFqName
+        }
+
+        is CfirClassLikeDeclaration -> {
+            if (sourceDeclaration !== this) return false
+            val expectedOwner = container.symbol as? CfirClassLikeSymbol<*> ?: return false
+            val actualOwner = callable.getContainingClass() ?: return false
+            val sameClassOwner = actualOwner === expectedOwner
+            val nestedConstructorOwner =
+                (this is CfirConstructorSymbol || this is CfirEnumConstructorSymbol) &&
+                    container.declarations.any { it === actualOwner.cfir }
+            (sameClassOwner || nestedConstructorOwner) && callable.getContainingExtend() == null
+        }
+
+        is CfirExtend ->
+            sourceDeclaration === this && callable.getContainingExtend() === container
+
+        else -> false
     }
 }
+
+/** Source-backed declaration associated with a synthesized type-alias constructor. */
+private fun CfirBasedSymbol<*>.sourceDeclarationForConflict(): CfirBasedSymbol<*> =
+    if (isBound) {
+        (this as? CfirConstructorSymbol)?.typeAliasConstructorInfo?.typeAliasSymbol ?: this
+    } else {
+        this
+    }
+
+/** Only source-origin declarations can outrank synthetic conflict participants as diagnostic owners. */
+private fun CfirBasedSymbol<*>.hasSourceConflictDeclaration(): Boolean {
+    val sourceDeclaration = sourceDeclarationForConflict()
+    return sourceDeclaration.origin == CfirDeclarationOrigin.Source &&
+        sourceDeclaration.isBound &&
+        sourceDeclaration.cfir.source != null
+}
+
+/** Apply the CFIR reporter's source mapping after the cluster has selected its one report owner. */
+private fun CfirBasedSymbol<*>.conflictDiagnosticSource(container: CfirDeclaration): AbstractCjSourceElement? {
+    if (this !is CfirCallableSymbol<*>) return boundSourceOrNull()
+    if (!isBound) return container.source
+
+    val finalizer = cfir as? CfirFinalizer
+    if (finalizer != null) return finalizer.finalizerNameDiagnosticSource()
+
+    val typeAliasSource = (this as? CfirConstructorSymbol)
+        ?.typeAliasConstructorInfo
+        ?.typeAliasSymbol
+        ?.cfir
+        ?.source
+    if (typeAliasSource != null) return typeAliasSource
+
+    return when (origin) {
+        CfirDeclarationOrigin.Source -> boundSourceOrNull()
+        CfirDeclarationOrigin.Library -> null
+        else -> container.source
+    }
+}
+
+/** 未绑定构造器没有 primary 状态，不能通过 cfir 读取它。 */
+private fun CfirBasedSymbol<*>.isPrimaryConstructor(): Boolean =
+    this is CfirConstructorSymbol && isBound && cfir.isPrimary
 
 /**
  * 渲染符号集合在 redeclaration 诊断中的名称列表。
@@ -366,7 +516,14 @@ private fun CfirBasedSymbol<*>.isFunctionLikeRedeclaration(): Boolean =
 
 /** Intrinsic duplicates have a dedicated parser-level diagnostic owner. */
 private fun CfirBasedSymbol<*>.isIntrinsicFunction(): Boolean =
-    (this as? CfirFunctionSymbol<*>)?.cfir?.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC) == true
+    (this as? CfirFunctionSymbol<*>)
+        ?.takeIf { it.isBound }
+        ?.cfir
+        ?.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC) == true
+
+/** Symbols retain identity semantics in conflict groups and diagnostic representative sets. */
+private fun identitySymbolSet(): MutableSet<CfirBasedSymbol<*>> =
+    java.util.Collections.newSetFromMap(IdentityHashMap<CfirBasedSymbol<*>, Boolean>())
 
 /**
  * 函数体局部重声明 visitor。
@@ -503,6 +660,18 @@ private class LocalRedeclarationVisitor(
             catch.pattern.bindingVariables().forEach { declare(it.symbol) }
             catch.body.statements.forEach { it.accept(this) }
         }
+    }
+
+    override fun visitHandleClause(handleClause: org.cangnova.cangjie.cfir.expressions.CfirHandleClause) {
+        withScope {
+            handleClause.commandPattern.bindingVariable?.let { declare(it.symbol) }
+            handleClause.body.statements.forEach { it.accept(this) }
+        }
+    }
+
+    override fun visitResourceVariable(resourceVariable: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable) {
+        resourceVariable.initializer?.accept(this)
+        declare(resourceVariable.symbol)
     }
 
     /**

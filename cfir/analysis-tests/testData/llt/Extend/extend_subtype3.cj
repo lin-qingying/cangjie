@@ -28,7 +28,7 @@ func subFunc2(a: B<Int32>): Int64 {
 }
 
 main() {
-    test(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>s<!>ubFunc)
+    test(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>subFunc<!>)
     test2(subFunc2)
     0
 }

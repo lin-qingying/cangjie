@@ -1,0 +1,4 @@
+FILE: lambdaBlockBody.cj
+    internal? func useLambda(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

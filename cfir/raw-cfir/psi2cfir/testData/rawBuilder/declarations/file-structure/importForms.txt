@@ -1,0 +1,23 @@
+FILE: importForms.cj
+    package importforms
+    import std.collection.*
+    import std.collection.ArrayList
+    import std.collection as col
+    internal? func useImports(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(ArrayList<R|Int64|>) {
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(ArrayList<R|Int64|>) {
+                    receiver:
+                        NAMED_ACCESS(col)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(b)
+    }

@@ -45,8 +45,9 @@ object CangJieBuiltInMetadataStubBuilder : CangJieMetadataStubBuilder() {
     /**
      * 读取 `.cjo` 文件并封装成 metadata stub 构建所需的数据对象。
      *
-     * 该实现要求 project 上下文存在，因为反编译出的声明必须绑定真实 [CjoModuleDataProvider]
-     * 返回的 module data；版本不兼容时返回 [FileWithMetadata.Incompatible]。
+     * 该实现要求 project 上下文存在，因为反编译出的声明必须绑定 [CjoModuleDataProvider]
+     * 返回的 module data（结构内为真实 library/builtins session，结构外为 detached owner）；
+     * 版本不兼容时返回 [FileWithMetadata.Incompatible]。
      */
     override fun readFile(
         virtualFile: VirtualFile,
@@ -54,12 +55,15 @@ object CangJieBuiltInMetadataStubBuilder : CangJieMetadataStubBuilder() {
         project: Project?,
     ): FileWithMetadata? {
         project ?: return null
-        val loadedPackage = project.getService(DecompiledPackageDataFinder::class.java).loadPackageData(virtualFile) ?: return null
+        val bytes = content ?: virtualFile.contentsToByteArray(false)
+        val pkg = PackageFormat.Package.getRootAsPackage(java.nio.ByteBuffer.wrap(bytes))
+        if (!CjoBinaryFileReader.isSupportedVersion(pkg)) return FileWithMetadata.Incompatible()
+        val loadedPackage = project.getService(DecompiledPackageDataFinder::class.java).loadPackageData(virtualFile, bytes) ?: return null
         if (!loadedPackage.isVersionSupported) {
             return FileWithMetadata.Incompatible()
         }
 
-        val moduleData = CjoModuleDataProvider.getInstance(project).getModuleData(virtualFile) ?: return null
+        val moduleData = checkNotNull(loadedPackage.deserializationContext) { "Actual CJO reader has no binding" }.moduleData
 
         return FileWithMetadata.Compatible(loadedPackage, moduleData)
     }

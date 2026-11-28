@@ -24,6 +24,7 @@ internal fun freshCfirOwnedSymbol(symbol: CfirBasedSymbol<*>): CfirBasedSymbol<*
     is CfirPropertySymbol -> CfirPropertySymbol(symbol.callableId)
     is CfirPropertyAccessorSymbol -> CfirPropertyAccessorSymbol()
     is CfirFieldVariableSymbol -> CfirFieldVariableSymbol(symbol.callableId)
+    is CfirResourceVariableSymbol -> CfirResourceVariableSymbol(symbol.callableId)
     is CfirPatternVariableSymbol -> CfirPatternVariableSymbol(symbol.callableId)
     is CfirPatternBindingSymbol -> CfirPatternBindingSymbol(symbol.callableId)
     is CfirValueParameterSymbol -> CfirValueParameterSymbol(symbol.callableId)

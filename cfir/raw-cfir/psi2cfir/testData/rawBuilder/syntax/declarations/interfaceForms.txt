@@ -1,0 +1,60 @@
+FILE: interfaceForms.cj
+    internal? interface Named {
+        public? abstract? func name(): R|String|
+    }
+    internal? interface Sized {
+        public? abstract? func size(): R|Int64|
+    }
+    internal? interface Both {
+        public? func combined(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        public? abstract? func required(): R|Int64|
+        public? prop label: R|String|
+        public? abstract? prop abstractProp: R|Int64|
+        public? static prop staticProp: R|Int64|
+        public operator func *operator_equals(other: R|Both|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+    }
+    internal? interface Multi <: R|Named|, R|Sized| {
+        public? func describe(): R|String| {
+            RETURN {
+                STRING("multi")
+            }
+        }
+    }
+    internal? interface GenericBox<T> {
+        public? abstract? func box(): R|T|
+    }
+    internal? class Impl <: R|Named|, R|Sized| {
+        init() {
+        }
+        public func name(): R|String| {
+            RETURN {
+                STRING("impl")
+            }
+        }
+        public func size(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    internal? class BothImpl <: R|Both| {
+        private var store: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+        }
+        public func required(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+        public prop abstractProp: R|Int64|
+    }

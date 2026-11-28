@@ -8,7 +8,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirRawMacroUsageSlot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
@@ -23,7 +22,7 @@ internal class CfirLazyBodyPublications(private val session: CfirSession) : Pres
         val file: CfirFile,
         val metadata: CfirAnnotationMetadataBuilder,
         val slots: List<CfirRawMacroUsageSlot>,
-        val surfaces: List<MacroSurfaceExpr>,
+        val surfaces: List<MacroSurface>,
     ) {
         private enum class WriterState { OPEN, SEALED, ABORTED }
         private var writerState = WriterState.OPEN
@@ -58,7 +57,7 @@ internal class CfirLazyBodyPublications(private val session: CfirSession) : Pres
         checkNotNull(session.rawMacroSurfaceUsageStoreOrNull) {
             "Body publication requires a registered raw file usage store."
         }.validateAdoptionSlots(file, slots)
-        entries += Entry(target, file, metadata, slots.toList(), surfaces.filterIsInstance<MacroSurfaceExpr>())
+        entries += Entry(target, file, metadata, slots.toList(), surfaces.toList())
     }
 
     /** 根 keeper 的所有子后处理先完成；恢复时先还原原图，再恢复本操作的 side tables。 */

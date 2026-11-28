@@ -1,0 +1,10 @@
+FILE: cInteropForms.cj
+    internal? foreign func nativeAbs(x: R|Int64|): R|Int64|
+    internal? foreign func nativeUnit(): R|Unit|
+    @R|C|() internal? foreign func nativeC(x: R|Int64|): R|Int64|
+    internal? func cInteropForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func cFuncTypes(g: R|CFunc<R|(R|Int64|) -> R|Unit||>|, h: R|(R|CPointer<R|Int64|>|) -> R|Unit||, i: R|(R|CString|) -> R|Unit||, j: R|(R|CType|) -> R|Unit||, k: R|() -> R|CString||, l: R|() -> R|(R|Int64|, R|Int64|)||, m: R|(R|Int64|) -> R|Unit||, n: R|(R|Int64|) -> R|CString||): R|Unit| {
+        <element: CfirLazyBlock>
+    }

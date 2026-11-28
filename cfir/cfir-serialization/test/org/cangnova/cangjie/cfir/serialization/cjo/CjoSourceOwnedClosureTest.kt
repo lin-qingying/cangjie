@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.BlockInfo
 import PackageFormat.CallKind
 import PackageFormat.DeclKind
@@ -1032,7 +1033,10 @@ class CjoSourceOwnedClosureTest {
         val manager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = listOf(root.toFile()), envProvider = { null }),
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.session.register(CfirSymbolProvider::class, provider)
         val loaded = assertNotNull(manager.loadPackage(input.fullPackageName))
         return Fixture(input.fullPackageName, provider, loaded, original, root.resolve(input.fullPackageName + ".cjo"))

@@ -8,6 +8,6 @@ interface I {
     func foo(): Unit
 }
 
-<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend A <: I {
+<!NEED_MEMBER_IMPLEMENTATION!>extend A <: I {
     // must implement foo() here
-}
+}<!>

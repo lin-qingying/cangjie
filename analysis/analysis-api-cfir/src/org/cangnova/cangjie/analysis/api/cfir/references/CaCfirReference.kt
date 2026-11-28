@@ -2,19 +2,24 @@ package org.cangnova.cangjie.analysis.api.cfir.references
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.findLibraryPsi
 import org.cangnova.cangjie.analysis.api.cfir.findReferencePsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.platform.caches.getOrPut
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
 import org.cangnova.cangjie.idea.references.CjReference
 import org.cangnova.cangjie.idea.references.mainReference
+import org.cangnova.cangjie.psi.CangJieResolveResult
+import org.cangnova.cangjie.psi.cangJieCanonicalTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjImportInfo
@@ -24,7 +29,6 @@ import org.cangnova.cangjie.psi.CjSimpleNameExpression
 /**
  * CFIR Analysis API 支持的仓颉 PSI 引用公共接口。
  */
-@OptIn(CaImplementationDetail::class)
 internal sealed interface CaCfirReference : CjReference {
     /**
      * 当前引用使用的 CFIR 多结果解析器。
@@ -50,8 +54,8 @@ internal sealed interface CaCfirReference : CjReference {
                 is CjSimpleNameExpression -> importedReference.mainReference.multiResolve(false)
                 else -> null
             } ?: return null
-        val targets = multiResolve(false).mapNotNull { it.element }
-        val adjustedImportTargets = importResults.mapNotNull { it.element }
+        val targets = multiResolve(false).filter { it.isValidResult }.mapNotNull { it.cangJieCanonicalTarget }
+        val adjustedImportTargets = importResults.filter { it.isValidResult }.mapNotNull { it.cangJieCanonicalTarget }
         val manager = importItem.manager
         if (adjustedImportTargets.any { importTarget ->
                 targets.any { target ->
@@ -70,13 +74,21 @@ internal sealed interface CaCfirReference : CjReference {
 
     /**
      * 将解析得到的公开符号转换为 PSI 目标集合。
+     *
+     * [receiverHint] 是调用点能提供的接收者类型文本（`this` 所在 extend 的接收者、
+     * 或显式接收者的声明类型）。库 `extend` 成员没有 classId，只能靠它把同名成员
+     * 收敛到唯一 extend。
      */
-    fun getResolvedToPsi(analysisSession: CaSession, referenceTargetSymbols: Collection<CaSymbol>): Collection<PsiElement> =
+    fun getResolveResults(
+        analysisSession: CaSession,
+        referenceTargetSymbols: Collection<CaSymbol>,
+        receiverHint: String? = null,
+    ): Collection<CangJieResolveResult> =
         with(analysisSession) {
             referenceTargetSymbols.flatMap { symbol ->
                 when (symbol) {
-                    is CaCfirSymbol<*> -> getPsiDeclarations(symbol)
-                    else -> listOfNotNull(symbol.psi)
+                    is CaCfirSymbol<*> -> getPsiDeclarations(symbol, receiverHint)
+                    else -> listOfNotNull(symbol.psi?.let { CangJieResolveResult(it) })
                 }
             }
         }
@@ -84,39 +96,119 @@ internal sealed interface CaCfirReference : CjReference {
     /**
      * 解析当前引用并返回 PSI 目标集合。
      */
-    fun getResolvedToPsi(analysisSession: CaSession): Collection<PsiElement> =
+    fun getResolveResults(analysisSession: CaSession): Collection<CangJieResolveResult> =
         with(analysisSession) {
-            getResolvedToPsi(analysisSession, resolveToSymbols())
+            getResolveResults(analysisSession, resolveToSymbols())
         }
+
+    /** 既有 resolveTargetElements 抽象只投影导航 PSI，不执行第二次符号解析。 */
+    fun getResolvedToPsi(analysisSession: CaSession): Collection<PsiElement> =
+        getResolveResults(analysisSession).map { it.element }
 
     /**
      * 在 CFIR session 缓存中解析当前引用对应的公开符号集合。
+     *
+     * 只缓存非空结果：冷启动阶段返回空集合时若写入缓存，该引用会在整个会话内保持
+     * “无法解析”，直到用户修改对应 PSI 元素（新引用对象）才会重算。
+     *
+     * 缓存值同时记录解析时所在文件的修改戳。`PsiModificationTracker.MODIFICATION_COUNT` 只统计
+     * **物理** PSI 的改动，dangling file / `CjFile.copy()` 这类非物理文件被编辑时它不推进，
+     * 于是同一个引用对象会被继续复用：只按引用对象身份命中缓存，就会把编辑前算出的符号
+     * 一直返回给编辑后的源码（[fileModificationStamp] 会随手修改推进，据此丢弃旧结果）。
      */
     @OptIn(CaPlatformInterface::class)
     fun CaSession.resolveToSymbols(): Collection<CaSymbol> = withValidityAssertion {
         check(this is CaCfirSession)
-        this.cacheStorage.resolveToSymbolsCache.value.getOrPut(this@CaCfirReference) {
-            computeSymbols()
+        val cache = this.cacheStorage.resolveToSymbolsCache.value
+        val reference = this@CaCfirReference
+        val stamp = reference.fileModificationStamp
+        val cached = cache.getIfPresent(reference)
+        if (cached != null) {
+            if (cached.fileModificationStamp == stamp) return cached.symbols
+            // 文件在两次解析之间被编辑过，旧结果对应的已不是同一段源码，必须丢弃而不是复用。
+            cache.invalidate(reference)
         }
+        val symbols = computeSymbols()
+        if (symbols.isNotEmpty() && stamp != null) {
+            cache.put(reference, CaResolvedSymbolsCacheEntry(stamp, symbols))
+        }
+        symbols
     }
+}
+
+/**
+ * `resolveToSymbols` 缓存条目。
+ *
+ * [fileModificationStamp] 是解析时引用所在文件的修改戳，用于识别非物理 PSI 的编辑
+ * （物理 PSI 由 `PsiModificationTracker` 产出新引用对象，不需要这一层校验）。
+ *
+ * @property fileModificationStamp 计算 [symbols] 时的文件修改戳。
+ * @property symbols 当时解析出的公开符号集合。
+ */
+internal data class CaResolvedSymbolsCacheEntry(
+    val fileModificationStamp: Long,
+    val symbols: Collection<CaSymbol>,
+)
+
+/**
+ * 引用所在文件的修改戳；用于判断缓存结果是否仍对应同一段源码。
+ *
+ * 取 `PsiFile.modificationStamp` 而不是 `PsiModificationTracker.MODIFICATION_COUNT`：
+ * 后者只统计物理 PSI 的改动，dangling file / `CjFile.copy()` 这类非物理文件编辑后不会推进。
+ */
+internal val CaCfirReference.fileModificationStamp: Long?
+    get() = element.containingFile?.modificationStamp
+
+/** 已解析 CFIR reference 的正式 PSI 结果；生成 usages 与普通 resolver 使用同一投影。 */
+@CaImplementationDetail
+fun CaSession.getCfirReferenceResolveResults(symbol: CfirBasedSymbol<*>): Collection<CangJieResolveResult> {
+    check(this is CaCfirSession) { "CFIR reference results require a CFIR-backed analysis session." }
+    val publicSymbol = cfirSymbolBuilder.buildSymbol(symbol)
+    check(publicSymbol is CaCfirSymbol<*>) { "A CFIR reference target must retain its CFIR-backed declaration." }
+    return getPsiDeclarations(publicSymbol)
 }
 
 /**
  * 将 CFIR 公开符号恢复为 reference resolve 可用的 PSI 声明集合。
  */
-internal fun CaSession.getPsiDeclarations(symbol: CaCfirSymbol<*>): Collection<PsiElement> {
+internal fun CaSession.getPsiDeclarations(
+    symbol: CaCfirSymbol<*>,
+    receiverHint: String? = null,
+): Collection<CangJieResolveResult> {
     val intersectionOverriddenSymbolsOrSingle = when {
         symbol.origin == CaSymbolOrigin.INTERSECTION_OVERRIDE && symbol is CaCallableSymbol -> symbol.intersectionOverriddenSymbols
         else -> listOf(symbol)
     }
-    return intersectionOverriddenSymbolsOrSingle.mapNotNull { it.findPsiForReferenceResolve(analysisScope) }
+    return intersectionOverriddenSymbolsOrSingle.mapNotNull {
+        val navigationTarget = it.findPsiForReferenceResolve(analysisScope, receiverHint) ?: return@mapNotNull null
+        val cfirSymbol = it as? CaCfirSymbol<*> ?: return@mapNotNull null
+        val declaration = cfirSymbol.cfirSymbol.cfir
+        val snapshot = (declaration.moduleData.session as? org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession)
+            ?.macroSemanticSnapshot
+        val macroOutput = snapshot?.macroSurfaceIdsForDeclaration(declaration) != null ||
+            declaration.source?.let { source -> snapshot?.isGeneratedSource(source) } == true
+        val canonicalTarget = if (macroOutput) it.psi ?: return@mapNotNull null else navigationTarget
+        val owningSession = cfirSymbol.cfirSymbol.llCfirModuleData.session
+        CangJieResolveResult(canonicalTarget, navigationTarget) {
+            owningSession.isValid && (!macroOutput ||
+                (owningSession as? org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession)
+                    ?.macroSemanticSnapshot === snapshot)
+        }
+    }
 }
 
 
 /**
  * 恢复单个公开符号在给定搜索范围内的 reference resolve PSI。
+ *
+ * 源码声明走 `source` 回链；库声明在 CFIR 侧没有 `source`，必须走反编译 PSI
+ * （对齐 Kotlin `KaSymbol.psi` 对 `LIBRARY` origin 的保证）。
  */
-private fun CaSymbol.findPsiForReferenceResolve(scope: GlobalSearchScope): PsiElement? {
-    require(this is CaCfirSymbol<*>)
+private fun CaSymbol.findPsiForReferenceResolve(
+    scope: GlobalSearchScope,
+    receiverHint: String? = null,
+): PsiElement? {
+    if (this !is CaCfirSymbol<*>) return null
     return cfirSymbol.cfir.findReferencePsi(scope, analysisSession.project)
+        ?: findLibraryPsi(receiverHint)
 }

@@ -1,0 +1,4 @@
+FILE: letPatternNestedOption.cj
+    internal? func f(o: R|Option<R|Option<R|Int64|>|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

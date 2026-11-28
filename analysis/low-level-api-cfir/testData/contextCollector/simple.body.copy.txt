@@ -5,6 +5,8 @@ Tower Data Context:
                 CfirValueParameterSymbol value: R|Int64|
     Element 1
         Scope: CfirLocalScope
+            Variables:
+                CfirPatternBindingSymbol <element: CfirPatternBindingVariable>
 
 FILE: simple.cj
     package sample.lowlevel.contextcollector.generated

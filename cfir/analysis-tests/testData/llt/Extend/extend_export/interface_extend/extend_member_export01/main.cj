@@ -13,10 +13,10 @@ package b
 import a.*
 
 public interface I {
-    public func f1(): Unit {
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f1(): Unit {
         println("f1")
     }
-    public func f3(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f3(): Unit
 }
 
 extend A <: I {

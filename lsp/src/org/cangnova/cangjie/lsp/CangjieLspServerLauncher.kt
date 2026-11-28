@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.lsp
 
+import org.cangnova.cangjie.lsp.analysis.frontendMacroExpansionOptions
 import org.cangnova.cangjie.lsp.server.CangjieLanguageServer
+import org.cangnova.cangjie.macro.expansion.SdkHandle
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.LanguageClient
@@ -128,6 +130,7 @@ fun main(args: Array<String>) {
         CangjieLspServerLauncher.launch(
             input = LspIoManager.inputStream,
             output = LspIoManager.outputStream,
+            options = lspServerOptionsFromArgs(args),
         )
     } catch (t: Throwable) {
         val err = LspIoManager.logStream
@@ -136,4 +139,52 @@ fun main(args: Array<String>) {
         t.printStackTrace(err)
         System.exit(1)
     }
+}
+
+/**
+ * 从命令行参数构造宿主提供的 [SdkHandle]。
+ *
+ * SDK 布局由宿主解析；LSP 只接受显式路径：`--sdk-home` 必填，
+ * `--macro-server` / `--stdlib` 可选。
+ */
+internal fun lspSdkHandleFromArgs(
+    args: Array<String>,
+    environment: Map<String, String> = System.getenv(),
+): SdkHandle? {
+    val home = args.optionValue("--sdk-home") ?: return null
+    val sdkEnvironment = environment.toMutableMap()
+    sdkEnvironment["CANGJIE_HOME"] = home
+    return SdkHandle(
+        id = "lsp:$home",
+        homePath = home,
+        environment = sdkEnvironment,
+        stdlibPath = args.optionValue("--stdlib"),
+        macroServerPath = args.optionValue("--macro-server"),
+    )
+}
+
+/**
+ * 根据命令行参数构造 LSP 启动选项；未提供 `--sdk-home` 时保持宏展开关闭。
+ */
+internal fun lspServerOptionsFromArgs(
+    args: Array<String>,
+    environment: Map<String, String> = System.getenv(),
+): CangjieLspServerOptions {
+    val sdk = lspSdkHandleFromArgs(args, environment) ?: return CangjieLspServerOptions()
+    return CangjieLspServerOptions(macroExpansion = frontendMacroExpansionOptions(sdk))
+}
+
+/** 读取 `--name value` 或 `--name=value` 形式的参数值。 */
+private fun Array<String>.optionValue(name: String): String? {
+    val prefix = "$name="
+    for (index in indices) {
+        val argument = this[index]
+        if (argument == name) {
+            return getOrNull(index + 1)?.takeIf(String::isNotBlank)
+        }
+        if (argument.startsWith(prefix)) {
+            return argument.substring(prefix.length).takeIf(String::isNotBlank)
+        }
+    }
+    return null
 }

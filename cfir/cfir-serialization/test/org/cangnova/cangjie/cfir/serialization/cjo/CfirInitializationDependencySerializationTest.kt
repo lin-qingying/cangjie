@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.DeclKind
 import PackageFormat.Package
 import PackageFormat.TypeKind
@@ -186,6 +187,7 @@ class CfirInitializationDependencySerializationTest :
                     ),
                     CfirCangJieScopeProvider(),
                     module,
+                    moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(tempDir)),
                 )
             },
         )
@@ -205,7 +207,7 @@ class CfirInitializationDependencySerializationTest :
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
         )
         val decodedType = CfirTypeDeserializer(
-            deserializationContext(encoded, cjoManager),
+            deserializationContext(encoded, cjoManager, setOf(tempDir)),
         ).deserializeTypeFromField(metadata.declarations.single { it.identifier == "target" }.type)
         val decodedTuple = assertInstanceOf(ConeTupleType::class.java, decodedType)
         val decodedString = assertInstanceOf(ConeStructType::class.java, decodedTuple.elementTypes[0])
@@ -230,7 +232,7 @@ class CfirInitializationDependencySerializationTest :
             dependencies = { module ->
                 CfirCompositeSymbolProvider(
                     module.session,
-                    listOf(CfirBuiltinSymbolProvider(module.session), module.session.dependenciesSymbolProvider),
+                    listOf(CfirBuiltinSymbolProvider(module.session, module), module.session.dependenciesSymbolProvider),
                 )
             },
         )
@@ -574,7 +576,10 @@ class CfirInitializationDependencySerializationTest :
             CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
         )
         val module = Module(CfirCjmpMode.NONE, CfirSession.Kind.Library)
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(tempDir)),
+        )
         module.session.register(CfirSymbolProvider::class, provider)
 
         val externalClassId = ClassId.topLevel(FqName(externalPackageName).child(Name.identifier("Holder")))
@@ -942,10 +947,14 @@ class CfirInitializationDependencySerializationTest :
             CjoSearchPath { null },
             CjoFormatVersionPolicy.Compilation(org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT),
         ),
+        ownedRoots: Set<Path> = emptySet(),
     ): CfirDeserializationContext {
         val module = Module(CfirCjmpMode.NONE, CfirSession.Kind.Library)
         val session = module.session
-        val provider = CfirDeserializedSymbolProvider(session, cjoManager, session.cangjieScopeProvider, module)
+        val provider = CfirDeserializedSymbolProvider(
+            session, cjoManager, session.cangjieScopeProvider, module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, ownedRoots),
+        )
         session.register(CfirSymbolProvider::class, provider)
         session.register(org.cangnova.cangjie.cfir.resolve.providers.CfirProvider::class,
             org.cangnova.cangjie.cfir.resolve.providers.CfirLibrarySessionProvider(provider))
@@ -954,16 +963,7 @@ class CfirInitializationDependencySerializationTest :
             CjoPackageHeader.fromPackage(pkg),
             module,
             cjoManager,
-            initializationDependencyResolver = { targetSourcePath, fullPackageName, ownerDeclarationIndex, declarationIndex ->
-                provider.deserializeCjoInitializationDependency(
-                    targetSourcePath,
-                    fullPackageName,
-                    ownerDeclarationIndex,
-                    declarationIndex,
-                )
-            },
-            declarationResolver = provider::deserializeCjoDeclaration,
-            dependencySnapshotResolver = { provider.selectImportedSnapshot(module, it) },
+            classSymbolLookup = provider,
         )
     }
 

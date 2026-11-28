@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
+import org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies
 
 /** helper 与原函数的非拥有关系；lazy 正文由原 owner 的正常重建事务物化。 */
 data class CfirDefaultParameterHelperInfo(val owner: CfirFunction, val parameterIndex: Int)
@@ -8,7 +9,13 @@ data class CfirDefaultParameterHelperInfo(val owner: CfirFunction, val parameter
 var CfirNamedFunction.defaultParameterHelperInfo: CfirDefaultParameterHelperInfo? by
     CfirDeclarationDataRegistry.data(DefaultParameterHelperInfoKey)
 
-internal object DefaultParameterHelperInfoKey : CfirDeclarationDataKey()
+internal object DefaultParameterHelperInfoKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy = CfirRawDeclarationDataPolicies.referenceValue<CfirDefaultParameterHelperInfo>(
+        "default parameter helper owner",
+    ) { value, context ->
+        value.copy(owner = context.state.referencedElement(value.owner))
+    }
+}
 
 /**
  * 默认值的两个独立事实：HAS_INITIAL 与 FuncParamList.desugars 指向的辅助函数。
@@ -48,5 +55,17 @@ val CfirValueParameter.ownedDefaultParameterHelper: CfirNamedFunction?
 val CfirValueParameter.hasInitialDefaultValue: Boolean
     get() = defaultValueMetadata?.hasInitial ?: (defaultValue != null)
 
-internal object ParameterDefaultValueMetadataKey : CfirDeclarationDataKey()
-internal object DefaultAssignmentSyntaxFactsKey : CfirDeclarationDataKey()
+internal object ParameterDefaultValueMetadataKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy = CfirRawDeclarationDataPolicies.value<CfirParameterDefaultValueMetadata>(
+        "parameter default helper",
+        collect = { value, _, visit -> value.function?.let(visit) },
+    ) { value, context ->
+        value.copy(function = value.function?.let(context.state::copyOwned))
+    }
+}
+
+internal object DefaultAssignmentSyntaxFactsKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy = CfirRawDeclarationDataPolicies.value<CfirDefaultAssignmentSyntaxFacts>(
+        "default assignment syntax",
+    ) { value, context -> value.copy(source = value.source?.let(context::source)) }
+}

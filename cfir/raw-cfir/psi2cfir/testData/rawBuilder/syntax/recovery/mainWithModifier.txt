@@ -1,0 +1,2 @@
+FILE: mainWithModifier.cj
+    <element: CfirMainFunction>

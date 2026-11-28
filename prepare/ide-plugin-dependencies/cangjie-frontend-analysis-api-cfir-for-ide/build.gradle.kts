@@ -8,6 +8,7 @@ publishCangjieJarsForIde(
     listOf(
         ":analysis:analysis-api-cfir",
         ":analysis:low-level-api-cfir",
+        ":analysis:macro-expansion",
         ":analysis:decompiled",
         ":analysis:decompiled:decompiler-to-file-stubs",
         ":analysis:decompiled:decompiler-to-stubs",

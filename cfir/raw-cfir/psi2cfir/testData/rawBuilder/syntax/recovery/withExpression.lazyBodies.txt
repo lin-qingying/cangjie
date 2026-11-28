@@ -1,0 +1,12 @@
+FILE: withExpression.cj
+    internal? class R {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func use(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func withExpression(r: R|R|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

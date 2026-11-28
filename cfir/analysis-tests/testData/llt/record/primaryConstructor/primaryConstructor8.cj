@@ -7,14 +7,14 @@ struct A {
     }
 }
 
-<!VALUE_TYPE_RECURSIVE!>s<!>truct Data {
+<!VALUE_TYPE_RECURSIVE!>struct Data {
     public Data() {}
     public var b = <!RECURSIVE_CONSTRUCTOR_CALL!>Data<!>()
-}
+}<!>
 
-<!VALUE_TYPE_RECURSIVE!>s<!>truct Data2 {
+<!VALUE_TYPE_RECURSIVE!>struct Data2 {
     public var b: Data2 = <!RECURSIVE_CONSTRUCTOR_CALL!>Data2<!>()
-}
+}<!>
 
 struct GenRec {
     public var a: Int64

@@ -30,9 +30,15 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguousFunctionReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.MemberLookupBlockedByDeclaredSupertype
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
+import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceNode
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenSourceOrigin
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.parsing.ParsedCangJiePsiFile
 import org.cangnova.cangjie.parsing.CjParsingSourceBindingScope
@@ -173,10 +179,21 @@ internal class LLCfirFileSourceReplacement(
 
     /** 非 IR annotation/token 来源也属于同一产品，不能只迁移 visitor 可见的 source。 */
     fun mapTokens(tokens: List<MacroSurfaceToken>): List<MacroSurfaceToken> = tokens.map { token ->
-        val originalRange = token.sourceRange ?: return@map token
-        val originalSource = originalRange.source ?: return@map token
+        val spans = token.sourceSpans.map span@{ span ->
+            val origin = span.origin as? MacroTokenSourceOrigin.Input ?: return@span span
+            val mapped = checkNotNull(mapSource(origin.source)) { "A retained token span must identify its current target carrier." }
+            if (mapped === origin.source) span else {
+                check(origin.source.text == mapped.text) { "A retained token span changed its grammar text." }
+                span.copy(origin = MacroTokenSourceOrigin.Input(
+                    mapped, origin.renderedText, origin.isLinear, next.product.sourceFileLinesMapping,
+                ))
+            }
+        }
+        val remapped = if (spans == token.sourceSpans) token else token.copy(sourceSpans = spans)
+        val originalRange = token.sourceRange ?: return@map remapped
+        val originalSource = originalRange.source ?: return@map remapped
         val mapped = checkNotNull(mapSource(originalSource)) { "A retained token source must identify its current target carrier." }
-        if (mapped === originalSource) return@map token
+        if (mapped === originalSource) return@map remapped
         check(originalSource.text == mapped.text) { "A retained token carrier changed its grammar text." }
         val delta = mapped.startOffset - originalSource.startOffset
         val start = if (token.isSourceToken) token.startOffset + delta else token.startOffset
@@ -184,24 +201,38 @@ internal class LLCfirFileSourceReplacement(
         if (token.isSourceToken) {
             check(next.product.lexicalInput.source.text.substring(start, end) == token.text)
         }
-        token.copy(
+        remapped.copy(
             startOffset = start, endOffset = end,
             sourceRange = originalRange.copy(source = mapped, startOffset = originalRange.startOffset + delta, endOffset = originalRange.endOffset + delta),
         )
     }
 
-    fun mapSurface(surface: MacroSurfaceExpr): MacroSurfaceExpr {
+    fun mapSurface(surface: MacroSurface): MacroSurface {
         val range = checkNotNull(surface.sourceRange)
         val originalSource = checkNotNull(range.source)
         val mapped = checkNotNull(mapSource(originalSource))
-        val psi = mapped.psi as? CjMacroExpression ?: error("An expression macro must retain its actual invocation PSI.")
-        val facts = checkNotNull(psi.parsingFacts)
-        val boundFacts = facts.copy(declarationPrefix = CjParsingSourceBindingScope(next.product.file).bind(facts.declarationPrefix, psi))
-        return surface.copy(
-            parsingFacts = boundFacts,
-            sourceRange = MacroSurfaceSourceRange(mapped, mapped.startOffset, mapped.endOffset),
-            attrTokens = mapTokens(surface.attrTokens), inputTokens = mapTokens(surface.inputTokens),
-        )
+        val psi = checkNotNull(mapped.psi) { "A retained macro surface must retain its actual invocation PSI." }
+        val boundFacts = surface.parsingFacts?.let {
+            val facts = checkNotNull(when (psi) {
+                is CjMacroExpression -> psi.parsingFacts
+                is CjAnnotation -> psi.parsingFacts
+                else -> null
+            }) { "A retained parser-produced surface must still have its own invocation facts." }
+            facts.copy(declarationPrefix = CjParsingSourceBindingScope(next.product.file).bind(facts.declarationPrefix, psi))
+        }
+        val sourceRange = MacroSurfaceSourceRange(mapped, mapped.startOffset, mapped.endOffset)
+        val attrTokens = mapTokens(surface.attrTokens)
+        val inputTokens = mapTokens(surface.inputTokens)
+        return when (surface) {
+            is MacroSurfaceExpr -> surface.copy(parsingFacts = checkNotNull(boundFacts), sourceRange = sourceRange, attrTokens = attrTokens, inputTokens = inputTokens)
+            is MacroSurfaceNode -> surface.copy(parsingFacts = checkNotNull(boundFacts), sourceRange = sourceRange, attrTokens = attrTokens, inputTokens = inputTokens)
+            is MacroSurfaceDecl -> surface.copy(parsingFacts = boundFacts, sourceRange = sourceRange, attrTokens = attrTokens, inputTokens = inputTokens)
+            is MacroSurfaceParam -> surface.copy(parsingFacts = boundFacts, sourceRange = sourceRange, attrTokens = attrTokens, inputTokens = inputTokens)
+            is IfAvailableSurface -> surface.copy(
+                parsingFacts = boundFacts, sourceRange = sourceRange, attrTokens = attrTokens, inputTokens = inputTokens,
+                branchTokens = mapTokens(surface.branchTokens),
+            )
+        }
     }
 
     fun prepare(): Boolean {
@@ -326,7 +357,7 @@ internal class LLCfirFileSourceReplacement(
 }
 
 /** PSI 载体先按对象映射；偏移策略只迁移已选中载体的范围，不据范围选择声明 owner。 */
-private fun mapPsiSource(source: CjSourceElement, mapper: (PsiElement) -> PsiElement?): CjSourceElement? {
+internal fun mapPsiSource(source: CjSourceElement, mapper: (PsiElement) -> PsiElement?): CjSourceElement? {
     val psiSource = when (source) {
         is CjPsiSourceElement -> source
         is CjLightSourceElement -> source.unwrapToCjPsiSourceElement() ?: return null

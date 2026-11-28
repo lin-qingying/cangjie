@@ -1,0 +1,4 @@
+FILE: matchRangePattern.cj
+    internal? func matchRangePattern(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

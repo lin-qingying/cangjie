@@ -1,5 +1,9 @@
 package org.cangnova.cangjie.lsp.server
 
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommandHandler
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
+import org.cangnova.cangjie.lsp.quickfix.LspQuickFixCommandHandler
+import org.cangnova.cangjie.lsp.quickfix.LspQuickFixCommands
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
@@ -37,8 +41,10 @@ class CangjieWorkspaceService(
      * 配置变更可能影响项目结构和诊断，因此统一触发工作区语义刷新。
      */
     override fun didChangeConfiguration(params: DidChangeConfigurationParams) {
-        logger.info("====> didChangeConfiguration")
-        refreshWorkspaceSemantics()
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChangeConfiguration")
+            refreshWorkspaceSemantics()
+        }.join()
     }
 
     /**
@@ -47,8 +53,10 @@ class CangjieWorkspaceService(
      * 磁盘文件变化会影响 unopened 文件和依赖关系，必须刷新项目结构并重发打开文档诊断。
      */
     override fun didChangeWatchedFiles(params: DidChangeWatchedFilesParams) {
-        logger.info("====> didChangeWatchedFiles")
-        refreshWorkspaceSemantics()
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChangeWatchedFiles")
+            refreshWorkspaceSemantics()
+        }.join()
     }
 
     /**
@@ -57,31 +65,78 @@ class CangjieWorkspaceService(
      * 方法同步 workspace folder 状态、刷新 Analysis API 项目结构，并通知 analysis facade 执行语义层更新。
      */
     override fun didChangeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
-        logger.info("====> didChangeWorkspaceFolders")
-        serverContext.workspaceState.updateWorkspaceFolders(
-            added = params.event.added,
-            removed = params.event.removed,
-        )
-        serverContext.refreshProjectStructure()
-        serverContext.analysisFacade.didChangeWorkspaceFolders(
-            context = serverContext.requestContext(),
-            added = params.event.added,
-            removed = params.event.removed,
-        )
-        serverContext.republishOpenDiagnostics()
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChangeWorkspaceFolders")
+            serverContext.workspaceState.updateWorkspaceFolders(
+                added = params.event.added,
+                removed = params.event.removed,
+            )
+            serverContext.refreshProjectStructure()
+            serverContext.analysisFacade.didChangeWorkspaceFolders(
+                context = serverContext.requestContext(),
+                added = params.event.added,
+                removed = params.event.removed,
+            )
+            serverContext.republishOpenDiagnostics()
+        }.join()
     }
 
     /**
      * 处理 workspace/executeCommand 请求。
      *
-     * 当前未定义具体命令语义，因此返回空对象作为协议占位并保留日志。
+     * 路由补全插入和 quick-fix ModCommand 两类命令；客户端接受动作后，服务端通过
+     * workspace/applyEdit 请求客户端应用编辑。
+     *
+     * 未识别的命令仍返回空对象作为协议占位（客户端可能发送别处声明的命令），
+     * 补全和 quick-fix 命令的失败路径均返回明确错误，不静默成功。
      */
     override fun executeCommand(params: ExecuteCommandParams): CompletableFuture<Any> {
         logger.info("====> executeCommand: ${params.command}")
+        if (params.command == LspCompletionCommands.APPLY_COMPLETION) {
+            return completionCommands.applyCompletion(params.arguments ?: emptyList())
+        }
+        if (params.command == LspQuickFixCommands.APPLY_MOD_COMMAND) {
+            return quickFixCommands.applyModCommand(params.arguments ?: emptyList())
+        }
         return CompletableFuture.completedFuture(Any()).also {
             it.thenAccept { logger.info("<==== executeCommand") }
         }
     }
+
+    /**
+     * 补全命令处理器。
+     *
+     * 客户端在 `initialize` 之后才有，因此用取值函数而不是构造期直传。
+     */
+    private val completionCommands = LspCompletionCommandHandler(
+        sessions = serverContext.completionSessions,
+        documentStore = serverContext.documentStore,
+        project = serverContext.environment.project,
+        clientProvider = { serverContext.client },
+        // 补全插入靠客户端应用编辑：客户端能力在 initialize 时记进 workspaceState。
+        supportsApplyEdit = {
+            serverContext.workspaceState.initializeParams()?.capabilities?.workspace?.applyEdit == true
+        },
+    )
+
+    /**
+     * Quick-fix command handler; the client owns the resulting document edit and undo step.
+     */
+    private val quickFixCommands = LspQuickFixCommandHandler(
+        documentStore = serverContext.documentStore,
+        clientProvider = { serverContext.client },
+        supportsApplyEdit = {
+            serverContext.workspaceState.initializeParams()?.capabilities?.workspace?.applyEdit == true
+        },
+        supportsDocumentChanges = {
+            serverContext.workspaceState.initializeParams()
+                ?.capabilities?.workspace?.workspaceEdit?.documentChanges == true
+        },
+        supportsResourceOperation = { operation ->
+            operation in serverContext.workspaceState.initializeParams()
+                ?.capabilities?.workspace?.workspaceEdit?.resourceOperations.orEmpty()
+        },
+    )
 
     /**
      * 处理 workspace/symbol 查询。
@@ -93,7 +148,7 @@ class CangjieWorkspaceService(
         if (!serverContext.enabledFeatures.workspaceSymbol) {
             return CompletableFuture.completedFuture(Either.forLeft(emptyList()))
         }
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.WORKSPACE_SYMBOL) {
             serverContext.analysisFacade.workspaceSymbols(serverContext.requestContext(), params)
         }.also { it.thenAccept { logger.info("<==== symbol") } }
     }
@@ -108,9 +163,9 @@ class CangjieWorkspaceService(
         if (!serverContext.enabledFeatures.diagnostics) {
             return CompletableFuture.completedFuture(WorkspaceDiagnosticReport(emptyList()))
         }
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.WORKSPACE_DIAGNOSTIC) {
             val context = serverContext.requestContext()
-            WorkspaceDiagnosticReport(serverContext.analysisFacade.collectWorkspaceDiagnostics(context))
+            WorkspaceDiagnosticReport(serverContext.collectWorkspaceDiagnostics(context))
         }.also { it.thenAccept { logger.info("<==== diagnostic (workspace)") } }
     }
 

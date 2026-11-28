@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.declarations.utils.constructedClassTypeParameterRefs
+import org.cangnova.cangjie.cfir.declarations.utils.hasSerializedInitializer
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildFinalizer
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
@@ -60,17 +61,37 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.toAnnotationArgumentView
+import org.cangnova.cangjie.cfir.CfirFunctionTarget
+import org.cangnova.cangjie.cfir.declarations.builder.buildAnonymousFunction
+import org.cangnova.cangjie.cfir.expressions.builder.buildAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
+import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
+import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildTypeConversion
+import org.cangnova.cangjie.cfir.expressions.builder.buildBinaryOp
+import org.cangnova.cangjie.cfir.expressions.builder.buildComparisonExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildIfExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildTupleLiteral
+import org.cangnova.cangjie.cfir.expressions.builder.buildUnsafeExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildInoutArgumentExpression
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.builder.buildExpressionStub
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationArgumentMappingImpl
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
@@ -96,12 +117,12 @@ import java.util.IdentityHashMap
  * 声明反序列化器：Decl → CfirDeclaration。
  *
  * 将 .cjo 中的 FlatBuffers Decl 表转换为 CFIR 声明树。
- * 所有反序列化声明的 origin 为 Library，resolveState 初始化为 BODY_RESOLVE。
+ * 所有反序列化声明的 origin 为 Library，签名与所请求的内容通过同一绑定事务发布。
  */
 @OptIn(CfirImplementationDetail::class)
 class CfirDeclDeserializer private constructor(
     /** 当前 `.cjo` 包的反序列化上下文、缓存与跨包解析入口。 */
-    private val context: CfirDeserializationContext,
+    context: CfirDeserializationContext,
     /** 与当前声明反序列化器配套的类型反序列化器。 */
     private val typeDeserializer: CfirTypeDeserializer,
     /** compiled-file stub 只需要声明签名，不物化字段初始化表达式。 */
@@ -109,7 +130,9 @@ class CfirDeclDeserializer private constructor(
 ) {
     /** 为 CFIR 符号解析创建完整的声明反序列化器。 */
     constructor(context: CfirDeserializationContext, typeDeserializer: CfirTypeDeserializer) :
-        this(context, typeDeserializer, loadFieldVariableInitializers = true)
+        this(context, typeDeserializer, loadFieldVariableInitializers = context.mode == CjoDeserializationMode.FULL)
+
+    private val context = context.canonical()
 
     /** 当前正在反序列化的 enum owner 上下文。 */
     private data class EnumOwnerContext(
@@ -195,10 +218,52 @@ class CfirDeclDeserializer private constructor(
 
     fun deserializeDecl(declIndex: Int): CfirDeclaration? = context.materialize {
         if (declIndex !in 0 until context.pkg.allDeclsLength) return@materialize null
+        context.headerRecordOrNull(declIndex) // 重复查询保留首次 wire failure 和真实索引。
+        check(!context.isNormalReferenceInitializerPending(declIndex)) {
+            "CJO declaration still has a pending normal initializer: $declIndex"
+        }
         val declaration = CfirSourceGraphLoader(context).headerDeclaration(declIndex)
-        ensureNormalHeaderFamily((declIndex + 1).toUInt())
+        ensureNormalHeaderFamily((declIndex + 1).toUInt(), loadFieldVariableInitializers)
         declaration
     }
+
+    fun deserializeSymbol(declIndex: Int): CfirBasedSymbol<*>? =
+        deserializeDecl(declIndex)?.wireSymbol(declIndex)
+
+    /** SOURCE 借用者只取其授权 header；普通 FULL 读者在共享事务中完成实际变量的 initializer。 */
+    internal fun deserializeSymbolForReference(declIndex: Int): CfirBasedSymbol<*>? = context.materialization.read {
+        val sourceSelection = context.currentSourceSelection
+        val previouslyBound = if (sourceSelection == null) context.headerRecordOrNull(declIndex) else null
+        val declaration = previouslyBound?.declarationRoot ?: deserializeCanonicalDeclaration(declIndex) ?: return@read null
+        val wire = declaration.wireSymbol(declIndex)
+        if (sourceSelection == null && loadFieldVariableInitializers && declaration is CfirPatternVariable &&
+            context.pkg.allDecls(declIndex)?.kind == DeclKind.VarDecl && declaration.hasSerializedInitializer &&
+            context.publishedContentSource.snapshot().initializer(declaration) == null
+        ) {
+            val newHeader = previouslyBound == null
+            val queued = context.enqueueNormalReferenceInitializer(declIndex) {
+                context.materialize {
+                    ensureNormalHeaderFamily((declIndex + 1).toUInt(), includeInitializers = true)
+                }
+                if (newHeader) {
+                    declaration.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
+                    wire.cfir.replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
+                }
+            }
+            if (queued && newHeader) {
+                declaration.replaceResolvePhase(CfirResolvePhase.TYPES)
+                wire.cfir.replaceResolvePhase(CfirResolvePhase.TYPES)
+            }
+        }
+        wire
+    }
+
+    private fun CfirDeclaration.wireSymbol(declIndex: Int): CfirBasedSymbol<*> =
+        if (this is CfirPatternVariable && context.pkg.allDecls(declIndex)?.kind == DeclKind.VarDecl) {
+            pattern.bindingVariables().single().symbol
+        } else {
+            symbol
+        }
 
     /** 正常header按真实owning槽选择自己的参数、TP、成员及helper；引用的classifier不获得内容授权。 */
     internal fun deserializeHeaderContents(declaration: CfirDeclaration) = context.materialize {
@@ -217,7 +282,7 @@ class CfirDeclDeserializer private constructor(
     }
 
     /** normal全header产品的owning范围，与仅metadata或单个内容槽分开。 */
-    private fun ensureNormalHeaderFamily(root: UInt) {
+    private fun ensureNormalHeaderFamily(root: UInt, includeInitializers: Boolean = false) {
         val registry = context.sourceHeaderRegistry
         val children = HashMap<UInt, MutableList<UInt>>()
         registry.declarations.values.forEach { entry ->
@@ -246,18 +311,24 @@ class CfirDeclDeserializer private constructor(
             }
             val needsDefault = declaration is CfirValueParameter && wire.infoType == DeclInfo.ParamInfo &&
                 (wire.info(ParamInfo()) as ParamInfo).defaultVal != 0u && declaration !in context.bodyState.defaults
-            if (needsDefault || declaration !in context.bodyState.annotationContents) {
+            val needsInitializer = includeInitializers && declaration is CfirVariable &&
+                declaration !is CfirValueParameter && wire.infoType == DeclInfo.VarInfo &&
+                (wire.info(VarInfo()) as VarInfo).initializer.isSavedInitializer() &&
+                declaration !in context.bodyState.initializers
+            if (needsDefault || needsInitializer || declaration !in context.bodyState.annotationContents) {
                 val roots = buildList {
                     add(CjoSourceContentRoot.DeclarationHeader(reference))
                     if (needsDefault) add(CjoSourceContentRoot.ParameterDefault(reference))
+                    if (needsInitializer) add(CjoSourceContentRoot.Initializer(reference))
                     if (declaration !in context.bodyState.annotationContents) add(CjoSourceContentRoot.DeclarationAnnotations(reference))
                 }
                 val selection = CjoSourceOwnershipPlan.request(context.sourceHeaderRegistry, roots)
                 context.registerSourceSelection(selection)
-                context.enqueueHeaderContents(declaration, false, selection) { includeInitializers ->
+                context.enqueueHeaderContents(declaration, needsInitializer, selection) { includeInitializers ->
                     materializeSavedDeclarationContent(wire, declaration, includeInitializers)
                     if (declaration !in context.bodyState.annotationContents) {
-                        context.stageAnnotations(declaration, materializeAnnotations(wire, declaration.symbol))
+                        val annotationOwner = declaration.wireSymbol(index)
+                        context.stageAnnotations(declaration, materializeAnnotations(wire, reference, annotationOwner))
                         context.enqueueDeclarationMetadata(declaration) { completeDeclarationMetadata(index, declaration) }
                     }
                 }
@@ -302,8 +373,10 @@ class CfirDeclDeserializer private constructor(
     }
 
     internal fun deserializeVariableInitializer(variable: CfirVariable): CfirExpression? = context.materialize {
-        check(variable !is CfirValueParameter && context.isPublishedDeclaration(variable))
-        bodyDeserializer.deserializeInitializer(variable)
+        if (context.mode == CjoDeserializationMode.SIGNATURE_ONLY) return@materialize null
+        val owner = checkNotNull(context.publishedDeclarationRoot(variable)) as CfirVariable
+        check(owner !is CfirValueParameter)
+        bodyDeserializer.deserializeInitializer(owner)
     }
 
     /** FullId 参数/成员入口先恢复真实 owner；不能以顶层方式另造一个参数声明。 */
@@ -418,6 +491,8 @@ class CfirDeclDeserializer private constructor(
                             owner.typeParameters, owner.isRefEnum)) { action() }
                         else action()
                     }
+                } else if (owner is CfirExtend) {
+                    withExtendReceiverType(owner.extendedTypeRef.coneTypeOrNull as? ConeSimpleCangJieType, action)
                 } else action()
             }
         } finally {
@@ -452,7 +527,6 @@ class CfirDeclDeserializer private constructor(
             if (!declsUnderDeserialization.add(declIndex)) {
                 return@materialize context.declarations[declIndex]
             }
-
             try {
                 val decl = try {
                     context.pkg.allDecls(declIndex)
@@ -542,19 +616,35 @@ class CfirDeclDeserializer private constructor(
         ) {
             result.initContainingClassAttr()
         }
+        result.cjoDeclarationIndex = index
+        val wire = result.wireSymbol(index)
+        if (wire !== result.symbol) {
+            wire.cfir.cjoDeclarationIndex = index
+            recordCjoDeclarationPosition(index, decl, wire.cfir)
+        }
+        context.recordWireHeader(index, result, wire)
         result.serializedDeclarationAttributes = CfirSerializedDeclarationAttributes(
             words = (0 until decl.attributesLength).map(decl::attributes),
         )
         result.serializedInteropFacts = serializedInteropFacts(decl)
         result.serializedAnnotationHeaderInfo = serializedAnnotationInfo(decl)
+        if (wire !== result.symbol) {
+            val wireOwner = wire.cfir
+            wireOwner.isFromCommonPart = result.isFromCommonPart
+            wireOwner.hasGenericNode = result.hasGenericNode
+            wireOwner.exportFacts = result.exportFacts
+            wireOwner.serializedDeclarationAttributes = result.serializedDeclarationAttributes
+            wireOwner.serializedInteropFacts = result.serializedInteropFacts
+            wireOwner.serializedAnnotationHeaderInfo = result.serializedAnnotationHeaderInfo
+        }
         context.enqueueHeaderDependencies()
     }
 
     /** 标准注解、sidecar及弃用/ABI派生信息共用绑定后的完成阶段，不发布半成品header。 */
     private fun materializeSavedDeclarationContent(decl: Decl, result: CfirDeclaration, includeInitializers: Boolean) {
-        if (result is CfirFieldVariable && decl.infoType == DeclInfo.VarInfo && includeInitializers) {
+        if (result is CfirVariable && result !is CfirValueParameter && decl.infoType == DeclInfo.VarInfo && includeInitializers) {
             val reference = (decl.info(VarInfo()) as VarInfo).initializer
-            if (reference != 0u) bodyDeserializer.deserializeInitializer(result)
+            if (reference.isSavedInitializer()) bodyDeserializer.deserializeInitializer(result)
         }
         if (result is CfirValueParameter) {
             if (decl.infoType == DeclInfo.NONE) return
@@ -565,18 +655,24 @@ class CfirDeclDeserializer private constructor(
     }
 
     private fun completeDeclarationMetadata(index: Int, result: CfirDeclaration) {
-        val additional = context.sidecar?.annotations(index, result).orEmpty()
-        val annotations = appendSerializedAnnotationMarker(result, context.bodyState.annotationDrafts.getValue(result) + additional)
-        if (result is CfirMemberDeclaration) {
-            val target = result.annotationTargetFor()
+        val wireOwner = result.wireSymbol(index).cfir
+        val additional = context.sidecar?.annotations(index, wireOwner).orEmpty()
+        val annotations = appendSerializedAnnotationMarker(wireOwner, context.bodyState.annotationDrafts.getValue(result) + additional)
+        if (wireOwner is CfirMemberDeclaration) {
+            val target = wireOwner.annotationTargetFor()
             annotations.forEach { it.replaceAnnotationTarget(target) }
         }
-        val annotationProduct = if (result is CfirMemberDeclaration && (annotations.isNotEmpty() || result.serializedAnnotationHeaderInfo != null))
-            result.computeAnnotationInfo(context.moduleData.session, annotations, result.serializedAnnotationHeaderInfo) else result.serializedAnnotationHeaderInfo
-        val interopProduct = result.computeInteropInfo(context.moduleData.session, annotations, annotationProduct)
-        context.publishAnnotations(result, org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Complete(
-            annotations, deprecationsProviderFor(annotations), annotationProduct, interopProduct,
-        ))
+        val serializedInfo = wireOwner.serializedAnnotationHeaderInfo
+        val annotationProduct = if (wireOwner is CfirMemberDeclaration && (annotations.isNotEmpty() || serializedInfo != null))
+            wireOwner.computeAnnotationInfo(context.moduleData.session, annotations, serializedInfo) else serializedInfo
+        val interopProduct = wireOwner.computeInteropInfo(context.moduleData.session, annotations, annotationProduct)
+        context.publishAnnotations(
+            result,
+            org.cangnova.cangjie.cfir.CfirPublishedAnnotations.Complete(
+                annotations, deprecationsProviderFor(annotations), annotationProduct, interopProduct,
+            ),
+            wireOwner,
+        )
     }
 
     /**
@@ -873,6 +969,7 @@ class CfirDeclDeserializer private constructor(
      */
     private fun materializeAnnotations(
         decl: Decl,
+        declarationReference: UInt,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): MutableOrEmptyList<CfirAnnotation> {
         check(containingDeclarationSymbol.isBound) { "Annotation materialization requires its actual bound header" }
@@ -883,7 +980,7 @@ class CfirDeclDeserializer private constructor(
             val serialized = checkNotNull(decl.annotations(index)) {
                 "CJO declaration annotation #$index is absent"
             }
-            result += checkNotNull(deserializeAnnotation(serialized, containingDeclarationSymbol, index)) {
+            result += checkNotNull(deserializeAnnotation(serialized, declarationReference, containingDeclarationSymbol, index)) {
                 "CJO declaration annotation #$index could not be materialized"
             }
         }
@@ -902,6 +999,7 @@ class CfirDeclDeserializer private constructor(
     /** 恢复单个 CJO 注解调用。 */
     private fun deserializeAnnotation(
         serialized: Anno,
+        declarationReference: UInt,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
         annotationIndex: Int,
     ): CfirAnnotationCall? {
@@ -978,9 +1076,7 @@ class CfirDeclDeserializer private constructor(
                 val expression = deserializeRequiredExpression(
                     serializedArgument.expr,
                     "annotation argument #$argumentIndex",
-                    CjoSourceContentRoot.AnnotationArgument((context.declarations.entries.single {
-                        it.value.symbol === containingDeclarationSymbol
-                    }.key + 1).toUInt(), annotationIndex, argumentIndex),
+                    CjoSourceContentRoot.AnnotationArgument(declarationReference, annotationIndex, argumentIndex),
                 )
                 val argumentName = serializedArgument.name?.takeIf(String::isNotBlank)
                 add(
@@ -1168,11 +1264,10 @@ class CfirDeclDeserializer private constructor(
         fun forCompiledFileStub(
             context: CfirDeserializationContext,
             typeDeserializer: CfirTypeDeserializer,
-        ): CfirDeclDeserializer = CfirDeclDeserializer(
-            context,
-            typeDeserializer,
-            loadFieldVariableInitializers = false,
-        )
+        ): CfirDeclDeserializer {
+            val signatures = context.withMode(CjoDeserializationMode.SIGNATURE_ONLY)
+            return CfirDeclDeserializer(signatures, signatures.createTypeDeserializer(), loadFieldVariableInitializers = false)
+        }
 
         internal fun forSourceGraph(context: CfirDeserializationContext): CfirDeclDeserializer =
             CfirDeclDeserializer(context, context.createTypeDeserializer(), loadFieldVariableInitializers = false)
@@ -1234,13 +1329,15 @@ class CfirDeclDeserializer private constructor(
     private fun isEnumConstructorDecl(decl: Decl): Boolean =
         testAttr(decl, AttrBit.ENUM_CONSTRUCTOR)
 
-    /** 从 attributes 位域解析可见性 */
-    private fun resolveVisibility(decl: Decl): Visibility = when {
-        testAttr(decl, AttrBit.PUBLIC) -> Visibilities.Public
-        testAttr(decl, AttrBit.PRIVATE) -> Visibilities.Private
-        testAttr(decl, AttrBit.PROTECTED) -> Visibilities.Protected
-        testAttr(decl, AttrBit.INTERNAL) -> Visibilities.Internal
-        else -> Visibilities.Public // 默认 public
+    /** CJO visibility 只有唯一属性位时才是已知值；缺失或冲突位保留为 UNKNOWN。 */
+    private fun resolveVisibility(decl: Decl): Visibility {
+        val visibilityBits = buildList {
+            if (testAttr(decl, AttrBit.PUBLIC)) add(Visibilities.Public)
+            if (testAttr(decl, AttrBit.PRIVATE)) add(Visibilities.Private)
+            if (testAttr(decl, AttrBit.PROTECTED)) add(Visibilities.Protected)
+            if (testAttr(decl, AttrBit.INTERNAL)) add(Visibilities.Internal)
+        }
+        return visibilityBits.singleOrNull() ?: Visibilities.Unknown
     }
 
     /** 从 attributes 位域解析 modality */
@@ -1258,8 +1355,10 @@ class CfirDeclDeserializer private constructor(
             visibility = visibility,
             modality = modality,
         )
-        status.isVisibilityExplicit = visibility != Visibilities.Public
-        status.isModalityExplicit = modality != Modality.FINAL
+        status.isVisibilityExplicit = false
+        status.isModalityExplicit = false
+        status.visibilityExplicitness = CfirModifierExplicitness.UNKNOWN
+        status.modalityExplicitness = CfirModifierExplicitness.UNKNOWN
         status.isAbstract = testAttr(decl, AttrBit.ABSTRACT)
         status.isDefault = testAttr(decl, AttrBit.DEFAULT)
         status.isOpen = testAttr(decl, AttrBit.OPEN)
@@ -1277,6 +1376,7 @@ class CfirDeclDeserializer private constructor(
             context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.BuiltInAnnotations)) ||
             status.isForeign
         status.isCommon = testAttr(decl, AttrBit.COMMON)
+        status.isFromCommonPart = testAttr(decl, AttrBit.FROM_COMMON_PART)
         status.isSpecific = testAttr(decl, AttrBit.SPECIFIC)
         // 官方 ASTLoader 原样恢复 AttributePack；COMMON_WITH_DEFAULT 决定跨模块验证豁免
         //（CheckCJMP.cpp MustMatchWithPlatform），必须随位恢复而不是从函数体推导——
@@ -1285,13 +1385,14 @@ class CfirDeclDeserializer private constructor(
         status.isUnsafe = testAttr(decl, AttrBit.UNSAFE)
         status.isMut = testAttr(decl, AttrBit.MUT)
         status.isRedef = testAttr(decl, AttrBit.REDEF)
-        return status.resolved(visibility, modality)
+        // CJO 声明直接发布为 BODY_RESOLVE，解码出的有效状态必须满足 resolved 状态不变量。
+        return status.resolvedWithEffectiveModality()
     }
 
     /** Reconstruct non-Anno interop facts written by the official CJO writer. */
     private fun serializedInteropFacts(decl: Decl): CfirSerializedInteropFacts {
         val isForeign = testAttr(decl, AttrBit.FOREIGN)
-        val funcInfo = decl.info(FuncInfo()) as? FuncInfo
+        val funcInfo = if (decl.infoType == DeclInfo.FuncInfo) decl.info(FuncInfo()) as? FuncInfo else null
         return CfirSerializedInteropFacts(
             hasCAnnotationAttribute = testAttr(decl, AttrBit.C),
             hasExplicitC = testAttr(decl, AttrBit.C) && !isForeign,
@@ -1591,7 +1692,7 @@ class CfirDeclDeserializer private constructor(
         val owner = checkNotNull(currentContainingDeclarationSymbol)
         val originalGroups = mutableListOf<CfirDeserializedGenericConstraint>()
         for (i in 0 until generic.constraintsLength) {
-            val constraint = checkNotNull(generic.constraints(i))
+            val constraint = checkNotNull(generic.constraints(i)) { "Missing owner generic constraint" }
             val constrainedType = typeDeserializer.deserializeTypeFromField(constraint.type)
             val bounds = (0 until constraint.uppersLength).map { buildTypeRef(constraint.uppers(it)) }
             originalGroups += CfirDeserializedGenericConstraint(
@@ -1641,6 +1742,30 @@ class CfirDeclDeserializer private constructor(
     private val currentEnumOwner: EnumOwnerContext?
         get() = enumOwnerStack.lastOrNull()
 
+    /**
+     * `extend` 成员反序列化期间的被扩展类型栈。
+     *
+     * Cangjie 的 `extend Foo { func bar() }` 与 Kotlin class 成员同构：`bar` 的接收者是 `Foo`。
+     * 库侧成员必须与源码侧共享同一份 dispatch receiver 语义，否则符号层无法区分
+     * 不同 extend 上的同名成员（如 std.core 的多个 `toString`），导航/文档/补全都会退化。
+     */
+    private val extendReceiverTypeStack = mutableListOf<ConeSimpleCangJieType>()
+
+    /** 在 [type] 作为当前 extend 接收者类型的上下文中执行 [block]。 */
+    private inline fun <R> withExtendReceiverType(type: ConeSimpleCangJieType?, block: () -> R): R {
+        if (type == null) return block()
+        extendReceiverTypeStack += type
+        return try {
+            block()
+        } finally {
+            extendReceiverTypeStack.removeAt(extendReceiverTypeStack.lastIndex)
+        }
+    }
+
+    /** 当前 extend 的接收者类型；不在 extend 成员内部或无法推断时为 null。 */
+    private val currentExtendReceiverType: ConeSimpleCangJieType?
+        get() = extendReceiverTypeStack.lastOrNull()
+
     /** 在 class-like 声明反序列化期间压入 owner 上下文。 */
     private inline fun <R> withClassLikeOwner(owner: ClassLikeOwnerContext, block: () -> R): R {
         classLikeOwnerStack += owner
@@ -1676,7 +1801,7 @@ class CfirDeclDeserializer private constructor(
     private val currentContainingDeclarationSymbol: CfirBasedSymbol<*>?
         get() = containingDeclarationSymbolStack.lastOrNull()
 
-    /** 设置声明的 resolve 状态为 BODY_RESOLVE（库声明已完全解析）。 */
+    /** 库声明的解析阶段在签名事务发布前完成。 */
     private fun CfirDeclaration.markResolved() {
         initDefaultResolveState()
         replaceResolvePhase(CfirResolvePhase.BODY_RESOLVE)
@@ -2117,7 +2242,12 @@ class CfirDeclDeserializer private constructor(
      */
     private fun dispatchReceiverTypeForCurrentOwner(status: CfirDeclarationStatus): ConeSimpleCangJieType? {
         if (status.isStatic) return null
-        val ownerSymbol = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*> ?: return null
+        val ownerSymbol = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>
+        if (ownerSymbol == null) {
+            // 普通 class-like 成员走上面的 owner 分支；`extend` 成员没有 class-like owner，
+            // 其接收者就是被扩展类型（对齐 Kotlin 中「成员接收者 = 声明所在类型」的语义）。
+            return currentExtendReceiverType
+        }
         val owner = checkNotNull(currentClassLikeOwner)
         check(owner.classId == ownerSymbol.classId)
         return ownerSymbol.constructType(owner.typeParameters.map { it.symbol.constructType() }) as ConeSimpleCangJieType
@@ -2126,7 +2256,7 @@ class CfirDeclDeserializer private constructor(
     /** 从反序列化结构上下文恢复 constructor/static callable 的名义 owner，保留声明站点身份。 */
     private fun CfirCallableDeclaration.initContainingClassAttr() {
         containingClassForStaticMemberAttr =
-            (currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>)?.toLookupTag()
+            (containingDeclarationSymbolStack.lastOrNull { it is CfirClassLikeSymbol<*> } as? CfirClassLikeSymbol<*>)?.toLookupTag()
     }
 
     /**
@@ -2136,7 +2266,7 @@ class CfirDeclDeserializer private constructor(
      */
     private fun convertConstructorIfNeeded(decl: Decl): CfirConstructor? {
         if (!testAttr(decl, AttrBit.CONSTRUCTOR)) return null
-        val containingClass = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*> ?: return null
+        val containingClass = checkNotNull(currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>) { "Constructor requires its exact wire class-like parent" }
         val isPrimary = testAttr(decl, AttrBit.PRIMARY_CONSTRUCTOR)
 
         val symbol = CfirConstructorSymbol(CallableId(containingClass.classId, SpecialNames.INIT))
@@ -2301,7 +2431,15 @@ class CfirDeclDeserializer private constructor(
             return convertEnumConstructorFromVariableDecl(decl)
         }
 
-        val name = Name.identifier(decl.identifier ?: "???")
+        val name = Name.identifier(checkNotNull(decl.identifier))
+        val isField = !decl.isTopLevel && (
+            testAttr(decl, Attribute.IN_CLASSLIKE.ordinal) || testAttr(decl, Attribute.IN_STRUCT.ordinal) ||
+                currentContainingDeclarationSymbol is CfirClassLikeSymbol<*>
+            )
+        if (isField) check(currentContainingDeclarationSymbol is CfirClassLikeSymbol<*>) {
+            "Field '${decl.identifier}' requires its exact wire class-like parent"
+        }
+        if (decl.isTopLevel && !sourceDeclarationIsLocal) return convertPlainPackageVariable(decl, name)
         val symbol = CfirFieldVariableSymbol(callableIdForCurrentOwner(name))
         val status = buildStatus(decl)
         val typeParams = withContainingDeclarationSymbol(symbol) {
@@ -2335,6 +2473,7 @@ class CfirDeclDeserializer private constructor(
             isVar = isVar,
             isTypeImplicit = false,
         )
+        cfirVar.hasSerializedInitializer = varInfo?.initializer.isSavedInitializer()
         cfirVar.isMemberParameter = varInfo?.isMemberParam == true
         restoreSerializedConstantValue(cfirVar, varInfo, decl.type,
             varInfo?.let { (decl.info(CjoSourceTable()) as CjoSourceTable).position() })
@@ -2342,8 +2481,71 @@ class CfirDeclDeserializer private constructor(
         return cfirVar
     }
 
+    /** 普通包变量的 wire symbol 与 CFIR 声明根共用同一存储定义。 */
+    private fun convertPlainPackageVariable(decl: Decl, name: Name): CfirPatternVariable {
+        val returnTypeRef = buildTypeRef(decl.type)
+        val status = buildStatus(decl)
+        val info = if (decl.infoType == DeclInfo.VarInfo) decl.info(VarInfo()) as? VarInfo else null
+        val bindingSymbol = CfirPatternBindingSymbol(CallableId(packageFqName, name))
+        val binding = CfirPatternBindingVariableImpl(
+            source = null,
+            moduleData = context.moduleData,
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
+            status = status.copy(),
+            deprecationsProvider = UnresolvedDeprecationProvider,
+            contentSource = context.publishedContentSource,
+            isVar = info?.isVar == true,
+            isTypeImplicit = false,
+            symbol = bindingSymbol,
+            typeParameters = mutableListOf(),
+            returnTypeRef = returnTypeRef,
+            name = name,
+        )
+        val pattern = buildBindingPattern {
+            this.name = name
+            bindingVariable = binding
+            semanticTypeRef = returnTypeRef
+        }
+        val symbol = CfirPatternVariableSymbol(CallableId(Name.special("<pattern-variable>")))
+        val typeParameters = withContainingDeclarationSymbol(symbol) { deserializeTypeParameters(decl) }
+        val result = CfirPatternVariableImpl(
+            source = null,
+            moduleData = context.moduleData,
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            isLocal = false,
+            dispatchReceiverType = null,
+            status = status,
+            deprecationsProvider = UnresolvedDeprecationProvider,
+            contentSource = context.publishedContentSource,
+            initializer = null,
+            isVar = binding.isVar,
+            isTypeImplicit = false,
+            symbol = symbol,
+            typeParameters = typeParameters,
+            returnTypeRef = returnTypeRef,
+            pattern = pattern,
+        )
+        val hasInitializer = info?.initializer.isSavedInitializer()
+        result.hasSerializedInitializer = hasInitializer
+        binding.hasSerializedInitializer = hasInitializer
+        restoreSerializedConstantValue(binding, info, decl.type,
+            info?.let { (decl.info(CjoSourceTable()) as CjoSourceTable).position() })
+        return result
+    }
+
+    private fun UInt?.isSavedInitializer(): Boolean =
+        this != null && this != 0u && this != UInt.MAX_VALUE
+
     /** VarInfo 值先登记；真实 classifier/成员 header 完成后由 context 的唯一值产品材料化。 */
-    private fun restoreSerializedConstantValue(variable: CfirFieldVariable, info: VarInfo?, typeReference: UInt, hostPosition: Int?) {
+    private fun restoreSerializedConstantValue(variable: CfirVariable, info: VarInfo?, typeReference: UInt, hostPosition: Int?) {
         if (info != null && info.valueType != ConstValue.NONE) context.enqueueConstantInitializer(variable, info, typeReference, checkNotNull(hostPosition))
     }
 
@@ -2526,7 +2728,6 @@ class CfirDeclDeserializer private constructor(
             status = status,
             deprecationsProvider = UnresolvedDeprecationProvider,
             contentSource = context.publishedContentSource,
-            initializer = null,
             isVar = bindingInfo.isVar,
             isTypeImplicit = false,
             symbol = symbol,
@@ -2534,6 +2735,7 @@ class CfirDeclDeserializer private constructor(
             returnTypeRef = returnTypeRef,
             name = bindingName,
         ).also {
+            it.hasSerializedInitializer = bindingInfo.initializer.isSavedInitializer()
             check(context.declarations.putIfAbsent(bindingIndex, it) == null) {
                 "A pattern binding declaration was materialized twice"
             }
@@ -2567,14 +2769,18 @@ class CfirDeclDeserializer private constructor(
         val extendInfo = decl.info(ExtendInfo()) as? ExtendInfo
         // 被扩展的类型来自 decl.type
         val extendedTypeRef = buildTypeRef(decl.type)
+        // 成员接收者 = 被扩展类型；`extend<T> Foo<T>` 的接收者此时已带上该 extend 的类型参数 symbol。
+        val extendReceiverType = extendedTypeRef.coneType as? ConeSimpleCangJieType
         val superTypeRefs = if (extendInfo != null) {
             deserializeInheritedTypes(extendInfo::inheritedTypes, extendInfo.inheritedTypesLength)
         } else mutableListOf()
         val members = if (extendInfo != null) {
             withContainingDeclarationSymbol(symbol) {
-                deserializeBody(extendInfo::body, extendInfo.bodyLength)
+                withExtendReceiverType(extendReceiverType) {
+                    deserializeBody(extendInfo::body, extendInfo.bodyLength)
+                }
             }
-        } else mutableListOf()
+        } else emptyList()
 
         val cfirExtend = CfirExtendImpl(
             contentSource = context.publishedContentSource,
@@ -2639,7 +2845,7 @@ class CfirDeclDeserializer private constructor(
 
     /** GenericParamDecl → CfirTypeParameter */
     private fun convertTypeParameter(decl: Decl): CfirTypeParameter {
-        val name = Name.identifier(decl.identifier ?: "T")
+        val name = Name.identifier(checkNotNull(decl.identifier).also { check(it.isNotBlank()) })
         val symbol = CfirTypeParameterSymbol()
         val containingDeclarationSymbol = currentContainingDeclarationSymbol
             ?: error("Type parameter '${name.asString()}' must be deserialized inside a containing declaration")
@@ -2667,8 +2873,8 @@ class CfirDeclDeserializer private constructor(
     /** 将 VarDecl 形式的 enum constructor 反序列化为 [CfirEnumConstructor]。 */
     private fun convertEnumConstructorFromVariableDecl(decl: Decl): CfirEnumConstructor {
         val name = Name.identifier(decl.identifier ?: "???")
-        val owner = currentEnumOwner
-        val symbol = CfirEnumConstructorSymbol(owner?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name))
+        val owner = checkNotNull(currentEnumOwner) { "Enum constructor requires its exact wire parent" }
+        val symbol = CfirEnumConstructorSymbol(CallableId(owner.classId, name))
         val status = buildStatus(decl)
         val typeParams: MutableList<CfirTypeParameterRef> = if (owner != null) {
             constructedClassTypeParameterRefs(owner.typeParameters).toMutableList()
@@ -2701,8 +2907,8 @@ class CfirDeclDeserializer private constructor(
     /** 将 FuncDecl 形式的 enum constructor 反序列化为 [CfirEnumConstructor]。 */
     private fun convertEnumConstructorFromFunctionDecl(decl: Decl): CfirEnumConstructor {
         val name = Name.identifier(decl.identifier ?: "???")
-        val owner = currentEnumOwner
-        val symbol = CfirEnumConstructorSymbol(owner?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name))
+        val owner = checkNotNull(currentEnumOwner) { "Enum constructor requires its exact wire parent" }
+        val symbol = CfirEnumConstructorSymbol(CallableId(owner.classId, name))
         val status = buildStatus(decl)
         val typeParams: MutableList<CfirTypeParameterRef> = if (owner != null) {
             constructedClassTypeParameterRefs(owner.typeParameters).toMutableList()

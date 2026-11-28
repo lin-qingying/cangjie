@@ -118,8 +118,8 @@ class CaTestPlatformState(
      *
      * Kotlin `KotlinTestProjectStructureProvider` 的核心语义在这里保持一致：
      * 1. builtins 先按 builtins scope 命中；
-     * 2. library binary 再按 binary content scope 命中；
-     * 3. source/file 最后回落到测试模块结构；
+     * 2. source-like 模块按测试模块结构的文件索引命中；
+     * 3. library binary 再按 binary content scope 命中（只兜底不属于任何测试模块的文件）；
      * 4. 找不到模块时直接报错，而不是兜底生成额外模块。
      */
     private class InstalledCaTestProjectStructure(
@@ -158,23 +158,29 @@ class CaTestPlatformState(
 
         /**
          * 按 PSI 文件的真实内容归属解析模块；测试场景与 Kotlin TestProjectStructureProvider 一样不以 use-site 覆盖文件模块。
+         *
+         * 归属顺序：builtins scope → 测试模块结构文件索引 → library binary content scope。
+         * 文件索引必须先于 binary scope：`CaLibrarySourceModule` 的 `sourceRoots` 与其配对
+         * `CaLibraryModule.binaryLibraryModule.binaryRoots` 在测试里是同一批源文件，
+         * 先命中 binary scope 会把库源码文件误判为二进制库成员，low-level 解析随后走 static
+         * 分支并在 `findCompiledCfirSymbol` 的 compiled-only 断言上失败。
          */
         fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
             val containingFile = element.containingFile
                 ?: error("Cannot resolve module for PSI element without containing file: $element")
             val virtualFile = containingFile.virtualFile
 
-            if (virtualFile != null) {
-                if (virtualFile in builtinsModule.contentScope) {
-                    return builtinsModule
-                }
+            if (virtualFile != null && virtualFile in builtinsModule.contentScope) {
+                return builtinsModule
+            }
 
+            moduleStructure.findModuleByFile(containingFile)?.let { return it.caModule }
+
+            if (virtualFile != null) {
                 binaryModules
                     .firstOrNull { module -> virtualFile in module.contentScope }
                     ?.let { return it }
             }
-
-            moduleStructure.findModuleByFile(containingFile)?.let { return it.caModule }
 
             error(
                 buildString {

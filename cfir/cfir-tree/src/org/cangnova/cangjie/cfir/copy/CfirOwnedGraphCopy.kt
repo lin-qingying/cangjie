@@ -64,7 +64,8 @@ class CfirOwnedGraphCopyContext internal constructor(
     }
 
     internal fun initializer(owner: CfirVariable): CfirExpression? = when (val source = owner.contentSource) {
-        CfirContentSource.Owned -> owner.initializer
+        // Main 的整值 binding initializer 是借用视图；仅复制 binding 的物理拥有槽。
+        CfirContentSource.Owned -> if (owner is CfirPatternBindingVariable) owner.ownedInitializer else owner.initializer
         is CfirContentSource.Published -> snapshot(source).initializer(owner)
     }
 
@@ -357,7 +358,8 @@ class CfirOwnedGraphCopyContext internal constructor(
         check(element in owned)
         check(allocating.add(element)) { "Immutable wrapper allocation cycle" }
         val result = element.accept(visitor, false)
-        check(result !== element || element === CfirEmptyArgumentList || element === CfirEmptyAnnotationArgumentMapping) {
+        check(result !== element || element === CfirEmptyArgumentList ||
+            element === CfirEmptyAnnotationArgumentMapping || element === CfirStubReference) {
             "Mutable owned node identity was shared"
         }
         check(result::class == element::class) { "Owned copy changed the concrete node kind" }

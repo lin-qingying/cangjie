@@ -87,6 +87,12 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             defaultNull("source")
             defaultNull("coneTypeOrNull")
         }
+        builder(ifExpression) {
+            // 未进入 select producer 的 RAW if 只持有无状态的未解析引用。
+            default("calleeReference") {
+                value = "org.cangnova.cangjie.cfir.references.CfirStubReference"
+            }
+        }
         val callBuilder by builder {
             fields from call
         }
@@ -145,7 +151,11 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         }
 
         builder(matchExpression) {
+            default("calleeReference", "org.cangnova.cangjie.cfir.references.CfirStubReference")
             default("exhaustiveness", "CfirMatchExhaustivenessStatus.Unknown")
+        }
+        builder(tryExpression) {
+            default("calleeReference", "org.cangnova.cangjie.cfir.references.CfirStubReference")
         }
 
         builder(parenthesizedTypeRef) { withCopy() }
@@ -232,7 +242,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
 
         // -------- 声明节点 --------
         file, classDeclaration, interfaceDeclaration,structDeclaration,enumDeclaration,  enumConstructor, extend, typeAlias, namedFunction, anonymousFunction, mainFunction, macroDeclaration, finalizer,
-        codeFragment, invalidDeclaration, property, propertyAccessor, fieldVariable, patternVariable, patternBindingVariable, valueParameter, typeParameter,
+        codeFragment, invalidDeclaration, property, propertyAccessor, fieldVariable, resourceVariable, patternVariable, patternBindingVariable, valueParameter, typeParameter, constructedClassTypeParameterRef,
 
         // -------- 语句 / 表达式节点 --------
         nativeMatchExpression,
@@ -255,6 +265,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         matchExpression,
         matchBranch,
         catchClause,
+        handleClause,
         loopExpression,
         forInExpression,
         tryExpression,

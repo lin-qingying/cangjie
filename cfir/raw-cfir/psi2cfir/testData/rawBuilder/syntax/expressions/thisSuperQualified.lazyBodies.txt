@@ -1,0 +1,23 @@
+FILE: thisSuperQualified.cj
+    internal? open class Base {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived <: R|Base| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func viaThis(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public func viaSuper(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func thisSuperQualified(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

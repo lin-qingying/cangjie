@@ -36,6 +36,11 @@ import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.source.isInSameSourceTree
+import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.source.toCjLightSourceElement
+import org.cangnova.cangjie.cfir.builder.CfirRawSourceElementFactory
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMap
 
 /**
  * 安装生产级 token-backed macro fragment parser。
@@ -94,7 +99,7 @@ private fun reparsePsiMacroFragment(
         session.cjmpSettings.toParsingContext(session.languageVersionSettings).copy(initialFileRole = fileFacts.cjmpRole),
         entry,
         settings,
-    )
+    ).copy(annotationModuleProvenance = input.annotationModuleProvenance(0))
     // 新 token 不继承宿主 builtin-module；seed 持有真实 ParseNodes 文法，context 仅供 PSI 名称解析。
     val fragment = CjMacroCodeFragment(project, "macroFragment.cj", text, sourcePsi, seed)
     val contents = fragment.getContentElement()
@@ -102,7 +107,15 @@ private fun reparsePsiMacroFragment(
     val parsedFacts = contents.fileFacts
     if (publication.diagnostics.any { it.isError }) return MacroFragmentReparseResult.SyntaxFailure(text, publication, parsedFacts)
 
-    val builder = PsiRawCfirBuilder(session, annotationMetadata = input.annotationMetadata)
+    val builder = PsiRawCfirBuilder(
+        session,
+        annotationMetadata = input.annotationMetadata,
+        sourceElementFactory = if (input.mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+            input.customAnnotationSourceFactory()
+        } else {
+            input.sourceFactory(contents.toCjPsiSourceElement())
+        },
+    )
     if (input.mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
         val original = surface.replaceHandle.annotationCarrier?.owner as? CfirValueParameter
         val containingSymbol = original?.containingDeclarationSymbol ?: surface.replaceHandle.annotationCarrier?.owner?.symbol
@@ -143,10 +156,11 @@ private fun reparseLightTreeMacroFragment(
     check(ownerSnapshot.packageFqName == surface.scopeContext.packageFqName) { "Macro surface and raw owner disagree on the host package." }
     val entry = macroFragmentEntry(input.mode, surface, ownerSnapshot)
         ?: return MacroFragmentReparseResult.Failure("Macro fragment has no parser facts for its replacement slot.")
-    val transaction = parseLightTreeMacroCodeFragment(session, text, fileFacts, entry, settings)
+    val transaction = parseLightTreeMacroCodeFragment(session, text, fileFacts, entry, settings, input)
     if (input.mode != MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
         return LightTree2Cfir(session, session.cangjieScopeProvider, parserSettings = settings).buildMacroFragment(
             transaction, fileFacts.cjmpRole, ownerSnapshot, input.annotationMetadata,
+            sourceElementFactory = { parsed -> input.sourceFactory(parsed.tree.root.toCjLightSourceElement(parsed.tree)) },
         )
     }
     return transaction.consume { fragment, diagnostics ->
@@ -163,6 +177,7 @@ private fun reparseLightTreeMacroFragment(
             macroFacts = fragment.macroFacts,
             nominalFacts = fragment.cjmpNominalFacts,
             declarationModifiers = fragment.declarationModifiers,
+            sourceElementFactory = input.customAnnotationSourceFactory(),
         )
         val ownerDeclaration = surface.replaceHandle.annotationCarrier?.owner
             ?: return@consume MacroFragmentReparseResult.Failure("Custom annotation has no declaration owner.", fragment.fileFacts)
@@ -243,6 +258,7 @@ private fun parseLightTreeMacroCodeFragment(
     fileFacts: ParsingFileFacts,
     entry: CjMacroFragmentContext,
     settings: CjParserSettings,
+    input: MacroFragmentInput,
 ): CangJieLightMacroParseResult {
     val psiBuilder = CangJieLightParser.createBuilder(text)
     val seed = createMacroFragmentParserSeed(
@@ -250,9 +266,40 @@ private fun parseLightTreeMacroCodeFragment(
         session.cjmpSettings.toParsingContext(session.languageVersionSettings).copy(initialFileRole = fileFacts.cjmpRole),
         entry,
         settings,
-    )
+    ).copy(annotationModuleProvenance = input.annotationModuleProvenance(0))
     return CangJieLightParser.parseMacroCodeFragmentBuffered(psiBuilder, seed)
 }
+
+/** 前置 annotation 的 parser 模块只来自 sourceMap 确证的原 @ token 及原槽位身份。 */
+private fun MacroFragmentInput.annotationModuleProvenance(fragmentStartOffset: Int): (Int) -> String? = { offset ->
+    val start = offset - fragmentStartOffset
+    val original = sourceMap?.takeIf { start >= 0 && start < it.text.length }?.originalRange(start, start + 1)
+    val snapshots = if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+        listOfNotNull(annotationSnapshot)
+    } else inheritedAnnotationSnapshots
+    snapshots.firstOrNull { snapshot ->
+        original != null && snapshot.annotationSource.isInSameSourceTree(original) &&
+            snapshot.annotationSource.startOffset == original.startOffset
+    }?.originalAnnotation?.sourceModuleName
+}
+
+/** custom payload 已由原槽位 tokens 验证，模块事实按该槽位的完整 source 身份消费。 */
+private fun MacroFragmentInput.customAnnotationSourceFactory(): CfirRawSourceElementFactory {
+    val snapshot = checkNotNull(annotationSnapshot)
+    return object : CfirRawSourceElementFactory by CfirRawSourceElementFactory.Original() {
+        override fun annotationSourceModuleName(source: CjSourceElement?, parserModuleName: String): String {
+            val original = snapshot.annotationSource
+            return if (source != null && source.isInSameSourceTree(original) &&
+                source.startOffset == original.startOffset && source.endOffset == original.endOffset
+            ) snapshot.originalAnnotation.sourceModuleName else parserModuleName
+        }
+    }
+}
+
+private fun MacroFragmentInput.sourceFactory(anchor: CjSourceElement): CfirRawSourceElementFactory =
+    MacroFragmentSourceElementFactory(
+        checkNotNull(sourceMap), anchor, 0, node.surface.surfaceId, sourceMapping, inheritedAnnotationSnapshots,
+    )
 
 /**
  * 使用宏 payload tokenizer 对表面 token 文本重新分词。
@@ -267,7 +314,8 @@ private fun List<MacroSurfaceToken>.reTokenizeMacroSurfaceTokens(): List<MacroSu
         val exact: Boolean,
     )
 
-    val text = joinToString(separator = "") { it.text }
+    val sourceMap = MacroFragmentSourceMap.materialize(this)
+    val text = sourceMap.text
     val origins = mutableListOf<OriginSpan>()
     var inputOffset = 0
     for (token in this) {
@@ -328,6 +376,8 @@ private fun List<MacroSurfaceToken>.reTokenizeMacroSurfaceTokens(): List<MacroSu
             kindName = token.kindName,
             sourceRange = combinedRange,
             isSourceToken = exactStart != null,
+            sourceSpans = sourceMap.spansForRange(token.startOffset, token.endOffset),
+            isTrivia = token.kindName in CfirRawSourceElementFactory.TRIVIA_KINDS,
         )
     }
 }

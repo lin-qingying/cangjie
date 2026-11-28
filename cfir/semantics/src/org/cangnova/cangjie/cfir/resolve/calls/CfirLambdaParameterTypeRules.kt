@@ -1,14 +1,20 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeParamCountMismatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterCountMismatch
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealFloatLiteralType
@@ -21,6 +27,7 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.AbstractTypeRefiner
@@ -134,3 +141,35 @@ private fun ConeCangJieType.primitiveKindForLambdaParameterRule(): PrimitiveType
         is ConePrimitiveType -> kind
         else -> expandedClassIdOrPrimitiveClassId?.toPrimitiveTypeKindOrNull()
     }
+
+/**
+ * 源码省略类型的 lambda 形参是否仍未解出。
+ *
+ * 判定口径对齐官方 `SynLamExpr` / `SolveLamExprParamTys`：形参类型仍是隐式 type-ref、
+ * 仍是 `Cannot infer value parameter type` 错误，或类型树里仍含未消解的 placeholder
+ * 类型变量时，视为该形参未能从上下文推断出来。
+ *
+ * 该谓词同时供 resolve 侧记录"定义点推断失败"事实与 checker 侧消费，必须只有一份实现。
+ */
+fun CfirValueParameter.hasUninferredLambdaParameterType(): Boolean {
+    val typeRef = returnTypeRef
+    return when {
+        typeRef is CfirImplicitTypeRef -> true
+        typeRef is CfirErrorTypeRef ->
+            typeRef.diagnostic.unwrapForLambdaParameterInference() is ConeCannotInferValueParameterType
+        typeRef is CfirResolvedTypeRef -> typeRef.coneType.containsUninferredLambdaParameterType()
+        else -> false
+    }
+}
+
+/** 判断类型树中是否仍含未推断的 lambda 参数 placeholder（无原始类型参数的 type variable 或其派生错误）。 */
+private fun ConeCangJieType.containsUninferredLambdaParameterType(): Boolean {
+    if (this is ConeTypeVariableType && typeConstructor.originalTypeParameter == null) return true
+    val diagnostic = (this as? ConeErrorType)?.diagnostic?.unwrapForLambdaParameterInference()
+    if (diagnostic is ConeCannotInferValueParameterType) return true
+    return typeArguments.any { projection -> projection.type.containsUninferredLambdaParameterType() }
+}
+
+/** 剥离未上报重复诊断包装，取原始诊断供推断失败判定使用。 */
+private fun ConeDiagnostic.unwrapForLambdaParameterInference(): ConeDiagnostic =
+    (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this

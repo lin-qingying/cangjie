@@ -1,0 +1,48 @@
+FILE: interfaceForms.cj
+    internal? interface Named {
+        public? abstract? func name(): R|String|
+    }
+    internal? interface Sized {
+        public? abstract? func size(): R|Int64|
+    }
+    internal? interface Both {
+        public? func combined(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public? abstract? func required(): R|Int64|
+        public? prop label: R|String|
+        public? abstract? prop abstractProp: R|Int64|
+        public? static prop staticProp: R|Int64|
+        public operator func *operator_equals(other: R|Both|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Multi <: R|Named|, R|Sized| {
+        public? func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface GenericBox<T> {
+        public? abstract? func box(): R|T|
+    }
+    internal? class Impl <: R|Named|, R|Sized| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class BothImpl <: R|Both| {
+        private var store: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func required(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public prop abstractProp: R|Int64|
+    }

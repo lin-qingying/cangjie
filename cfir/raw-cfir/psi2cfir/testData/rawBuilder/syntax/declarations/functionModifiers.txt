@@ -1,0 +1,67 @@
+FILE: functionModifiers.cj
+    public func publicFunc(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    private func privateFunc(): R|Int64| {
+        RETURN {
+            INT(2)
+        }
+    }
+    internal func internalFunc(): R|Int64| {
+        RETURN {
+            INT(3)
+        }
+    }
+    public func constFunc(): R|Int64| {
+        RETURN {
+            INT(4)
+        }
+    }
+    internal? foreign func foreignFunc(p: R|CPointer<R|Int64|>|): R|Int64|
+    internal? open class Base {
+        init() {
+        }
+        public open func openFunc(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        public static func staticFunc(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+        protected func protectedFunc(): R|Int64| {
+            RETURN {
+                INT(3)
+            }
+        }
+        private func privateFunc(): R|Int64| {
+            RETURN {
+                INT(4)
+            }
+        }
+        internal func internalFunc(): R|Int64| {
+            RETURN {
+                INT(5)
+            }
+        }
+    }
+    internal? class Derived <: R|Base| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func openFunc(): R|Int64| {
+            RETURN {
+                INT(6)
+            }
+        }
+        public static func staticFunc(): R|Int64| {
+            RETURN {
+                INT(7)
+            }
+        }
+    }

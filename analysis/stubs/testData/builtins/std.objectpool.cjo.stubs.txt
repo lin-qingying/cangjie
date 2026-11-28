@@ -4,14 +4,18 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=objectpool]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent, isAllUnder=true, aliasName=null)], packageFqName=std.objectpool]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.objectpool]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.objectpool]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.collection.concurrent, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.objectpool]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
   CangJieStub$CLASS[classId=std/objectpool/ObjectPool, fqName=std.objectpool.ObjectPool, name=ObjectPool, superNames=[]]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Deprecated]
@@ -19,13 +23,13 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
               CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=pool]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -51,7 +55,7 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=newFunc]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -60,7 +64,7 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=resetFunc]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -91,7 +95,7 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -111,16 +115,17 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE

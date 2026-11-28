@@ -93,9 +93,9 @@ class CangJieStandaloneDeclarationProviderFactory(
         libraryModule: CaLibraryModule,
         scope: GlobalSearchScope,
     ): List<CangJieFileBasedDeclarationProvider> {
+        val binaryIndex = CaDecompiledBinaryIndex.getInstance(project)
         val rootFiles = fileCollector.collectFromRoots(libraryModule.binaryRoots, scope)
-        val decompiledFiles = CaDecompiledBinaryIndex.getInstance(project)
-            .getBinaryFiles(libraryModule)
+        val decompiledFiles = binaryIndex.getBinaryFiles(libraryModule)
             .asSequence()
             .filter(scope::contains)
             .mapNotNull { binaryFile -> psiManager.findFile(binaryFile) as? CjFile }
@@ -103,7 +103,21 @@ class CangJieStandaloneDeclarationProviderFactory(
 
         return (rootFiles + decompiledFiles)
             .distinctBy { file -> file.virtualFile?.url ?: file.name }
-            .map(::CangJieFileBasedDeclarationProvider)
+            .map { file ->
+                // `.cjo` 的包名取自 binary index 已在构建期解析的 header，不经 `CjFile.packageFqName`；
+                // 后者读 green stub，在 stub 索引期向索引索要尚未索引的另一个文件，平台直接报错。
+                // 判据是"该文件是否属于本库模块已索引的 `.cjo` 集合"，
+                // 而不是 `isCompiled`：索引内的 `.cjo` 一律有可读包名，
+                // 库内 stub-origin 源文件不在索引内，其包名来自自身 PSI，读取安全。
+                // 与 builtins 分支（第 82 行）同源，也与官方 `CjoManagerImpl::UpdateSearchPath` 的包全集语义一致。
+                val packageFqName = file.virtualFile
+                    ?.let { binaryIndex.findLibraryPackageFqName(libraryModule, it) }
+                if (packageFqName != null) {
+                    CangJieFileBasedDeclarationProvider(file, packageFqName)
+                } else {
+                    CangJieFileBasedDeclarationProvider(file)
+                }
+            }
     }
 }
 

@@ -2,6 +2,8 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import PackageFormat.BlockInfo
 import PackageFormat.ConstValue
 import PackageFormat.DeclInfo
@@ -416,7 +418,7 @@ class CjoSourcePackageGraphTest {
         }
     }
 
-    private fun literal(graph: CfirSourceGraph, variable: CfirFieldVariable): String =
+    private fun literal(graph: CfirSourceGraph, variable: CfirVariable): String =
         assertIs<CfirSourceExpressionPayload.Literal>(graph.expression(graph.initializers.getValue(variable)).payload).text
 
     private fun assertProvenance(declaration: CfirDeclaration, path: Path, index: Int) {
@@ -548,7 +550,8 @@ class CjoSourcePackageGraphTest {
         val wire: Package get() = snapshot.pkg
         val source: CfirImportedSourceGraphProvider get() = provider
         fun function(name: String): CfirNamedFunction = assertIs<CfirNamedFunction>(callable(name))
-        fun variable(name: String): CfirFieldVariable = assertIs<CfirFieldVariable>(callable(name))
+        fun binding(name: String): CfirPatternBindingVariable = provider.packageVariableBinding(packageName, name)
+        fun variable(name: String): CfirPatternVariable = assertIs<CfirPatternVariable>(binding(name).patternTreeOwner)
         fun callable(name: String): CfirDeclaration = provider.getTopLevelCallableSymbols(FqName(packageName), Name.identifier(name)).single().cfir
         fun struct(name: String): CfirStruct = assertIs<CfirStruct>(assertNotNull(provider.getClassLikeSymbolByClassId(
             ClassId.topLevel(FqName("$packageName.$name")))).cfir)
@@ -577,7 +580,10 @@ class CjoSourcePackageGraphTest {
     private fun attach(root: Path, input: CjoPackageMetadata, manager: CjoManager, originalWire: Package): Fixture {
         val path = root.resolve(input.fullPackageName + ".cjo").toAbsolutePath().normalize()
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.registerProvider(provider)
         val snapshot = assertNotNull(manager.loadPackageSnapshot(input.fullPackageName))
         assertEquals(path, snapshot.sourcePath)

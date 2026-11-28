@@ -26,7 +26,8 @@ package org.cangnova.cangjie.cfir.resolve.match
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
+import org.cangnova.cangjie.cfir.declarations.constructorNameOrNull
+import org.cangnova.cangjie.cfir.declarations.ownerQualifierMatchesSubject
 import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.declarations.substitutedPayloadParameterTypes
@@ -37,11 +38,14 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.patterns.*
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import java.math.BigInteger
@@ -586,21 +590,21 @@ fun convertPattern(
         }
 
         is CfirEnumPattern -> {
-            val patternType = expectedType.expandedPatternEnumType(session) ?: expectedType
+            val expandedType = expectedType.fullyExpandedType(session)
+            val patternType = expandedType.expandedPatternEnumType(session) ?: expandedType
             val enumClassId = patternType.patternEnumClassId()
-            val constructorAccess = pattern.constructorReference?.enumPatternConstructorAccessOrNull()
-            val ownerMatches = when (patternType) {
-                is ConeEnumType -> {
-                    val enumDeclaration = session.enumDeclaration(patternType)
-                    enumDeclaration != null && constructorAccess?.matchesEnumOwner(enumDeclaration, patternType) == true
-                }
-
-                is ConeClassLikeType if patternType.classId == StdlibClassIds.Option ->
-                    constructorAccess?.matchesStdlibOptionOwner(patternType) == true
-
+            val subjectIsEnum = when (patternType) {
+                is ConeEnumType -> session.enumDeclaration(patternType) != null
+                is ConeClassLikeType -> patternType.classId == StdlibClassIds.Option
                 else -> false
             }
-            val entryName = constructorAccess?.constructorName?.asString()
+            val reference = pattern.constructorReference
+            val resolvedConstructor = (reference as? CfirResolvedNamedReference)?.resolvedSymbol as? CfirEnumConstructorSymbol
+            val resolvedOwner = resolvedConstructor?.callableId?.classId
+            val ownerMatches = subjectIsEnum && reference !is CfirErrorNamedReference &&
+                (resolvedOwner == null || resolvedOwner == enumClassId) &&
+                pattern.ownerQualifierMatchesSubject(patternType, session)
+            val entryName = pattern.constructorNameOrNull()?.asString()
             if (enumClassId == null || entryName == null || !ownerMatches) {
                 listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
             } else {

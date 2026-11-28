@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.MppCheckerKind
+import org.cangnova.cangjie.cfir.analysis.checkers.isExplicit
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
 import org.cangnova.cangjie.cfir.declarations.noArgEnumConstructorTargetType
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -43,19 +44,21 @@ object CfirGenericBareClassifierAccessChecker : CfirQualifiedAccessChecker(MppCh
     /** 检查裸泛型 classifier 访问是否缺少必须显式提供的类型实参。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
-        if (expression.hasInvalidGenericTypeArgument()) return
-        if (expression.typeArguments.isNotEmpty()) return
+        if (expression.typeArguments.any { it.isExplicit }) return
         val resolvedSymbol = expression.calleeReference.resolvedBareAccessSymbol() ?: return
 
         if (resolvedSymbol is CfirEnumConstructorSymbol) {
+            // 写回生成的未定型实参是裸构造器缺参的结果，不能阻止报告它的源码根因。
             expression.reportEnumConstructorWithoutTypeArgumentsIfNeeded(resolvedSymbol)
             return
         }
+        if (expression.hasInvalidGenericTypeArgument()) return
 
         if (context.callsOrAssignments.asReversed().drop(1).any { call ->
                 call is CfirFunctionCall && call.explicitReceiver === expression
             }) return
         if (expression.isQualifierOfEnumConstructorWithFixedOwner()) return
+        if (expression.isEnumPatternOwnerQualifier()) return
 
         val resolvedReference = expression.calleeReference as? CfirResolvedNamedReference ?: return
         val classLikeSymbol = resolvedSymbol as? CfirClassLikeSymbol<*> ?: return
@@ -243,7 +246,7 @@ object CfirInvalidEnumMemberTypeArgumentsChecker : CfirQualifiedAccessChecker(Mp
     /** 对 `TimeUnit<Int32>.Year<Int64>` 报告专用 enum member access 诊断。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
-        if (expression.typeArguments.isEmpty()) return
+        if (expression.typeArguments.none { it.isExplicit }) return
         if (!expression.calleeReference.resolvesToQualifiedEnumConstructor()) return
 
         val ownerAccess = expression.explicitReceiver as? CfirQualifiedAccessExpression ?: return

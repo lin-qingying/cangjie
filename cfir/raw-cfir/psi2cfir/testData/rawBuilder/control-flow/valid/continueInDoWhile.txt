@@ -1,0 +1,37 @@
+FILE: continueInDoWhile.cj
+    internal? func f(): R|Int64| {
+        local? var i: <implicit> = ...
+            initializer:
+                INT(0)
+        DO_WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(i)
+                    INT(5)
+                }
+            body:
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(i)
+                    rValue:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(i)
+                            arguments:
+                                INT(1)
+                        }
+                }
+                IF {
+                    condition:
+                        COMPARISON(LT) {
+                            NAMED_ACCESS(i)
+                            INT(3)
+                        }
+                    then:
+                        CONTINUE
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(i)
+        }
+    }

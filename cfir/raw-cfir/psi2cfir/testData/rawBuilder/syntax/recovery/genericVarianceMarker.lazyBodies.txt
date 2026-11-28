@@ -1,0 +1,6 @@
+FILE: genericVarianceMarker.cj
+    internal? class Variance<<error>> {
+        init()
+    }
+    internal? interface VarianceOut<out> {
+    }

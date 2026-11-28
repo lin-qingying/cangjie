@@ -7,6 +7,11 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.CfirResolution
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.UnresolvedReason
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.valueOrNull
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
@@ -23,6 +28,10 @@ import org.cangnova.cangjie.psi.CjFile
 fun CaModule.getResolutionFacade(project: Project): LLResolutionFacade =
     LLResolutionFacadeService.getInstance(project).getResolutionFacade(this)
 
+/** 读取有效会话已发布的宏快照，查询本身不创建会话。 */
+fun CaModule.getPublishedMacroSemanticSnapshot(): LLCfirMacroSemanticSnapshot? =
+    LLCfirSessionCache.getInstance(project).getCachedResolvableSession(this)?.macroSemanticSnapshot
+
 /**
  * Resolves this [CjDeclaration] to a [CfirBasedSymbol].
  *
@@ -33,6 +42,23 @@ fun CjDeclaration.resolveToCfirSymbol(
     phase: CfirResolvePhase = CfirResolvePhase.RAW_CFIR,
 ): CfirBasedSymbol<*> {
     return resolutionFacade.resolveToCfirSymbol(this, phase)
+}
+
+/**
+ * Resolves this [CjDeclaration] to a [CfirBasedSymbol], **without throwing on missing symbols**.
+ *
+ * 符号恢复是部分函数：库声明可能尚未进入索引、反编译 PSI 可能失效、声明可能没有全局身份。
+ * 该入口把「取不到」表达为 [CfirResolution.Unresolved]，让上层按 [UnresolvedReason] 分类降级。
+ *
+ * 新代码应优先使用本入口；[resolveToCfirSymbol] 仅作为仍要求非空符号的旧调用点的兼容层。
+ *
+ * The underlying [CfirDeclaration][org.cangnova.cangjie.cfir.declarations.CfirDeclaration] will be resolved at least to [phase].
+ */
+fun CjDeclaration.resolveToCfirSymbolOrUnresolved(
+    resolutionFacade: LLResolutionFacade,
+    phase: CfirResolvePhase = CfirResolvePhase.RAW_CFIR,
+): CfirResolution<CfirBasedSymbol<*>> {
+    return resolutionFacade.resolveToCfirSymbolOrUnresolved(this, phase)
 }
 
 /**
@@ -54,7 +80,11 @@ inline fun <reified S : CfirBasedSymbol<*>> CjDeclaration.resolveToCfirSymbolOfT
 }
 
 /**
- * Resolves this [CjDeclaration] to a [CfirBasedSymbol]. If the resulting [CfirBasedSymbol] is not subtype of [S], returns `null`.
+ * Resolves this [CjDeclaration] to a [CfirBasedSymbol].
+ *
+ * 与 [`as? S`] 的语义一致：**符号不可恢复**与**类型不匹配**都返回 `null`。
+ * 之前该入口名为 Safe，实际第一步就走抛异常的非空路径——名不副实；
+ * 现在它建立在 [resolveToCfirSymbolOrUnresolved] 之上，名字承诺才成立。
  *
  * The underlying [CfirDeclaration][org.cangnova.cangjie.cfir.declarations.CfirDeclaration] will be resolved at least to [phase].
  */
@@ -63,7 +93,7 @@ inline fun <reified S : CfirBasedSymbol<*>> CjDeclaration.resolveToCfirSymbolOfT
     resolutionFacade: LLResolutionFacade,
     phase: CfirResolvePhase = CfirResolvePhase.RAW_CFIR,
 ): @kotlin.internal.NoInfer S? {
-    return resolveToCfirSymbol(resolutionFacade, phase) as? S
+    return resolveToCfirSymbolOrUnresolved(resolutionFacade, phase).valueOrNull as? S
 }
 
 /**

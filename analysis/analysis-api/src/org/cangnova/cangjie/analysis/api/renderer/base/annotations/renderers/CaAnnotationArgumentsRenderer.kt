@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.renderer.base.annotations.renderers
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotated
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
+import org.cangnova.cangjie.analysis.api.annotations.CaNamedAnnotationValue
 import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.analysis.api.renderer.base.annotations.CaAnnotationRenderer
 import org.cangnova.cangjie.analysis.api.renderer.base.annotations.CaAnnotationValueRenderer
@@ -12,8 +13,8 @@ import kotlin.text.append
 /**
  * 注解参数渲染器。
  *
- * 仓颉当前公开注解模型只暴露 `arguments: List<String>`，
- * 因此这里不发明命名参数对象模型，而是只负责拼装外层括号。
+ * 仓颉公开注解模型通过 [CaNamedAnnotationValue] 暴露具名参数和值；
+ * 这里按仓颉语法输出 `name: value`，并使用方括号包裹参数列表。
  *
  * 对齐 Kotlin Analysis API 的 `KaAnnotationArgumentsRenderer`。
  */
@@ -32,8 +33,8 @@ fun interface CaAnnotationArgumentsRenderer {
         val NONE: CaAnnotationArgumentsRenderer = CaAnnotationArgumentsRenderer { _, _, _, _, _ -> }
 
         /**
-         * 预设: 当存在参数时按 `name = value` 形式渲染, 用括号包裹;
-         * 无参数则完全省略括号。
+         * 预设: 当存在参数时按 `name: value` 形式渲染, 用仓颉注解语法的方括号包裹;
+         * 无参数则完全省略方括号。
          */
         val IF_ANY: CaAnnotationArgumentsRenderer = CaAnnotationArgumentsRenderer { _, annotation, _, _, printer ->
             if (annotation.arguments.isEmpty()) return@CaAnnotationArgumentsRenderer
@@ -41,11 +42,11 @@ fun interface CaAnnotationArgumentsRenderer {
             printer {
                 printCollection(
                     annotation.arguments,
-                    prefix = "(",
-                    postfix = ")",
+                    prefix = "[",
+                    postfix = "]",
                 ) { argument ->
                     append(argument.name.render())
-                    append(" = ")
+                    append(": ")
                     append(CaAnnotationValueRenderer.render(argument.expression))
                 }
             }

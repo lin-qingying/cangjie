@@ -1,0 +1,16 @@
+FILE: incDecForms.cj
+    internal? class Counter {
+        init()
+        internal? var count: R|Int64|
+        internal? var other: R|Int64|
+        public func bump(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Holder {
+        init()
+        internal? var items: R|Array<R|Int64|>|
+    }
+    internal? func incDecForms(xs: R|Array<R|Int64|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

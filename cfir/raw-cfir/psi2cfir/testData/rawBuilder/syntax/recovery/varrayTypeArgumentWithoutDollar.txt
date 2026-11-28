@@ -1,0 +1,2 @@
+FILE: varrayTypeArgumentWithoutDollar.cj
+    internal? func varrayTypeArgumentWithoutDollar(a: R|VArray<R|Int64|, 0>|): <implicit>

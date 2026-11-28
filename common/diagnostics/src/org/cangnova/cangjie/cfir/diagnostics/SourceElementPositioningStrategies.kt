@@ -13,6 +13,13 @@ object SourceElementPositioningStrategies {
      */
     val DEFAULT: AbstractSourceElementPositioningStrategy = OffsetsOnlyPositioningStrategy()
     /**
+     * 按 PSI 或 LightTree 语法节点定位完整源码单元，并跳过节点边界上的注释与空白。
+     */
+    val SOURCE_NODE: AbstractSourceElementPositioningStrategy = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.DEFAULT,
+        PositioningStrategies.DEFAULT,
+    )
+    /**
      * 标记声明的实际名称标识符。
      */
     val ACTUAL_DECLARATION_NAME = SourceElementPositioningStrategy(

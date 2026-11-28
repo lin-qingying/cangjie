@@ -53,7 +53,7 @@ class CjFinalizer : CjDeclarationStub<CangJieFinalizerStub>, CjFunction {
     /**
      * 提供 `getContainingTypeStatement` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
-    fun getContainingTypeStatement() = parent?.parent as CjTypeStatement
+    fun getContainingTypeStatement() = containingCjTypeStatement()
 
     /**
      * 保存 `initKeyword`，供仓颉 PSI流程读取节点结构或语义信息。

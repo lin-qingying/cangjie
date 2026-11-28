@@ -6,7 +6,7 @@ interface I1 {
 }
 
 interface I3<T> {
-    public func goo(): T
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func goo(): T
 }
 
 class CA<T> <: I3<I1> where T <: I1 {

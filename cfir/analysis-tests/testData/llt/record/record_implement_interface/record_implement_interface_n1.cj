@@ -1,4 +1,4 @@
 
 
 
-<!TYPE_IMPLEMENT_NON_INTERFACE!>s<!>truct A <: A {}
+<!TYPE_IMPLEMENT_NON_INTERFACE!>struct A <: A {}<!>

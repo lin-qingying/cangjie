@@ -108,6 +108,7 @@ abstract class CjDeclarationStub<T : StubElement<*>> : CjModifierListOwnerStub<T
      */
     override fun getNavigationElement(): PsiElement {
         val currentDeclaration = requireCurrentCjElement() as CjDeclaration
+        currentDeclaration.findMacroNavigationElement()?.let { return it }
         val navigationPolicy = ApplicationManager.getApplication().getService(
             CangJieDeclarationNavigationPolicy::class.java,
         )

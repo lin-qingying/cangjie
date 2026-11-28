@@ -1,0 +1,8 @@
+FILE: quoteTokens.cj
+    import std.ast.*
+    internal? func useQuote(input: R|Tokens|): R|Tokens| {
+        RETURN {
+            QUOTE("quote(hello)") {
+            }
+        }
+    }

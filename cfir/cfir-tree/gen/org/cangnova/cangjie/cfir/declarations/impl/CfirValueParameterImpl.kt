@@ -36,7 +36,7 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
     override val attributes: CfirDeclarationAttributes,
     override val isLocal: Boolean,
     deprecationsProvider: DeprecationsProvider,
-    override val dispatchReceiverType: ConeSimpleCangJieType?,
+    override var dispatchReceiverType: ConeSimpleCangJieType?,
     override val contentSource: CfirContentSource = CfirContentSource.Owned,
     override val isTypeImplicit: Boolean,
     override val typeParameters: MutableList<CfirTypeParameter>,
@@ -101,10 +101,10 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
             require(deprecationsProvider === UnresolvedDeprecationProvider) { "Published content must be supplied by its completed snapshot" }
             require(defaultValue == null) { "Published content must be supplied by its completed snapshot" }
         }
-        symbol.bind(this)
-        resolveState = resolvePhase.asResolveState()
         @Suppress("SENSELESS_COMPARISON")
         require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
+        symbol.bind(this)
+        resolveState = resolvePhase.asResolveState()
     }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -173,6 +173,10 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
 
     override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
         deprecationsProvider = newDeprecationsProvider
+    }
+
+    override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?) {
+        dispatchReceiverType = newDispatchReceiverType
     }
 
     override fun replaceInitializer(newInitializer: CfirExpression?) {}

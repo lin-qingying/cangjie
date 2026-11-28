@@ -2,6 +2,8 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.ClassInfo
 import PackageFormat.DeclKind
 import PackageFormat.ExprInfo
@@ -687,7 +689,10 @@ class CjoDefinitionSnapshotTest {
     /** 每个 Fixture 都使用真正的 Library provider/context；共享 Manager 不共享 semantic binder。 */
     private class Fixture(val manager: CjoManager, val source: CjoLoadedPackage) {
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(source.sourcePath.parent)),
+        )
         init {
             module.session.register(CfirSymbolProvider::class, provider)
             module.session.register(CfirProvider::class, CfirLibrarySessionProvider(provider))
@@ -732,14 +737,7 @@ class CjoDefinitionSnapshotTest {
         val metadata = rawMetadata()
         val path = CjoPackageWriter.write(root.resolve("scope.raw.cjo"), metadata)
         val fixture = fixture(root, path, metadata.fullPackageName)
-        return CfirDeserializationContext(
-            pkg = fixture.source.pkg,
-            header = fixture.source.header,
-            moduleData = fixture.module,
-            cjoManager = fixture.manager,
-            sourcePath = fixture.source.sourcePath,
-            loadedPackage = fixture.source,
-        )
+        return fixture.provider.deserializationBinding.contextForSnapshot(fixture.source, CjoDeserializationMode.FULL)
     }
 
     /** 固定 N 合法 raw fixture：F.body 拥有 local P/binding 和非零 initializer，另有全局变量。 */

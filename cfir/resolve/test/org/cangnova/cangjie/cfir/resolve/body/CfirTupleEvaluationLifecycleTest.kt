@@ -389,7 +389,7 @@ class CfirTupleEvaluationLifecycleTest {
             symbol = CfirPatternBindingSymbol(CallableId(name))
             returnTypeRef = buildResolvedTypeRef { coneType = ConePrimitiveType.INT64 }
             isVar = true
-            initializer = integer(1)
+            ownedInitializer = integer(1)
         }
         val writeTwo = assignment(2, "x equals two")
         // 已解析的签名是内部 CFIR 输入；此测试不解析或执行签名正文。

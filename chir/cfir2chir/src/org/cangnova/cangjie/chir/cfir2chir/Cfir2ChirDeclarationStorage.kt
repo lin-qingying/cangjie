@@ -157,6 +157,18 @@ class Cfir2ChirDeclarationStorage {
         }
     }
 
+    /** Update the SSA address when lowering another copy of the same finally body. */
+    internal fun replaceLocalVariableAddress(
+        symbol: CfirBasedSymbol<*>,
+        previous: ChirLocalVariableHeader,
+        replacement: ChirLocalVariableHeader,
+    ) {
+        check(replacement.declaration === previous.declaration && replacement.ownerFunctionId == previous.ownerFunctionId) {
+            "Relowered local variable changed its declaration owner: ${symbol.debugName}"
+        }
+        check(localVariablesBySymbol.replace(symbol, previous, replacement))
+    }
+
     /**
      * 获取指定 CFIR 局部变量符号对应的 CHIR 局部变量 header。
      */

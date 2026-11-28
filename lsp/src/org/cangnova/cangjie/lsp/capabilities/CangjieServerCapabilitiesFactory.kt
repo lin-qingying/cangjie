@@ -6,6 +6,7 @@ import org.eclipse.lsp4j.DocumentFormattingOptions
 import org.eclipse.lsp4j.DiagnosticRegistrationOptions
 import org.eclipse.lsp4j.ExecuteCommandOptions
 import org.eclipse.lsp4j.InitializeResult
+import org.eclipse.lsp4j.InlayHintRegistrationOptions
 import org.eclipse.lsp4j.RenameOptions
 import org.eclipse.lsp4j.SaveOptions
 import org.eclipse.lsp4j.SemanticTokensLegend
@@ -78,7 +79,7 @@ object CangjieServerCapabilitiesFactory {
             if (features.workspaceSymbol) setWorkspaceSymbolProvider(true)
             if (features.codeAction) {
                 setCodeActionProvider(CodeActionOptions(descriptor.codeActionKinds).apply {
-                    resolveProvider = false
+                    resolveProvider = descriptor.codeActionResolveProvider
                 })
             }
             if (features.formatting) {
@@ -98,7 +99,15 @@ object CangjieServerCapabilitiesFactory {
                     true,
                 )
             }
-            if (features.inlayHints) setInlayHintProvider(true)
+            /*
+             * inlay hint 广告 resolve 能力：lsp4j 1.0.0 里字段类型是
+             * `Either<Boolean, InlayHintRegistrationOptions>`，只有后者能带 resolveProvider。
+             * 广告前必须已经存在 `resolveInlayHint` 的服务实现——协议默认实现会抛
+             * UnsupportedOperationException，客户端随后每个提示都会拿到错误。
+             */
+            if (features.inlayHints) {
+                setInlayHintProvider(InlayHintRegistrationOptions().apply { resolveProvider = true })
+            }
             if (negotiation.pullDiagnostics) {
                 diagnosticProvider = DiagnosticRegistrationOptions().apply {
                     identifier = descriptor.diagnosticIdentifier

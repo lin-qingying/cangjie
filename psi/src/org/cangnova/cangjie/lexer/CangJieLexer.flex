@@ -68,7 +68,7 @@
  *    IDENTIFIER_START    = XID_Start 或下划线      标识符起始字符
  *    IDENTIFIER_PART     = XID_Continue             标识符组成部分
  *    PLAIN_IDENTIFIER   = {IDENTIFIER_START}{IDENTIFIER_PART}*  普通标识符
- *    ESCAPED_IDENTIFIER = `[^`\n]+`               转义标识符
+ *    ESCAPED_IDENTIFIER = `[^`\r\n]+`              转义标识符
  *    FIELD_IDENTIFIER   = \${IDENTIFIER}          字段标识符
  * 
  * 3. 数值字面量：
@@ -76,8 +76,8 @@
  *    FLOAT_LITERAL     = 支持小数点和科学计数法
  *    
  * 4. 字符串相关：
- *    ESCAPE_SEQUENCE    = \\(u\{HEX_DIGIT{1,8}\}|[^\n])  转义序列
- *    STRING_CONTENT    = [^\\\"'\n\$]+            字符串内容
+ *    ESCAPE_SEQUENCE    = \\(u\{HEX_DIGIT{1,8}\}|[^\r\n])  转义序列
+ *    STRING_CONTENT    = [^\\\"'\r\n\$]+          字符串内容
  *    INTERPOLATION     = \$+                      字符串插值标记
  *
  * 错误处理策略：
@@ -255,14 +255,14 @@ IDENTIFIER_PART={XID_START}|{XID_CONTINUE_EXTRA}
 
 PLAIN_IDENTIFIER={IDENTIFIER_START}{IDENTIFIER_PART}*  // 普通标识符
 BOOLEAN_LITERAL= true | false         // 布尔字面量
-ESCAPED_IDENTIFIER = `[^`\n]+`       // 反引号包围的标识符
+ESCAPED_IDENTIFIER = `[^`\r\n]+`      // 反引号包围的标识符（不含回车）
 IDENTIFIER={ESCAPED_IDENTIFIER}|{PLAIN_IDENTIFIER}  // 完整标识符定义
 FIELD_IDENTIFIER = \${IDENTIFIER}     // 字段标识符（以$开头）
 
 /* 注释
  * ====
  */
-EOL_COMMENT="/""/"[^\n]*             // 单行注释（到行尾）
+EOL_COMMENT="/""/"[^\r\n]*           // 单行注释（到行尾，不含回车）
 
 /* 字符和字符串相关定义
  * ================
@@ -274,7 +274,7 @@ EOL_COMMENT="/""/"[^\n]*             // 单行注释（到行尾）
  */
 
 // 转义序列
-ESCAPE_SEQUENCE=\\(u\{ {HEX_DIGIT}{1,8} \} | [^\n])  // 支持Unicode转义和普通转义
+ESCAPE_SEQUENCE=\\(u\{ {HEX_DIGIT}{1,8} \} | [^\r\n])  // 支持Unicode转义和普通转义
 
 // 字节字符字面量
 CHARACTER_BYTE_LITERAL = {CHARACTER_BYTE_SINGLE_LITERAL}  // 字节字符（b前缀）
@@ -320,8 +320,8 @@ DOUBLE_QUO = \"                      // 双引号
  */
 
 // 字符串内容
-REGULAR_STRING_PART_DOUBLE=[^\\\"\n\$]+  // 双引号字符串内容（非转义字符）
-REGULAR_STRING_PART_SINGLE=[^\\\'\n\$]+  // 单引号字符串内容（非转义字符）
+REGULAR_STRING_PART_DOUBLE=[^\\\"\r\n\$]+  // CR 独立成段，保证完整 CRLF 使用最长换行匹配
+REGULAR_STRING_PART_SINGLE=[^\\\'\r\n\$]+  // CR 独立成段，保证完整 CRLF 使用最长换行匹配
 INTERPOLATION = \$+                      // 字符串插值标记
 
 // 字符串模板
@@ -421,7 +421,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 哈希字符串内容处理
 <HSAH_STRING_SINGLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_TERMINATOR}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {LONELY_DOLLAR}  { return CjTokens.REGULAR_STRING_PART; }
@@ -451,7 +451,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 哈希字符串（双引号）内容处理
 <HSAH_STRING_DOUBLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_TERMINATOR}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {LONELY_DOLLAR}  { return CjTokens.REGULAR_STRING_PART; }
@@ -489,7 +489,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 原始字符串（单引号）内容处理
 <RAW_STRING_SINGLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_TERMINATOR}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {THREE_OR_SINGLE_MORE_QUO} {  // 结束引号处理
@@ -512,7 +512,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 
 // 原始字符串（双引号）内容处理
 <RAW_STRING_DOUBLE> {
-    \n                { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
+    {LINE_TERMINATOR}     { return CjTokens.REGULAR_STRING_PART; }  // 换行符处理
     \" | \'          { return CjTokens.REGULAR_STRING_PART; }  // 引号处理
     \\               { return CjTokens.REGULAR_STRING_PART; }  // 反斜杠处理
     {THREE_OR_DOUBLE_MORE_QUO} {  // 结束引号处理
@@ -537,9 +537,9 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
     pushState("STRING_SINGLE",STRING_SINGLE);
     return CjTokens.OPEN_QUOTE;
 }
-<STRING_SINGLE> \n {
+<STRING_SINGLE> {LINE_TERMINATOR} {
     popState();
-    yypushback(1);
+    yypushback(yylength());
     return CjTokens.DANGLING_NEWLINE;
 }
 <STRING_SINGLE>     {SINGLE_QUO} {
@@ -554,9 +554,9 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
     pushState("STRING_DOUBLE",STRING_DOUBLE);
     return CjTokens.OPEN_QUOTE;
 }
-<STRING_DOUBLE> \n {
+<STRING_DOUBLE> {LINE_TERMINATOR} {
     popState();
-    yypushback(1);
+    yypushback(yylength());
     return CjTokens.DANGLING_NEWLINE;
 }
 <STRING_DOUBLE>     {DOUBLE_QUO} {
@@ -565,6 +565,11 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 }
 <STRING_DOUBLE> {ESCAPE_SEQUENCE} {
     return CjTokens.ESCAPE_SEQUENCE;
+}
+
+// 孤立 CR 是内容；CRLF 的两字符换行规则优先于该单字符匹配。
+<STRING_DOUBLE,STRING_SINGLE,RAW_STRING_DOUBLE,RAW_STRING_SINGLE,HSAH_STRING_DOUBLE,HSAH_STRING_SINGLE> \r {
+    return CjTokens.REGULAR_STRING_PART;
 }
 
 
@@ -905,6 +910,11 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "?"          { return CjTokens.QUEST; }
 "..."        { return CjTokens.ELLIPSIS; }
 // 分隔符
+"\\("        { return CjTokens.ESCAPE_LPAR; }
+"\\)"        { return CjTokens.ESCAPE_RPAR; }
+"\\["        { return CjTokens.ESCAPE_LBRACKET; }
+"\\]"        { return CjTokens.ESCAPE_RBRACKET; }
+"\\@"        { return CjTokens.ESCAPE_AT; }
 "["          { return CjTokens.LBRACKET; }
 "]"          { return CjTokens.RBRACKET; }
 "{"          { return CjTokens.LBRACE; }

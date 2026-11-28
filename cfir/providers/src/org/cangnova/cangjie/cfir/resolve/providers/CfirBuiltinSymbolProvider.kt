@@ -1,25 +1,16 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
-import org.cangnova.cangjie.cfir.common.moduleData
-import org.cangnova.cangjie.cfir.common.nullableModuleData
+import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.builtinOperatorSignature
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInTypeKind
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
-import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
-import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildTypeParameter
-import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -27,23 +18,18 @@ import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
+import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.descriptors.Modality
 
 /**
  * 将 builtin 类型暴露为合成 class-like 声明。
@@ -55,25 +41,19 @@ import org.cangnova.cangjie.descriptors.Modality
  */
 class CfirBuiltinSymbolProvider(
     session: CfirSession,
+    /** primitive 与合成 builtin 的实际 owner 由会话/metadata 装配入口显式提供。 */
+    private val builtinModuleData: CfirModuleData,
 ) : CfirSymbolProvider(session) {
 
-    /**
-     * builtin 声明使用的 module data。
-     *
-     * 若 session 已经绑定 module data，则沿用当前 module；否则创建二进制依赖 module data 作为合成 builtin 宿主。
-     */
-    private val builtinModuleData by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        session.nullableModuleData
-            ?: CfirBinaryDependenciesModuleData(Name.identifier("<builtins>")).also { it.bindSession(session) }
+    init {
+        require(builtinModuleData.session === session) { "Builtin owner is bound to a different session" }
     }
 
-    /** primitive ClassId 到合成声明的缓存。 */
-    private val primitiveDeclarationsByClassId: Map<ClassId, CfirPrimitiveTypeDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        PrimitiveTypeKind.entries.associateBy(
-            keySelector = { it.classId },
-            valueTransform = ::buildPrimitiveDeclaration,
-        )
-    }
+    /**
+     * primitive 声明的会话级单例工厂；provider 只是其名称解析外观，
+     * 声明与 symbol 的唯一构造来源是 [primitiveFactory]。
+     */
+    private val primitiveFactory by lazy { CfirPrimitiveDeclarationFactory.getInstance(session, builtinModuleData) }
 
     /** 官方 BuiltInDecl ClassId 到合成声明的缓存。 */
     private val builtInDeclarationsByClassId: Map<ClassId, CfirBuiltInDeclaration> by lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -88,11 +68,21 @@ class CfirBuiltinSymbolProvider(
     override val symbolNamesProvider: CfirSymbolNamesProvider = BuiltinNamesProvider
 
     /**
+     * 合成 builtins 属于**库侧**：`Int64` 这类名字没有对应的项目源码文件，
+     * 也不该由宿主名称索引给出（索引只覆盖源码根），因此整套名字都并入库侧视图。
+     *
+     * 这一路不是可有可无：实测（临时去掉本覆写）`std.core` 的 `.cjo` 只导出
+     * `AtomicInt64`、`Int64Less` 这些派生名字，**`Int64` 本身只由本 provider 暴露**。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = symbolNamesProvider
+
+    /**
      * 返回 primitive 或官方 BuiltInDecl 对应的合成 class-like symbol。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
         builtInDeclarationsByClassId[classId]?.symbol
-            ?: primitiveDeclarationsByClassId[classId]?.symbol
+            ?: primitiveFactory.getDeclaration(classId)?.symbol
 
     /**
      * builtin provider 不提供顶层 callable symbol。
@@ -194,77 +184,6 @@ class CfirBuiltinSymbolProvider(
             ).toCfirResolvedTypeRef()
         }
     }
-
-    /**
-     * 构造一个 primitive 类型的合成 class-like 声明。
-     */
-    private fun buildPrimitiveDeclaration(kind: PrimitiveTypeKind): CfirPrimitiveTypeDeclaration {
-        val symbol = CfirPrimitiveTypeSymbol(kind.classId, kind)
-        val declaration = CfirPrimitiveTypeDeclaration(
-            moduleData = builtinModuleData,
-            symbol = symbol,
-            name = kind.classId.shortClassName,
-            kind = kind,
-            scopeProvider = session.cangjieScopeProvider,
-            origin = CfirDeclarationOrigin.Synthetic.Default,
-            attributes = CfirDeclarationAttributes.EMPTY,
-            declarations = buildPrimitiveMembers(kind).toMutableList(),
-            superTypeRefs = mutableListOf(),
-        )
-        declaration.initDefaultResolveState()
-
-        return declaration
-    }
-
-    /**
-     * 为 primitive 类型构造合成 operator 成员。
-     *
-     * 这些成员用于 scope 与调用解析统一看见 primitive 运算能力。
-     */
-    private fun buildPrimitiveMembers(kind: PrimitiveTypeKind): List<CfirDeclaration> =
-        BuiltinPrimitiveOperators.signaturesFor(kind).map { signature ->
-            val functionSymbol = CfirNamedFunctionSymbol(CallableId(kind.classId, signature.name))
-            val parameters = signature.parameterKinds.mapIndexed { index, parameterKind ->
-                val parameterSymbol = CfirValueParameterSymbol(CallableId(signature.name))
-                buildValueParameter {
-                    moduleData = builtinModuleData
-                    resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                    origin = CfirDeclarationOrigin.Synthetic.FakeFunction
-                    attributes = CfirDeclarationAttributes.EMPTY
-                    isLocal = false
-                    deprecationsProvider = EmptyDeprecationsProvider
-                    dispatchReceiverType = null
-                    symbol = parameterSymbol
-                    containingDeclarationSymbol = functionSymbol
-                    isNamed = false
-                    status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-                    returnTypeRef = buildResolvedTypeRef {
-                        coneType = ConePrimitiveType(parameterKind)
-                    }
-                    name = Name.identifier("p$index")
-                }
-            }
-
-            val status = CfirDeclarationStatusImpl(modality = Modality.FINAL).apply {
-                isOperator = true
-            }.let { it.resolved(it.visibility, Modality.FINAL) }
-            buildNamedFunction {
-                moduleData = builtinModuleData
-                resolvePhase = CfirResolvePhase.BODY_RESOLVE
-                origin = CfirDeclarationOrigin.Synthetic.FakeFunction
-                attributes = CfirDeclarationAttributes.EMPTY
-                isLocal = false
-                dispatchReceiverType = null
-                this.status = status
-                returnTypeRef = buildResolvedTypeRef {
-                    coneType = ConePrimitiveType(signature.returnKind)
-                }
-                valueParameters += parameters
-                symbol = functionSymbol
-                name = signature.name
-                isMut = false
-            }.apply { builtinOperatorSignature = signature }
-        }
 
     /**
      * builtin provider 的名称索引实现。

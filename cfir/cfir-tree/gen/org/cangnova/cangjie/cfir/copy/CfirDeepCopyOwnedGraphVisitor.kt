@@ -93,6 +93,13 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
                 original.typeParameters.forEach { it.accept(collector, Unit) }
                 original.returnTypeRef.accept(collector, Unit)
             }
+            is CfirResourceVariable -> {
+                context.annotations(original).forEach { it.accept(collector, Unit) }
+                original.status.accept(collector, Unit)
+                context.initializer(original)?.accept(collector, Unit)
+                original.typeParameters.forEach { it.accept(collector, Unit) }
+                original.returnTypeRef.accept(collector, Unit)
+            }
             is CfirPatternVariable -> {
                 context.annotations(original).forEach { it.accept(collector, Unit) }
                 original.status.accept(collector, Unit)
@@ -104,8 +111,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             is CfirPatternBindingVariable -> {
                 context.annotations(original).forEach { it.accept(collector, Unit) }
                 original.status.accept(collector, Unit)
-                context.initializer(original)?.accept(collector, Unit)
                 original.typeParameters.forEach { it.accept(collector, Unit) }
+                context.initializer(original)?.accept(collector, Unit)
                 original.returnTypeRef.accept(collector, Unit)
             }
             is CfirValueParameter -> {
@@ -234,8 +241,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             expression = original.expression,
         )
         val copied = context.copyOwned(original) as CfirOptionalExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.expression = context.copyOwned(original.expression)
         return copied
     }
@@ -250,8 +257,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             expression = original.expression,
         )
         val copied = context.copyOwned(original) as CfirOptionalChainExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.expression = context.copyOwned(original.expression)
         return copied
     }
@@ -261,8 +268,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirIfAvailableExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.condition = original.condition?.let { context.copyOwned(it) }
         copied.thenBranch = context.copyOwned(original.thenBranch)
         copied.elseBranch = context.copyOwned(original.elseBranch)
@@ -276,9 +283,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             featureIds = original.featureIds.toMutableList(),
         )
         val copied = context.copyOwned(original) as CfirFeaturesDirectiveImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.featureIds.clear()
-        copied.featureIds.addAll(original.featureIds.map { it }.toMutableList())
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceFeatureIds(original.featureIds.map { it }.toMutableList())
         return copied
     }
 
@@ -303,7 +309,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             condition = original.condition,
         )
         val copied = context.copyOwned(original) as CfirImportImpl
-        copied.condition = original.condition?.let { context.copyOwned(it) }
+        copied.replaceCondition(original.condition?.let { context.copyOwned(it) })
         return copied
     }
 
@@ -312,7 +318,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirResolvedImportImpl
-        copied.condition = original.condition?.let { context.copyOwned(it) }
+        copied.replaceCondition(original.condition?.let { context.copyOwned(it) })
         copied.delegate = context.copyOwned(original.delegate)
         return copied
     }
@@ -337,13 +343,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             declarations = original.declarations.toMutableList(),
         )
         val copied = context.copyOwned(original) as CfirFileImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.featuresDirective = original.featuresDirective?.let { context.copyOwned(it) }
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceFeaturesDirective(original.featuresDirective?.let { context.copyOwned(it) })
         copied.packageDirective = context.copyOwned(original.packageDirective)
-        copied.imports.clear()
-        copied.imports.addAll(original.imports.map { context.copyOwned(it) }.toMutableList())
-        copied.conditionalCompilationFailures.clear()
-        copied.conditionalCompilationFailures.addAll(original.conditionalCompilationFailures.map { it }.toMutableList())
+        copied.replaceImports(original.imports.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceConditionalCompilationFailures(original.conditionalCompilationFailures.map { it }.toMutableList())
         copied.declarations.clear()
         copied.declarations.addAll(original.declarations.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -362,8 +366,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             block = original.block,
         )
         val copied = context.copyOwned(original) as CfirCodeFragmentImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.block = context.copyOwned(original.block)
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceBlock(context.copyOwned(original.block))
         return copied
     }
 
@@ -386,10 +390,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name),
         )
         val copied = context.copyOwned(original) as CfirClassImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
+        copied.replaceStatus(context.copyOwned(original.status))
         copied.superTypeRefs.clear()
         copied.superTypeRefs.addAll(original.superTypeRefs.map { context.copyOwned(it) }.toMutableList())
         copied.declarations.clear()
@@ -416,10 +420,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name),
         )
         val copied = context.copyOwned(original) as CfirInterfaceImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
+        copied.replaceStatus(context.copyOwned(original.status))
         copied.superTypeRefs.clear()
         copied.superTypeRefs.addAll(original.superTypeRefs.map { context.copyOwned(it) }.toMutableList())
         copied.declarations.clear()
@@ -446,10 +450,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name),
         )
         val copied = context.copyOwned(original) as CfirStructImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
+        copied.replaceStatus(context.copyOwned(original.status))
         copied.superTypeRefs.clear()
         copied.superTypeRefs.addAll(original.superTypeRefs.map { context.copyOwned(it) }.toMutableList())
         copied.declarations.clear()
@@ -478,10 +482,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             isNonExhaustive = original.isNonExhaustive,
         )
         val copied = context.copyOwned(original) as CfirEnumImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
+        copied.replaceStatus(context.copyOwned(original.status))
         copied.superTypeRefs.clear()
         copied.superTypeRefs.addAll(original.superTypeRefs.map { context.copyOwned(it) }.toMutableList())
         copied.declarations.clear()
@@ -510,14 +514,13 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name),
         )
         val copied = context.copyOwned(original) as CfirEnumConstructorImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
         return copied
     }
 
@@ -538,10 +541,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             declarations = original.declarations.toMutableList(),
         )
         val copied = context.copyOwned(original) as CfirExtendImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
+        copied.replaceStatus(context.copyOwned(original.status))
         copied.extendedTypeRef = context.copyOwned(original.extendedTypeRef)
         copied.superTypeRefs.clear()
         copied.superTypeRefs.addAll(original.superTypeRefs.map { context.copyOwned(it) }.toMutableList())
@@ -570,15 +573,15 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             expandedTypeRef = original.expandedTypeRef,
         )
         val copied = context.copyOwned(original) as CfirTypeAliasImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.declarations.clear()
         copied.declarations.addAll(original.declarations.map { context.copyOwned(it) }.toMutableList())
         copied.superTypeRefs.clear()
         copied.superTypeRefs.addAll(original.superTypeRefs.map { context.copyOwned(it) }.toMutableList())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
-        copied.expandedTypeRef = context.copyOwned(original.expandedTypeRef)
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceExpandedTypeRef(context.copyOwned(original.expandedTypeRef))
         return copied
     }
 
@@ -605,12 +608,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             isMut = original.isMut,
         )
         val copied = context.copyOwned(original) as CfirNamedFunctionImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -637,12 +639,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             symbol = context.remapSymbol(original.symbol),
         )
         val copied = context.copyOwned(original) as CfirMainFunctionImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -670,12 +671,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name),
         )
         val copied = context.copyOwned(original) as CfirMacroDeclarationImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -702,12 +702,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             symbol = context.remapSymbol(original.symbol),
         )
         val copied = context.copyOwned(original) as CfirFinalizerImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -753,24 +752,22 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
         )
         when (val copied = context.copyOwned(original)) {
             is CfirConstructorImpl -> {
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
             }
             is CfirPrimaryConstructor -> {
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
             }
         }
         val copied = context.copyOwned(original)
@@ -790,7 +787,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             reason = original.reason,
         )
         val copied = context.copyOwned(original) as CfirInvalidDeclarationImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -806,7 +803,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             attributes = context.copyAttributes(original.attributes),
         )
         val copied = context.copyOwned(original) as CfirMacroExpansionDeclarationImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -832,13 +829,13 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             bodyResolveState = original.bodyResolveState,
         )
         val copied = context.copyOwned(original) as CfirPropertyImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.getter = original.getter?.let { context.copyOwned(it) }
-        copied.setter = original.setter?.let { context.copyOwned(it) }
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceGetter(original.getter?.let { context.copyOwned(it) })
+        copied.replaceSetter(original.setter?.let { context.copyOwned(it) })
         return copied
     }
 
@@ -865,12 +862,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             isGetter = original.isGetter,
         )
         val copied = context.copyOwned(original) as CfirPropertyAccessorImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -898,12 +894,43 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name),
         )
         val copied = context.copyOwned(original) as CfirFieldVariableImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.status = context.copyOwned(original.status)
-        copied.initializer = context.initializer(original)?.let { context.copyOwned(it) }
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceInitializer(context.initializer(original)?.let { context.copyOwned(it) })
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        return copied
+    }
+
+    override fun visitResourceVariable(original: CfirResourceVariable, data: Boolean): CfirElement {
+        if (!data) return CfirResourceVariableImpl(
+            source = original.source,
+            moduleData = original.moduleData,
+            resolvePhase = original.resolvePhase,
+            annotations = context.annotations(original).toMutableList().toMutableOrEmpty(),
+            origin = original.origin,
+            attributes = context.copyAttributes(original.attributes),
+            isLocal = original.isLocal,
+            deprecationsProvider = UnresolvedDeprecationProvider,
+            dispatchReceiverType = original.dispatchReceiverType?.let { context.simpleType(it) },
+            status = original.status,
+            contentSource = CfirContentSource.Owned,
+            initializer = context.initializer(original),
+            isVar = original.isVar,
+            isTypeImplicit = original.isTypeImplicit,
+            symbol = context.remapSymbol(original.symbol),
+            typeParameters = original.typeParameters.toMutableList(),
+            returnTypeRef = original.returnTypeRef,
+            name = context.name(original, original.name),
+        )
+        val copied = context.copyOwned(original) as CfirResourceVariableImpl
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceInitializer(context.initializer(original)?.let { context.copyOwned(it) })
+        copied.typeParameters.clear()
+        copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
         return copied
     }
 
@@ -926,16 +953,15 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             typeParameters = original.typeParameters.toMutableList(),
             symbol = context.remapSymbol(original.symbol),
             returnTypeRef = original.returnTypeRef,
-            pattern = original.pattern,
+            pattern = context.allocate(original.pattern),
         )
         val copied = context.copyOwned(original) as CfirPatternVariableImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.status = context.copyOwned(original.status)
-        copied.initializer = context.initializer(original)?.let { context.copyOwned(it) }
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceInitializer(context.initializer(original)?.let { context.copyOwned(it) })
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.pattern = context.copyOwned(original.pattern)
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
         return copied
     }
 
@@ -952,21 +978,21 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             dispatchReceiverType = original.dispatchReceiverType?.let { context.simpleType(it) },
             status = original.status,
             contentSource = CfirContentSource.Owned,
-            initializer = context.initializer(original),
             isVar = original.isVar,
             isTypeImplicit = original.isTypeImplicit,
             typeParameters = original.typeParameters.toMutableList(),
             symbol = context.remapSymbol(original.symbol),
+            ownedInitializer = context.initializer(original),
             returnTypeRef = original.returnTypeRef,
             name = context.name(original, original.name),
         )
         val copied = context.copyOwned(original) as CfirPatternBindingVariableImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.status = context.copyOwned(original.status)
-        copied.initializer = context.initializer(original)?.let { context.copyOwned(it) }
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceStatus(context.copyOwned(original.status))
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
+        copied.replaceOwnedInitializer(context.initializer(original)?.let { context.copyOwned(it) })
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
         return copied
     }
 
@@ -993,12 +1019,12 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             defaultValue = context.defaultValue(original),
         )
         val copied = context.copyOwned(original) as CfirValueParameterImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.defaultValue = context.defaultValue(original)?.let { context.copyOwned(it) }
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceDefaultValue(context.defaultValue(original)?.let { context.copyOwned(it) })
         return copied
     }
 
@@ -1017,17 +1043,15 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             bounds = original.bounds.toMutableList(),
         )
         val copied = context.copyOwned(original) as CfirTypeParameterImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.bounds.clear()
-        copied.bounds.addAll(original.bounds.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceBounds(original.bounds.map { context.copyOwned(it) }.toMutableList())
         return copied
     }
 
     override fun visitConstructedClassTypeParameterRef(original: CfirConstructedClassTypeParameterRef, data: Boolean): CfirElement {
-        if (!data) return CfirConstructedClassTypeParameterRefImpl(
-            source = original.source,
-            symbol = context.remapSymbol(original.symbol),
-        )
+        if (!data) return buildConstructedClassTypeParameterRefCopy(original) {
+            symbol = context.remapSymbol(original.symbol)
+        }
         val copied = context.copyOwned(original) as CfirConstructedClassTypeParameterRefImpl
 
         return copied
@@ -1043,8 +1067,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             overflowStrategy = original.overflowStrategy,
         )
         val copied = context.copyOwned(original) as CfirExpressionStub
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
@@ -1053,8 +1077,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirNativeMatchExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.selector = context.copyOwned(original.selector)
         copied.cases.clear()
         copied.cases.addAll(original.cases.map { context.copyOwned(it) }.toMutableList())
@@ -1066,8 +1090,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirNativeMatchCaseImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.patterns.clear()
         copied.patterns.addAll(original.patterns.map { context.copyOwned(it) }.toMutableList())
         copied.guard = original.guard?.let { context.copyOwned(it) }
@@ -1080,8 +1104,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirNativeConditionMatchExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.cases.clear()
         copied.cases.addAll(original.cases.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -1092,8 +1116,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirNativeConditionMatchCaseImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.condition = context.copyOwned(original.condition)
         copied.body = context.copyOwned(original.body)
         return copied
@@ -1104,8 +1128,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirLetPatternDestructorExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.initializer = context.copyOwned(original.initializer)
         copied.patterns.clear()
         copied.patterns.addAll(original.patterns.map { context.copyOwned(it) }.toMutableList())
@@ -1127,8 +1151,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirNativeTryExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.resources.clear()
         copied.resources.addAll(original.resources.map { context.copyOwned(it) }.toMutableList())
         copied.tryBlock = context.copyOwned(original.tryBlock)
@@ -1143,8 +1167,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirPrimitiveTypeExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
@@ -1153,8 +1177,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirWildcardExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
@@ -1163,8 +1187,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirFunctionArgumentImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.value = original.value?.let { context.copyOwned(it) }
         return copied
     }
@@ -1174,8 +1198,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirCallExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.base = context.copyOwned(original.base)
         copied.arguments.clear()
         copied.arguments.addAll(original.arguments.map { context.copyOwned(it) }.toMutableList())
@@ -1187,8 +1211,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirUnaryExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.operand = context.copyOwned(original.operand)
         return copied
     }
@@ -1198,8 +1222,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirBinaryExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.left = context.copyOwned(original.left)
         copied.right = context.copyOwned(original.right)
         return copied
@@ -1211,8 +1235,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             initializerSymbol = original.initializerSymbol?.let { context.remapSymbol(it) }
         }
         val copied = context.copyOwned(original) as CfirArrayCreationExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.arguments.clear()
         copied.arguments.addAll(original.arguments.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -1223,8 +1247,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirPointerExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.argument = original.argument?.let { context.copyOwned(it) }
         return copied
     }
@@ -1234,8 +1258,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirResolvedSpawnExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.argument = original.argument?.let { context.copyOwned(it) }
         copied.future = context.copyOwned(original.future)
         return copied
@@ -1246,10 +1270,9 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirBlockImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.statements.clear()
-        copied.statements.addAll(original.statements.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceStatements(original.statements.map { context.copyOwned(it) }.toMutableList())
         return copied
     }
 
@@ -1258,8 +1281,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirLiteralExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
@@ -1268,8 +1291,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirStringInterpolationImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.parts.clear()
         copied.parts.addAll(original.parts.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -1309,14 +1332,13 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             diagnostic = original.diagnostic,
         )
         val copied = context.copyOwned(original) as CfirErrorPrimaryConstructorImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         return copied
     }
 
@@ -1325,13 +1347,13 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirFunctionCallImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.calleeReference = context.copyOwned(original.calleeReference)
-        copied.dispatchReceiver = original.dispatchReceiver?.let { context.copyOwned(it) }
-        copied.explicitReceiver = original.explicitReceiver?.let { context.copyOwned(it) }
-        copied.typeArguments = original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.argumentList = context.copyOwned(original.argumentList)
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
+        copied.replaceDispatchReceiver(original.dispatchReceiver?.let { context.copyOwned(it) })
+        copied.replaceExplicitReceiver(original.explicitReceiver?.let { context.copyOwned(it) })
+        copied.replaceTypeArguments(original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceArgumentList(context.copyOwned(original.argumentList))
         return copied
     }
 
@@ -1348,8 +1370,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             operationSource = original.operationSource,
         )
         val copied = context.copyOwned(original) as CfirIncrementDecrementExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.expression = context.copyOwned(original.expression)
         return copied
     }
@@ -1370,8 +1392,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirInoutArgumentExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.expression = context.copyOwned(original.expression)
         return copied
     }
@@ -1388,8 +1410,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             nameSource = original.nameSource,
         )
         val copied = context.copyOwned(original) as CfirNamedArgumentExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.expression = context.copyOwned(original.expression)
         return copied
     }
@@ -1400,13 +1422,13 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             containingDeclarationSymbol = context.remapSymbol(original.containingDeclarationSymbol)
         }
         val copied = context.copyOwned(original) as CfirAnnotationCallImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.typeRef = context.copyOwned(original.typeRef)
-        copied.argumentMapping = context.copyOwned(original.argumentMapping)
-        copied.argumentList = context.copyOwned(original.argumentList)
-        copied.calleeReference = context.copyOwned(original.calleeReference)
-        copied.argumentView = original.argumentView?.let { copyArgumentView(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceTypeRef(context.copyOwned(original.typeRef))
+        copied.replaceArgumentMapping(context.copyOwned(original.argumentMapping))
+        copied.replaceArgumentList(context.copyOwned(original.argumentList))
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
+        copied.replaceArgumentView(original.argumentView?.let { copyArgumentView(it) })
         return copied
     }
 
@@ -1416,7 +1438,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             superTypeRef = original.superTypeRef,
         )
         val copied = context.copyOwned(original) as CfirSuperReferenceImpl
-        copied.superTypeRef = context.copyOwned(original.superTypeRef)
+        copied.replaceSuperTypeRef(context.copyOwned(original.superTypeRef))
         return copied
     }
 
@@ -1435,11 +1457,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             qualifierSymbol = original.qualifierSymbol?.let { context.remapSymbol(it) }
         }
         val copied = context.copyOwned(original) as CfirResolvedQualifierImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.explicitParent = original.explicitParent?.let { context.copyOwned(it) }
-        copied.nonFatalDiagnostics = original.nonFatalDiagnostics.map { it }.toMutableOrEmpty()
-        copied.typeArguments = original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceExplicitParent(original.explicitParent?.let { context.copyOwned(it) })
+        copied.replaceNonFatalDiagnostics(original.nonFatalDiagnostics.map { it }.toMutableOrEmpty())
+        copied.replaceTypeArguments(original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -1449,11 +1471,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             qualifierSymbol = original.qualifierSymbol?.let { context.remapSymbol(it) }
         }
         val copied = context.copyOwned(original) as CfirErrorResolvedQualifierImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.explicitParent = original.explicitParent?.let { context.copyOwned(it) }
-        copied.nonFatalDiagnostics = original.nonFatalDiagnostics.map { it }.toMutableOrEmpty()
-        copied.typeArguments = original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceExplicitParent(original.explicitParent?.let { context.copyOwned(it) })
+        copied.replaceNonFatalDiagnostics(original.nonFatalDiagnostics.map { it }.toMutableOrEmpty())
+        copied.replaceTypeArguments(original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -1462,12 +1484,12 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirNamedAccessExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.calleeReference = context.copyOwned(original.calleeReference)
-        copied.dispatchReceiver = original.dispatchReceiver?.let { context.copyOwned(it) }
-        copied.typeArguments = original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.explicitReceiver = original.explicitReceiver?.let { context.copyOwned(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
+        copied.replaceDispatchReceiver(original.dispatchReceiver?.let { context.copyOwned(it) })
+        copied.replaceTypeArguments(original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceExplicitReceiver(original.explicitReceiver?.let { context.copyOwned(it) })
         return copied
     }
 
@@ -1484,12 +1506,12 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             typeArguments = original.typeArguments.toMutableList().toMutableOrEmpty(),
         )
         val copied = context.copyOwned(original) as CfirQualifiedAccessExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.calleeReference = context.copyOwned(original.calleeReference)
-        copied.dispatchReceiver = original.dispatchReceiver?.let { context.copyOwned(it) }
-        copied.explicitReceiver = original.explicitReceiver?.let { context.copyOwned(it) }
-        copied.typeArguments = original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
+        copied.replaceDispatchReceiver(original.dispatchReceiver?.let { context.copyOwned(it) })
+        copied.replaceExplicitReceiver(original.explicitReceiver?.let { context.copyOwned(it) })
+        copied.replaceTypeArguments(original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -1506,12 +1528,12 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             calleeReference = original.calleeReference,
         )
         val copied = context.copyOwned(original) as CfirSuperReceiverExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.dispatchReceiver = original.dispatchReceiver?.let { context.copyOwned(it) }
-        copied.explicitReceiver = original.explicitReceiver?.let { context.copyOwned(it) }
-        copied.typeArguments = original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.calleeReference = context.copyOwned(original.calleeReference)
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceDispatchReceiver(original.dispatchReceiver?.let { context.copyOwned(it) })
+        copied.replaceExplicitReceiver(original.explicitReceiver?.let { context.copyOwned(it) })
+        copied.replaceTypeArguments(original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
         return copied
     }
 
@@ -1535,13 +1557,12 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             symbol = context.remapSymbol(original.symbol),
         )
         val copied = context.copyOwned(original) as CfirErrorFunctionImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
         return copied
     }
@@ -1564,10 +1585,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             symbol = context.remapSymbol(original.symbol),
         )
         val copied = context.copyOwned(original) as CfirErrorNamedValueImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.status = context.copyOwned(original.status)
+        copied.replaceStatus(context.copyOwned(original.status))
         copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
         return copied
     }
@@ -1577,11 +1598,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirAssignmentImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.lValue = context.copyOwned(original.lValue)
         copied.rValue = context.copyOwned(original.rValue)
-        copied.typeMismatchOutcome = original.typeMismatchOutcome?.let { it.copy(expectedType = context.type(it.expectedType), actualType = context.type(it.actualType)) }
+        copied.replaceTypeMismatchOutcome(original.typeMismatchOutcome?.let { it.copy(expectedType = context.type(it.expectedType), actualType = context.type(it.actualType)) })
         return copied
     }
 
@@ -1598,8 +1619,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             rightArgument = original.rightArgument,
         )
         val copied = context.copyOwned(original) as CfirAugmentedAssignmentImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.leftArgument = context.copyOwned(original.leftArgument)
         copied.rightArgument = context.copyOwned(original.rightArgument)
         return copied
@@ -1610,8 +1631,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirBinaryOpImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.left = context.copyOwned(original.left)
         copied.right = context.copyOwned(original.right)
         return copied
@@ -1622,8 +1643,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirComparisonExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.left = context.copyOwned(original.left)
         copied.right = context.copyOwned(original.right)
         return copied
@@ -1634,8 +1655,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirTypeOperatorImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.argument = context.copyOwned(original.argument)
         copied.typeRef = context.copyOwned(original.typeRef)
         return copied
@@ -1646,22 +1667,27 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirTypeConversionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.argument = context.copyOwned(original.argument)
         copied.targetTypeRef = context.copyOwned(original.targetTypeRef)
         return copied
     }
 
     override fun visitLetPatternExpression(original: CfirLetPatternExpression, data: Boolean): CfirElement {
-        if (!data) return buildLetPatternExpressionCopy(original) {
-            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
-        }
+        if (!data) return CfirLetPatternExpressionImpl(
+            source = original.source,
+            annotations = original.annotations.toMutableList().toMutableOrEmpty(),
+            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) },
+            mappedExpression = original.mappedExpression,
+            overflowStrategy = original.overflowStrategy,
+            initializer = original.initializer,
+            pattern = context.allocate(original.pattern),
+        )
         val copied = context.copyOwned(original) as CfirLetPatternExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.initializer = context.copyOwned(original.initializer)
-        copied.pattern = context.copyOwned(original.pattern)
         return copied
     }
 
@@ -1670,8 +1696,9 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirIfExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
         copied.condition = context.copyOwned(original.condition)
         copied.thenBranch = context.copyOwned(original.thenBranch)
         copied.elseBranch = original.elseBranch?.let { context.copyOwned(it) }
@@ -1683,8 +1710,9 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirMatchExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
         copied.subject = original.subject?.let { context.copyOwned(it) }
         copied.branches.clear()
         copied.branches.addAll(original.branches.map { context.copyOwned(it) }.toMutableList())
@@ -1697,15 +1725,12 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             semanticTypeRef = original.semanticTypeRef,
             constantValues = original.constantValues.toMutableList(),
             contextExpression = original.contextExpression,
-            alternatives = original.alternatives.toMutableList(),
+            alternatives = original.alternatives.mapTo(mutableListOf()) { context.allocate(it) },
         )
         val copied = context.copyOwned(original) as CfirOrPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.alternatives.clear()
-        copied.alternatives.addAll(original.alternatives.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
@@ -1718,66 +1743,80 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             expression = original.expression,
         )
         val copied = context.copyOwned(original) as CfirExpressionPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
         copied.expression = context.copyOwned(original.expression)
         return copied
     }
 
     override fun visitMatchBranch(original: CfirMatchBranch, data: Boolean): CfirElement {
-        if (!data) return buildMatchBranchCopy(original) {
-            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
-        }
+        if (!data) return CfirMatchBranchImpl(
+            source = original.source,
+            annotations = original.annotations.toMutableList().toMutableOrEmpty(),
+            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) },
+            mappedExpression = original.mappedExpression,
+            overflowStrategy = original.overflowStrategy,
+            pattern = context.allocate(original.pattern),
+            guard = original.guard,
+            body = original.body,
+        )
         val copied = context.copyOwned(original) as CfirMatchBranchImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.pattern = context.copyOwned(original.pattern)
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.guard = original.guard?.let { context.copyOwned(it) }
         copied.body = context.copyOwned(original.body)
         return copied
     }
 
     override fun visitCatchPattern(original: CfirCatchPattern, data: Boolean): CfirElement {
-        if (!data) return buildCatchPatternCopy(original) {
-
-        }
+        if (!data) return CfirCatchPatternImpl(
+            source = original.source,
+            semanticTypeRef = original.semanticTypeRef,
+            constantValues = original.constantValues.toMutableList(),
+            contextExpression = original.contextExpression,
+            nestedPattern = context.allocate(original.nestedPattern),
+            typeRefs = original.typeRefs.toMutableList(),
+        )
         val copied = context.copyOwned(original) as CfirCatchPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.nestedPattern = context.copyOwned(original.nestedPattern)
-        copied.typeRefs.clear()
-        copied.typeRefs.addAll(original.typeRefs.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceTypeRefs(original.typeRefs.map { context.copyOwned(it) }.toMutableList())
         return copied
     }
 
     override fun visitCatch(original: CfirCatch, data: Boolean): CfirElement {
-        if (!data) return buildCatchCopy(original) {
-            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
-        }
+        if (!data) return CfirCatchImpl(
+            source = original.source,
+            annotations = original.annotations.toMutableList().toMutableOrEmpty(),
+            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) },
+            mappedExpression = original.mappedExpression,
+            overflowStrategy = original.overflowStrategy,
+            pattern = context.allocate(original.pattern),
+            body = original.body,
+        )
         val copied = context.copyOwned(original) as CfirCatchImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.pattern = context.copyOwned(original.pattern)
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.body = context.copyOwned(original.body)
         return copied
     }
 
     override fun visitCommandTypePattern(original: CfirCommandTypePattern, data: Boolean): CfirElement {
-        if (!data) return buildCommandTypePatternCopy(original) {
-
-        }
+        if (!data) return CfirCommandTypePatternImpl(
+            source = original.source,
+            semanticTypeRef = original.semanticTypeRef,
+            constantValues = original.constantValues.toMutableList(),
+            contextExpression = original.contextExpression,
+            nestedPattern = context.allocate(original.nestedPattern),
+            typeRefs = original.typeRefs.toMutableList(),
+        )
         val copied = context.copyOwned(original) as CfirCommandTypePatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.nestedPattern = context.copyOwned(original.nestedPattern)
-        copied.typeRefs.clear()
-        copied.typeRefs.addAll(original.typeRefs.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceTypeRefs(original.typeRefs.map { context.copyOwned(it) }.toMutableList())
         return copied
     }
 
@@ -1788,13 +1827,12 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) },
             mappedExpression = original.mappedExpression,
             overflowStrategy = original.overflowStrategy,
-            commandPattern = original.commandPattern,
+            commandPattern = context.allocate(original.commandPattern),
             body = original.body,
         )
         val copied = context.copyOwned(original) as CfirHandleClauseImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.commandPattern = context.copyOwned(original.commandPattern)
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.body = context.copyOwned(original.body)
         return copied
     }
@@ -1804,21 +1842,29 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirLoopExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.condition = context.copyOwned(original.condition)
         copied.body = context.copyOwned(original.body)
         return copied
     }
 
     override fun visitForInExpression(original: CfirForInExpression, data: Boolean): CfirElement {
-        if (!data) return buildForInExpressionCopy(original) {
-            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
-        }
+        if (!data) return CfirForInExpressionImpl(
+            source = original.source,
+            annotations = original.annotations.toMutableList().toMutableOrEmpty(),
+            coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) },
+            mappedExpression = original.mappedExpression,
+            overflowStrategy = original.overflowStrategy,
+            pattern = context.allocate(original.pattern),
+            iterable = original.iterable,
+            patternGuard = original.patternGuard,
+            body = original.body,
+            iterationKind = original.iterationKind,
+        )
         val copied = context.copyOwned(original) as CfirForInExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.pattern = context.copyOwned(original.pattern)
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.iterable = context.copyOwned(original.iterable)
         copied.patternGuard = original.patternGuard?.let { context.copyOwned(it) }
         copied.body = context.copyOwned(original.body)
@@ -1830,10 +1876,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirTryExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.resources.clear()
-        copied.resources.addAll(original.resources.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceCalleeReference(context.copyOwned(original.calleeReference))
+        copied.replaceResources(original.resources.map { context.copyOwned(it) }.toMutableList())
         copied.tryBlock = context.copyOwned(original.tryBlock)
         copied.handlers.clear()
         copied.handlers.addAll(original.handlers.map { context.copyOwned(it) }.toMutableList())
@@ -1848,8 +1894,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirThrowExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.exception = context.copyOwned(original.exception)
         return copied
     }
@@ -1858,6 +1904,10 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
         if (!data) return CfirResolvedDeclarationStatusImpl(
             source = original.source,
             visibility = original.visibility,
+            visibilityExplicitness = original.visibilityExplicitness,
+            modalityExplicitness = original.modalityExplicitness,
+            bodyPresence = original.bodyPresence,
+            isDeclarationFile = original.isDeclarationFile,
             isVisibilityExplicit = original.isVisibilityExplicit,
             isModalityExplicit = original.isModalityExplicit,
             isAbstractExplicit = original.isAbstractExplicit,
@@ -1870,6 +1920,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             isForeign = original.isForeign,
             isC = original.isC,
             isCommon = original.isCommon,
+            isFromCommonPart = original.isFromCommonPart,
             isSpecific = original.isSpecific,
             isCommonWithDefault = original.isCommonWithDefault,
             isRedef = original.isRedef,
@@ -1894,8 +1945,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             expression = original.expression,
         )
         val copied = context.copyOwned(original) as CfirPerformExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.expression = context.copyOwned(original.expression)
         return copied
     }
@@ -1911,8 +1962,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             throwingExpression = original.throwingExpression,
         )
         val copied = context.copyOwned(original) as CfirResumeExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.withExpression = original.withExpression?.let { context.copyOwned(it) }
         copied.throwingExpression = original.throwingExpression?.let { context.copyOwned(it) }
         return copied
@@ -1924,9 +1975,9 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             target = context.target(original.target)
         }
         val copied = context.copyOwned(original) as CfirReturnExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.result = context.copyOwned(original.result)
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceResult(context.copyOwned(original.result))
         return copied
     }
 
@@ -1936,8 +1987,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             target = context.target(original.target)
         }
         val copied = context.copyOwned(original) as CfirBreakExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
@@ -1947,8 +1998,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             target = context.target(original.target)
         }
         val copied = context.copyOwned(original) as CfirContinueExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
@@ -1977,15 +2028,14 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             matchingParameterFunctionType = original.matchingParameterFunctionType?.let { context.type(it) },
         )
         val copied = context.copyOwned(original) as CfirAnonymousFunctionImpl
-        copied.annotations = context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
-        copied.body = context.body(original)?.let { context.copyOwned(it) }
-        copied.status = context.copyOwned(original.status)
-        copied.valueParameters.clear()
-        copied.valueParameters.addAll(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(context.annotations(original).map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceReturnTypeRef(context.copyOwned(original.returnTypeRef))
+        copied.replaceBody(context.body(original)?.let { context.copyOwned(it) })
+        copied.replaceStatus(context.copyOwned(original.status))
+        copied.replaceValueParameters(original.valueParameters.map { context.copyOwned(it) }.toMutableList())
         copied.typeParameters.clear()
         copied.typeParameters.addAll(original.typeParameters.map { context.copyOwned(it) }.toMutableList())
-        copied.typeRef = context.copyOwned(original.typeRef)
+        copied.replaceTypeRef(context.copyOwned(original.typeRef))
         return copied
     }
 
@@ -2006,8 +2056,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirAnonymousFunctionExpressionImpl
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.anonymousFunction = context.copyOwned(original.anonymousFunction)
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceAnonymousFunction(context.copyOwned(original.anonymousFunction))
         return copied
     }
 
@@ -2016,8 +2066,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirRangeExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.start = context.copyOwned(original.start)
         copied.end = context.copyOwned(original.end)
         copied.step = original.step?.let { context.copyOwned(it) }
@@ -2030,10 +2080,9 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             initializerSymbol = original.initializerSymbol?.let { context.remapSymbol(it) }
         }
         val copied = context.copyOwned(original) as CfirArrayLiteralImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.elements.clear()
-        copied.elements.addAll(original.elements.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceElements(original.elements.map { context.copyOwned(it) }.toMutableList())
         return copied
     }
 
@@ -2042,10 +2091,9 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirTupleLiteralImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
-        copied.elements.clear()
-        copied.elements.addAll(original.elements.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceElements(original.elements.map { context.copyOwned(it) }.toMutableList())
         return copied
     }
 
@@ -2054,8 +2102,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirSpawnExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.body = context.copyOwned(original.body)
         copied.threadContextArgument = original.threadContextArgument?.let { context.copyOwned(it) }
         return copied
@@ -2066,8 +2114,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirSynchronizedExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.monitor = context.copyOwned(original.monitor)
         copied.body = context.copyOwned(original.body)
         return copied
@@ -2078,8 +2126,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirUnsafeExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.body = context.copyOwned(original.body)
         return copied
     }
@@ -2089,8 +2137,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirQuoteExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.interpolations.clear()
         copied.interpolations.addAll(original.interpolations.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -2101,13 +2149,13 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneTypeOrNull = original.coneTypeOrNull?.let { context.type(it) }
         }
         val copied = context.copyOwned(original) as CfirSubscriptExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.receiver = context.copyOwned(original.receiver)
         copied.indices.clear()
         copied.indices.addAll(original.indices.map { context.copyOwned(it) }.toMutableList())
-        copied.resolvedGetCall = original.resolvedGetCall?.let { context.copyOwned(it) }
-        copied.resolvedSetCall = original.resolvedSetCall?.let { context.copyOwned(it) }
+        copied.replaceResolvedGetCall(original.resolvedGetCall?.let { context.copyOwned(it) })
+        copied.replaceResolvedSetCall(original.resolvedSetCall?.let { context.copyOwned(it) })
         return copied
     }
 
@@ -2116,8 +2164,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirErrorExpressionImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.mappedExpression = original.mappedExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceMappedExpression(original.mappedExpression?.let { context.copyReferenceElement(it) })
         copied.expression = original.expression?.let { context.copyOwned(it) }
         copied.nonExpressionElement = original.nonExpressionElement?.let { context.copyOwned(it) }
         return copied
@@ -2128,12 +2176,11 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirConstPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.expression = context.copyOwned(original.expression)
-        copied.operatorCall = original.operatorCall?.let { context.copyOwned(it) }
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceExpression(context.copyOwned(original.expression))
+        copied.replaceOperatorCall(original.operatorCall?.let { context.copyOwned(it) })
         return copied
     }
 
@@ -2142,81 +2189,96 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirWildcardPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
     override fun visitBindingPattern(original: CfirBindingPattern, data: Boolean): CfirElement {
-        if (!data) return buildBindingPatternCopy(original) {
-            name = context.name(original, original.name)
-        }
+        if (!data) return CfirBindingPatternImpl(
+            source = original.source,
+            semanticTypeRef = original.semanticTypeRef,
+            constantValues = original.constantValues.toMutableList(),
+            contextExpression = original.contextExpression,
+            name = context.name(original, original.name),
+            typeRef = original.typeRef,
+            bindingVariable = original.bindingVariable?.let { context.allocate(it) },
+            nestedPattern = original.nestedPattern?.let { context.allocate(it) },
+        )
         val copied = context.copyOwned(original) as CfirBindingPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.typeRef = original.typeRef?.let { context.copyOwned(it) }
-        copied.bindingVariable = original.bindingVariable?.let { context.copyOwned(it) }
-        copied.nestedPattern = original.nestedPattern?.let { context.copyOwned(it) }
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceTypeRef(original.typeRef?.let { context.copyOwned(it) })
         return copied
     }
 
     override fun visitVarOrEnumPattern(original: CfirVarOrEnumPattern, data: Boolean): CfirElement {
-        if (!data) return buildVarOrEnumPatternCopy(original) {
-            name = context.name(original, original.name)
-        }
+        if (!data) return CfirVarOrEnumPatternImpl(
+            source = original.source,
+            semanticTypeRef = original.semanticTypeRef,
+            constantValues = original.constantValues.toMutableList(),
+            contextExpression = original.contextExpression,
+            name = context.name(original, original.name),
+            bindingVariable = original.bindingVariable?.let { context.allocate(it) },
+        )
         val copied = context.copyOwned(original) as CfirVarOrEnumPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.bindingVariable = original.bindingVariable?.let { context.copyOwned(it) }
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
     override fun visitTuplePattern(original: CfirTuplePattern, data: Boolean): CfirElement {
-        if (!data) return buildTuplePatternCopy(original) {
-
-        }
+        if (!data) return CfirTuplePatternImpl(
+            source = original.source,
+            semanticTypeRef = original.semanticTypeRef,
+            constantValues = original.constantValues.toMutableList(),
+            contextExpression = original.contextExpression,
+            elements = original.elements.mapTo(mutableListOf()) { context.allocate(it) },
+        )
         val copied = context.copyOwned(original) as CfirTuplePatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.elements.clear()
-        copied.elements.addAll(original.elements.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
         return copied
     }
 
     override fun visitEnumPattern(original: CfirEnumPattern, data: Boolean): CfirElement {
-        if (!data) return buildEnumPatternCopy(original) {
-
-        }
+        if (!data) return CfirEnumPatternImpl(
+            source = original.source,
+            semanticTypeRef = original.semanticTypeRef,
+            constantValues = original.constantValues.toMutableList(),
+            contextExpression = original.contextExpression,
+            constructor = original.constructor,
+            arguments = original.arguments.mapTo(mutableListOf()) { context.allocate(it) },
+        )
         val copied = context.copyOwned(original) as CfirEnumPatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.constructor = context.copyOwned(original.constructor)
-        copied.arguments.clear()
-        copied.arguments.addAll(original.arguments.map { context.copyOwned(it) }.toMutableList())
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceConstructor(context.copyOwned(original.constructor))
         return copied
     }
 
     override fun visitTypePattern(original: CfirTypePattern, data: Boolean): CfirElement {
-        if (!data) return buildTypePatternCopy(original) {
-
-        }
+        if (!data) return CfirTypePatternImpl(
+            source = original.source,
+            semanticTypeRef = original.semanticTypeRef,
+            constantValues = original.constantValues.toMutableList(),
+            contextExpression = original.contextExpression,
+            matchingKind = original.matchingKind,
+            typeRef = original.typeRef,
+            nestedPattern = context.allocate(original.nestedPattern),
+            matchBeforeRuntime = original.matchBeforeRuntime,
+            needRuntimeTypeCheck = original.needRuntimeTypeCheck,
+        )
         val copied = context.copyOwned(original) as CfirTypePatternImpl
-        copied.semanticTypeRef = original.semanticTypeRef?.let { context.copyOwned(it) }
-        copied.constantValues.clear()
-        copied.constantValues.addAll(original.constantValues.map { context.copyConstant(it) }.toMutableList())
-        copied.contextExpression = original.contextExpression?.let { context.copyReferenceElement(it) }
-        copied.typeRef = context.copyOwned(original.typeRef)
-        copied.nestedPattern = context.copyOwned(original.nestedPattern)
+        copied.replaceSemanticTypeRef(original.semanticTypeRef?.let { context.copyOwned(it) })
+        copied.replaceConstantValues(original.constantValues.map { context.copyConstant(it) }.toMutableList())
+        copied.replaceContextExpression(original.contextExpression?.let { context.copyReferenceElement(it) })
+        copied.replaceTypeRef(context.copyOwned(original.typeRef))
         return copied
     }
 
@@ -2225,7 +2287,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             coneType = context.type(original.coneType)
         }
         val copied = context.copyOwned(original) as CfirResolvedTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.delegatedTypeRef = original.delegatedTypeRef?.let { context.copyOwned(it) }
         return copied
     }
@@ -2235,7 +2297,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name)
         }
         val copied = context.copyOwned(original) as CfirQualifierPartImpl
-        copied.typeArguments = original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceTypeArguments(original.typeArguments.map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -2244,7 +2306,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirParenthesizedTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.innerTypeRef = context.copyOwned(original.innerTypeRef)
         return copied
     }
@@ -2254,8 +2316,8 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirUserTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
-        copied.qualifier = original.qualifier.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
+        copied.replaceQualifier(original.qualifier.map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -2264,7 +2326,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             name = context.name(original, original.name)
         }
         val copied = context.copyOwned(original) as CfirBasicTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -2274,7 +2336,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirImplicitTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         return copied
     }
 
@@ -2283,7 +2345,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirFunctionTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.parameterTypeRefs.clear()
         copied.parameterTypeRefs.addAll(original.parameterTypeRefs.map { context.copyOwned(it) }.toMutableList())
         copied.returnTypeRef = context.copyOwned(original.returnTypeRef)
@@ -2299,7 +2361,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
             componentTypeRef = original.componentTypeRef,
         )
         val copied = context.copyOwned(original) as CfirOptionTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.componentTypeRef = context.copyOwned(original.componentTypeRef)
         return copied
     }
@@ -2309,7 +2371,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirTupleTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.elementTypeRefs.clear()
         copied.elementTypeRefs.addAll(original.elementTypeRefs.map { context.copyOwned(it) }.toMutableList())
         return copied
@@ -2320,7 +2382,7 @@ internal class CfirDeepCopyOwnedGraphVisitor(context: CfirOwnedGraphCopyContext)
 
         }
         val copied = context.copyOwned(original) as CfirVArrayTypeRefImpl
-        copied.annotations = original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty()
+        copied.replaceAnnotations(original.annotations.map { context.copyOwned(it) }.toMutableOrEmpty())
         copied.elementTypeRef = context.copyOwned(original.elementTypeRef)
         return copied
     }

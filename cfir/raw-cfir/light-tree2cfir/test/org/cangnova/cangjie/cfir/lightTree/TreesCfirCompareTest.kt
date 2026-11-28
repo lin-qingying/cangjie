@@ -53,8 +53,8 @@ class TreesCfirCompareTest : AbstractLightTree2CfirConverterTestCase() {
                 appendLine("${failedFiles.size} file(s) differ between PSI and LightTree:")
                 failedFiles.forEach { (file, msg) ->
                     appendLine("  - ${file.relativeTo(testDataRoot).invariantSeparatorsPath}")
-                    // 截断过长的错误信息
-                    val shortMsg = msg.lines().take(5).joinToString("\n    ")
+                    // 保留足够行数以看到 PSI / LightTree 渲染差异的首个分叉点
+                    val shortMsg = msg.lines().take(400).joinToString("\n    ")
                     appendLine("    $shortMsg")
                 }
             }

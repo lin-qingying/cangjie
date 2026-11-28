@@ -25,7 +25,10 @@ interface CaSymbol : CaLifetimeOwner {
      * 与当前符号对应的 PSI 元素。
      *
      * - 对源码符号必然非空；
-     * - 对库符号、合成符号等其他 origin，可能为 `null`，由实现方按约定决定是否提供回链。
+     * - 对库符号必须回链到 `.cjo` 的反编译 PSI，对齐 Kotlin `KaSymbol.psi` 对 `LIBRARY`
+     *   origin 的保证（"the psi source element is taken from the generated class file"）；
+     *   只有确实不存在对应反编译声明的合成/隐式符号才允许为 `null`；
+     * - 其他 origin 由实现方按约定决定是否提供回链。
      */
     val psi: PsiElement?
 

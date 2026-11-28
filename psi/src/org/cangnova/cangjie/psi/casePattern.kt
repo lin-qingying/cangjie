@@ -170,7 +170,7 @@ class CjBindingPattern : CjCasePattern<CangJieBindingPatternStub>, CjSimpleNameE
      * 保存 `isTopLevel`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val isTopLevel: Boolean
-        get() = parent is CjFile
+        get() = variable?.parent is CjFile
 
     /**
      * 暴露 `referencedNameElement`，实现仓颉 PSI节点对上层接口的属性契约。

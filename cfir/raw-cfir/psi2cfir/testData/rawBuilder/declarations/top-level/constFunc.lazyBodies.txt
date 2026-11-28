@@ -1,0 +1,7 @@
+FILE: constFunc.cj
+    internal? func double(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func useConst(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

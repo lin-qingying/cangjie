@@ -240,11 +240,11 @@ class PostponedArgumentInputTypesResolver(
     ): TypeVariableMarker {
         return when (argument) {
             is LambdaWithTypeVariableAsExpectedTypeMarker ->
-                resolutionTypeSystemContext.createTypeVariableForLambdaReturnType()
+                resolutionTypeSystemContext.createTypeVariableForLambdaReturnType(argument)
             is PostponedCallableReferenceMarker ->
-                resolutionTypeSystemContext.createTypeVariableForCallableReferenceReturnType()
+                resolutionTypeSystemContext.createTypeVariableForCallableReferenceReturnType(argument)
             else -> throw IllegalStateException("Unsupported postponed argument type of $argument")
-        }.also { c.getBuilder().registerVariable(it) }
+        }.also { c.registerInferenceVariableIfAbsent(it) }
     }
 
     /**
@@ -260,7 +260,19 @@ class PostponedArgumentInputTypesResolver(
             is PostponedCallableReferenceMarker ->
                 resolutionTypeSystemContext.createTypeVariableForCallableReferenceParameterType(argument, index)
             else -> throw IllegalStateException("Unsupported postponed argument type of $argument")
-        }.also { getBuilder().registerVariable(it) }
+        }.also { registerInferenceVariableIfAbsent(it) }
+    }
+
+    /** 当前 CS 已持有同一 constructor 时只验证 TV 身份，不能重注册而覆盖其固定状态。 */
+    private fun Context.registerInferenceVariableIfAbsent(variable: TypeVariableMarker) {
+        val builder = getBuilder()
+        val constructor = variable.freshTypeConstructor()
+        val registered = builder.currentStorage().allTypeVariables[constructor]
+        if (registered == null) {
+            builder.registerVariable(variable)
+        } else {
+            check(registered === variable) { "Current constraint system contains a different variable for this constructor" }
+        }
     }
 
     /**

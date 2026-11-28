@@ -307,7 +307,7 @@ class PostponedArgumentsAnalyzer(
 
             else -> {
                 topLevelCandidate.addDiagnostic(UnsuccessfulCallableReferenceArgument(expression))
-                ConeNoMatchingFunctionReferenceError(errorReference.name)
+                ConeNoMatchingFunctionReferenceError(errorReference.name, topLevelCandidate)
             }
         }
 

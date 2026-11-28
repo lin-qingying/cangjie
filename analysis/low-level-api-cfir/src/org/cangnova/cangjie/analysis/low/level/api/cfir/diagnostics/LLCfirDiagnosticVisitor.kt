@@ -10,7 +10,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 import com.intellij.openapi.diagnostic.thisLogger
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
-import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOrUnresolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.valueOrNull
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
 import org.cangnova.cangjie.analysis.utils.printer.parentsOfType
@@ -52,7 +53,7 @@ internal open class LLCfirDiagnosticVisitor(
      */
     override fun checkElement(element: CfirElement) {
         beforeElementDiagnosticCollectionHandler?.beforeCollectingForElement(element, components.phase)
-        components.regularComponents.forEach { diagnosticVisitor ->
+        forEachTimedCheckerComponent { diagnosticVisitor ->
             checkCanceled()
             suppressAndLogExceptions {
                 element.accept(diagnosticVisitor, context)
@@ -91,9 +92,13 @@ internal open class LLCfirDiagnosticVisitor(
             val module = CangJieProjectStructureProvider.getModule(project, contextElement, useSiteModule = null)
             val resolutionFacade = module.getResolutionFacade(project)
 
-            // Register containing declarations of a context element
+            // Register containing declarations of a context element.
+            // 符号不可恢复的祖先声明跳过：诊断要能为其余祖先继续收集，
+            // 不能因为一个库符号缺失让整份文件的诊断变成空。
             contextElement.parentsOfType<CjDeclaration>().toList().asReversed()
-                .map { declaration: CjDeclaration -> declaration.resolveToCfirSymbol(resolutionFacade).cfir }
+                .mapNotNull { declaration: CjDeclaration ->
+                    declaration.resolveToCfirSymbolOrUnresolved(resolutionFacade).valueOrNull?.cfir
+                }
                 .run(::process)
 
             return
@@ -127,7 +132,6 @@ internal open class LLCfirDiagnosticVisitor(
             else -> return
         }
 
-        // Casting to `CfirDeclaration` is required in K1.
         @Suppress("USELESS_CAST")
         (declarationContainer as CfirDeclaration).forEachDeclaration { declaration ->
             withAnnotationContainer(declaration) {
@@ -145,6 +149,12 @@ internal open class LLCfirDiagnosticVisitor(
          * an alternative handler.
          *
          * For instance, the IntelliJ plugin reports such exceptions and doesn't interrupt the execution flow.
+         *
+         * 偏差说明：默认测试 logger 的 `error` 会抛出 AssertionError，从而让一个元素的失败
+         * 终止整份文件的诊断收集。这里以 warn 记录完整异常并继续，保证诊断隔离粒度是
+         * “单个 checker / structure element”，而不是整个文件。被隔离的异常同时写入
+         * [DiagnosticCollectionFailures]，测试与真实项目报告必须显式断言其数量为 0，
+         * 因此异常不会被静默忽略。
          */
         inline fun <T> suppressAndLogExceptions(block: () -> T): T? = try {
             block()
@@ -153,7 +163,8 @@ internal open class LLCfirDiagnosticVisitor(
                 throw e
             }
 
-            thisLogger().error("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
+            DiagnosticCollectionFailures.record(e)
+            thisLogger().warn("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
             null
         }
     }

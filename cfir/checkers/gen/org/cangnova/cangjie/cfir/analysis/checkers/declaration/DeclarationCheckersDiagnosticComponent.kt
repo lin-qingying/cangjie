@@ -118,6 +118,10 @@ class DeclarationCheckersDiagnosticComponent(
         checkers.allCallableDeclarationCheckers.check(patternBindingVariable, data)
     }
 
+    override fun visitResourceVariable(resourceVariable: CfirResourceVariable, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(resourceVariable, data)
+    }
+
     override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: CheckerContext) {
         checkers.allFunctionCheckers.check(macroDeclaration, data)
     }

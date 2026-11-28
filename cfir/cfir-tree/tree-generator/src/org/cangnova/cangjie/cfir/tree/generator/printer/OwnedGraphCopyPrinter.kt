@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.tree.generator.printer
 
+import org.cangnova.cangjie.cfir.tree.generator.CfirTree
 import org.cangnova.cangjie.cfir.tree.generator.model.*
 import org.cangnova.cangjie.generators.tree.ElementOrRef
 import org.cangnova.cangjie.generators.tree.ClassRef
@@ -101,18 +102,19 @@ internal object OwnedGraphCopyPrinter {
         // 内容节点直接按已捕获选择值构造；build*Copy 的预填会额外读取活动原 body/initializer。
         val builder = (implementation.builder as? LeafBuilder)?.takeIf {
             it.wantsCopy && it.typeName !in intermediateBuilderNames &&
-                implementation.allFields.none { field -> field.publishedContentKind != null }
+                implementation.allFields.none { field -> field.publishedContentKind != null } &&
+                constructorFields.none { field -> isPatternOwnershipEdge(implementation, field) }
         }
         return if (builder != null) {
             val name = builder.typeName.removePrefix("Cfir").removeSuffix("Builder").removeSuffix("Impl")
             "build" + name + "Copy(original) {\n" + builder.allFields.filter {
                 it.hasSymbolType || it.name == "attributes" || (it.name == "name" && it.classType?.typeName == "Name") || it.hasConeType ||
                     it.classType?.typeName in setOf("CfirTarget", "BuiltinPrimitiveOperatorSignature")
-            }.joinToString("\n") { "            " + it.name + " = " + shellValue(it) } + "\n        }"
+            }.joinToString("\n") { "            " + it.name + " = " + shellValue(implementation, it) } + "\n        }"
         } else {
             // 与 ImplementationPrinter 同一参数规则：final 的 resolveState 由 init 根据 phase 建立。
             implementation.typeName + "(\n" + constructorFields.joinToString(",\n") {
-                "            " + it.name + " = " + shellValue(it)
+                "            " + it.name + " = " + shellValue(implementation, it)
             } + ",\n        )"
         }
     }
@@ -126,9 +128,29 @@ internal object OwnedGraphCopyPrinter {
         return fields
     }
 
-    private fun shellValue(field: Field): String {
+    /**
+     * 根节点的构造器会绑定整棵模式树。只对真实模式拥有边递归分配，
+     * 使这些构造器永远不会读到仍由原宿主持有的孩子或 binding。
+     */
+    private fun isPatternOwnershipEdge(implementation: Implementation, field: Field): Boolean {
+        val element = implementation.element
+        if (element.patternTreeRootFieldName == field.name) return true
+        if (!element.isPattern()) return false
+        val fieldElement = ((if (field is ListField) field.baseType else field.typeRef) as? ElementOrRef<*>)?.element
+        return field.isChild && fieldElement is Element &&
+            (fieldElement.isPattern() || fieldElement == CfirTree.patternBindingVariable)
+    }
+
+    private fun Element.isPattern(): Boolean =
+        this == CfirTree.pattern || allParents.any { it.isPattern() }
+
+    private fun shellValue(implementation: Implementation, field: Field): String {
         val value = selectedValue(field)
         return when {
+            isPatternOwnershipEdge(implementation, field) && field is ListField ->
+                value + ".mapTo(mutableListOf()) { context.allocate(it) }" +
+                    if (field.isMutableOrEmptyList) ".toMutableOrEmpty()" else ""
+            isPatternOwnershipEdge(implementation, field) -> nullableCall(field, "context.allocate")
             field.name == "contentSource" -> "CfirContentSource.Owned"
             field.name == "name" && field.classType?.typeName == "Name" -> "context.name(original, " + value + ")"
             field.classType?.typeName == "BuiltinPrimitiveOperatorSignature" -> "copyOperatorSignature(" + value + ")"
@@ -148,14 +170,23 @@ internal object OwnedGraphCopyPrinter {
         val owningFields = constructorFields.filter {
             it.typeRef is ElementOrRef<*> || it is ListField ||
                 it.classType?.typeName in setOf("CfirAnnotationArgumentView", "CfirAssignmentTypeMismatchOutcome")
-        }.filterNot { it.classType?.typeName == "CfirControlFlowGraphReference" }
+        }.filterNot {
+            it.classType?.typeName == "CfirControlFlowGraphReference" || isPatternOwnershipEdge(implementation, it)
+        }
         val lines = owningFields.map { field ->
             val value = copyValue(field)
-            if (field is ListField && !field.isMutableOrEmptyList) {
-                "        copied." + field.name + ".clear()\n        copied." + field.name + ".addAll(" + value + ")"
-            } else {
-                check(field.isMutable) { "Immutable owned field requires a hand-written allocation contract: " + implementation.typeName + "." + field.name }
-                "        copied." + field.name + " = " + value
+            when {
+                field.withReplace -> "        copied.replace" + field.name.replaceFirstChar(Char::uppercaseChar) + "(" + value + ")"
+                field is ListField && !field.isMutableOrEmptyList -> {
+                    check(!field.readOnlyImplementationList) { "Read-only list requires a replace entry point: ${implementation.typeName}.${field.name}" }
+                    "        copied." + field.name + ".clear()\n        copied." + field.name + ".addAll(" + value + ")"
+                }
+                else -> {
+                    check(field.isMutable && field.customSetterVisibility == org.cangnova.cangjie.generators.tree.Visibility.PUBLIC) {
+                        "Immutable owned field requires a hand-written allocation contract: " + implementation.typeName + "." + field.name
+                    }
+                    "        copied." + field.name + " = " + value
+                }
             }
         }.toMutableList()
         implementation.fieldsInBody.filter {

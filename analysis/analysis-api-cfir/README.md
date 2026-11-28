@@ -4,7 +4,7 @@
 
 ## 关键包
 
-`org.cangnova.cangjie.analysis.api.cfir.*` — CFIR 后端 components 实现，按 component 类型分包（resolve / type / call / scope / completion / diagnostics 等）。
+`org.cangnova.cangjie.analysis.api.cfir.*` — CFIR 后端实现，按领域分包：`components`（各 component 实现）、`symbols` / `types` / `scopes` / `signatures` / `diagnostics` / `statistics` / `session` / `references` 等。
 
 ## 子模块
 
@@ -12,11 +12,13 @@
 
 ## 依赖
 
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`
-- `:analysis:analysis-api-impl-base`
+- `:analysis:analysis-api`、`:analysis:analysis-api-impl-base`
 - `:analysis:low-level-api-cfir`
-- `:cfir:entrypoint`、`:cfir:resolve`、`:cfir:checkers`、`:cfir:cfir-tree`、`:cfir:cfir-cones`、`:cfir:cfir-common`
+- `:analysis:macro-expansion`、`:analysis:decompiled`、`:analysis:stubs`、`:analysis:cj-references`、`:analysis:symbol-light-declarations`
+- `:cfir:entrypoint`、`:cfir:resolve`、`:cfir:checkers`、`:cfir:cfir-tree`
+- `:common:diagnostics`
 - `:psi`
+- OpenTelemetry API（`implementation`）
 
 ## 测试
 

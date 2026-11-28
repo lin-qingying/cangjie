@@ -7,16 +7,16 @@ import std.collection.concurrent.*
 import std.core.*
 
 @Deprecated
-class ObjectPool<T> {
-    var pool: std.core.Array<std.collection.concurrent.ConcurrentLinkedQueue<T>>
+public class ObjectPool<T> {
+    internal var pool: std.core.Array<std.collection.concurrent.ConcurrentLinkedQueue<T>>
 
-    let newFunc: () -> T
+    internal let newFunc: () -> T
 
-    let resetFunc: std.core.Option<(T) -> T>
+    internal let resetFunc: std.core.Option<(T) -> T>
 
-    init(newFunc: () -> T, resetFunc: std.core.Option<(T) -> T>) { /* compiled code */ }
+    init(newFunc: () -> T, resetFunc!: std.core.Option<(T) -> T> = COMPILED_CODE /* compiled code */) { /* compiled code */ }
 
-    func get(): T { /* compiled code */ }
+    public func get(): T { /* compiled code */ }
 
-    func put(item: T): Unit { /* compiled code */ }
+    public func put(item: T): Unit { /* compiled code */ }
 }

@@ -66,6 +66,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
+import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
@@ -134,8 +135,9 @@ fun BodyResolveComponents.initialTypeOfCandidate(candidate: Candidate): ConeCang
         // return type。candidate.substitutedReturnType 已应用声明类型参数替换，这里只继续应用
         // 当前约束系统，供 expected-return 过滤和嵌套调用目标类型选择读取真实调用结果类型。
         val system = candidate.system
-        val declaredResultType = candidate.substitutedReturnType()
-        return system.buildCurrentSubstitutor()
+        val declaredResultType = candidate.substitutedReturnTypeFromCalculator()
+        // 类型投影只读取固定绑定；FULL 已冻结的系统不能再进入 builder/analyzer 上下文。
+        return system.captureStorage().buildCurrentSubstitutor(system, emptyMap())
             .safeSubstitute(system, declaredResultType)
             .asCone()
     }
@@ -192,7 +194,7 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
         is CfirErrorReferenceWithCandidate -> {
             val candidate = calleeReference.candidate
             if (candidate.hasExplicitTypeArgumentConstraintMismatchForNominalRecovery()) {
-                return candidate.substituteExplicitTypeArgumentConstraints(candidate.substitutedReturnType())
+                return candidate.substituteExplicitTypeArgumentConstraints(candidate.substitutedReturnTypeFromCalculator())
             }
             // 其他失败候选只承载根诊断，不能把声明的名义返回类型暴露给外围表达式。
             ConeErrorType(ConeUnreportedDuplicateDiagnostic(calleeReference.diagnostic))
@@ -205,7 +207,7 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
                 return candidate.substitutedReturnType()
             }
             if (candidate.symbol.cfir is CfirEnumConstructor) {
-                return candidate.substitutedReturnType()
+                return candidate.substitutedReturnTypeFromCalculator()
             }
             when (candidate.callInfo.callKind) {
                 CallKind.NamedValueAccess -> typeFromNamedValueCandidate(candidate)
@@ -283,7 +285,7 @@ private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candida
     val declaration = candidate.symbol.cfir
     if (declaration !is CfirFunction) {
         if (declaration is CfirEnumConstructor) {
-            return candidate.substitutedReturnType()
+            return candidate.substitutedReturnTypeFromCalculator()
         }
         return typeFromSymbol(candidate.symbol)
     }
@@ -475,6 +477,7 @@ fun CfirNamedReferenceWithCandidate.toErrorReference(diagnostic: ConeDiagnostic)
  */
 fun ConeCangJieType.initialTypeOfCandidate(candidate: Candidate): ConeCangJieType {
     val system = candidate.system
-    val resultingSubstitutor = system.buildCurrentSubstitutor()
+    // 保留语义入口原来的 parent 同步，替换计算自身只消费同一实际系统的只读快照。
+    val resultingSubstitutor = system.captureStorage().buildCurrentSubstitutor(system, emptyMap())
     return resultingSubstitutor.safeSubstitute(system, candidate.substitutor.substituteOrSelf(this)).asCone()
 }

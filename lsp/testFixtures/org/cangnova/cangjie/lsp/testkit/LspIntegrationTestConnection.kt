@@ -53,8 +53,12 @@ class LspIntegrationTestConnection private constructor(
 
     /**
      * 被测语言服务器实例。
+     *
+     * 公开是**刻意的**：有些验证必须进到服务端容器里做（例如确认补全管线在生产容器中
+     * 能否跑通、或读取装配好的 project 做探针）。这类验证不能改由测试自建容器替代——
+     * 夹具容器的结论不能外推到生产容器（设计 §12.7）。
      */
-    private val server: CangjieLanguageServer = CangjieLanguageServer(options)
+    val server: CangjieLanguageServer = CangjieLanguageServer(options)
 
     /**
      * 服务端侧 LSP4J launcher。
@@ -229,6 +233,11 @@ class LspIntegrationTestConnection private constructor(
         return awaitFuture(serverProxy.textDocumentService.codeAction(params))
     }
 
+    /** 发起 codeAction/resolve 请求并等待结果。 */
+    fun resolveCodeAction(params: CodeAction): CodeAction {
+        return awaitFuture(serverProxy.textDocumentService.resolveCodeAction(params))
+    }
+
     /** 发起 formatting 请求并等待结果。 */
     fun formatting(params: DocumentFormattingParams): List<TextEdit> {
         return awaitFuture(serverProxy.textDocumentService.formatting(params))
@@ -276,6 +285,11 @@ class LspIntegrationTestConnection private constructor(
         return awaitFuture(serverProxy.textDocumentService.inlayHint(params))
     }
 
+    /** 发起 inlayHint/resolve 请求并等待结果。 */
+    fun resolveInlayHint(hint: InlayHint): InlayHint {
+        return awaitFuture(serverProxy.textDocumentService.resolveInlayHint(hint))
+    }
+
     /** 发起 textDocument/diagnostic 请求并等待结果。 */
     fun documentDiagnostic(params: DocumentDiagnosticParams): DocumentDiagnosticReport {
         return awaitFuture(serverProxy.textDocumentService.diagnostic(params))
@@ -296,10 +310,28 @@ class LspIntegrationTestConnection private constructor(
         serverProxy.workspaceService.didChangeWorkspaceFolders(params)
     }
 
+    /**
+     * 发起 `completionItem/resolve` 请求并等待结果。
+     *
+     * 协议上 resolve **不带文档 URI**——item 自己带着定位信息（`data`），
+     * 因此助手也不接受 URI 参数。
+     */
+    fun resolveCompletionItem(item: CompletionItem): CompletionItem {
+        return awaitFuture(serverProxy.textDocumentService.resolveCompletionItem(item))
+    }
+
     /** 发起 workspace/executeCommand 请求并等待结果。 */
     fun executeCommand(params: ExecuteCommandParams): Any {
         return awaitFuture(serverProxy.workspaceService.executeCommand(params))
     }
+
+    /**
+     * 服务端已发出的 `workspace/applyEdit` 请求。
+     *
+     * 补全插入的两端分工是「服务端算编辑 + 客户端落盘」，
+     * 因此服务端侧可断言的就是这些请求里的编辑内容。
+     */
+    fun appliedEdits(): List<ApplyWorkspaceEditParams> = client.appliedEdits.toList()
 
     /** 发起 workspace/symbol 请求并等待结果。 */
     fun workspaceSymbol(params: WorkspaceSymbolParams): Either<List<SymbolInformation>, List<WorkspaceSymbol>> {
@@ -466,6 +498,20 @@ class LspIntegrationTestConnection private constructor(
          * 已发布的 diagnostics 通知列表。
          */
         val publishedDiagnostics: MutableList<PublishDiagnosticsParams> = CopyOnWriteArrayList()
+
+        /**
+         * 服务端发来的 `workspace/applyEdit` 请求列表。
+         *
+         * 补全插入是「服务端算编辑、客户端落盘」：服务端侧能验证的就是**发出的编辑内容**，
+         * 因此这里必须记录请求本身（按设计 §7.11.7，不验证服务端的写事务）。
+         */
+        val appliedEdits: MutableList<ApplyWorkspaceEditParams> = CopyOnWriteArrayList()
+
+        /** 接受并记录 `workspace/applyEdit`。 */
+        override fun applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture<ApplyWorkspaceEditResponse> {
+            appliedEdits += params
+            return CompletableFuture.completedFuture(ApplyWorkspaceEditResponse(true))
+        }
 
         /** 忽略 telemetry 通知。 */
         override fun telemetryEvent(`object`: Any) {}

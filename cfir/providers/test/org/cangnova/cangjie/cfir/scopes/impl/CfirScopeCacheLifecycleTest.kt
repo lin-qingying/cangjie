@@ -1286,6 +1286,11 @@ class CfirScopeCacheLifecycleTest {
         private fun resolvedStatus(isStatic: Boolean = false): CfirResolvedDeclarationStatus = buildResolvedDeclarationStatus {
             visibility = Visibilities.Public
             modality = Modality.FINAL
+            visibilityExplicitness = CfirModifierExplicitness.EXPLICIT
+            modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+            bodyPresence = CfirBodyPresence.UNKNOWN
+            isDeclarationFile = false
+            isFromCommonPart = false
             isVisibilityExplicit = true
             isModalityExplicit = false
             isAbstractExplicit = false

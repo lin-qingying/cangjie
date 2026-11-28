@@ -16,15 +16,29 @@ import java.util.concurrent.ConcurrentHashMap
 class CjoSearchPath(
     /** 当前 binary library 模块显式提供的 CJO 搜索根目录。 */
     private val additionalLibrarySearchPaths: List<File> = emptyList(),
+    /**
+     * 宿主解析出的标准库搜索根目录；为 `null` 时才回退到 `CANGJIE_STDLIB_MODULE` 环境变量。
+     *
+     * SDK 路径由项目设置决定，不能在宿主已给出根之后仍按进程环境变量解析，否则同一 IDE
+     * 会按另一份 SDK 的目录查找 `std.*` 包。
+     */
+    private val explicitStdlibSearchPaths: List<File>? = null,
     /** 环境变量读取函数，测试可注入以隔离宿主环境。 */
     private val envProvider: (String) -> String? = System::getenv,
 ) {
-    /** 标准库 `.cjo` 搜索根目录，来自 `CANGJIE_STDLIB_MODULE`。 */
-    private val stdlibSearchPaths: List<File> by lazy { readPaths("CANGJIE_STDLIB_MODULE") }
-    /** 普通库 `.cjo` 搜索根目录，来自环境变量及当前 binary library 模块。 */
+    /** 标准库 `.cjo` 搜索根目录，来自宿主显式根或 `CANGJIE_STDLIB_MODULE`。 */
+    private val stdlibSearchPaths: List<File> by lazy {
+        (explicitStdlibSearchPaths ?: readPaths("CANGJIE_STDLIB_MODULE"))
+            .filter { it.isDirectory || it.isFile && it.extension.equals("cjo", ignoreCase = true) }
+    }
+    /** 显式模块根可为目录或单个 CJO 文件；单文件 owner 不认领相邻包，仍优先于 SDK。 */
+    private val ownLibrarySearchPaths: List<File> = additionalLibrarySearchPaths
+        .map { it.absoluteFile.normalize() }
+        .filter { it.isDirectory || it.isFile && it.extension.equals("cjo", ignoreCase = true) }
+        .distinct()
+    /** 普通库环境搜索根；未指定模块根时保留原有 stdlib/library 顺序。 */
     private val librarySearchPaths: List<File> by lazy {
-        (readPaths("CANGJIE_LIBRARY") + additionalLibrarySearchPaths.filter(File::isDirectory))
-            .distinctBy(File::getAbsolutePath)
+        readPaths("CANGJIE_LIBRARY").distinctBy(File::getAbsolutePath)
     }
 
     /** 每个根目录按包头 fullPkgName 建出的索引缓存。 */
@@ -43,13 +57,31 @@ class CjoSearchPath(
             .orEmpty()
     }
 
-    /** 根据包名选择搜索根目录；标准库包优先查标准库路径。 */
+    companion object {
+        /**
+         * 按宿主解析出的根构造搜索路径：标准库根与普通库根都显式给出，不再读环境变量。
+         *
+         * builtins / library 根由 [BuiltinsVirtualFileProvider] 与 library module 的 binary roots 折叠而来，
+         * 是当前进程唯一的 SDK 真相。
+         */
+        fun forRoots(
+            builtinsRoots: List<File>,
+            libraryRoots: List<File> = emptyList(),
+        ): CjoSearchPath = CjoSearchPath(
+            additionalLibrarySearchPaths = libraryRoots.distinctBy(File::getAbsolutePath),
+            explicitStdlibSearchPaths = builtinsRoots.distinctBy(File::getAbsolutePath),
+            envProvider = { null },
+        )
+    }
+
+    /** 先使用显式模块根；环境查询中的标准库包仍优先查标准库路径。 */
     private fun searchPathsFor(fullPkgName: String): List<File> {
-        return if (isStdlibPackage(fullPkgName)) {
+        val environmentPaths = if (isStdlibPackage(fullPkgName)) {
             stdlibSearchPaths + librarySearchPaths
         } else {
             librarySearchPaths
         }
+        return (ownLibrarySearchPaths + environmentPaths).distinctBy(File::getAbsolutePath)
     }
 
     /** 判断完整包名是否属于 `std` 标准库命名空间。 */
@@ -67,18 +99,13 @@ class CjoSearchPath(
         if (fullPkgName in missingPackages) return null
 
         val searchPaths = searchPathsFor(fullPkgName)
+        val relativePath = CjoConstants.packageNameToPath(fullPkgName)
 
         for (dir in searchPaths) {
-            val indexed = indexDirectoryByHeader(dir)[fullPkgName] ?: continue
-            resolvedByPackage.putIfAbsent(fullPkgName, indexed)
-            missingPackages.remove(fullPkgName)
-            return resolvedByPackage[fullPkgName] ?: indexed
-        }
-
-        val legacyRelativePath = CjoConstants.packageNameToPath(fullPkgName)
-        for (dir in searchPaths) {
-            val candidate = File(dir, legacyRelativePath)
-            if (!candidate.isFile) continue
+            // 每个 root 内完成 header 与标准路径定位后再进入下一 root，不能由低优先级索引越过当前资源。
+            val candidate = indexDirectoryByHeader(dir)[fullPkgName]
+                ?: dir.takeIf(File::isDirectory)?.let { File(it, relativePath).takeIf(File::isFile) }
+                ?: continue
             resolvedByPackage.putIfAbsent(fullPkgName, candidate)
             missingPackages.remove(fullPkgName)
             return resolvedByPackage[fullPkgName] ?: candidate
@@ -91,7 +118,7 @@ class CjoSearchPath(
     /** 枚举当前搜索根目录与解析缓存中已知的包名。 */
     fun getAvailablePackageNames(): Set<String> {
         return buildSet {
-            for (root in stdlibSearchPaths + librarySearchPaths) {
+            for (root in ownLibrarySearchPaths + stdlibSearchPaths + librarySearchPaths) {
                 addAll(indexDirectoryByHeader(root).keys)
             }
             addAll(resolvedByPackage.keys)
@@ -105,6 +132,11 @@ class CjoSearchPath(
      */
     private fun indexDirectoryByHeader(root: File): Map<String, File> {
         return directoryIndexCache.getOrPut(root) {
+            if (root.isFile) {
+                // 实际文件已由初始 owner 限定；named 索引只能指向该文件，不能再次搜索父目录。
+                val name = readPackageNameFromHeader(root) ?: return@getOrPut emptyMap()
+                return@getOrPut mapOf(name to root)
+            }
             if (!root.isDirectory) return@getOrPut emptyMap()
 
             val files = root.walkTopDown()

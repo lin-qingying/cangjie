@@ -391,12 +391,28 @@ abstract class AbstractImplementationConfigurator<Implementation, Element, Eleme
                     isMutable = true
                 }
 
+            /** 字段 transform 方法的自定义完整方法体。 */
+            var customTransform: String? = null
+
+            /** 字段 replace 方法的自定义完整方法体。 */
+            var customReplace: String? = null
+
+            /** 列表字段在实现类中公开为只读 List 视图。 */
+            var readOnlyImplementationList: Boolean = false
+
+            /** 自定义 setter 的可见性；用于实现属性存储框架内部维护的不变量。 */
+            var customSetterVisibility: Visibility? = null
+
             /**
              * 将本 DSL 上下文收集到的配置写入字段模型（implementationDefaultStrategy）。
              * 优先级：显式 value > delegate 委托 > 不写入（保持已有策略）
              */
             fun applyConfiguration() {
                 field.customSetter = customSetter
+                field.customTransform = customTransform
+                field.customReplace = customReplace
+                field.readOnlyImplementationList = readOnlyImplementationList
+                customSetterVisibility?.let { field.customSetterVisibility = it }
                 isMutable?.let { field.isMutable = it }
 
                 var value = value
@@ -427,6 +443,13 @@ abstract class AbstractImplementationConfigurator<Implementation, Element, Eleme
      */
     protected inner class ImplementationContext(val implementation: Implementation) :
         FieldContainerContext<ElementField>(implementation) {
+
+        /**
+         * 为生成的实现类 init 块追加初始化语句。
+         */
+        fun initializationStatements(vararg statements: String) {
+            implementation.initializationStatements += statements
+        }
 
         /** 为实现类添加 @OptIn 注解，当类内代码需要 opt-in API 时使用 */
         fun optInToInternals() {

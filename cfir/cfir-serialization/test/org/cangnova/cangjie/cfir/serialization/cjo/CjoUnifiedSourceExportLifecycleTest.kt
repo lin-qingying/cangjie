@@ -2,6 +2,10 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import PackageFormat.AnnoKind
 import PackageFormat.ConstValue
 import PackageFormat.DeclKind
@@ -683,14 +687,15 @@ class CjoUnifiedSourceExportLifecycleTest : CjParsingTestCase("", "cj", CangJieF
         val wire: Package get() = snapshot.pkg
         fun declaration(index: Int): CfirDeclaration = kotlin.test.assertNotNull(provider.deserializeCjoDeclaration(path, metadata.fullPackageName, index))
         fun function(name: String): CfirNamedFunction = assertIs<CfirNamedFunction>(callable(name))
-        fun variable(name: String): CfirFieldVariable = assertIs<CfirFieldVariable>(callable(name))
+        fun binding(name: String): CfirPatternBindingVariable = provider.packageVariableBinding(packageName, name)
+        fun variable(name: String): CfirPatternVariable = assertIs<CfirPatternVariable>(binding(name).patternTreeOwner)
         private fun callable(name: String): CfirDeclaration = provider.getTopLevelCallableSymbols(
             FqName(metadata.fullPackageName), Name.identifier(name)).single().cfir
         fun classifier(name: String): CfirClassLikeDeclaration = kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(
             ClassId.topLevel(FqName("${metadata.fullPackageName}.$name")))).cfir
         fun graph(): CfirSourceGraph = kotlin.test.assertNotNull(provider.packageSourceGraphOf(roots.first()))
         fun value(name: String): CfirConstantValue = assertIs<CfirConstantValueExpression>(
-            assertIs<CfirEvaluatorResult.Evaluated>(variable(name).evaluatedInitializer).result).constantValue
+            assertIs<CfirEvaluatorResult.Evaluated>(binding(name).evaluatedInitializer).result).constantValue
         fun variableInfo(name: String): VarInfo = assertIs<VarInfo>(wire.allDecls(
             kotlin.test.assertNotNull(variable(name).cjoDeclarationOrigin).declarationIndex)!!.info(VarInfo()))
         fun body(name: String): PackageFormat.FuncBody = kotlin.test.assertNotNull(assertIs<FuncInfo>(wire.allDecls(
@@ -708,7 +713,10 @@ class CjoUnifiedSourceExportLifecycleTest : CjParsingTestCase("", "cj", CangJieF
             envProvider = { null }), CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
             explicitCommonPartPaths = listOf(path))
         val module = Module(CfirSession.Kind.Library)
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, (listOf(root) + searchRoots).toSet()),
+        )
         module.registerProvider(provider)
         val snapshot = kotlin.test.assertNotNull(manager.loadPackageSnapshot(metadata.fullPackageName))
         val roots = metadata.declarations.withIndex().filter { it.value.isTopLevel }.map {
@@ -787,7 +795,9 @@ class CjoUnifiedSourceExportLifecycleTest : CjParsingTestCase("", "cj", CangJieF
             }
         }
         graph.constantValues.forEach { (host, value) ->
-            assertSame(value, assertIs<CfirConstantValueExpression>(assertIs<CfirEvaluatorResult.Evaluated>(host.evaluatedInitializer).result).constantValue)
+            assertSame(value, assertIs<CfirConstantValueExpression>(assertIs<CfirEvaluatorResult.Evaluated>(
+                if (host is CfirPatternVariable) host.pattern.bindingVariables().single().evaluatedInitializer else host.evaluatedInitializer,
+            ).result).constantValue)
             assertSame(host.returnTypeRef.coneType, value.type)
         }
     }
@@ -855,6 +865,11 @@ class CjoUnifiedSourceExportLifecycleTest : CjParsingTestCase("", "cj", CangJieF
             visibility = Visibilities.Local
             modality = org.cangnova.cangjie.descriptors.Modality.FINAL
             isConst = const
+            visibilityExplicitness = CfirModifierExplicitness.IMPLICIT
+            modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+            bodyPresence = CfirBodyPresence.UNKNOWN
+            isDeclarationFile = false
+            isFromCommonPart = false
             isVisibilityExplicit = false
             isModalityExplicit = false
             isAbstractExplicit = false

@@ -58,6 +58,7 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(MppCheckerKin
         val result = expression.result ?: return
         val source = result.source as? AbstractCjSourceElement ?: return
         val containingFunction = expression.target.labeledElement
+        if (containingFunction is CfirConstructor && containingFunction.status.isStatic) return
         if (
             containingFunction is CfirNamedFunction &&
             containingFunction.hasImplicitOrInferredReturnType()
@@ -67,13 +68,6 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(MppCheckerKin
         val rawActualType = result.coneTypeOrNull ?: return
         val returnTypeMismatch = result.returnTypeMismatchError(rawActualType)
         val actualType = returnTypeMismatch?.actualType ?: rawActualType
-        if (actualType is ConeErrorType) return
-        if (result is CfirMatchExpression && result.branches.any { branch ->
-                branch.body.coneTypeOrNull is ConeErrorType || branch.coneTypeOrNull is ConeErrorType
-            }
-        ) {
-            return
-        }
         if (expression.source?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor) return
 
         if (
@@ -119,7 +113,9 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker(MppCheckerKin
             }
         }
 
+        // 复合 return 值由共享 owner 下钻并逐叶裁决错误类型；match 某分支失败不影响其余分支的检查。
         if (checkTargetTypedExpression(result, expectedType).isHandled) return
+        if (actualType is ConeErrorType) return
 
         // 显式 return 的字面量与函数体尾字面量都经过同一目标类型转换规则。
         literalConversionDiagnostic(

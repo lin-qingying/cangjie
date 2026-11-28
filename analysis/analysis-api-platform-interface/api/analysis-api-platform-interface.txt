@@ -53,6 +53,8 @@ package org.cangnova.cangjie.analysis.api.platform.caches
 public value class NullableCaffeineCache<K : Any, V : Any>( val cache: Cache<K, Any>, )
 NullableCaffeineCache.public inline fun get(key: K, crossinline compute: (K) -> V?): V?
 NullableCaffeineCache.public inline fun getOrPut(key: K, crossinline compute: (K) -> V?): V?
+NullableCaffeineCache.public fun getIfPresent(key: K): V?
+NullableCaffeineCache.public fun put(key: K, value: V?)
 NullableCaffeineCache.public val estimatedSize: @NonNegative Long
 ## org/cangnova/cangjie/analysis/api/platform/caches/NullableConcurrentCache.kt
 package org.cangnova.cangjie.analysis.api.platform.caches
@@ -75,11 +77,13 @@ public fun Project.createAnnotationResolver(searchScope: GlobalSearchScope): Can
 ## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieDeclarationProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.declarations
 public interface CangJieDeclarationProvider : CangJieComposableProvider
+CangJieDeclarationProvider.public fun getPackageFiles(packageFqName: FqName, organizationName: Name? = null, includeSubpackages: Boolean = false): Collection<CjFile>
 CangJieDeclarationProvider.public fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration?
 CangJieDeclarationProvider.public fun getAllClassesByClassId(classId: ClassId): Collection<CjTypeStatement>
 CangJieDeclarationProvider.public fun getAllTypeAliasesByClassId(classId: ClassId): Collection<CjTypeAlias>
 CangJieDeclarationProvider.public fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
 CangJieDeclarationProvider.public fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
+CangJieDeclarationProvider.public fun getTopLevelPatternBindings(callableId: CallableId): Collection<CjNamedPattern>
 CangJieDeclarationProvider.public fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
 CangJieDeclarationProvider.public fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration>
 CangJieDeclarationProvider.public fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
@@ -117,40 +121,35 @@ CangJieEmptyDeclarationProvider.public override fun getAllClassesByClassId(class
 CangJieEmptyDeclarationProvider.public override fun getAllTypeAliasesByClassId(classId: ClassId): List<CjTypeAlias>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelProperties(callableId: CallableId): List<CjProperty>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelPatternBindings(callableId: CallableId): List<CjNamedPattern>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelFunctions(callableId: CallableId): List<CjNamedFunction>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelMacros(callableId: CallableId): List<CjMacroDeclaration>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelCallableFiles(callableId: CallableId): List<CjFile>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelExtends(): List<CjExtend>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelExtendFiles(): List<CjFile>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>
+CangJieEmptyDeclarationProvider.public override fun getPackageFiles(packageFqName: FqName, organizationName: Name?, includeSubpackages: Boolean): List<CjFile>
 CangJieEmptyDeclarationProvider.public override fun findFilesForFacadeByPackage(packageFqName: FqName): List<CjFile>
 CangJieEmptyDeclarationProvider.public override fun findFilesForFacade(facadeFqName: FqName): List<CjFile>
 CangJieEmptyDeclarationProvider.public override fun findInternalFilesForFacade(facadeFqName: FqName): List<CjFile>
 CangJieEmptyDeclarationProvider.public override fun computePackageNames(): Set<String>
 CangJieEmptyDeclarationProvider.public override val hasSpecificClassifierPackageNamesComputation: Boolean
 CangJieEmptyDeclarationProvider.public override val hasSpecificCallablePackageNamesComputation: Boolean
-## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt
-package org.cangnova.cangjie.analysis.api.platform.declarations
-public class CangJieFileBasedDeclarationProvider( val cangjieFile: CjFile, ) : CangJieDeclarationProvider
-CangJieFileBasedDeclarationProvider.public val virtualFile
-CangJieFileBasedDeclarationProvider.public val file
-CangJieFileBasedDeclarationProvider.public override fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration?
-CangJieFileBasedDeclarationProvider.public override fun getAllClassesByClassId(classId: ClassId): Collection<CjTypeStatement>
-CangJieFileBasedDeclarationProvider.public override fun getAllTypeAliasesByClassId(classId: ClassId): Collection<CjTypeAlias>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelExtends(): Collection<CjExtend>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelExtendFiles(): Collection<CjFile>
-CangJieFileBasedDeclarationProvider.public override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>
-CangJieFileBasedDeclarationProvider.public override fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile>
-CangJieFileBasedDeclarationProvider.public override fun findFilesForFacade(facadeFqName: FqName): Collection<CjFile>
-CangJieFileBasedDeclarationProvider.public override fun findInternalFilesForFacade(facadeFqName: FqName): Collection<CjFile>
-CangJieFileBasedDeclarationProvider.public override fun computePackageNames(): Set<String>
-CangJieFileBasedDeclarationProvider.public override val hasSpecificClassifierPackageNamesComputation: Boolean
-CangJieFileBasedDeclarationProvider.public override val hasSpecificCallablePackageNamesComputation: Boolean
+## org/cangnova/cangjie/analysis/api/platform/index/CaSymbolIndexQuery.kt
+package org.cangnova.cangjie.analysis.api.platform.index
+public data class CaSymbolIndexEntry( val packageFqName: FqName, val name: Name, val kind: CaSymbolIndexEntryKind, val ownerClassId: ClassId? = null, )
+public enum class CaSymbolIndexEntryKind
+public data class CaSymbolIndexNameFilter( val prefix: String, val isRepeatedInvocation: Boolean = false, )
+CaSymbolIndexNameFilter.public fun matches(name: Name): Boolean
+public enum class CaSymbolIndexPersistence
+public interface CaSymbolIndexQuery : CaPlatformComponent
+CaSymbolIndexQuery.public fun findDeclarations(filter: CaSymbolIndexNameFilter): Collection<CaSymbolIndexEntry>
+CaSymbolIndexQuery.public val indexPersistence: CaSymbolIndexPersistence
+public fun Project.createCaSymbolIndexQuery(analysisScope: GlobalSearchScope): CaSymbolIndexQuery
+public interface CaSymbolIndexQueryService : CaPlatformComponent
+CaSymbolIndexQueryService.public fun createSymbolIndexQuery(analysisScope: GlobalSearchScope): CaSymbolIndexQuery
+CaSymbolIndexQueryService.public companion object
+CaSymbolIndexQueryService.Companion.public fun getInstance(project: Project): CaSymbolIndexQueryService
 ## org/cangnova/cangjie/analysis/api/platform/lifetime/CaAlwaysAccessibleLifetimeToken.kt
 package org.cangnova.cangjie.analysis.api.platform.lifetime
 public class CaAlwaysAccessibleLifetimeToken(project: Project) : CaLifetimeToken()
@@ -455,6 +454,10 @@ CaStatisticsService.public fun start()
 CaStatisticsService.public companion object
 CaStatisticsService.Companion.public val areStatisticsEnabled: Boolean
 CaStatisticsService.Companion.public fun getInstance(project: Project): CaStatisticsService?
+## org/cangnova/cangjie/analysis/api/platform/statistics/CangJieGlobalOpenTelemetryProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.statistics
+public class CangJieGlobalOpenTelemetryProvider : CangJieOpenTelemetryProvider
+CangJieGlobalOpenTelemetryProvider.public override val openTelemetry: OpenTelemetry
 ## org/cangnova/cangjie/analysis/api/platform/statistics/CangJieOpenTelemetryProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.statistics
 public interface CangJieOpenTelemetryProvider : CaOptionalPlatformComponent

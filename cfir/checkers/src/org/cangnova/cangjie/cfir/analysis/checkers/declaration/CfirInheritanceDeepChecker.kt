@@ -1668,13 +1668,14 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker(MppCheckerKind.Common) 
      * 判断 callable 是否需要作为接口要求由实现方提供实现。
      *
      * 接口中没有函数体或访问器体的默认成员在继承检查中等价于 abstract requirement。
+     * 泛型代换生成的声明只保存签名，函数体和访问器体由原声明持有。
      */
     private fun CfirCallableDeclaration.requiresInterfaceImplementation(
         ownerDeclaration: CfirClassLikeDeclaration?,
     ): Boolean {
         if (status.isAbstract) return true
         if (ownerDeclaration !is CfirInterface) return false
-        return !hasOwnBodyOrAccessorBody()
+        return !unwrapSubstitutionOverrides().hasOwnBodyOrAccessorBody()
     }
 
     /**

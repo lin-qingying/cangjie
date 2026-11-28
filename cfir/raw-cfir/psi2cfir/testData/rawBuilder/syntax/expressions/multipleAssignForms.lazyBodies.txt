@@ -1,0 +1,4 @@
+FILE: multipleAssignForms.cj
+    internal? func multipleAssignForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

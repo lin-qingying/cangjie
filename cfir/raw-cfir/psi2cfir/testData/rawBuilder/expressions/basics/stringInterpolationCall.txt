@@ -1,0 +1,27 @@
+FILE: stringInterpolationCall.cj
+    internal? class A {
+        init()
+        internal? func name(): R|String| {
+            RETURN {
+                STRING("a")
+            }
+        }
+    }
+    internal? func greet(a: R|A|, x: R|Int64|): R|String| {
+        RETURN {
+            STRING_INTERPOLATION {
+                STRING("v=")
+                FUNCTION_CALL(name) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                }
+                STRING(" w=")
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(2)
+                }
+            }
+        }
+    }

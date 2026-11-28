@@ -1,0 +1,186 @@
+package org.cangnova.cangjie.analysis.decompiled.psi.text
+
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Disposer
+import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.stubs.StubElement
+import com.intellij.testFramework.LightVirtualFile
+import org.cangnova.cangjie.CangJieCoreEnvironment
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.analysis.decompiler.stub.CjoFileStubBuilder
+import org.cangnova.cangjie.analysis.decompiler.stub.LoadedCjoPackage
+import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
+import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
+import org.cangnova.cangjie.lang.CangJieFileType
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
+import org.junit.jupiter.api.Test
+import java.nio.file.Files
+import java.nio.file.Path
+
+/**
+ * 临时诊断：对“已安装 SDK”的 std.core.cjo 计算 binary stub 与反编译文本重建 stub 的类型直方图差集。
+ * 仅用于定位 `Stub count ... doesn't match stubbed node length ...`。
+ */
+class StubShapeHistogramDiffTest {
+    @Test
+    fun diffInstalledStdCore() {
+        val disposable = Disposer.newDisposable("StubShapeHistogramDiffTest")
+        try {
+            val environment = CangJieCoreEnvironment.createForTests(disposable)
+            val library = installedSdkLibrary()
+            val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") library.toString() else null })
+            val snapshot = requireNotNull(manager.loadPackageSnapshot("std.core")) { "std.core snapshot is null: $library" }
+            val module = Module()
+            module.session.register(
+                CfirSymbolProvider::class,
+                CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module),
+            )
+            val binary = CjoFileStubBuilder.buildFileStub(
+                LoadedCjoPackage(
+                    LightVirtualFile("std.core.cjo"), FqName("std.core"), snapshot.pkg, snapshot.header,
+                    manager, true, snapshot.sourcePath,
+                ), module,
+            )
+            val rendered = buildDecompiledText(binary)
+            val repo = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+                .first { Files.isRegularFile(it.resolve("settings.gradle.kts")) }
+            Files.createDirectories(repo.resolve(".scratch/idea-lag"))
+            Files.writeString(repo.resolve(".scratch/idea-lag/std-core-rendered.cj"), rendered)
+            val source = PsiFileFactory.getInstance(environment.project)
+                .createFileFromText("stdCoreReparsed.cj", CangJieFileType.INSTANCE, rendered) as CjFile
+            val rebuilt = source.calcStubTree().root as CangJieFileStubImpl
+
+            val errors = com.intellij.psi.util.PsiTreeUtil
+                .findChildrenOfType(source, com.intellij.psi.PsiErrorElement::class.java)
+            val errorSamples = errors.take(12).joinToString("\n") { error ->
+                val start = error.textOffset.coerceAtLeast(0)
+                val context = rendered.substring(
+                    (start - 60).coerceAtLeast(0),
+                    (start + 90).coerceAtMost(rendered.length),
+                ).replace("\n", "\\n")
+                "offset=$start error='${error.errorDescription}' context=...$context..."
+            }
+
+            val binaryHistogram = histogram(binary)
+            val sourceHistogram = histogram(rebuilt)
+            val binaryTotal = binaryHistogram.values.sum()
+            val sourceTotal = sourceHistogram.values.sum()
+
+            val diff = (binaryHistogram.keys + sourceHistogram.keys).toSortedSet().mapNotNull { type ->
+                val b = binaryHistogram[type] ?: 0
+                val s = sourceHistogram[type] ?: 0
+                if (b == s) null else "%-48s binary=%5d source=%5d delta=%+d".format(type, b, s, s - b)
+            }
+            val binaryParents = parentHistogram(binary)
+            val sourceParents = parentHistogram(rebuilt)
+            val parentDiff = (binaryParents.keys + sourceParents.keys).toSortedSet().mapNotNull { key ->
+                val b = binaryParents[key] ?: 0
+                val s = sourceParents[key] ?: 0
+                if (b == s) null else "%s binary=%d source=%d delta=%+d".format(key, b, s, s - b)
+            }.sortedByDescending { kotlin.math.abs(it.substringAfter("delta=").toIntOrNull() ?: 0) }.take(40)
+            val binaryShape = shape(binary)
+            val sourceShape = shape(rebuilt)
+            val firstShapeDifference = (0 until minOf(binaryShape.size, sourceShape.size))
+                .firstOrNull { binaryShape[it] != sourceShape[it] }
+            if (binaryTotal == sourceTotal && diff.isEmpty() && binaryShape == sourceShape) {
+                println(
+                    "NO DIFF: binary=$binaryTotal source=$sourceTotal renderedChars=${rendered.length} " +
+                        "psiErrors=${errors.size}",
+                )
+                return
+            }
+            error(
+                buildString {
+                    appendLine("STUB SHAPE DIFF for installed std.core.cjo")
+                    appendLine("library=$library")
+                    appendLine("binaryTotal=$binaryTotal sourceTotal=$sourceTotal renderedChars=${rendered.length}")
+                    appendLine("type-level diff:")
+                    diff.forEach { appendLine("  $it") }
+                    appendLine("parent-qualified diff (top 40 by |delta|):")
+                    parentDiff.forEach { appendLine("  $it") }
+                    appendLine("psi errors=${errors.size}")
+                    appendLine("first shape difference at $firstShapeDifference " +
+                        "binarySize=${binaryShape.size} sourceSize=${sourceShape.size}")
+                    appendLine("binaryShape=${binaryShape.getOrNull(firstShapeDifference ?: 0)}")
+                    appendLine("sourceShape=${sourceShape.getOrNull(firstShapeDifference ?: 0)}")
+                    appendLine(errorSamples)
+                },
+            )
+        } finally {
+            ApplicationManager.getApplication().runWriteAction { Disposer.dispose(disposable) }
+        }
+    }
+
+    private fun installedSdkLibrary(): Path {
+        val repositories = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+            .first { Files.isRegularFile(it.resolve("settings.gradle.kts")) }
+        val sdkRoot = Path.of(System.getProperty("user.home"), ".cangjie", "sdks")
+        val candidates = Files.list(sdkRoot).use { stream ->
+            stream.filter { Files.isDirectory(it) }.toList()
+        }
+        for (sdk in candidates) {
+            val library = sdk.resolve("cangjie/modules/windows_x86_64_cjnative")
+            if (Files.isRegularFile(library.resolve("std/std.core.cjo"))) return library
+        }
+        error("installed cangjie SDK with std/std.core.cjo not found under $sdkRoot (repo=$repositories)")
+    }
+
+    private fun shape(root: StubElement<*>): List<String> = buildList {
+        fun visit(stub: StubElement<*>, path: String) {
+            add("$path:${stub.stubType}")
+            stub.childrenStubs.forEachIndexed { index, child -> visit(child, "$path/$index") }
+        }
+        root.childrenStubs.forEachIndexed { index, child -> visit(child, "$index") }
+    }
+
+    private fun histogram(root: StubElement<*>): Map<String, Int> {
+        val counts = HashMap<String, Int>()
+        fun visit(stub: StubElement<*>) {
+            counts.merge(stub.stubType.toString(), 1, Int::plus)
+            stub.childrenStubs.forEach(::visit)
+        }
+        root.childrenStubs.forEach(::visit)
+        return counts
+    }
+
+    private fun parentHistogram(root: StubElement<*>): Map<String, Int> {
+        val counts = HashMap<String, Int>()
+        fun visit(stub: StubElement<*>, parent: String) {
+            val key = "$parent>${stub.stubType}"
+            counts.merge(key, 1, Int::plus)
+            stub.childrenStubs.forEach { visit(it, stub.stubType.toString()) }
+        }
+        root.childrenStubs.forEach { visit(it, root.stubType?.toString() ?: "FILE") }
+        return counts
+    }
+
+    private class Module : CfirModuleData() {
+        override val name = Name.identifier("compiled-shape-test")
+        override val dependencies = emptyList<CfirModuleData>()
+        override val refinementDependencies = emptyList<CfirModuleData>()
+        override val allRefinementDependencies = emptyList<CfirModuleData>()
+        override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
+        override val platform = CfirPlatform.DEFAULT
+        override val isCommon = false
+        override val stableModuleName = "compiled-shape-test"
+        override val session = object : CfirSession(Kind.Library) {}.also {
+            it.register(
+                CfirLanguageSettingsComponent::class,
+                CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
+            )
+            it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
+        }
+        init { bindSession(session) }
+    }
+}

@@ -20,6 +20,8 @@ dependencies {
     api(project(":common:diagnostics"))
     api(project(":cfir:providers"))
     compileOnly(intellijCore())
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
@@ -37,7 +39,9 @@ sourceSets {
         projectDefault()
         generatedDir()
     }
-    "test" { none() }
+    "test" { projectDefault() }
 }
+
+tasks.test { useJUnitPlatform() }
 
 generatedDiagnosticContainersAndCheckerComponents()

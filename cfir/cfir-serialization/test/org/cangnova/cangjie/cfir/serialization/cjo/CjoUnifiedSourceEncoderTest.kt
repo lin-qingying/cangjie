@@ -2,6 +2,10 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.AnnoKind
 import PackageFormat.ConstValue
 import PackageFormat.DeclKind
@@ -111,12 +115,13 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
         val secondModule = Module(CfirSession.Kind.Library)
         val secondProvider = CfirDeserializedSymbolProvider(
             secondModule.session, first.manager, CfirCangJieScopeProvider(), secondModule,
+            moduleDataProvider = cjoFixtureModuleDataProvider(secondModule, setOf(first.path.parent)),
         )
         secondModule.registerProvider(secondProvider)
         val original = first.variable("answer")
-        val second = assertIs<CfirFieldVariable>(
-            secondProvider.getTopLevelCallableSymbols(FqName("sharedbinders"), Name.identifier("answer")).single().cfir,
-        )
+        val secondBinding = secondProvider.packageVariableBinding("sharedbinders", "answer")
+        val second = assertIs<CfirPatternVariable>(secondBinding.patternTreeOwner)
+        assertNotSame(first.binding("answer"), secondBinding)
         assertNotSame(original, second)
 
         val snapshots = CjoExportSourceSnapshots.sourceExportSnapshots(listOf(original, second, original), includeContent = true)
@@ -159,7 +164,7 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
     fun ordinaryImportedTargetRemainsAnExternalBorrowedReference(@TempDir root: Path) {
         val seed = produceSource(sourceConstant("borrowedlibrary", "answer", 7))
         val imported = load(root.resolve("library"), seed, common = false)
-        val target = imported.variable("answer")
+        val target = imported.binding("answer")
         assertTrue(target.exportFacts.isImported)
         assertEquals("7", literal(imported, "answer"))
         val source = sourceConstant("borrower", "view", 7, borrowed = target)
@@ -185,7 +190,7 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
         assertEquals(imported.path.toString(), kotlin.test.assertNotNull(rebound.cjoDeclarationOrigin).packagePath)
         assertFalse(graph.initializers.containsKey(rebound))
         assertCanonical(consumed)
-        assertSame(target, imported.variable("answer"))
+        assertSame(target, imported.binding("answer"))
         assertTrue(target.exportFacts.isImported)
     }
 
@@ -337,7 +342,7 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
             canonicalSources = listOf(source, ga, gb))
         val consumed = load(root.resolve("merged"), metadata)
         assertEquals(setOf("local", "left", "right", "leftValue", "rightValue"),
-            consumed.roots.filterIsInstance<CfirVariable>().map { it.symbol.name.asString() }.toSet())
+            consumed.roots.filterIsInstance<CfirPatternVariable>().map { it.pattern.bindingVariables().single().name.asString() }.toSet())
         assertEquals(3, consumed.graph().expressions.size)
         for ((name, text) in listOf("local" to "11", "left" to "7", "right" to "9")) {
             assertEquals(text, literal(consumed, name))
@@ -645,7 +650,7 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
     private data class Source(val module: Module, val file: CfirFile, val variable: CfirFieldVariable)
 
     /** 完成 typed SOURCE fixture；真实 PSI 范围、状态解析及 construction 登记均沿既有装配入口。 */
-    private fun sourceConstant(packageName: String, name: String, number: Long, borrowed: CfirFieldVariable? = null): Source {
+    private fun sourceConstant(packageName: String, name: String, number: Long, borrowed: CfirPatternBindingVariable? = null): Source {
         val module = Module(CfirSession.Kind.Source, CfirCjmpMode.COMMON)
         val psi = createPsiFile(name, "package $packageName\npublic const $name: Int64 = ${borrowed?.name?.asString() ?: number}") as CjFile
         val declaration = psi.declarations.filterIsInstance<CjPatternVariable>().single()
@@ -700,15 +705,15 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
         val searchRoots: List<Path>,
     ) {
         val wire: Package get() = snapshot.pkg
-        fun variable(name: String): CfirFieldVariable = assertIs<CfirFieldVariable>(
-            provider.getTopLevelCallableSymbols(FqName(metadata.fullPackageName), Name.identifier(name)).single().cfir)
+        fun binding(name: String): CfirPatternBindingVariable = provider.packageVariableBinding(metadata.fullPackageName, name)
+        fun variable(name: String): CfirPatternVariable = assertIs<CfirPatternVariable>(binding(name).patternTreeOwner)
         fun function(name: String): CfirNamedFunction = assertIs<CfirNamedFunction>(
             provider.getTopLevelCallableSymbols(FqName(metadata.fullPackageName), Name.identifier(name)).single().cfir)
         fun classifier(name: String): CfirClass = assertIs<CfirClass>(kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(
             ClassId.topLevel(FqName("${metadata.fullPackageName}.$name")))).cfir)
         fun graph(): CfirSourceGraph = kotlin.test.assertNotNull(provider.packageSourceGraphOf(roots.first()))
         fun value(name: String): CfirConstantValue = assertIs<CfirConstantValueExpression>(
-            assertIs<CfirEvaluatorResult.Evaluated>(variable(name).evaluatedInitializer).result).constantValue
+            assertIs<CfirEvaluatorResult.Evaluated>(binding(name).evaluatedInitializer).result).constantValue
     }
 
     /** 只在测试运行时生成临时 cjo；原 context 经正式 provider 创建并拥有全部 binder。 */
@@ -720,7 +725,10 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
             explicitCommonPartPaths = if (common) listOf(path) else emptyList())
         val module = Module(CfirSession.Kind.Library)
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, (listOf(root) + searchRoots).toSet()),
+        )
         module.registerProvider(provider)
         val snapshot = kotlin.test.assertNotNull(manager.loadPackageSnapshot(input.fullPackageName))
         assertSame(snapshot, manager.loadedPackageSnapshot(path))
@@ -825,7 +833,9 @@ class CjoUnifiedSourceEncoderTest : CjParsingTestCase("", "cj", CangJieFileType.
             assertSame(graph.expression(identity), graph.expression(identity))
         }
         graph.constantValues.forEach { (owner, value) ->
-            assertSame(value, assertIs<CfirConstantValueExpression>(assertIs<CfirEvaluatorResult.Evaluated>(owner.evaluatedInitializer).result).constantValue)
+            assertSame(value, assertIs<CfirConstantValueExpression>(assertIs<CfirEvaluatorResult.Evaluated>(
+                if (owner is CfirPatternVariable) owner.pattern.bindingVariables().single().evaluatedInitializer else owner.evaluatedInitializer,
+            ).result).constantValue)
         }
     }
 

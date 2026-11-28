@@ -1,0 +1,4 @@
+FILE: identifiers.cj
+    internal? func ordinaryIdentifiers(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

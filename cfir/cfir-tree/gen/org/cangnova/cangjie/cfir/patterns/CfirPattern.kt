@@ -18,11 +18,15 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.pattern]
  */
-sealed class CfirPattern : CfirPureAbstractElement(), CfirElement {
+sealed class CfirPattern : CfirPureAbstractElement(), CfirElement, CfirPatternTreeNode {
     abstract override val source: CjSourceElement?
     abstract val semanticTypeRef: CfirTypeRef?
     abstract val constantValues: List<CfirConstantValue>
     abstract val contextExpression: CfirExpression?
+    /**
+     * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
+     */
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
 
     /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
     @CfirImplementationDetail
@@ -45,6 +49,8 @@ sealed class CfirPattern : CfirPureAbstractElement(), CfirElement {
     abstract fun replaceConstantValues(newConstantValues: List<CfirConstantValue>)
 
     abstract fun replaceContextExpression(newContextExpression: CfirExpression?)
+
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
 
     abstract fun <D> transformSemanticTypeRef(transformer: CfirTransformer<D>, data: D): CfirPattern
 }

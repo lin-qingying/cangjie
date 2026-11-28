@@ -5,12 +5,15 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
+import com.intellij.psi.PsiElement
 import com.intellij.util.containers.ContainerUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.findExtendDeclarationIn
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.patchDesignationPathIfNeeded
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.*
@@ -44,25 +47,42 @@ internal class CfirElementFinder : CfirSessionComponent {
 
         /**
          * 为 [targetMemberDeclaration] 收集 designation 路径。
+         *
+         * [additionalPathPrefix] 表达位于文件与 class-like 之间的声明容器（仓颉 extend），对标 Kotlin 的 script 前缀。
          */
         fun collectDesignationPath(
             cfirFile: CfirFile,
             declarationContainerClassId: ClassId?,
+            additionalPathPrefix: List<CfirDeclaration> = emptyList(),
             targetMemberDeclaration: CfirDeclaration,
         ): CfirDesignation? = collectDesignationPath(
             cfirFile = cfirFile,
             containerClassId = declarationContainerClassId,
+            additionalPathPrefix = additionalPathPrefix,
             targetDeclarationName = CfirFileStructureNode.mappingName(targetMemberDeclaration),
             expectedDeclarationAcceptor = { it == targetMemberDeclaration },
         )
 
-        /**
-         * 在 [cfirFile] 中查找 [nonLocalDeclaration] 对应的 CFIR 声明。
-         */
-        fun findDeclaration(cfirFile: CfirFile, nonLocalDeclaration: CjDeclaration): CfirDeclaration? = collectDesignationPath(
+        /** 在当前 CFIR 声明树中按真实 PSI 身份定位；宏输出只能通过正式 source alias 映射恢复。 */
+        fun findDeclaration(
+            cfirFile: CfirFile,
+            nonLocalDeclaration: CjDeclaration,
+        ): CfirDeclaration? = collectDesignationPath(
             cfirFile = cfirFile,
             nonLocalDeclaration = nonLocalDeclaration,
         )?.declarationTarget
+
+        /**
+         * 遍历完整 CFIR 文件，按源码 PSI 等价关系查找模式变量。
+         *
+         * 文件级结构索引不能定位函数体中的模式变量，因此该类声明统一从重建后的 CFIR 子树中查找。
+         */
+        fun findPatternVariable(
+            cfirFile: CfirFile,
+            patternVariablePsi: CjPatternVariable,
+        ): CfirPatternVariable? = findElementIn<CfirPatternVariable>(cfirFile) { patternVariable ->
+            patternVariable.psi?.isEquivalentTo(patternVariablePsi) == true
+        }
 
         /**
          * 返回 [nonLocalDeclaration] 的完整声明路径，包含目标本身。
@@ -86,11 +106,18 @@ internal class CfirElementFinder : CfirSessionComponent {
             val targetDeclaration = cache.compilationElement(nonLocalDeclaration) as? CjDeclaration ?: return null
             return collectDesignationPath(
                 cfirFile = cfirFile,
-                containerClassId = targetDeclaration.containingTypeStatement?.getClassId(),
+                containerClassId = targetDeclaration.containingClassLikeIn()?.getClassId(),
+                additionalPathPrefix = targetDeclaration.findExtendDeclarationIn(cfirFile)?.let(::listOf).orEmpty(),
                 targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(targetDeclaration),
                 expectedDeclarationAcceptor = { it.psi === targetDeclaration },
             )
         }
+
+        /**
+         * 返回 [this] 的 class-like 容器；extend 容器不是 class-like，这里返回 `null`。
+         */
+        private fun CjDeclaration.containingClassLikeIn(): CjClassLikeDeclaration? =
+            containingTypeStatement?.takeUnless { it is CjExtend } as? CjClassLikeDeclaration
 
         /**
          * 在 [container] 子树中查找满足 [predicate] 的第一个 [E] 类型元素。
@@ -132,6 +159,7 @@ internal class CfirElementFinder : CfirSessionComponent {
         private fun collectDesignationPath(
             cfirFile: CfirFile,
             containerClassId: ClassId?,
+            additionalPathPrefix: List<CfirDeclaration> = emptyList(),
             targetDeclarationName: Name?,
             expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
         ): CfirDesignation? {
@@ -145,7 +173,9 @@ internal class CfirElementFinder : CfirSessionComponent {
                 }
             }
 
-            val pathSegments = containerClassId?.relativeClassName?.pathSegments().orEmpty()
+            // 前缀声明（extend）不是 class-like，没有 ClassId，按文件结构里的映射名作为首段路径进入。
+            val pathSegments = additionalPathPrefix.map(CfirFileStructureNode::mappingName) +
+                containerClassId?.relativeClassName?.pathSegments().orEmpty()
             val resultPath = ArrayList<CfirDeclaration>(pathSegments.size + 1)
             resultPath += cfirFile
 
@@ -153,6 +183,7 @@ internal class CfirElementFinder : CfirSessionComponent {
             val result = structure.find(
                 pathSegments = pathSegments,
                 resultPath = resultPath,
+                expectedPrefixDeclarations = additionalPathPrefix,
                 targetDeclarationName = targetDeclarationName,
                 expectedDeclarationAcceptor = expectedDeclarationAcceptor,
             ) ?: return null
@@ -261,6 +292,8 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
      *   The target declaration and the [CfirFile] is not included.
      *
      * @param resultPath a list into which a path to a target declaration will be added.
+     * @param expectedPrefixDeclarations the declarations expected at the first [expectedPrefixDeclarations].size segments
+     *   of [pathSegments]（仓颉 extend 容器），按身份匹配，避免同名的其他声明被误认成路径前缀。
      * @param targetDeclarationName the [mappingName] of a target declaration. It helps to perform the search more efficiently if present.
      * @param expectedDeclarationAcceptor a predicate that will be called on potential target declaration.
      *   It should return **true** for the expected target declaration.
@@ -270,12 +303,14 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
     fun find(
         pathSegments: List<Name>,
         resultPath: MutableList<CfirDeclaration>,
+        expectedPrefixDeclarations: List<CfirDeclaration> = emptyList(),
         targetDeclarationName: Name?,
         expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
     ): CfirDeclaration? = find(
         pathSegments = pathSegments,
         pathIndex = 0,
         resultPath = resultPath,
+        expectedPrefixDeclarations = expectedPrefixDeclarations,
         targetDeclarationName = targetDeclarationName,
         expectedDeclarationAcceptor = expectedDeclarationAcceptor,
     )
@@ -289,6 +324,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
         pathSegments: List<Name>,
         pathIndex: Int,
         resultPath: MutableList<CfirDeclaration>,
+        expectedPrefixDeclarations: List<CfirDeclaration>,
         targetDeclarationName: Name?,
         expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
     ): CfirDeclaration? {
@@ -299,11 +335,15 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             val structures = elements[nextSegmentName] ?: return null
 
             for (structure in structures) {
+                val expectedDeclaration = expectedPrefixDeclarations.getOrNull(pathIndex)
+                if (expectedDeclaration != null && structure.element !== expectedDeclaration) continue
+
                 resultPath += structure.element
                 val result = structure.find(
                     pathSegments = pathSegments,
                     pathIndex = pathIndex + 1,
                     resultPath = resultPath,
+                    expectedPrefixDeclarations = expectedPrefixDeclarations,
                     targetDeclarationName = targetDeclarationName,
                     expectedDeclarationAcceptor = expectedDeclarationAcceptor,
                 )
@@ -403,6 +443,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CfirEnumConstructor -> declaration.name
             is CfirTypeAlias -> declaration.name
             is CfirCodeFragment -> SpecialNames.NO_NAME_PROVIDED
+            is CfirInvalidDeclaration -> SpecialNames.NO_NAME_PROVIDED
 
             is CfirFile,
             is CfirAnonymousFunction,
@@ -428,8 +469,9 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CjConstructor<*> -> SpecialNames.INIT
             is CjCodeFragment -> SpecialNames.NO_NAME_PROVIDED
 
-            is CjTypeStatement, is CjTypeAlias, is CjNamedFunction, is CjProperty -> declaration.nameAsSafeName
+            is CjTypeStatement, is CjTypeAlias, is CjNamedFunction, is CjProperty, is CjFieldVariable -> declaration.nameAsSafeName
             else -> null
         }
     }
 }
+

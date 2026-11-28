@@ -31,8 +31,8 @@ import com.intellij.lang.ASTNode
 /**
  * 仓颉基本类型 PSI 元素
  *
- * 表示仓颉语言中的基本类型，如 Int、String、Bool 等。
- * 基本类型是语言内置的基础数据类型，不需要导入即可使用。
+ * 表示解析器 `BASICTYPES` token 集中的仓颉原始类型。
+ * `String`、`Array` 等名义类型由 [CjUserType] 表示，不属于此 PSI 类型。
  *
  * 支持的基本类型包括：
  * - 整数类型：Int8, Int16, Int32, Int64, IntNative, UInt8, UInt16, UInt32, UInt64, UIntNative
@@ -40,13 +40,13 @@ import com.intellij.lang.ASTNode
  * - 字符类型：Rune
  * - 布尔类型：Bool
  * - 单位类型：Unit
- * - 其他类型：Nothing, Any 等
+ * - 底类型：Nothing
  *
  * 此类支持基于 Stub 的索引，提供快速的类型解析能力。
  *
  * 示例：
  * ```
- * let x: Int = 42        // Int 是基本类型
+ * let x: Int64 = 42      // Int64 是基本类型
  * let z: Bool = true     // Bool 是基本类型
  * ```
  */
@@ -72,7 +72,7 @@ class CjBasicType : CjElementImplStub<CangJieBasicTypeStub>, CjTypeElement {
      * @return 元素类型名称
      */
     override fun toString(): String {
-        return elementType.toString()
+        return iElementType.toString()
     }
 
     /**
@@ -91,7 +91,7 @@ class CjBasicType : CjElementImplStub<CangJieBasicTypeStub>, CjTypeElement {
      *
      * 优先从 Stub 中获取（性能更好），如果 Stub 不可用则从文本中获取。
      *
-     * @return 类型名称，如 "Int"、"Bool" 等
+     * @return 类型名称，如 "Int64"、"Bool" 等
      */
     override fun getName(): String {
         return stub?.basicType ?: text

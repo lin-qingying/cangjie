@@ -10,11 +10,18 @@ import org.cangnova.cangjie.analysis.api.platform.lifetime.ModificationTrackerWi
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.analysis.collectors.registerCheckerComponentTimingObserver
+import org.cangnova.cangjie.cfir.analysis.collectors.registerDiagnosticPassTimingObserver
+import org.cangnova.cangjie.cfir.builder.registerRawBuildTimingObserver
+import org.cangnova.cangjie.cfir.resolve.providers.macro.registerMacroConstructionTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.registerResolvePhaseTimingObserver
+import org.cangnova.cangjie.cfir.serialization.provider.registerCjoDeserializationTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import kotlin.time.TimeSource
@@ -55,12 +62,64 @@ abstract class LLCfirSession(
 ) : CfirSession(kind) {
     init {
         register(CfirBuiltinTypes::class, builtinTypes)
+        // 统计可用时挂上语义解析阶段耗时观察者；统计未启用（无 provider 或开关关闭）时不注册，解析路径零开销。
+        LLStatisticsService.getInstance(caModule.project)?.let { statisticsService ->
+            registerResolvePhaseTimingObserver(statisticsService.resolvePhases)
+            registerRawBuildTimingObserver(statisticsService.rawBuild)
+            registerMacroConstructionTimingObserver(statisticsService.macroConstruction)
+            registerDiagnosticPassTimingObserver(statisticsService.diagnosticPasses)
+            registerCheckerComponentTimingObserver(statisticsService.checkerComponents)
+            registerCjoDeserializationTimingObserver(statisticsService.deserialization)
+        }
     }
 
     /**
      * 返回当前 session 使用的作用域会话。
      */
     abstract fun getScopeSession(): ScopeSession
+
+    /** named binary provider、extend 读取与 imported FullId 共用本 session 的唯一 metadata provider。 */
+    internal val cjoSymbolProvider: org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider by lazy {
+        org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLBinaryOriginLibrarySymbolProviderFactory
+            .createCjoSymbolProvider(this)
+    }
+
+    /** 跨模块正式 metadata 入口；不暴露或查询 session 的 PSI/组合 symbol provider。 */
+    @org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+    fun getOwnCjoPackageContext(
+        packageName: String,
+        mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode,
+    ): org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext? {
+        check(isValid) { "CJO reader uses an invalid library session" }
+        return cjoSymbolProvider.getOwnPackageContext(packageName, mode)
+    }
+
+    /** actual-file 与 named 查询共享本 session 的原 binding 与 snapshot manager。 */
+    @org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+    fun getOwnCjoPackageContext(
+        packageName: String,
+        sourcePath: java.nio.file.Path,
+        content: ByteArray,
+        mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode,
+    ): org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext {
+        check(isValid) { "CJO reader uses an invalid library session" }
+        return cjoSymbolProvider.getOwnPackageContext(packageName, sourcePath, content, mode)
+    }
+
+    companion object {
+        /** 结构外 reader 的 manager 同样使用项目 metadata 图事务，不创建独立锁。 */
+        @org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+        fun createCjoDeclarationManager(
+            project: Project,
+            searchPath: org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath,
+        ): org.cangnova.cangjie.cfir.serialization.cjo.CjoManager =
+            org.cangnova.cangjie.cfir.serialization.cjo.CjoManager(
+                searchPath = searchPath,
+                formatVersionPolicy = org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy.Decompilation,
+                declarationMaterialization =
+                    org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents.getInstance(project).cjoMaterialization,
+            )
+    }
 
     /**
      * 当前 session 所属工程。

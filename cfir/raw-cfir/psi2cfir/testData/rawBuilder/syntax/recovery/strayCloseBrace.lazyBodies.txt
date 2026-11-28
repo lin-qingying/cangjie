@@ -1,0 +1,4 @@
+FILE: strayCloseBrace.cj
+    internal? func strayCloseBrace(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

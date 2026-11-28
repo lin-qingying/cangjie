@@ -1,0 +1,775 @@
+CangjieSemanticsAuthority — G3/G4 官方源码摘录
+Repository: D:/code/intellij/cangjie/external/cangjie_compiler
+Ref: v1.1.3
+Commit: 14276740ffec1262b81b6b5236b1d840af270b37
+所有源码内容取自本次 git show v1.1.3:path 输出；行首数字是原文件一基行号。
+
+[g3_file_owner]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Frontend/CompileStrategy.cpp
+Command: git show v1.1.3:src/Frontend/CompileStrategy.cpp
+Original lines: 167-197
+167:     void InitializePackageInfoFromFirstFile(Package& package) const
+168:     {
+169:         if (package.files.empty()) {
+170:             return;
+171:         }
+172:         if (auto packageSpec = package.files[0]->package.get()) {
+173:             package.fullPackageName = packageSpec->GetPackageName();
+174:             package.accessible = !packageSpec->modifier                  ? AccessLevel::PUBLIC
+175:                 : packageSpec->modifier->modifier == TokenKind::PROTECTED ? AccessLevel::PROTECTED
+176:                 : packageSpec->modifier->modifier == TokenKind::INTERNAL  ? AccessLevel::INTERNAL
+177:                                                                           : AccessLevel::PUBLIC;
+178:         }
+179:     }
+180: 
+181:     /**
+182:      * Add parsed files from task results to an existing package.
+183:      * @param package The package to add files to
+184:      * @param taskResults Vector of task results containing parsed files
+185:      * @return Total line count of added files
+186:      */
+187:     size_t AddFilesToPackage(Package& package, ParseTaskResults& taskResults) const
+188:     {
+189:         size_t lineCountOfAddedFiles = 0;
+190:         const size_t filePtrIdx = 0;
+191:         const size_t commentIdx = 1;
+192:         const size_t lineNumIdx = 2;
+193:         for (auto& taskResult : taskResults) {
+194:             auto curResult = taskResult.get();
+195:             std::get<filePtrIdx>(curResult)->curPackage = &package;
+196:             std::get<filePtrIdx>(curResult)->indexOfPackage = package.files.size();
+197:             package.files.push_back(std::move(std::get<filePtrIdx>(curResult)));
+Original lines: 295-297
+295:         // Check curPackage for each file in the package to ensure it is not changed in lsp or some other reason.
+296:         for (auto& file : package.files) {
+297:             CJC_ASSERT_WITH_MSG(file->curPackage == &package, "curPackage should be set to package");
+
+[g3_decl_file]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Parse/Parser.cpp
+Command: git show v1.1.3:src/Parse/Parser.cpp
+Original lines: 185-194
+185: void ParserImpl::AssignCurFile(const OwnedPtr<AST::File>& file) const
+186: {
+187:     file->curFile = file.get();
+188:     auto visitPre = [&file](Ptr<Node> curNode) -> VisitAction {
+189:         curNode->curFile = file.get();
+190:         return VisitAction::WALK_CHILDREN;
+191:     };
+192: 
+193:     Walker curFileAssignWalker(file.get(), visitPre);
+194:     curFileAssignWalker.Walk();
+
+[g3_decl_identity]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Sema/Collector.cpp
+Command: git show v1.1.3:src/Sema/Collector.cpp
+Original lines: 652-655
+652:     if (auto decl = DynamicCast<Decl*>(node); decl && decl->fullPackageName.empty()) {
+653:         // Imported decl has fullPackageName.
+654:         decl->fullPackageName = ctx.fullPackageName;
+655:     }
+
+[g3_common_origin]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Modules/ASTSerialization/ASTLoader.cpp
+Command: git show v1.1.3:src/Modules/ASTSerialization/ASTLoader.cpp
+Original lines: 298-324
+298: void ASTLoader::ASTLoaderImpl::PreloadCommonPartOfPackage(AST::Package& pkg)
+299: {
+300:     if (!VerifyForData("ast")) {
+301:         CJC_ABORT();
+302:     }
+303: 
+304:     package = PackageFormat::GetPackage(data.data());
+305:     CJC_NULLPTR_CHECK(package);
+306: 
+307:     curPackage = &pkg; // Deserialize common part AST into current specific package AST
+308: 
+309:     allTypes.resize(package->allTypes()->size(), nullptr);
+310:     auto fileSize = package->allFiles()->size();
+311:     allFileIds.resize(fileSize);
+312:     for (uoffset_t i = 0; i < fileSize; i++) {
+313:         CJC_NULLPTR_CHECK(package->allFileImports());
+314:         auto&& importInfos = LoadImportSpecs(package->allFileImports()->Get(i));
+315:         CJC_NULLPTR_CHECK(package->allFileInfo());
+316:         // Load file info for CJMP
+317:         auto fileInfo = package->allFileInfo()->Get(i);
+318:         allFileIds[i] = fileInfo->fileID();
+319:         auto file = CreateFileNode(*curPackage, fileInfo->fileID(), std::move(importInfos));
+320:         file->EnableAttr(Attribute::FROM_COMMON_PART);
+321:         file->EnableAttr(Attribute::COMMON);
+322:         file->isCommon = true;
+323:         file->begin = LoadPos(fileInfo->begin());
+324:         file->end = LoadPos(fileInfo->end());
+Original lines: 389-398
+389: OwnedPtr<AST::File> ASTLoader::ASTLoaderImpl::CreateFileNode(
+390:     Package& pkg, unsigned int fileId, std::vector<OwnedPtr<AST::ImportSpec>>&& imports)
+391: {
+392:     auto file = MakeOwned<File>();
+393:     file->curFile = file.get();
+394:     file->curPackage = &pkg;
+395:     Source& source = sourceManager.GetSource(fileId);
+396:     file->fileName = FileUtil::GetFileName(source.path);
+397:     file->filePath = source.path;
+398:     file->fileHash = source.fileHash;
+Original lines: 591-606
+591: void ASTLoader::ASTLoaderImpl::LoadDeclBasicInfo(const PackageFormat::Decl& decl, Decl& astDecl)
+592: {
+593:     astDecl.identifier = decl.identifier()->str();
+594:     astDecl.exportId = decl.exportId()->str();
+595:     astDecl.mangledName = decl.mangledName()->str();
+596:     astDecl.fullPackageName = decl.fullPkgName()->str();
+597:     astDecl.moduleName = package->moduleName()->str();
+598:     auto pos = LoadPos(decl.identifierPos());
+599:     auto endPos = pos;
+600:     if (pos != INVALID_POSITION && pos != DEFAULT_POSITION) {
+601:         endPos = endPos + astDecl.identifier.Val().size();
+602:     }
+603:     astDecl.identifier.SetPos(pos, endPos);
+604:     astDecl.CopyAttrs(GetAttributes(decl));
+605:     if (!astDecl.TestAttr(Attribute::FROM_COMMON_PART) || !deserializingCommon) {
+606:         astDecl.EnableAttr(Attribute::IMPORTED);
+
+[g4_common_imports]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Modules/ImportManager.cpp
+Command: git show v1.1.3:src/Modules/ImportManager.cpp
+Original lines: 540-550
+540: bool ImportManager::ResolveImportedPackages(const std::vector<Ptr<Package>>& packages)
+541: {
+542:     Utils::ProfileRecorder recorder("BuildIndex", "ResolveImportedPackages");
+543:     bool success = true;
+544:     Utils::ProfileRecorder::Start("ResolveImportedPackages", "ResolveImportedPackageHeaders");
+545:     for (auto pkg : packages) {
+546:         curPackage = pkg;
+547:         // Files of common part need to be loaded in advance,
+548:         // to be able to handle `import`s of common part.
+549:         cjoManager->LoadFilesOfCommonPart(pkg);
+550:         success = ResolveImportedPackageHeaders(*curPackage, false) && success;
+
+[g4_source_imported_collection]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Sema/TypeCheckExtend.cpp
+Command: git show v1.1.3:src/Sema/TypeCheckExtend.cpp
+Original lines: 398-432
+398: void TypeChecker::TypeCheckerImpl::BuildExtendMap(ASTContext& ctx)
+399: {
+400:     std::unordered_set<Ptr<ExtendDecl>> allExtends;
+401:     // Collect current package's source extends.
+402:     auto syms = GetSymsByASTKind(ctx, ASTKind::EXTEND_DECL, Sort::posAsc);
+403:     for (auto& sym : syms) {
+404:         if (auto ed = AST::As<ASTKind::EXTEND_DECL>(sym->node); ed) {
+405:             allExtends.emplace(ed);
+406:             PreCheckExtend(ctx, *ed);
+407:         }
+408:     }
+409:     // The matching of `common/specific extend` depends on the resolved symbol type.
+410:     // Here is the first step after resolving the final symbol type, and also the first step in processing extendDecl.
+411:     mpImpl->PrepareTypeCheck4CJMPExtension(*ci, scopeManager, ctx, allExtends);
+412:     UpdateExtendMap(typeManager, allExtends);
+413: }
+414: 
+415: void TypeChecker::TypeCheckerImpl::BuildImportedExtendMap()
+416: {
+417:     Utils::ProfileRecorder recorder("PreCheck", "BuildImportedExtendMap");
+418:     std::unordered_set<Ptr<ExtendDecl>> allExtends;
+419:     // Collect all imported extends.
+420:     auto emplaceExtend = [&allExtends](const OwnedPtr<Decl>& decl) {
+421:         if (auto ed = DynamicCast<ExtendDecl*>(decl.get())) {
+422:             allExtends.emplace(ed);
+423:         }
+424:     };
+425:     // Must collect all packages' extend, even invisible macro packages.
+426:     auto pkgs = importManager.GetAllImportedPackages(true);
+427:     for (auto& pkg : pkgs) {
+428:         if (pkg->srcPackage->TestAttr(Attribute::IMPORTED)) {
+429:             IterateToplevelDecls(*pkg->srcPackage, emplaceExtend);
+430:         }
+431:     }
+432:     UpdateExtendMap(typeManager, allExtends);
+
+[g4_import_visibility]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Modules/ImportManager.cpp
+Command: git show v1.1.3:src/Modules/ImportManager.cpp
+Original lines: 1354-1375
+1354: bool ImportManager::IsDeclAccessible(const File& file, Decl& decl) const
+1355: {
+1356:     auto ret = decl.fullPackageName == file.curPackage->fullPackageName;
+1357:     auto relation = Modules::GetPackageRelation(file.curPackage->fullPackageName, decl.fullPackageName);
+1358:     if (!Utils::In(Ptr(&decl), GetImportedDeclsByName(file, decl.identifier))) {
+1359:         // Process 'import pkg1.pkg2; pkg2.Decl.extendMember', If 'Decl' is imported, it must visible in cur package.
+1360:         auto pkgNames = Utils::SplitQualifiedName(decl.fullPackageName);
+1361:         for (auto it = pkgNames.crbegin(); it != pkgNames.crend(); ++it) {
+1362:             ret = ret || (!GetImportedDeclsByName(file, *it).empty() && Modules::IsVisible(decl, relation));
+1363:         }
+1364:         // Process import alias decl or alias-import.
+1365:         // If we have 'type TA = A; extend TA {...}' in pkg1, and other pkg import 'pkg1.TA', 'extend A' is accessable.
+1366:         auto found = declToTypeAlias.find(&decl);
+1367:         if (found != declToTypeAlias.end()) {
+1368:             for (auto& tadId : found->second) {
+1369:                 ret = ret || !GetImportedDeclsByName(file, tadId).empty();
+1370:             }
+1371:         }
+1372:     } else {
+1373:         ret = true;
+1374:     }
+1375:     return ret;
+Original lines: 1392-1462
+1392: bool ImportManager::IsExtendAllUpperBoundsImported(
+1393:     const ExtendDecl& ed, const File& file, const Ptr<DiagnosticBuilder> builder) const
+1394: {
+1395:     if (!ed.generic) {
+1396:         return true;
+1397:     }
+1398:     std::set<std::string> upperboundsNotImported;
+1399:     bool areAllUpperBoundsImported = true;
+1400:     for (auto& gc : ed.generic->genericConstraints) {
+1401:         for (auto& ub : gc->upperBounds) {
+1402:             CJC_NULLPTR_CHECK(ub);
+1403:             if (!IsTypeAccessible(file, *ub)) {
+1404:                 areAllUpperBoundsImported = false;
+1405:                 upperboundsNotImported.emplace(ub->ty->String());
+1406:                 break;
+1407:             }
+1408:         }
+1409:     }
+1410:     for (auto& up : upperboundsNotImported) {
+1411:         AddNoteForExtendExportDiag(builder, MakeRange(ed.begin, ed.end), up);
+1412:     }
+1413:     return areAllUpperBoundsImported;
+1414: }
+1415: 
+1416: bool ImportManager::IsExtendAccessible(
+1417:     const File& file, const ExtendDecl& ed, const Ptr<DiagnosticBuilder> builder) const
+1418: {
+1419:     if (!file.curPackage || ed.fullPackageName == file.curPackage->fullPackageName) {
+1420:         return true;
+1421:     }
+1422:     auto curPkgName = file.curPackage->fullPackageName;
+1423: 
+1424:     if (opts.compileTestsOnly && ed.TestAttr(Attribute::FOR_TEST) && IsTestPackage(curPkgName) &&
+1425:         GetMainPartPkgNameForTestPkg(curPkgName) == ed.fullPackageName) {
+1426:         return true;
+1427:     }
+1428:     bool areAllUpperBoundsImported = IsExtendAllUpperBoundsImported(ed, file, builder);
+1429:     bool hasAnyInterfacesImported = false;
+1430:     bool isExtendedTypeAccessible = false;
+1431:     auto extendedDecl = Ty::GetDeclPtrOfTy<InheritableDecl>(ed.ty);
+1432:     bool isInSamePkg =
+1433:         extendedDecl ? ed.fullPackageName == extendedDecl->fullPackageName : ed.fullPackageName == "std.core";
+1434:     if (!isInSamePkg) {
+1435:         for (auto& inhert : ed.inheritedTypes) {
+1436:             if (inhert && IsTypeAccessible(file, *inhert)) {
+1437:                 hasAnyInterfacesImported = true;
+1438:             }
+1439:         }
+1440:         isExtendedTypeAccessible = IsTypeAccessible(file, *ed.extendedType);
+1441:     } else {
+1442:         hasAnyInterfacesImported = true;
+1443:         if (extendedDecl) {
+1444:             auto relation = GetPackageRelation(file.curPackage->fullPackageName, extendedDecl->fullPackageName);
+1445:             isExtendedTypeAccessible = IsVisible(*extendedDecl, relation);
+1446:         } else {
+1447:             isExtendedTypeAccessible = true;
+1448:         }
+1449:     }
+1450:     if (!hasAnyInterfacesImported) {
+1451:         if (builder) {
+1452:             builder->AddNote(MakeRange(ed.begin, ed.end),
+1453:                 "to use the following extension, you must import at least one of its inherited interfaces");
+1454:         }
+1455:     }
+1456:     // For direct extension, all upperbound (if any) need to be imported.
+1457:     // For interface extension, all upperbound (if any) and at lest one interface need to be imported.
+1458:     if (!isExtendedTypeAccessible) {
+1459:         AddNoteForExtendExportDiag(builder, MakeRange(ed.begin, ed.end), ed.extendedType->ty->String());
+1460:     }
+1461:     bool isExtendImported = areAllUpperBoundsImported && hasAnyInterfacesImported && isExtendedTypeAccessible;
+1462:     return ed.IsExportedDecl() && isExtendImported;
+Original lines: 1485-1544
+1485: bool ImportManager::IsExtendMemberImported(
+1486:     const Ptr<ExtendDecl> extend, const File& file, const Decl& member, const Ptr<DiagnosticBuilder> builder) const
+1487: {
+1488:     if (extend->inheritedTypes.empty()) {
+1489:         return true;
+1490:     }
+1491:     auto extendedDecl = Ty::GetDeclPtrOfTy<InheritableDecl>(extend->ty);
+1492:     bool isInSamePkg =
+1493:         extendedDecl ? extend->fullPackageName == extendedDecl->fullPackageName : extend->fullPackageName == "std.core";
+1494:     if (isInSamePkg) {
+1495:         if (!IsTypeAccessible(file, *extend->extendedType)) {
+1496:             AddNoteForExtendExportDiag(builder, MakeRange(extend->begin, extend->end), extend->ty->String());
+1497:             return false;
+1498:         }
+1499:         return true;
+1500:     }
+1501:     // Check whether the interface to which the member belongs is imported.
+1502:     for (auto& super : extend->inheritedTypes) {
+1503:         if (auto implInterface = FindImplmentInterface(file, member, super)) {
+1504:             if (!IsTypeAccessible(file, *implInterface)) {
+1505:                 AddNoteForExtendExportDiag(builder, MakeRange(extend->begin, extend->end), implInterface->ty->String());
+1506:                 return false;
+1507:             }
+1508:             return true;
+1509:         }
+1510:     }
+1511:     return false;
+1512: }
+1513: 
+1514: bool ImportManager::IsExtendMemberAccessible(
+1515:     const File& file, const Decl& member, Ty& baseTy, const Ptr<DiagnosticBuilder> builder) const
+1516: {
+1517:     Ptr<ExtendDecl> extend = typeManager.GetExtendDeclByMember(member, baseTy);
+1518:     if (extend == nullptr || file.curPackage == nullptr) {
+1519:         return true;
+1520:     }
+1521: 
+1522:     auto curPkgName = file.curPackage->fullPackageName;
+1523:     if (opts.compileTestsOnly && !member.TestAttr(Attribute::PRIVATE) && extend->TestAttr(Attribute::FOR_TEST) &&
+1524:         IsTestPackage(curPkgName) && GetMainPartPkgNameForTestPkg(curPkgName) == member.fullPackageName) {
+1525:         return true;
+1526:     }
+1527:     // Access to extended members must meet the following four requirements:
+1528:     // 1. extension is exported.
+1529:     // 2. extension is imported. `IsExtendAccessible` checks 1 and 2.
+1530:     // 3. extension member is exported. `IsExportedDecl` checks 3.
+1531:     // 4. extension member is imported.
+1532:     if (file.curPackage && extend->fullPackageName == file.curPackage->fullPackageName) {
+1533:         return true;
+1534:     }
+1535:     if (!IsExtendAccessible(file, *extend, builder)) {
+1536:         return false;
+1537:     }
+1538:     if (!member.IsExportedDecl()) {
+1539:         AddNoteForExtendExportDiag(builder,
+1540:             "cannot access this member because it is not declared in any interface implemented by the extension");
+1541:         return false;
+1542:     }
+1543: 
+1544:     return IsExtendMemberImported(extend, file, member, builder);
+
+[g4_private_public_import]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Modules/ImportManager.cpp
+Command: git show v1.1.3:src/Modules/ImportManager.cpp
+Original lines: 1088-1103
+1088: void ImportManager::AddImportedDeclsForSourcePackage(const AST::Package& pkg)
+1089: {
+1090:     for (auto& file : pkg.files) {
+1091:         for (auto& import : file->imports) {
+1092:             auto& declMap = import->IsReExport() ? importedDeclsMap : fileImportedDeclsMap[file->fileHash];
+1093:             CJC_NULLPTR_CHECK(import);
+1094:             if (import->IsImportMulti()) {
+1095:                 continue;
+1096:             }
+1097:             auto fullPackageName = cjoManager->GetPackageNameByImport(*import);
+1098:             auto pkgDecl = cjoManager->GetPackageDecl(fullPackageName);
+1099:             if (fullPackageName.empty() || !pkgDecl) {
+1100:                 continue; // Load package failed.
+1101:             }
+1102:             auto relation = GetPackageRelation(pkg.fullPackageName, fullPackageName);
+1103:             auto importLevel = GetAccessLevel(*import);
+Original lines: 1152-1166
+1152: std::vector<Ptr<Decl>> ImportManager::GetImportedDeclsByName(const File& file, const std::string& name) const
+1153: {
+1154:     OrderedDeclSet ret;
+1155:     auto found = importedDeclsMap.find(name);
+1156:     if (found != importedDeclsMap.cend()) {
+1157:         ret.insert(found->second.cbegin(), found->second.cend());
+1158:     }
+1159:     auto fileIter = fileImportedDeclsMap.find(file.fileHash);
+1160:     if (fileIter != fileImportedDeclsMap.cend()) {
+1161:         auto iter = fileIter->second.find(name);
+1162:         if (iter != fileIter->second.cend()) {
+1163:             ret.insert(iter->second.cbegin(), iter->second.cend());
+1164:         }
+1165:     }
+1166:     return Utils::SetToVec<Ptr<Decl>>(ret);
+
+[g4_export_rules]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/AST/Node.cpp
+Command: git show v1.1.3:src/AST/Node.cpp
+Original lines: 968-981
+968: bool Decl::IsExportedDecl() const
+969: {
+970:     if (TestAnyAttr(Attribute::PUBLIC, Attribute::PROTECTED)) {
+971:         return true;
+972:     }
+973:     if (TestAttr(Attribute::INTERNAL)) {
+974:         if (curFile && curFile->curPackage) {
+975:             return !curFile->curPackage->noSubPkg;
+976:         } else {
+977:             return true;
+978:         }
+979:     }
+980:     if (TestAttr(Attribute::PRIVATE)) {
+981:         return false;
+Original lines: 1180-1249
+1180: bool ExtendDecl::IsExportedDecl() const
+1181: {
+1182:     // ExtendedType Check (Direct and Interface Extensions): If B in extend A<B> isn't exported, the extendDecl should
+1183:     // not be exported. For imported decl, extendedType may be nullptr and not ready.
+1184:     if (extendedType != nullptr) {
+1185:         for (auto& it : extendedType->GetTypeArgs()) {
+1186:             if (it && it->GetTarget() && !it->GetTarget()->IsExportedDecl()) {
+1187:                 return false;
+1188:             }
+1189:         }
+1190:     }
+1191:     auto extendedDecl = Ty::GetDeclPtrOfTy<InheritableDecl>(ty);
+1192:     bool isInSamePkg = extendedDecl && extendedDecl->fullPackageName == fullPackageName;
+1193:     auto isUpperBoundExport = [this]() {
+1194:         bool isUpperboundAllExported = true;
+1195:         for (auto& tp : generic->genericConstraints) {
+1196:             CJC_NULLPTR_CHECK(tp);
+1197:             for (auto& up : tp->upperBounds) {
+1198:                 CJC_NULLPTR_CHECK(up);
+1199:                 if (up->GetTarget() == nullptr) {
+1200:                     continue;
+1201:                 }
+1202:                 isUpperboundAllExported = up->GetTarget()->IsExportedDecl() && isUpperboundAllExported;
+1203:             }
+1204:         }
+1205:         return isUpperboundAllExported;
+1206:     };
+1207:     // Direct Extensions Check:
+1208:     if (inheritedTypes.empty()) {
+1209:         // Rule 1: In `package std.core`, direct extensions of types visible outside the package are exported.
+1210:         if (fullPackageName == "std.core") {
+1211:             return true;
+1212:         }
+1213:         if (isInSamePkg) {
+1214:             // Rule 2: When direct extensions are defined in the same `package` as the extended type, whether the
+1215:             // extension is exported is determined by the lowest access level of the type used in the extended type and
+1216:             // the generic constraints (if any).
+1217:             if (!generic) {
+1218:                 return extendedDecl->IsExportedDecl();
+1219:             }
+1220:             return extendedDecl->IsExportedDecl() && isUpperBoundExport();
+1221:         } else {
+1222:             // Rule 3: When the direct extension is in a different `package` from the declaration of the type being
+1223:             // extended, the extension is never exported and can only be used in the current `package`.
+1224:             return false;
+1225:         }
+1226:     }
+1227:     // Interface Extensions Check:
+1228:     if (isInSamePkg) {
+1229:         // Rule 1: When the interface extension and the extended type are in the same `package`, the extension is
+1230:         // exported together with the extended type and is not affected by the access level of the interface type.
+1231:         return extendedDecl->IsExportedDecl();
+1232:     }
+1233:     // Rule 2: When an interface extension is in a different `package` from the type being extended, whether the
+1234:     // interface extension is exported is determined by the smallest access level of the type used in the
+1235:     // interface type and the generic constraints (if any).
+1236:     bool isInterfaceAllExported = false;
+1237:     for (auto& inhertType : inheritedTypes) {
+1238:         if (inhertType->GetTarget() == nullptr) {
+1239:             continue;
+1240:         }
+1241:         if (inhertType->GetTarget()->IsExportedDecl()) {
+1242:             isInterfaceAllExported = true;
+1243:             break;
+1244:         }
+1245:     }
+1246:     if (!generic) {
+1247:         return isInterfaceAllExported;
+1248:     }
+1249:     return isInterfaceAllExported && isUpperBoundExport();
+Original lines: 1270-1285
+1270: bool FuncDecl::IsExportedDecl() const
+1271: {
+1272:     if (!outerDecl || outerDecl->astKind != ASTKind::EXTEND_DECL) {
+1273:         return Decl::IsExportedDecl();
+1274:     }
+1275:     auto extend = StaticCast<ExtendDecl>(outerDecl);
+1276:     auto extendedDecl = Ty::GetDeclPtrOfTy(extend->ty);
+1277:     // If extend and extended decleration in same package, all member of extend will be exported.
+1278:     if (!extendedDecl || extendedDecl->fullPackageName == extend->fullPackageName) {
+1279:         return Decl::IsExportedDecl();
+1280:     }
+1281:     // If extend is direct extension, all member will be not exported.
+1282:     if (extend->inheritedTypes.empty()) {
+1283:         return false;
+1284:     }
+1285:     return Decl::IsExportedDecl() && TestAttr(Attribute::INTERFACE_IMPL);
+
+[g4_member_lookup]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Sema/LookUpImpl.cpp
+Command: git show v1.1.3:src/Sema/LookUpImpl.cpp
+Original lines: 151-170
+151: void LookUpImpl::FieldLookupExtend(
+152:     Ty& ty, const std::string& fieldName, std::vector<Ptr<Decl>>& results, const LookupInfo& info)
+153: {
+154:     CJC_NULLPTR_CHECK(info.file);
+155:     // NOTE: decl which has 'IN_REFERENCE_CYCLE' should only be intercepted during checking 'inheritedTypes'.
+156:     OrderedDeclSet extendFuncs; // Ordered set for diagnostic consistency.
+157:     auto extends = typeManager.GetAllExtendsByTy(ty);
+158:     std::set<Ptr<ExtendDecl>, CmpNodeByPos> orderExtends(extends.begin(), extends.end());
+159:     for (auto& extend : orderExtends) {
+160:         CJC_NULLPTR_CHECK(extend);
+161:         if (!importManager.IsExtendAccessible(*info.file, *extend)) {
+162:             continue;
+163:         }
+164:         for (auto& it : extend->members) {
+165:             if (it->identifier == fieldName) {
+166:                 extendFuncs.emplace(it.get());
+167:             }
+168:         }
+169:     }
+170:     results.insert(results.end(), extendFuncs.begin(), extendFuncs.end());
+
+[g4_visible_members]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Frontend/CompilerInstance.cpp
+Command: git show v1.1.3:src/Frontend/CompilerInstance.cpp
+Original lines: 1045-1095
+1045: std::vector<Ptr<Decl>> CompilerInstance::GetAllVisibleExtendMembers(
+1046:     const std::variant<Ptr<Ty>, Ptr<InheritableDecl>>& type, const File& curFile) const
+1047: {
+1048:     std::set<Ptr<ExtendDecl>> extends = GetExtendDecls(type);
+1049:     std::vector<Ptr<Decl>> members;
+1050:     Ptr<Ty> exprTy = nullptr;
+1051:     if (type.index() == 0) {
+1052:         exprTy = std::get<Ptr<Ty>>(type);
+1053:     } else if (type.index() == 1) {
+1054:         exprTy = std::get<Ptr<InheritableDecl>>(type)->ty;
+1055:     }
+1056:     if (!Ty::IsTyCorrect(exprTy)) {
+1057:         return {};
+1058:     }
+1059:     for (auto& e : extends) {
+1060:         if (!importManager.IsExtendAccessible(curFile, *e)) {
+1061:             continue;
+1062:         }
+1063:         auto& extendMember = e->GetMemberDecls();
+1064:         if (curFile.curPackage->fullPackageName == e->fullPackageName) {
+1065:             members.insert(members.end(), extendMember.begin(), extendMember.end());
+1066:         } else {
+1067:             for (auto& m : extendMember) {
+1068:                 if (importManager.IsExtendMemberAccessible(curFile, *m, *exprTy)) {
+1069:                     members.emplace_back(m.get());
+1070:                 }
+1071:             }
+1072:         }
+1073:         std::function<void(const InheritableDecl&)> collectInheritMember = [&collectInheritMember, &members](
+1074:                                                                                const InheritableDecl& id) {
+1075:             for (auto& super : id.inheritedTypes) {
+1076:                 auto targetDecl = DynamicCast<InheritableDecl>(super->GetTarget());
+1077:                 if (targetDecl == nullptr) {
+1078:                     continue;
+1079:                 }
+1080:                 collectInheritMember(*targetDecl);
+1081:             }
+1082:             if (id.astKind != ASTKind::INTERFACE_DECL) {
+1083:                 return;
+1084:             }
+1085:             auto& inherMembers = id.GetMemberDecls();
+1086:             std::for_each(inherMembers.begin(), inherMembers.end(), [&members](auto& m) {
+1087:                 if (!m->TestAttr(Attribute::ABSTRACT)) {
+1088:                     members.emplace_back(m);
+1089:                 }
+1090:             });
+1091:         };
+1092:         collectInheritMember(*e);
+1093:         typeChecker->RemoveTargetNotMeetExtendConstraint(exprTy, members);
+1094:     }
+1095:     return members;
+
+[g4_bound_filter]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Sema/TypeCheckReference.cpp
+Command: git show v1.1.3:src/Sema/TypeCheckReference.cpp
+Original lines: 402-432
+402: void TypeChecker::TypeCheckerImpl::RemoveTargetNotMeetExtendConstraint(
+403:     const Ptr<Ty> baseTy, std::vector<Ptr<Decl>>& targets)
+404: {
+405:     Utils::EraseIf(targets, [this, &baseTy](auto target) -> bool {
+406:         bool ignored = !target || !Ty::IsTyCorrect(baseTy) || !Is<InheritableDecl>(target->outerDecl) ||
+407:             !Ty::IsTyCorrect(target->outerDecl->ty);
+408:         if (ignored) {
+409:             return false;
+410:         }
+411:         // Check whether target in extend decl or inherited interface decl is accessible from member base type.
+412:         auto prTys = promotion.Promote(*baseTy, *target->outerDecl->ty);
+413:         if (prTys.empty()) {
+414:             // No promoted type existed means the 'baseTy' not fit constraint of inheriting target's type.
+415:             return true;
+416:         }
+417:         Ptr<ExtendDecl> extend = nullptr;
+418:         if (auto res = typeManager.GetExtendDeclByInterface(*baseTy, *target->outerDecl->ty)) {
+419:             extend = *res;
+420:         } else {
+421:             extend = DynamicCast<ExtendDecl*>(target->outerDecl);
+422:         }
+423:         if (extend && extend->extendedType && extend->extendedType->ty) {
+424:             prTys = promotion.Promote(*baseTy, *extend->extendedType->ty);
+425:             auto promotedTy = prTys.empty() ? TypeManager::GetInvalidTy() : *prTys.begin();
+426:             if (Ty::IsTyCorrect(promotedTy)) {
+427:                 return !typeManager.CheckGenericDeclInstantiation(extend, promotedTy->typeArgs);
+428:             }
+429:         }
+430:         return false;
+431:     });
+432: }
+
+[g4_bound_instantiation]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Sema/InheritanceChecker/InstantiatedChecker.cpp
+Command: git show v1.1.3:src/Sema/InheritanceChecker/InstantiatedChecker.cpp
+Original lines: 125-142
+125: std::set<Ptr<ExtendDecl>, CmpNodeByPos> StructInheritanceChecker::GetVisibleExtendsForInstantiation(
+126:     const Decl& decl, const std::vector<Ptr<Ty>>& instTys)
+127: {
+128:     if (decl.astKind == ASTKind::EXTEND_DECL || !Ty::IsTyCorrect(decl.ty)) {
+129:         return {};
+130:     }
+131:     std::set<Ptr<ExtendDecl>, CmpNodeByPos> orderedVisibleExtends;
+132:     auto extends = typeManager.GetAllExtendsByTy(*decl.ty);
+133:     for (auto& extend : extends) {
+134:         // Check for extend decl if it is defined in current package or it has external attribute,
+135:         // and also the instantiation meets extend constraints.
+136:         bool visibleExtend = (IsExtendVisibleInCurpkg(*extend)) && extend->TestAttr(Attribute::GENERIC) &&
+137:             typeManager.CheckGenericDeclInstantiation(extend, instTys);
+138:         if (visibleExtend) {
+139:             orderedVisibleExtends.emplace(extend);
+140:         }
+141:     }
+142:     return orderedVisibleExtends;
+
+[g4_package_visibility]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/include/cangjie/Modules/ModulesUtils.h
+Command: git show v1.1.3:include/cangjie/Modules/ModulesUtils.h
+Original lines: 71-95
+71: inline bool IsVisible(const AST::Node& node, PackageRelation relation)
+72: {
+73:     return node.TestAnyAttr(AST::Attribute::PUBLIC) || relation == PackageRelation::SAME_PACKAGE ||
+74:         (node.TestAttr(AST::Attribute::PROTECTED) && relation != PackageRelation::NONE) ||
+75:         (node.TestAttr(AST::Attribute::INTERNAL) &&
+76:             (relation == PackageRelation::CHILD || relation == PackageRelation::SAME_PACKAGE));
+77: }
+78: 
+79: inline void AddImportedDeclToMap(
+80:     const AST::OrderedDeclSet& decls, AST::OrderedDeclSet& targetSet, AST::AccessLevel importLevel)
+81: {
+82:     for (auto decl : decls) {
+83:         if (IsCompatibleAccessLevel(importLevel, GetAccessLevel(*decl))) {
+84:             targetSet.emplace(decl);
+85:         }
+86:     }
+87: }
+88: 
+89: inline AST::OrderedDeclSet GetVisibleDeclToMap(
+90:     const AST::OrderedDeclSet& decls, AST::AccessLevel importLevel, PackageRelation relation)
+91: {
+92:     AST::OrderedDeclSet ret;
+93:     std::copy_if(decls.cbegin(), decls.cend(), std::inserter(ret, ret.end()), [importLevel, relation](auto decl) {
+94:         return IsCompatibleAccessLevel(importLevel, GetAccessLevel(*decl)) && IsVisible(*decl, relation);
+95:     });
+
+[g4_common_loading]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Modules/CjoManager.cpp
+Command: git show v1.1.3:src/Modules/CjoManager.cpp
+Original lines: 311-324
+311: void CjoManager::LoadFilesOfCommonPart(Ptr<Package> pkg)
+312: {
+313:     if (!impl->GetGlobalOptions().IsCompilingCJMPSpecific() && !impl->GetGlobalOptions().commonPartCjo.has_value()) {
+314:         return;
+315:     }
+316:     CJC_NULLPTR_CHECK(pkg);
+317:     // Remove existing isCommon files from pkg before loading new common part for lsp incremental compilation.
+318:     Utils::EraseIf(pkg->files, [](const auto& file) { return file->TestAttr(Attribute::FROM_COMMON_PART); });
+319:     auto commonLoader = GetCommonPartCjo(pkg->fullPackageName);
+320:     if (!commonLoader) {
+321:         return;
+322:     }
+323:     commonLoader->PreloadCommonPartOfPackage(*pkg);
+324: }
+Original lines: 478-487
+478: Ptr<ASTLoader> CjoManagerImpl::GetCommonPartCjo(std::string expectedName)
+479: {
+480:     CJC_ASSERT(commonPartLoader);
+481:     CJC_ASSERT(globalOptions.commonPartCjo);
+482: 
+483:     std::string realName = commonPartLoader->PreReadAndSetPackageName();
+484:     if (realName != expectedName) {
+485:         diag.DiagnoseRefactor(
+486:             DiagKindRefactor::module_common_cjo_wrong_package, DEFAULT_POSITION, realName, expectedName);
+487:         return nullptr;
+
+[g4_cjmp_mode]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/include/cangjie/Option/Option.h
+Command: git show v1.1.3:include/cangjie/Option/Option.h
+Original lines: 1145-1152
+1145:     bool IsCompilingCJMPSpecific() const
+1146:     {
+1147:         return inputChirFiles.size() > 0;
+1148:     }
+1149: 
+1150:     bool IsCompilingCJMP() const
+1151:     {
+1152:         return IsCompilingCJMPSpecific() || outputMode == GlobalOptions::OutputMode::CHIR;
+
+[g4_cjmp_flags]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/include/cangjie/Option/Options.inc
+Command: git show v1.1.3:include/cangjie/Option/Options.inc
+Original lines: 161-167
+161: PREDEFVALUE(output_type_list, {
+162:     // for CJNATIVE backend
+163:     VALUE("exe", "emit executable (default)", { BACKEND(CJNATIVE) }, { GROUP(STABLE) COMMA GROUP(VISIBLE) }) COMMA
+164:     VALUE("staticlib", "emit static library", { BACKEND(CJNATIVE) }, { GROUP(STABLE) COMMA GROUP(VISIBLE) }) COMMA
+165:     VALUE("dylib", "emit dynamic library", { BACKEND(CJNATIVE) }, { GROUP(STABLE) COMMA GROUP(VISIBLE) }) COMMA
+166:     VALUE("chir", "emit partially compiled package", { BACKEND(CJNATIVE) }, { GROUP(VISIBLE) }) COMMA
+167:     VALUE("obj", "emit obj", { BACKEND(CJNATIVE) }, { GROUP(VISIBLE) }) COMMA
+Original lines: 583-585
+583: OPTION("--common-part-cjo", COMMON_PART_PATH, FLAG_WITH_ARG, { BACKEND(CJNATIVE) },
+584:     { GROUP(GLOBAL) COMMA GROUP(VISIBLE) }, nullptr, {}, SINGLE_OCCURRENCE,
+585:     "Add .cjo path for common part of package")
+
+[g4_extend_modifiers]
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Parse/ParseDecl.cpp
+Command: git show v1.1.3:src/Parse/ParseDecl.cpp
+1733:     ScopeKind scopeKind, const std::set<AST::Modifier>& modifiers, PtrVector<Annotation> annos)
+1734: {
+1735:     Next(); // Consume the extend token.
+1736:     auto ret = MakeOwned<ExtendDecl>();
+1737:     ChainScope cs(*this, ret.get());
+1738:     CheckNoDeprecatedAnno(annos, "extend");
+1739:     ret->annotations = std::move(annos);
+1740: 
+1741:     ret->begin = lookahead.Begin();
+1742:     ret->keywordPos = lookahead.Begin();
+1743:     ret->identifier.SetPos(lookahead.Begin(), lookahead.Begin());
+1744:     CheckDeclarationInScope(scopeKind, DefKind::EXTEND);
+1745:     if (modifiers.size() == 1 && mpImpl->HasCJMPModifiers(*modifiers.begin())) {
+1746:         mpImpl->CheckCJMPModifiers(modifiers);
+1747:         auto attr = GetAttributeByModifier(modifiers.begin()->modifier);
+1748:         ret->EnableAttr(attr.value());
+1749:     } else if (!modifiers.empty() && !chainedAST.back()->TestAttr(Attribute::IS_BROKEN)) {
+1750:         DiagExpectNoModifier(*modifiers.begin());
+1751:     }
+1752:     CheckCJMappingAttr(*ret);
+1753:     ParseExtendedType(*ret);
+1754:     if (Skip(TokenKind::UPPERBOUND)) { // Interface extension.
+1755:         ret->upperBoundPos = lastToken.Begin();
+1756:         do {
+1757:             if (lastToken.kind == TokenKind::BITAND) {
+1758:                 ret->inheritedTypes.back()->bitAndPos = lastToken.Begin();
+1759:             }
+1760:             ret->inheritedTypes.push_back(ParseType());
+1761:         } while (Skip(TokenKind::BITAND));
+
+Source: D:/code/intellij/cangjie/external/cangjie_compiler/src/Parse/ParserModifierRules.cpp
+Command: git show v1.1.3:src/Parse/ParserModifierRules.cpp
+401:     {DefKind::CLASS, DEF_SCOPES(SCOPE_ENTRY(ScopeKind::TOPLEVEL, TOPLEVEL_CLASS_MODIFIERS))},
+402:     {DefKind::INTERFACE, DEF_SCOPES(SCOPE_ENTRY(ScopeKind::TOPLEVEL, TOPLEVEL_INTERFACE_MODIFIERS))},
+403:     {DefKind::VARIABLE,
+404:         DEF_SCOPES(SCOPE_ENTRY(ScopeKind::TOPLEVEL, TOPLEVEL_VARIABLE_MODIFIERS),
+405:             SCOPE_ENTRY(ScopeKind::CLASS_BODY, CLASS_BODY_VARIABLE_MODIFIERS),
+406:             SCOPE_ENTRY(ScopeKind::STRUCT_BODY, STRUCT_BODY_VARIABLE_MODIFIERS),
+407:             SCOPE_ENTRY(ScopeKind::FUNC_BODY, FUNC_BODY_VARIABLE_MODIFIERS),
+408:             SCOPE_ENTRY(ScopeKind::MACRO_BODY, FUNC_BODY_VARIABLE_MODIFIERS),
+409:             SCOPE_ENTRY(ScopeKind::PRIMARY_CONSTRUCTOR_BODY_FOR_CLASS, AGGREGATE_BODY_INSTANCE_INIT_MODIFIERS),
+410:             SCOPE_ENTRY(ScopeKind::PRIMARY_CONSTRUCTOR_BODY_FOR_STRUCT, AGGREGATE_BODY_INSTANCE_INIT_MODIFIERS))},
+411:     {DefKind::ENUM, DEF_SCOPES(SCOPE_ENTRY(ScopeKind::TOPLEVEL, TOPLEVEL_ENUM_MODIFIERS))},
+412:     {DefKind::STRUCT, DEF_SCOPES(SCOPE_ENTRY(ScopeKind::TOPLEVEL, TOPLEVEL_STRUCT_MODIFIERS))},
+413:     // Empty means it doesn't support any modifier.
+414:     {DefKind::EXTEND, DEF_SCOPES(SCOPE_ENTRY_EMPTY(ScopeKind::TOPLEVEL))},
+415:     {DefKind::TYPE, DEF_SCOPES(SCOPE_ENTRY(ScopeKind::TOPLEVEL, TOPLEVEL_COMMON_MODIFIERS))},
+416:     {DefKind::CONSTRUCTOR,
+417:         DEF_SCOPES(SCOPE_ENTRY(ScopeKind::CLASS_BODY, AGGREGATE_BODY_INIT_MODIFIERS),
+418:             SCOPE_ENTRY(ScopeKind::STRUCT_BODY, AGGREGATE_BODY_INIT_MODIFIERS))},
+419:     {DefKind::PRIMARY_CONSTRUCTOR,
+
+

@@ -3,8 +3,10 @@ package org.cangnova.cangjie.codeinsight.api.applicators.fixes
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
+import org.cangnova.cangjie.codeinsight.api.classic.quickfixes.QuickFixesPsiBasedFactory
 import kotlin.reflect.KClass
 
 /**
@@ -37,8 +39,11 @@ class CangJieQuickFixesList @ForCangJieQuickFixesListBuilder constructor(
     fun CaSession.getQuickFixesWithCatchingFor(diagnostic: CaDiagnosticWithPsi<*>): Sequence<Result<IntentionAction>> {
         val factories = quickFixes[diagnostic.diagnosticClass] ?: return emptySequence()
 
+        // 同一诊断多 factory 时按声明优先级升序（值小的先产出），未声明的排后面；
+        // 优先级相同保持注册顺序，保证 UI 顺序可预期。
         return factories.asSequence()
             .map { @Suppress("UNCHECKED_CAST") (it as CangJieQuickFixFactory<CaDiagnosticWithPsi<*>>) }
+            .sortedWith(compareBy({ it.priority }, { factories.indexOf(it) }))
             .map { factory ->
                 with(factory) {
                     runCatching { createQuickFixes(diagnostic).map { it.asIntention() } }
@@ -89,6 +94,23 @@ class CangJieQuickFixesListBuilder private constructor() {
         KClass<out CaDiagnosticWithPsi<*>>,
         MutableList<CangJieQuickFixFactory<out CaDiagnosticWithPsi<*>>>,
         >()
+
+    /**
+     * 注册只依赖诊断 PSI 的传统 intention factory。
+     */
+    fun <DIAGNOSTIC_PSI : PsiElement, DIAGNOSTIC : CaDiagnosticWithPsi<DIAGNOSTIC_PSI>> registerPsiQuickFixes(
+        diagnosticClass: KClass<DIAGNOSTIC>,
+        vararg factories: QuickFixesPsiBasedFactory<in DIAGNOSTIC_PSI>,
+    ) {
+        for (factory in factories) {
+            registerFactory(
+                diagnosticClass,
+                CangJieQuickFixFactory.IntentionBased<DIAGNOSTIC> { diagnostic ->
+                    diagnostic.psi.let(factory::createQuickFix)
+                },
+            )
+        }
+    }
 
     /**
      * 使用 reified 诊断类型注册 quick-fix factory。

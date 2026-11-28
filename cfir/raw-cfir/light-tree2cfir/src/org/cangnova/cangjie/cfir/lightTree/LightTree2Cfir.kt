@@ -1,11 +1,17 @@
 package org.cangnova.cangjie.cfir.lightTree
 
+import org.cangnova.cangjie.parsing.ParsedCangJieMacroFragment
+import org.cangnova.cangjie.cfir.builder.CfirRawSourceElementFactory
 import java.io.File
 import java.nio.file.Path
 import org.cangnova.cangjie.CjIoFileSourceFile
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.toParsingContext
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
+import org.cangnova.cangjie.cfir.builder.measureRawBuild
+import org.cangnova.cangjie.cfir.builder.rawBuildTimingObserverOrNull
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.publishParsingFileFacts
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
@@ -55,6 +61,7 @@ class LightTree2Cfir(
         entryFileRole: CjmpFileRole,
         ownerSnapshot: MacroRawOwnerSnapshot,
         annotationMetadata: CfirAnnotationMetadataBuilder,
+        sourceElementFactory: (ParsedCangJieMacroFragment) -> CfirRawSourceElementFactory = { CfirRawSourceElementFactory.Original() },
     ): MacroFragmentReparseResult {
         val target = session.cjmpSettings.toParsingContext(session.languageVersionSettings).copy(initialFileRole = entryFileRole)
         return transaction.forContext(target, entryFileRole).consume { fragment, diagnostics ->
@@ -72,6 +79,7 @@ class LightTree2Cfir(
                 nominalFacts = fragment.cjmpNominalFacts,
                 declarationModifiers = fragment.declarationModifiers,
                 annotationMetadata = annotationMetadata,
+                sourceElementFactory = sourceElementFactory(fragment),
             )
             val payload = builder.buildMacroFragmentPayload(fragment.roots, fragment.parsingInfo, ownerSnapshot)
                 ?: return@consume MacroFragmentReparseResult.Failure("A direct macro root has no raw CFIR conversion.", fragment.fileFacts)
@@ -192,13 +200,16 @@ class LightTree2Cfir(
         val builder = CangJieLightParser.createBuilder(code)
         // 解析模式随文件种类：`.cj.d` 走声明模式，体可以缺失。
         // 这里必须显式传入——LightTree 入口不会自己看文件名。
-        val parsed = CangJieLightParser.parseBuffered(
-            builder,
-            sourceKind = sourceFile.sourceKind,
-            cjmpContext = session.cjmpSettings.toParsingContext(session.languageVersionSettings),
-            sourceFile = sourceFile,
-            settings = parserSettings,
-        )
+        val observer = session.rawBuildTimingObserverOrNull
+        val parsed = observer.measureRawBuild(CfirRawBuildSource.LIGHT_TREE, CfirRawBuildStage.PARSE) {
+            CangJieLightParser.parseBuffered(
+                builder,
+                sourceKind = sourceFile.sourceKind,
+                cjmpContext = session.cjmpSettings.toParsingContext(session.languageVersionSettings),
+                sourceFile = sourceFile,
+                settings = parserSettings,
+            )
+        }
         return buildPreMacroCfirFile(parsed, sourceFile, linesMapping)
     }
 

@@ -14,7 +14,11 @@
 
 ## 关键包
 
-`org.cangnova.cangjie.analysis.decompiled.*` — 反编译入口、`.cjo` 二进制头读取、虚拟文件挂载。
+| 包 | 职责 |
+|---|---|
+| `org.cangnova.cangjie.analysis.decompiled` | 聚合层：公开服务装配（反编译二进制索引入口、`.cjo` → 虚拟文件挂载）、`.cjo` 模块数据提供器 |
+| `org.cangnova.cangjie.analysis.decompiler.stub` / `.stub.file` | `.cjo` 二进制头读取、file-level stub 与 stub 树构造 |
+| `org.cangnova.cangjie.analysis.decompiled.psi` | 反编译 PSI（view provider、各 decompiler、反编译文本产出） |
 
 ## 测试
 
@@ -25,10 +29,9 @@
 
 ## 依赖
 
-- `:cfir:cfir-serialization`（读取 `.cjo`）
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-api-impl-base`
-- `:analysis:stubs`、`:analysis:light-declarations`
+- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:low-level-api-cfir`
 - `:psi`
+- 子模块另依赖 `:cfir:cfir-serialization`（读取 `.cjo` 二进制）、`:flatbuffers-gen` 与 `:analysis:light-declarations`（`light-declarations-for-decompiled`）
 
 ## 命令
 

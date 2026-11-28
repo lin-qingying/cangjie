@@ -150,8 +150,15 @@ data class ConeUnmatchedTypeArgumentsError(
 }
 
 /**
- * 携带多个候选的 Cone 诊断。
+ * 对位 Kotlin ConePostponedInferenceDiagnostic：延迟 lambda 结果尚未完成的正式类型占位。
+ * 它与源码语义错误不同，completion 必须在最终发布前替换该类型。
  */
+object ConePostponedInferenceDiagnostic : ConeDiagnostic {
+    override val reason: String
+        get() = "Cone type inference has been postponed due to lambda resolution"
+}
+
+/** 携带多个候选的 Cone 诊断。 */
 interface ConeDiagnosticWithCandidates : ConeDiagnostic {
     /** 参与该诊断的候选集合。 */
     val candidates: Collection<AbstractCandidate>
@@ -243,6 +250,12 @@ class ConeAmbiguousFunctionReferenceError(
 class ConeNoMatchingFunctionReferenceError(
     /** 被引用的函数名。 */
     val name: Name,
+    /**
+     * 若该引用作为调用实参解析失败，保存拥有该实参的候选调用。
+     *
+     * 映射层据此判断是否应同时报告泛型调用的参数映射失败；独立函数引用不携带候选。
+     */
+    val argumentMappingCandidate: AbstractCallCandidate<*>? = null,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "No matching function declaration for reference: $name"
@@ -1134,6 +1147,7 @@ class ConeInvalidNodeAfterCheckError : ConeDiagnostic {
  *
  * @property expectedType 语义上下文期望类型。
  * @property actualType 实际解析到的类型。
+ * @property origin 区分表达式类型检查失败与仅使资源声明无效的协议检查。
  */
 data class ConeTypeMismatchError(
     /**
@@ -1144,7 +1158,10 @@ data class ConeTypeMismatchError(
      * 实际解析到的类型。
      */
     val actualType: ConeCangJieType,
+    val origin: Origin = Origin.TYPE_CHECK,
 ) : ConeDiagnostic {
+    enum class Origin { TYPE_CHECK, RESOURCE_PROTOCOL }
+
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "type mismatch: expected $expectedType but got $actualType"
 }

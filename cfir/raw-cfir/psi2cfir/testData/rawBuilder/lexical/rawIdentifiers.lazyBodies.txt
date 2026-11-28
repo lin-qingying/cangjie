@@ -1,0 +1,16 @@
+FILE: rawIdentifiers.cj
+    internal? func `if`(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? class `class` {
+        internal? var `var`: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func `for`(`in`: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func cjkRawId(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -44,5 +44,4 @@
 
 ## 相关文档
 
-- `../docs/psi-cfir-ast-chir-alignment.md` — PSI ↔ CFIR ↔ 官方 AST ↔ CHIR 节点级对照
 - `docs/psi-parser-comparison.md` — Parser 实现对比说明

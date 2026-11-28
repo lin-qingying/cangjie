@@ -7,11 +7,12 @@ public fun CfirAnnotationCallBuilder.initializeRawAnnotationSyntax(
     compileTimeVisible: Boolean,
     sourceName: String? = null,
     sourceModuleName: String,
+    sourceElementFactory: CfirRawSourceElementFactory = CfirRawSourceElementFactory.Original(),
 ) {
     isCompileTimeVisible = compileTimeVisible
     forcedCustom = compileTimeVisible
     annotationSourceName = sourceName
-    this.sourceModuleName = sourceModuleName
+    this.sourceModuleName = sourceElementFactory.annotationSourceModuleName(source, sourceModuleName)
     annotationKind = null
     annotationOrigin = null
     annotationIdentity = null

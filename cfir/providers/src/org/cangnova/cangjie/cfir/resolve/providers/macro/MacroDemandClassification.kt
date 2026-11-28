@@ -231,7 +231,7 @@ class MacroDemandClassification private constructor(
             pre: PreMacroRawBuildResult,
             defaultMacroImports: List<FqName> = emptyList(),
             builtinRegistries: MacroBuiltinRegistries = MacroBuiltinRegistries.DEFAULT,
-            knownExternalMacroPackages: Set<FqName> = emptySet(),
+            externalMacroPackages: Set<FqName> = emptySet(),
         ): MacroDemandClassification {
             val symbolIndex = buildMacroSymbolIndex(pre)
             val context = bindMacroImports(
@@ -244,7 +244,7 @@ class MacroDemandClassification private constructor(
             val knownMacroPackages = pre.files
                 .filter { it.isMacroPackage }
                 .mapTo(linkedSetOf()) { it.cfirFile.packageDirective.packageFqName }
-                .apply { addAll(knownExternalMacroPackages) }
+                .apply { addAll(externalMacroPackages) }
             val snapshots = pre.files.flatMap { preFile ->
                 preFile.surfaces.map { surface ->
                     surface.toPreArtifactSnapshot(
@@ -416,7 +416,7 @@ private fun MacroSurface.collectImportCandidatePackages(
         if (packageFqName.isRoot || packageFqName == scopeContext.packageFqName) continue
         val canBind = import.isAllUnder ||
             import.aliasName == name ||
-            importedFqName.shortName() == name
+            (import.aliasName == null && importedFqName.shortName() == name)
         if (canBind) result += packageFqName
     }
     return result.toList()
@@ -465,6 +465,9 @@ private val OFFICIAL_STDLIB_MACRO_PACKAGES: Set<FqName> = setOf(
     StandardNames.STD_UNITTEST_TESTMACRO_PACKAGE_FQ_NAME,
     StandardNames.STD_UNITTEST_MOCK_MOCKMACRO_PACKAGE_FQ_NAME,
 )
+
+/** 类型解析的注解命名空间和 artifact demand 共用官方标准库宏包事实。 */
+fun isOfficialStdlibMacroPackage(fqName: FqName): Boolean = fqName in OFFICIAL_STDLIB_MACRO_PACKAGES
 
 /** 判定当前 surface 是否只是 macro 定义签名的一部分，而不是 macro 调用需求。 */
 private fun MacroSurface.isMacroDefinitionSignatureSurfaceForClassification(): Boolean {

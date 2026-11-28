@@ -1,0 +1,253 @@
+package org.cangnova.cangjie.ide.completion.impl.shared.context
+
+import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.lang.CangJieFileType
+import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjMacroAttr
+import org.cangnova.cangjie.psi.CjMacroInput
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjPsiFactory
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+
+/**
+ * 补全位置分类回归。
+ *
+ * 只验证位置形态判定：分类错误会让候选生成选错家族，
+ * 而且这种错误在界面上表现为「少补了一些东西」，很难定位。
+ */
+class CompletionPositionContextTest : CjParsingTestCase(
+    dataPath = "",
+    fileExt = "cj",
+    fileType = CangJieFileType.INSTANCE,
+    CangJieParserDefinition(),
+) {
+    /**
+     * 初始化 PSI 解析测试环境。
+     */
+    @BeforeEach
+    fun setUpFixture() {
+        setUp()
+    }
+
+    /**
+     * 释放 PSI 解析测试环境。
+     */
+    @AfterEach
+    fun tearDownFixture() {
+        tearDown()
+    }
+
+    /**
+     * 解析源码为仓颉文件。
+     */
+    private fun parse(text: String): CjFile = createPsiFile("completionContext", text) as CjFile
+
+    /**
+     * `receiver.` 之后属于成员访问，接收者一侧仍是普通表达式位置。
+     */
+    @Test
+    fun classifiesMemberAccess() {
+        val file = parse(
+            """
+            class Box {
+                func unwrap(): Int64 {
+                    1
+                }
+            }
+
+            func use(box: Box): Int64 {
+                box.unwrap()
+            }
+            """.trimIndent(),
+        )
+
+        val qualified = PsiTreeUtil.findChildrenOfType(file, CjDotQualifiedExpression::class.java).single()
+        val selector = qualified.selectorExpression
+        assertNotNull(selector, "限定表达式的选择器必须存在")
+
+        val onSelector = CompletionPositionContexts.classify(selector)
+        assertEquals(CompletionPositionKind.MEMBER_ACCESS, onSelector.kind)
+        assertEquals(qualified.receiverExpression, onSelector.receiverExpression)
+
+        // 接收者一侧仍是普通函数体位置：只有选择器一侧才构成成员访问。
+        val onReceiver = CompletionPositionContexts.classify(qualified.receiverExpression)
+        assertEquals(CompletionPositionKind.FUNCTION_BODY, onReceiver.kind)
+        assertNull(onReceiver.receiverExpression, "接收者一侧不是成员访问位置")
+    }
+
+    /**
+     * 函数体内部归为函数体位置。
+     */
+    @Test
+    fun classifiesFunctionBody() {
+        val file = parse(
+            """
+            func compute(): Int64 {
+                let value = 1
+                value
+            }
+            """.trimIndent(),
+        )
+
+        val usage = file.lastReference("value")
+        val context = CompletionPositionContexts.classify(usage)
+        assertEquals(CompletionPositionKind.FUNCTION_BODY, context.kind)
+        assertNull(context.receiverExpression, "函数体位置不是成员访问")
+    }
+
+    /**
+     * import 语句内部归为 import 位置。
+     */
+    @Test
+    fun classifiesImport() {
+        val file = parse(
+            """
+            package sample.imports
+
+            import std.collection.ArrayList
+            """.trimIndent(),
+        )
+
+        val context = CompletionPositionContexts.classify(file.lastReference("ArrayList"))
+        assertEquals(CompletionPositionKind.IMPORT, context.kind)
+    }
+
+    /**
+     * 表达式片段内部归为片段表达式位置，且不给出所属声明。
+     */
+    @Test
+    fun classifiesExpressionCodeFragment() {
+        val host = parse(
+            """
+            package sample.fragments
+
+            func host(): Int64 {
+                1
+            }
+            """.trimIndent(),
+        )
+        val fragment = CjPsiFactory.contextual(host).createExpressionCodeFragment("host()", host)
+        val target = PsiTreeUtil.findChildrenOfType(fragment, CjSimpleNameExpression::class.java)
+            .last { it.referencedName == "host" }
+
+        val context = CompletionPositionContexts.classify(target)
+        assertEquals(CompletionPositionKind.CODE_FRAGMENT_EXPRESSION, context.kind)
+        assertNull(context.declaration, "片段表达式没有所属声明")
+        assertNull(context.receiverExpression, "片段表达式不是成员访问位置")
+    }
+
+    /**
+     * 块片段内部归为片段块位置。
+     *
+     * 片段里带 `let` 时必须仍然是片段形态——这正是 3.9 的验收点：
+     * 片段内部也有块，若按普通块位置处理，片段就退化成函数体位置，
+     * 丢掉「作用域只来自片段自身上下文」这一事实。
+     */
+    @Test
+    fun classifiesBlockCodeFragment() {
+        val host = parse(
+            """
+            package sample.fragments
+
+            func host(): Int64 {
+                1
+            }
+            """.trimIndent(),
+        )
+        val fragment = CjPsiFactory.contextual(host)
+            .createBlockCodeFragment("let local = 1\nhost()", host)
+        val target = PsiTreeUtil.findChildrenOfType(fragment, CjSimpleNameExpression::class.java)
+            .last { it.referencedName == "host" }
+
+        val context = CompletionPositionContexts.classify(target)
+        assertEquals(CompletionPositionKind.CODE_FRAGMENT_BLOCK, context.kind)
+        assertNull(context.receiverExpression, "片段块不是成员访问位置")
+    }
+
+    /**
+     * 反例：普通文件里的块位置不得被误判成片段位置。
+     */
+    @Test
+    fun doesNotClassifyOrdinaryFileAsFragment() {
+        val file = parse(
+            """
+            package sample.fragments
+
+            func ordinary(): Int64 {
+                let local = 1
+                local
+            }
+            """.trimIndent(),
+        )
+
+        val context = CompletionPositionContexts.classify(file.lastReference("local"))
+        assertEquals(CompletionPositionKind.FUNCTION_BODY, context.kind)
+    }
+
+    /**
+     * 属性宏的 token 输入单独登记为 `MACRO_TOKENS`。
+     *
+     * `@Foo[1+]` 的方括号里是 **token 序列**而不是表达式：`#`、`` ` ``、未转义的 `@`
+     * 都不是合法 token。那里没有可解析的代码上下文，普通候选无从谈起。
+     */
+    @Test
+    fun macroAttributeTokensAreClassifiedAsMacroTokens() {
+        val file = parse(MACRO_FILE)
+        val attr = PsiTreeUtil.findChildrenOfType(file, CjMacroAttr::class.java).first()
+        val position = requireNotNull(attr.findElementAt(1)) { "方括号内必须存在叶子元素" }
+
+        assertEquals(
+            expected = CompletionPositionKind.MACRO_TOKENS,
+            actual = CompletionPositionContexts.classify(position).kind,
+            message = "属性宏的 token 输入必须单独登记",
+        )
+    }
+
+    /**
+     * 普通宏输入（小括号）不登记为 `MACRO_TOKENS`。
+     *
+     * 那里是正常的表达式/声明输入，走常规分类——把两者混为一谈会让普通宏调用里的
+     * 代码补全整段失效。
+     */
+    @Test
+    fun macroInputIsNotClassifiedAsMacroTokens() {
+        val file = parse(MACRO_FILE)
+        val input = PsiTreeUtil.findChildrenOfType(file, CjMacroInput::class.java).first()
+        val position = requireNotNull(input.findElementAt(1)) { "小括号内必须存在叶子元素" }
+
+        assertNotEquals(
+            illegal = CompletionPositionKind.MACRO_TOKENS,
+            actual = CompletionPositionContexts.classify(position).kind,
+            message = "普通宏输入不得被当成 token 输入",
+        )
+    }
+}
+
+/**
+ * 属性宏定义与两种调用形态。
+ *
+ * 取自官方手册《实现宏》：属性宏多一个 `Tokens` 入参，调用时经 `[]` 传入。
+ */
+// `trimIndent()` 的结果不是编译期常量，因此只能是 `val` 而不是 `const val`。
+private val MACRO_FILE = """
+    macro Foo(attrTokens: Tokens, inputTokens: Tokens): Tokens {
+        attrTokens
+    }
+
+    var a: Int64 = @Foo[1+](2+3)
+""".trimIndent()
+
+/**
+ * 取得最后一个引用指定名字的表达式。
+ */
+private fun CjFile.lastReference(name: String): CjSimpleNameExpression =
+    PsiTreeUtil.findChildrenOfType(this, CjSimpleNameExpression::class.java).last { it.referencedName == name }

@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirIterationOwner
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.source.CfirSourceForInKind
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -19,7 +20,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.forInExpression]
  */
-abstract class CfirForInExpression : CfirExpression(), CfirIterationOwner {
+abstract class CfirForInExpression : CfirExpression(), CfirIterationOwner, CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
@@ -30,6 +31,10 @@ abstract class CfirForInExpression : CfirExpression(), CfirIterationOwner {
     abstract val patternGuard: CfirExpression?
     abstract val body: CfirBlock
     abstract val iterationKind: CfirSourceForInKind
+
+    abstract override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement
+    abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
+    abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
 
     /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
     @CfirImplementationDetail

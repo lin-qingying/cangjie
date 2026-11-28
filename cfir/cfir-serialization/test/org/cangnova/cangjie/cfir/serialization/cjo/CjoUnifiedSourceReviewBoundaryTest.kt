@@ -2,6 +2,9 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import PackageFormat.*
 import com.google.flatbuffers.Table
 import com.intellij.psi.util.PsiTreeUtil
@@ -748,6 +751,11 @@ class CjoUnifiedSourceReviewBoundaryTest :
             status = buildResolvedDeclarationStatus {
                 visibility = Visibilities.Local
                 modality = org.cangnova.cangjie.descriptors.Modality.FINAL
+                visibilityExplicitness = CfirModifierExplicitness.IMPLICIT
+                modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+                bodyPresence = CfirBodyPresence.UNKNOWN
+                isDeclarationFile = false
+                isFromCommonPart = false
                 isVisibilityExplicit = false
                 isModalityExplicit = false
                 isAbstractExplicit = false
@@ -797,6 +805,11 @@ class CjoUnifiedSourceReviewBoundaryTest :
             status = buildResolvedDeclarationStatus {
                 visibility = Visibilities.Local
                 modality = org.cangnova.cangjie.descriptors.Modality.FINAL
+                visibilityExplicitness = CfirModifierExplicitness.IMPLICIT
+                modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+                bodyPresence = CfirBodyPresence.UNKNOWN
+                isDeclarationFile = false
+                isFromCommonPart = false
                 isVisibilityExplicit = false
                 isModalityExplicit = false
                 isAbstractExplicit = false
@@ -856,6 +869,11 @@ class CjoUnifiedSourceReviewBoundaryTest :
                     status = buildResolvedDeclarationStatus {
                         visibility = Visibilities.Local
                         modality = org.cangnova.cangjie.descriptors.Modality.FINAL
+                        visibilityExplicitness = CfirModifierExplicitness.IMPLICIT
+                        modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+                        bodyPresence = CfirBodyPresence.UNKNOWN
+                        isDeclarationFile = false
+                        isFromCommonPart = false
                         isVisibilityExplicit = false
                         isModalityExplicit = false
                         isAbstractExplicit = false
@@ -1055,7 +1073,8 @@ class CjoUnifiedSourceReviewBoundaryTest :
         val wire: Package get() = snapshot.pkg
         fun declaration(index: Int): CfirDeclaration = kotlin.test.assertNotNull(provider.deserializeCjoDeclaration(path, metadata.fullPackageName, index))
         fun function(name: String): CfirNamedFunction = assertIs<CfirNamedFunction>(callable(name))
-        fun variable(name: String): CfirFieldVariable = assertIs<CfirFieldVariable>(callable(name))
+        fun binding(name: String): CfirPatternBindingVariable = provider.packageVariableBinding(packageName, name)
+        fun variable(name: String): CfirPatternVariable = assertIs<CfirPatternVariable>(binding(name).patternTreeOwner)
         private fun callable(name: String): CfirDeclaration = provider.getTopLevelCallableSymbols(
             FqName(metadata.fullPackageName), Name.identifier(name)).single().cfir
         fun classifier(name: String): CfirClassLikeDeclaration = kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(
@@ -1078,7 +1097,10 @@ class CjoUnifiedSourceReviewBoundaryTest :
             envProvider = { null }), CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
             explicitCommonPartPaths = listOf(path))
         val module = Module(CfirSession.Kind.Library)
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, (listOf(root) + searchRoots).toSet()),
+        )
         module.registerProvider(provider)
         val snapshot = kotlin.test.assertNotNull(manager.loadPackageSnapshot(metadata.fullPackageName))
         val roots = metadata.declarations.withIndex().filter { it.value.isTopLevel }.map {
@@ -1255,10 +1277,10 @@ class CjoUnifiedSourceReviewBoundaryTest :
             else -> CallableId(FqName(pkg), this.name)
         })
         dispatchReceiverType = receiverType
-        status = if (local) buildResolvedDeclarationStatus {
-            visibility = Visibilities.Local
-            modality = org.cangnova.cangjie.descriptors.Modality.FINAL
-            isConst = const
+        status = if (local) {
+            val modality = org.cangnova.cangjie.descriptors.Modality.FINAL
+            CfirDeclarationStatusImpl(Visibilities.Local, modality).apply { isConst = const }
+                .resolved(Visibilities.Local, modality)
         } else CfirDeclarationStatusImpl(visibility = Visibilities.Public).apply { isConst = const }
         returnTypeRef = type.toCfirResolvedTypeRef(null)
         this.initializer = initializer

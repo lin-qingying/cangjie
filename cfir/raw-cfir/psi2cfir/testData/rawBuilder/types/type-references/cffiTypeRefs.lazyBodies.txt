@@ -1,0 +1,7 @@
+FILE: cffiTypeRefs.cj
+    internal? typealias Handler = R|CFunc<R|(R|Int64|) -> R|Int32||>|
+    internal? typealias HandlerArray = R|VArray<R|Handler|, 4>|
+    internal? typealias BytePtr = R|CPointer<R|UInt8|>|
+    internal? typealias CStr = R|CString|
+    internal? typealias Mapper = R|(R|Int64|) -> R|String||
+    internal? typealias Pair = R|(R|Int64|, R|String|)|

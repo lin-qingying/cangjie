@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.CfirPublishedAnnotations
@@ -13,6 +14,8 @@ import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCjoDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -73,6 +76,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphStore
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.source.CfirImportedDeclarationHeaderSource
 import org.cangnova.cangjie.cfir.source.CfirSourceExpressionPayload
@@ -98,6 +102,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.TypeComponents
 import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -2370,6 +2375,11 @@ class CfirExportAnalysisInputSnapshotTest {
             isLocal = false
             status = buildResolvedDeclarationStatus {
                 visibility = Visibilities.Public
+                visibilityExplicitness = CfirModifierExplicitness.EXPLICIT
+                modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+                bodyPresence = CfirBodyPresence.UNKNOWN
+                isDeclarationFile = false
+                isFromCommonPart = false
                 isVisibilityExplicit = true
                 isModalityExplicit = false
                 isAbstractExplicit = false
@@ -2472,8 +2482,11 @@ class CfirExportAnalysisInputSnapshotTest {
                 check(checkNotNull(alias).resolvePhase >= CfirResolvePhase.SUPER_TYPES)
                 check(alias.expandedTypeRef is CfirResolvedTypeRef)
                 session.register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
-                session.register(org.cangnova.cangjie.cfir.types.TypeComponents::class,
-                    org.cangnova.cangjie.cfir.types.TypeComponents(session))
+                session.register(
+                    CfirLanguageSettingsComponent::class,
+                    CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
+                )
+                session.register(TypeComponents::class, TypeComponents(session))
             }
             val provider = CfirProviderImpl(session, scopeProvider)
             session.register(CfirProvider::class, provider)
@@ -2736,6 +2749,11 @@ class CfirExportAnalysisInputSnapshotTest {
 
         private fun resolvedStatus(isConst: Boolean = false): CfirResolvedDeclarationStatus = buildResolvedDeclarationStatus {
             visibility = Visibilities.Public
+            visibilityExplicitness = CfirModifierExplicitness.EXPLICIT
+            modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+            bodyPresence = CfirBodyPresence.UNKNOWN
+            isDeclarationFile = false
+            isFromCommonPart = false
             isVisibilityExplicit = true
             isModalityExplicit = false
             isAbstractExplicit = false

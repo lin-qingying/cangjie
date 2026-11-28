@@ -1,0 +1,95 @@
+# OpenTelemetry Collector 配置：Analysis API 统计的采集与分流。
+#
+# 双信号分流（用户拍板的方向）：
+#   metrics → prometheus exporter（Prometheus 抓取）＋ file（JSON 行落盘）＋ debug（日志）
+#   traces  → otlp_grpc/jaeger（Jaeger 存储与 UI）＋ debug
+#
+# 指标与链路都是 OpenTelemetry 标准模型，采集、聚合、看板都是现成组件的事，仓里不自己写渲染逻辑。
+#
+# 启动：docker compose up -d（见同目录 docker-compose.yml）
+# 前端：Prometheus http://localhost:9090、Jaeger http://localhost:16686
+# 直连 OTLP gRPC：localhost:4317
+
+receivers:
+  # 与 CaPerformanceTestTelemetry 的 OTLP 导出器对应：它发 gRPC，所以这里必须开 grpc 端口。
+  # http 同时开是为了让 curl 之类的临时排查能用。
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # 先于 batch 执行：批处理的排队窗口会让瞬时内存涨过限，硬丢数据反而更糟。
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # 攒 5 秒再发。指标按 JVM 累积（cumulative temporality），所以间隔越短看板上的
+  # cumulative 值抖动越大；5 秒是对"想看趋势"和"别把 exporter 打爆"的折中。
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+exporters:
+  # 指标出口：Prometheus 文本格式，暴露在 :9464/metrics，由 prometheus 服务抓取。
+  #
+  # 名字翻译用默认策略：`.` 换成 `_`，并追加类型/单位后缀——计数器加 `_total`，
+  # 直方图加 `_bucket`/`_sum`/`_count`，单位 `ms` 变 `milliseconds`。PromQL 速查见
+  # analysis/docs/analysis-performance-statistics.md 第 5 节。
+  prometheus:
+    endpoint: 0.0.0.0:9464
+
+  # 链路出口：转给 Jaeger，由它存与渲染。
+  #
+  # 端点是 4317：all-in-one 镜像 EXPOSE 声明的 OTLP gRPC 端口就是 4317（另有 4318 HTTP）。
+  # 此前试过 1417 并提交，那是我推断错了：镜像 EXPOSE 里没有 1417，collector 连它直接
+  # connection refused。1417 是 Jaeger 1.x 某些自建部署的端口，all-in-one 不用它。
+  #
+  # 曾经把 metrics 也发给 Jaeger，collector 收到 `unknown service ...MetricsService`——
+  # Jaeger 只实现 OTLP 的 trace 服务，不接 metrics。指标发给它注定失败，现在指标只走
+  # prometheus exporter，这条链路只承载 traces。
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # 落 JSON 行，离线或 CI 归档时用，不依赖 Jaeger / Prometheus 还在跑。
+  #
+  # 路径必须在 /tmp 下：contrib 镜像是 distroless（无 shell、非 root），它自己建不出
+  # /var/lib/otel 这样的目录，启动会直接失败。compose 里把宿主机目录挂到 /tmp/otel，
+  # 落盘文件才拿得回来。
+  file:
+    path: /tmp/otel/metrics.json
+
+  # 基本日志：collector 自己看到什么、收到了哪些遥测，出问题时先看这里。
+  #
+  # 用 debug 而非 logging：contrib 新版已把 logging exporter 标记弃用，配了它 collector
+  # 直接拒绝启动，且 verbosity 的取值也从 basic/normal 改成了 normal/detailed。
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, file, debug]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_grpc/jaeger, debug]
+  telemetry:
+    logs:
+      level: info
+    # 与 compose 的 8889 映射一致；0.161 起自身指标地址由 pull reader 配置（不再接受 address 键）。
+    metrics:
+      level: basic
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8889

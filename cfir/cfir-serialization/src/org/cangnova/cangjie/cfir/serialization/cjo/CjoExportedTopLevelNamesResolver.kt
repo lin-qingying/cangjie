@@ -44,9 +44,15 @@ data class CjoExportedTopLevelNames(
 class CjoExportedTopLevelNamesResolver(
     /** 负责按包名加载 `.cjo` 包头的管理器。 */
     private val cjoManager: CjoManager,
+    private val contextProvider: org.cangnova.cangjie.cfir.serialization.provider.CjoPackageContextProvider? = null,
+    private val mode: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode = org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL,
 ) {
-    /** 以完整包名为 key 的导出名称解析缓存，避免 public import 图重复遍历。 */
-    private val cache = ConcurrentHashMap<String, CjoExportedTopLevelNames>()
+    /** 绑定查询按 canonical context 隔离；纯包头入口仍由本 resolver 的 manager 限定来源。 */
+    private data class NamesKey(
+        val packageName: FqName,
+        val context: org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext?,
+    )
+    private val cache = ConcurrentHashMap<NamesKey, CjoExportedTopLevelNames>()
 
     /**
      * 解析指定包最终对外导出的顶层 callable 与 classifier 名称。
@@ -54,10 +60,37 @@ class CjoExportedTopLevelNamesResolver(
      * 返回值同时包含可见名称集合与 visible-name 到真实声明目标的映射。
      */
     fun resolve(packageFqName: FqName): CjoExportedTopLevelNames {
-        cache[packageFqName.asString()]?.let { return it }
-        val resolved = resolveRecursively(packageFqName, linkedSetOf())
-        cache.putIfAbsent(packageFqName.asString(), resolved)
-        return cache[packageFqName.asString()] ?: resolved
+        val packageName = packageFqName.asString()
+        val ownContexts = (contextProvider as? org.cangnova.cangjie.cfir.serialization.provider.CjoDeserializationBinding)
+            ?.getOwnPackageContexts(packageName, mode).orEmpty()
+        if (ownContexts.isNotEmpty()) {
+            val views = ownContexts.map { resolve(packageFqName, it) }
+            if (views.size == 1) return views.single()
+            val callableTargets = linkedMapOf<Name, CjoExportedTopLevelTarget>()
+            val classifierTargets = linkedMapOf<Name, CjoExportedTopLevelTarget>()
+            views.forEach {
+                mergeExportTargets(callableTargets, it.callableTargets)
+                mergeExportTargets(classifierTargets, it.classifierTargets)
+            }
+            return CjoExportedTopLevelNames(
+                views.flatMapTo(linkedSetOf()) { it.callableNames },
+                views.flatMapTo(linkedSetOf()) { it.classifierNames },
+                callableTargets, classifierTargets,
+            )
+        }
+        val context = contextProvider?.getPackageContext(packageName, mode)
+        return resolve(packageFqName, context)
+    }
+
+    private fun resolve(
+        packageFqName: FqName,
+        context: org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext?,
+    ): CjoExportedTopLevelNames {
+        val checkedContext = context?.validatedTarget(context.binding, packageFqName.asString(), mode)
+        val key = NamesKey(packageFqName, checkedContext)
+        cache[key]?.let { return it }
+        val resolved = resolveRecursively(packageFqName, linkedSetOf(), checkedContext)
+        return cache.putIfAbsent(key, resolved) ?: resolved
     }
 
     /**
@@ -68,8 +101,9 @@ class CjoExportedTopLevelNamesResolver(
     private fun resolveRecursively(
         packageFqName: FqName,
         visiting: LinkedHashSet<FqName>,
+        context: org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext? = null,
     ): CjoExportedTopLevelNames {
-        cache[packageFqName.asString()]?.let { return it }
+        cache[NamesKey(packageFqName, context?.canonical())]?.let { return it }
         if (!visiting.add(packageFqName)) {
             return CjoExportedTopLevelNames(
                 callableNames = emptySet(),
@@ -79,7 +113,11 @@ class CjoExportedTopLevelNamesResolver(
             )
         }
 
-        val headers = cjoManager.loadPackageHeaders(packageFqName.asString())
+        val headers = when {
+            context != null -> listOf(context.header)
+            contextProvider == null -> cjoManager.loadPackageHeaders(packageFqName.asString())
+            else -> emptyList()
+        }
         if (headers.isEmpty()) {
             visiting.remove(packageFqName)
             return CjoExportedTopLevelNames(
@@ -108,7 +146,12 @@ class CjoExportedTopLevelNamesResolver(
         for (entry in headers.flatMap { it.fileImportEntries }) {
             if (!entry.isPublicExportImport()) continue
             val importedPackageFqName = entry.importedPackageFqName() ?: continue
-            val importedNames = resolveRecursively(importedPackageFqName, visiting)
+            val importedContext = context?.let {
+                checkNotNull(it.packageContextOrNull(importedPackageFqName.asString())) {
+                    "Cannot load CJO public import target " + importedPackageFqName
+                }
+            }
+            val importedNames = resolveRecursively(importedPackageFqName, visiting, importedContext)
 
             if (entry.isAllUnder) {
                 callableNames += importedNames.callableNames

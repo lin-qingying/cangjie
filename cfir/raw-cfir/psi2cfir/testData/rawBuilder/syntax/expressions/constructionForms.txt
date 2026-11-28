@@ -1,0 +1,247 @@
+FILE: constructionForms.cj
+    internal? class WithInit {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? struct Pair {
+        internal? var x: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var y: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+        }
+        init(x: R|Int64|, y: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(x) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(x)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(y) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }
+    internal? class Box<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+    }
+    internal? enum Color {
+        Red
+        Custom(R|Int64|)
+        init()
+    }
+    internal? enum GenericEnum<T> {
+        Some(R|T|)
+        None
+        init()
+    }
+    internal? class Callable {
+        init() {
+        }
+        public operator func *operator_invoke(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    internal? func constructionForms(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(WithInit) {
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(WithInit) {
+                    INT(1)
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(WithInit) {
+                    INT(1)
+                    <element: CfirNamedArgumentExpression>
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Pair) {
+                }
+        local? let f: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Pair) {
+                    INT(1)
+                    INT(2)
+                }
+        local? let h: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box<R|Int64|>) {
+                    INT(1)
+                }
+        local? let i: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box<R|String|>) {
+                    STRING("x")
+                }
+        local? let j: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Array<R|Int64|>) {
+                }
+        local? let k: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Array<R|Int64|>) {
+                    INT(2)
+                    <element: CfirNamedArgumentExpression>
+                }
+        local? let l: R|VArray<R|Int64|, 3>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    INT(1)
+                    INT(2)
+                    INT(3)
+                }
+        local? let m: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(size: <implicit>) {
+                        NAMED_ACCESS(size)
+                    }
+                }
+        local? let m1: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    <element: CfirNamedArgumentExpression>
+                }
+        local? let n: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(Red) {
+                    receiver:
+                        NAMED_ACCESS(Color)
+                }
+        local? let o: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Custom) {
+                    receiver:
+                        NAMED_ACCESS(Color)
+                    arguments:
+                        INT(1)
+                }
+        local? let p: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Some) {
+                    receiver:
+                        NAMED_ACCESS(GenericEnum)
+                    arguments:
+                        INT(2)
+                }
+        local? let q: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Some) {
+                    INT(1)
+                }
+        local? let r: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(None)
+        local? let s: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Some) {
+                    receiver:
+                        NAMED_ACCESS(GenericEnum)
+                    arguments:
+                        INT(3)
+                }
+        local? let t: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(None) {
+                    receiver:
+                        NAMED_ACCESS(GenericEnum)
+                }
+        local? let u: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Callable) {
+                }
+        local? let v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(u) {
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(f)
+                    NAMED_ACCESS(h)
+                    NAMED_ACCESS(i)
+                    NAMED_ACCESS(j)
+                    NAMED_ACCESS(k)
+                    NAMED_ACCESS(l)
+                    NAMED_ACCESS(m)
+                    NAMED_ACCESS(m1)
+                    NAMED_ACCESS(n)
+                    NAMED_ACCESS(o)
+                    NAMED_ACCESS(p)
+                    NAMED_ACCESS(q)
+                    NAMED_ACCESS(r)
+                    NAMED_ACCESS(s)
+                    NAMED_ACCESS(t)
+                    NAMED_ACCESS(v)
+                }
+    }

@@ -1,0 +1,868 @@
+{
+  "date": "2026-10-02",
+  "kind": "static-source-evidence-not-runtime-verification",
+  "roots": {
+    "M": "D:/code/intellij/cangjie",
+    "H": "D:/code/intellij/cangjie/intellij-ide/.claude/worktrees/musing-bun-5ae793",
+    "K": "D:/code/intellij/cangjie/external/kotlin",
+    "P": "D:/code/intellij/cangjie/external/kotlin-plugin"
+  },
+  "host_head": "48c416ddf6a12162dc54422ea00f04106ba9810f",
+  "main_head": "b10638242d4ad36878350c4e58154542a45e19f7",
+  "skill": {
+    "path": "D:/code/intellij/cangjie/.claude/skills/openspec-propose/SKILL.md",
+    "sha256": "70d9fa2abe5764ac19972a078050f2f088e7aafc9a56a7104539d7757cddceee"
+  },
+  "entries": [
+    {
+      "id": "K01",
+      "root": "P",
+      "path": "plugin/resources/META-INF/plugin.xml",
+      "line": 34,
+      "line_count": 36,
+      "sha256": "86d8057957d8ec57f8e1885f9cd0c08fab316c5962eed9dcd652a296ecd60eea",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/plugin/resources/META-INF/plugin.xml",
+      "scope": "K1/K2 条件加载，不以仍保留 K1 文件推定 K2 使用 K1"
+    },
+    {
+      "id": "K02",
+      "root": "P",
+      "path": "plugin/k2/resources/kotlin.plugin.k2.xml",
+      "line": 246,
+      "line_count": 283,
+      "sha256": "494ba4ac26a9e3bf4f00b231ce64fd67aa6db9a221e78716f84681e758e01e3a",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/plugin/k2/resources/kotlin.plugin.k2.xml",
+      "scope": "K2 产品加载 completion module"
+    },
+    {
+      "id": "K02a",
+      "root": "P",
+      "path": "completion/impl-k2/resources/intellij.kotlin.completion.impl.xml",
+      "line": 13,
+      "line_count": 95,
+      "sha256": "2258202e5a956b236dc7e093a281f419a7f942dfcb63825547bef8784cfee9e7",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/resources/intellij.kotlin.completion.impl.xml",
+      "scope": "平台 contributor、chain、dummy、charFilter 和排序统计注册"
+    },
+    {
+      "id": "K03",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/KotlinFirCompletionContributor.kt",
+      "line": 43,
+      "line_count": 242,
+      "sha256": "dc74ee496c8402131d512b4fba9097d4ee870c7fbbe1b888f6b2c91049347a30",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/KotlinFirCompletionContributor.kt",
+      "scope": "BASIC/SMART、beforeCompletion、provider、重跑和 chain 调用"
+    },
+    {
+      "id": "K04",
+      "root": "P",
+      "path": "frontend-independent/src/org/jetbrains/kotlin/idea/util/positionContext/KotlinPositionContext.kt",
+      "line": 279,
+      "line_count": 462,
+      "sha256": "5b29c1bd26da1fe6929435479f2daa871f24ac202ad56db9de307a1a6b41496f",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/frontend-independent/src/org/jetbrains/kotlin/idea/util/positionContext/KotlinPositionContext.kt",
+      "scope": "真实位置分类函数"
+    },
+    {
+      "id": "K04a",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/KotlinFirCompletionParameters.kt",
+      "line": 138,
+      "line_count": 155,
+      "sha256": "913ca2f84f09b313851e209a784b692ecb139ffaf8c55cd4bee789df420d6267",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/KotlinFirCompletionParameters.kt",
+      "scope": "原始/修正参数与 completion file"
+    },
+    {
+      "id": "K04b",
+      "root": "P",
+      "path": "completion/impl-shared/src/org/jetbrains/kotlin/idea/completion/implCommon/AbstractCompletionDummyIdentifierProviderService.kt",
+      "line": 87,
+      "line_count": 364,
+      "sha256": "e52382fc30bb1f8f55adf20e86cc22b5dd14d64454c14a3b8268400c8953111b",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-shared/src/org/jetbrains/kotlin/idea/completion/implCommon/AbstractCompletionDummyIdentifierProviderService.kt",
+      "scope": "共享 dummy 修正流程"
+    },
+    {
+      "id": "K05",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/Completions.kt",
+      "line": 55,
+      "line_count": 188,
+      "sha256": "3a9b2427ec808d7338aa4ed36ae06a5ce6c5fee24df76906bd5a97b42c28ec80",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/Completions.kt",
+      "scope": "内部列表、位置筛选、section 注册"
+    },
+    {
+      "id": "K06",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/K2CompletionContributor.kt",
+      "line": 264,
+      "line_count": 364,
+      "sha256": "67ef94151bfa2ada3bd50f6f985a41d1a00d5ad35c14d9af92484dd8d0605b70",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/K2CompletionContributor.kt",
+      "scope": "内部抽象类及 setup/section 契约，不是公共 EP"
+    },
+    {
+      "id": "K06a",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/K2CompletionRunner.kt",
+      "line": 355,
+      "line_count": 557,
+      "sha256": "ce3999b0c741ee7afffc97b882431c61152ec74a1be2764098991071790a2bb2",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/K2CompletionRunner.kt",
+      "scope": "串行 session；并行入口在 455 附近，优先级和取消"
+    },
+    {
+      "id": "K07",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/lookups/factories/KotlinFirLookupElementFactory.kt",
+      "line": 70,
+      "line_count": 150,
+      "sha256": "dea567a3888de11a527f6d86133471cd388bd15f61354812e9ddf19e42ee4ed6",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/lookups/factories/KotlinFirLookupElementFactory.kt",
+      "scope": "按公开符号/签名分派 lookup"
+    },
+    {
+      "id": "K07a",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/lookups/factories/FunctionLookupElementFactory.kt",
+      "line": 187,
+      "line_count": 534,
+      "sha256": "9285fe5d8a9b5842d731e19ef7efe3b1e5fde9efd1169e1cd5d407d661bf7510",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/lookups/factories/FunctionLookupElementFactory.kt",
+      "scope": "插入策略；452 附近参数/import/缩短处理"
+    },
+    {
+      "id": "K08",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/weighers/Weighers.kt",
+      "line": 318,
+      "line_count": 428,
+      "sha256": "b62a14189ec2ac6449285e25eda02bd53a5e17d41a8e67acfb7bc8a38a62baba",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/weighers/Weighers.kt",
+      "scope": "分析期权重及平台 sorter 锚点；219 附近取位置 scope"
+    },
+    {
+      "id": "K09",
+      "root": "K",
+      "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaCompletionCandidateChecker.kt",
+      "line": 21,
+      "line_count": 132,
+      "sha256": "a25d7dfa4c292190c05228268f41d4aa07dcbaad0891465bde4756bde1d0992a",
+      "document_relative_path": "../../../../../../../external/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaCompletionCandidateChecker.kt",
+      "scope": "原件/副本/receiver 的扩展适用性契约"
+    },
+    {
+      "id": "K09a",
+      "root": "K",
+      "path": "analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/components/KaFirCompletionCandidateChecker.kt",
+      "line": 45,
+      "line_count": 231,
+      "sha256": "8b4f7d98413b7bd6251cd12e83431259a111d6d706a034580f6ef4ab091ec789",
+      "document_relative_path": "../../../../../../../external/kotlin/analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/components/KaFirCompletionCandidateChecker.kt",
+      "scope": "lazy checker、single candidate、substitutor、隐式 receiver"
+    },
+    {
+      "id": "K10",
+      "root": "K",
+      "path": "analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/components/KaFirExpressionTypeProvider.kt",
+      "line": 266,
+      "line_count": 626,
+      "sha256": "b2c615702119068ab763901ea0fdbf91386a5ae7c9bb83e749c6f4ed61e50435",
+      "document_relative_path": "../../../../../../../external/kotlin/analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/components/KaFirExpressionTypeProvider.kt",
+      "scope": "expectedType 多种上下文分派"
+    },
+    {
+      "id": "K11",
+      "root": "K",
+      "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+      "line": 245,
+      "line_count": 817,
+      "sha256": "97a6ed6bdff498bf29e0b1253ad903f1bcc51b524a768ae55acc4d31c36b5c0d",
+      "document_relative_path": "../../../../../../../external/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+      "scope": "scopeContext/importing context/kind/implicit receiver"
+    },
+    {
+      "id": "K11a",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/contributors/helpers/utils.kt",
+      "line": 141,
+      "line_count": 278,
+      "sha256": "8174bcc26a7e84e327f9d9aff30ed96bd5f535bb69d62a83e5c6e68d7ed16a15",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/contributors/helpers/utils.kt",
+      "scope": "类型 scope 的 callable signatures 消费"
+    },
+    {
+      "id": "K12",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/ImportStrategyDetector.kt",
+      "line": 58,
+      "line_count": 81,
+      "sha256": "b0bb82993b383f0c3b9d171bacbc7881c7f163b015de6e25d77da5c41611a2ef",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/ImportStrategyDetector.kt",
+      "scope": "callable/classifier 导入策略"
+    },
+    {
+      "id": "K12a",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/lookups/ImportStrategy.kt",
+      "line": 15,
+      "line_count": 71,
+      "sha256": "bab975162fd7d68a52685a75a98e0a2b985ac3c87cf300d6788fae4e83d6960c",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/lookups/ImportStrategy.kt",
+      "scope": "导入策略模型与已有导入判断"
+    },
+    {
+      "id": "K13",
+      "root": "P",
+      "path": "completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/KotlinChainCompletionContributor.kt",
+      "line": 23,
+      "line_count": 79,
+      "sha256": "2a3d727a6ed28037357c35a6a43e0a6ef231c1e4378a6d9b51ae826f4bb30e0e",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/impl-k2/src/org/jetbrains/kotlin/idea/completion/impl/k2/KotlinChainCompletionContributor.kt",
+      "scope": "未解析 receiver 的精确名称恢复，不等于任意深度链搜索"
+    },
+    {
+      "id": "K13a",
+      "root": "K",
+      "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/projectStructure/danglingFiles.kt",
+      "line": 194,
+      "line_count": 223,
+      "sha256": "f3010532fcc3934e92149f4118a15adb4e71d0684f08866b2ad38778102e3c6c",
+      "document_relative_path": "../../../../../../../external/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/projectStructure/danglingFiles.kt",
+      "scope": "线程局部模式覆盖及 finally 恢复"
+    },
+    {
+      "id": "A01",
+      "root": "M",
+      "path": "analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaScopeProvider.kt",
+      "line": 28,
+      "line_count": 161,
+      "sha256": "b6dde45b774c7944cf80bfcccc431aee3e02cd56cd73064fc6158b4f40caa6b8",
+      "document_relative_path": "../../../../../../../analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaScopeProvider.kt",
+      "scope": "现有公开查询，没有位置 scope context"
+    },
+    {
+      "id": "A02",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/scopes/CaCfirFileScope.kt",
+      "line": 92,
+      "line_count": 165,
+      "sha256": "e2f1ad653b61a4b0d53c65c97f70ea296da57e1fa003d9f2d34164b4cd414c29",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/scopes/CaCfirFileScope.kt",
+      "scope": "只枚举本文件 declarations；不以 KDoc 断言已含 import"
+    },
+    {
+      "id": "A02a",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/scopes/CaCfirPackageScope.kt",
+      "line": 46,
+      "line_count": 103,
+      "sha256": "b77f640e94a25ed24f9753f03a96b4b71f1fec1fbb78d86201bddcd38caecba7",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/scopes/CaCfirPackageScope.kt",
+      "scope": "包内名称/符号查询和子包枚举"
+    },
+    {
+      "id": "A03",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirScopeProvider.kt",
+      "line": 165,
+      "line_count": 187,
+      "sha256": "f8374ae92edbab1c85dc76aec8dac8a60ec08c3d60991b27e7816677a71e6186",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirScopeProvider.kt",
+      "scope": "具体类型转 class-like 后使用 unsubstituted scope"
+    },
+    {
+      "id": "A04",
+      "root": "M",
+      "path": "analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/projectStructure/danglingFiles.kt",
+      "line": 15,
+      "line_count": 53,
+      "sha256": "680ae9550f712e5665736a718eda4d6ca864a5ec1c000f5ac04a6c24b97548cd",
+      "document_relative_path": "../../../../../../../analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/projectStructure/danglingFiles.kt",
+      "scope": "现有模式和 explicitModule；不是无副本基础"
+    },
+    {
+      "id": "A04a",
+      "root": "M",
+      "path": "analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieProjectStructureProviderBase.kt",
+      "line": 34,
+      "line_count": 110,
+      "sha256": "80a244a1b602ac590894b1832023c113828025187198122d3c3a0c273639fe28",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieProjectStructureProviderBase.kt",
+      "scope": "副本/context/fragment 识别和默认模式"
+    },
+    {
+      "id": "A04b",
+      "root": "M",
+      "path": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirAbstractSessionFactory.kt",
+      "line": 486,
+      "line_count": 836,
+      "sha256": "5e972507a74afc45b3b84450357010f7c62408a3a01c495fcb12356df29f630d",
+      "document_relative_path": "../../../../../../../analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/sessions/LLCfirAbstractSessionFactory.kt",
+      "scope": "disregardSelfDeclarations 实际接线"
+    },
+    {
+      "id": "A05",
+      "root": "M",
+      "path": "analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaCompletionCandidateChecker.kt",
+      "line": 18,
+      "line_count": 23,
+      "sha256": "4b393006155d7358dd75e7778b845ffb02305fda396bf17a19f4c2b8415948b0",
+      "document_relative_path": "../../../../../../../analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/components/CaCompletionCandidateChecker.kt",
+      "scope": "现有三态检查入口，不含扩展适用性 checker"
+    },
+    {
+      "id": "A06",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt",
+      "line": 153,
+      "line_count": 370,
+      "sha256": "8268206760a01d8863d023bcdd6a3facb13d58afad458986099067261c21b96f",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt",
+      "scope": "可见性/文件可达性/导入路径的三态分派"
+    },
+    {
+      "id": "A07",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt",
+      "line": 315,
+      "line_count": 370,
+      "sha256": "8268206760a01d8863d023bcdd6a3facb13d58afad458986099067261c21b96f",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt",
+      "scope": "文件 lookup scopes 与短名比较；189/246 处缩短和优化"
+    },
+    {
+      "id": "A08",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirVisibilityChecker.kt",
+      "line": 55,
+      "line_count": 248,
+      "sha256": "9ef2ef75bb16484f012ea3210c5f0c3637c618e2f39da99ae38a5de7cf284127",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirVisibilityChecker.kt",
+      "scope": "receiver 只作有效性断言，后续独立访问分支"
+    },
+    {
+      "id": "A09",
+      "root": "M",
+      "path": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/VisibilityUtils.kt",
+      "line": 30,
+      "line_count": 77,
+      "sha256": "c1d7eb75fdaed2efd336e212cd31c518a3ed0436efdf39ea2941c461269ca5d4",
+      "document_relative_path": "../../../../../../../cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/VisibilityUtils.kt",
+      "scope": "compiler 调用的公共 accessibility 适配"
+    },
+    {
+      "id": "A10",
+      "root": "M",
+      "path": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollector.kt",
+      "line": 119,
+      "line_count": 1114,
+      "sha256": "7d6f84edcdec50fc44d9c68fd8fb5931d05fed60fb01e4ae183371c409a46396",
+      "document_relative_path": "../../../../../../../analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollector.kt",
+      "scope": "定位、body 上下文与 tower 快照基础"
+    },
+    {
+      "id": "A11",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirExpressionTypeProvider.kt",
+      "line": 90,
+      "line_count": 261,
+      "sha256": "9d16d87e2aa982ad6011a9d434eda58f925bc3a0651b6fb1902d73aa108e860c",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirExpressionTypeProvider.kt",
+      "scope": "expectedType 当前只分派实参/return；146–162 实际实现"
+    },
+    {
+      "id": "A12",
+      "root": "M",
+      "path": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirFileLookupScopes.kt",
+      "line": 47,
+      "line_count": 113,
+      "sha256": "22e4abfe79dd8c492ef704087d4eeebbefb2cca695f2adaf944895e778c3ceda",
+      "document_relative_path": "../../../../../../../cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirFileLookupScopes.kt",
+      "scope": "文件/包/显式/星号/默认导入的构造"
+    },
+    {
+      "id": "A13",
+      "root": "M",
+      "path": "cfir/providers/src/org/cangnova/cangjie/cfir/calls/CfirReceivers.kt",
+      "line": 382,
+      "line_count": 764,
+      "sha256": "8883066c935e2ce7062146206da56ac2ac7df9fbec50a6597004151f51f67b36",
+      "document_relative_path": "../../../../../../../cfir/providers/src/org/cangnova/cangjie/cfir/calls/CfirReceivers.kt",
+      "scope": "typeToScope/collectTypeScopes，具体 receiver、上界和 builtin 基础"
+    },
+    {
+      "id": "A14",
+      "root": "M",
+      "path": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirExtendProvider.kt",
+      "line": 22,
+      "line_count": 75,
+      "sha256": "d59b60d0e65c3b818e8cae24f38dcc9960b76e2609f68e6626117560e82c876b",
+      "document_relative_path": "../../../../../../../cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirExtendProvider.kt",
+      "scope": "目标、成员 owner、包和文件查询"
+    },
+    {
+      "id": "A14a",
+      "root": "M",
+      "path": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/providers/LLCfirSessionExtendProvider.kt",
+      "line": 118,
+      "line_count": 158,
+      "sha256": "4a7718de45a2ef41a366c26fe24884a8dfbc089fc0049b8b4475b08dc9f7f0f5",
+      "document_relative_path": "../../../../../../../analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/providers/LLCfirSessionExtendProvider.kt",
+      "scope": "materialize、types 解析及 extend 索引刷新"
+    },
+    {
+      "id": "A15",
+      "root": "M",
+      "path": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirExtendSubstitution.kt",
+      "line": 179,
+      "line_count": 469,
+      "sha256": "e0cb178b723e3f2c0e191aae83c21942d2eb833f081833a7b4d7cddd5a29c9fb",
+      "document_relative_path": "../../../../../../../cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirExtendSubstitution.kt",
+      "scope": "精确匹配与泛型约束；201 处宽松入口不能用于正常候选放行"
+    },
+    {
+      "id": "A16",
+      "root": "M",
+      "path": "analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieDeclarationProvider.kt",
+      "line": 49,
+      "line_count": 174,
+      "sha256": "f76954227044385d048e37774362bb0f41aac441061f9647f4be748b6b94bb99",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieDeclarationProvider.kt",
+      "scope": "已有包内名称、按 ID 查询、包枚举"
+    },
+    {
+      "id": "A16a",
+      "root": "M",
+      "path": "analysis/stubs/src/org/cangnova/cangjie/analysis/stubs/CaStubServices.kt",
+      "line": 68,
+      "line_count": 129,
+      "sha256": "657d579d3a023e06056839b857d301bbf9ed0cd7c718b76f9491f2032814ede0",
+      "document_relative_path": "../../../../../../../analysis/stubs/src/org/cangnova/cangjie/analysis/stubs/CaStubServices.kt",
+      "scope": "现有包/声明名称快照，不是空接口"
+    },
+    {
+      "id": "A16b",
+      "root": "H",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/CaIdeDeclarationProviderFactory.kt",
+      "line": 26,
+      "line_count": 45,
+      "sha256": "5af9441d45bc9cd67d6f139f9d95a2a9a38e535d80814701616d10c803093863",
+      "document_relative_path": "../../../modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/CaIdeDeclarationProviderFactory.kt",
+      "scope": "宿主现有文件收集及 file-based provider 接线"
+    },
+    {
+      "id": "A17",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSession.kt",
+      "line": 78,
+      "line_count": 204,
+      "sha256": "806cb5b3ac2f13a00ba97d40276ad5bdc76e5148f1d39b39adf10cf6dedc974a",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaCfirSession.kt",
+      "scope": "组件组装，不只定义未使用接口"
+    },
+    {
+      "id": "A18",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/signatures/CaCfirSignatureModel.kt",
+      "line": 186,
+      "line_count": 191,
+      "sha256": "1ee20570c466c22a7134d3a08b410ab94465d095e1ec1030d5486d06edeeb023",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/signatures/CaCfirSignatureModel.kt",
+      "scope": "变量签名底层强转；93 附近首次函数替换"
+    },
+    {
+      "id": "A18a",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/signatures/CaCfirSubstitutedSignatureModel.kt",
+      "line": 75,
+      "line_count": 144,
+      "sha256": "6fced2e3d38496c5c0920353ebe4a8fe68b1bd4e15ad0088ee12b735d54b91db",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/signatures/CaCfirSubstitutedSignatureModel.kt",
+      "scope": "已替换签名再做非空替换的限制；127 附近同类限制"
+    },
+    {
+      "id": "P01",
+      "root": "M",
+      "path": "code-insight/README.md",
+      "line": 3,
+      "line_count": 29,
+      "sha256": "91dacd11daeae4806e4452f4d0e2d464c90730dc3fa5d953879ca7bed38581d1",
+      "document_relative_path": "../../../../../../../code-insight/README.md",
+      "scope": "主仓库拥有共享 code-insight 实现"
+    },
+    {
+      "id": "P02",
+      "root": "M",
+      "path": "code-insight/refactoring/build.gradle.kts",
+      "line": 5,
+      "line_count": 30,
+      "sha256": "8a8e9b2a52219f936f498bf547b84561834f2a9df58ba1cc3f522aba62381734",
+      "document_relative_path": "../../../../../../../code-insight/refactoring/build.gradle.kts",
+      "scope": "现有模块依赖与平台/测试模式"
+    },
+    {
+      "id": "P03",
+      "root": "M",
+      "path": "repo/gradle-build-conventions/utilities/src/main/kotlin/sourceSets.kt",
+      "line": 80,
+      "line_count": 132,
+      "sha256": "b02a730d82cc8119c85338e0eb994b8fc1c2ac21e751bc245fe9570037c438e4",
+      "document_relative_path": "../../../../../../../repo/gradle-build-conventions/utilities/src/main/kotlin/sourceSets.kt",
+      "scope": "projectDefault 目录布局"
+    },
+    {
+      "id": "P04",
+      "root": "M",
+      "path": "analysis/cj-references/src/org/cangnova/cangjie/idea/references/CangJieReferenceMutateService.kt",
+      "line": 91,
+      "line_count": 115,
+      "sha256": "96f6adc18c91c6ba0b0aaccf41b11a6f91451001f4356ab1416000c50561802e",
+      "document_relative_path": "../../../../../../../analysis/cj-references/src/org/cangnova/cangjie/idea/references/CangJieReferenceMutateService.kt",
+      "scope": "bind 只换短名，不能当完整导入/缩短器"
+    },
+    {
+      "id": "P05",
+      "root": "M",
+      "path": "psi/src/org/cangnova/cangjie/psi/CjPsiFactory.kt",
+      "line": 502,
+      "line_count": 982,
+      "sha256": "15433d254bf9e0f177db101e150b8088eec7a0c4f28f06c37e3013757a0a7bcb",
+      "document_relative_path": "../../../../../../../psi/src/org/cangnova/cangjie/psi/CjPsiFactory.kt",
+      "scope": "普通/分组 import 节点构造"
+    },
+    {
+      "id": "P06",
+      "root": "M",
+      "path": "code-insight/override-implement/src/org/cangnova/cangjie/ide/core/overrideImplement/GenerateMembersHandler.kt",
+      "line": 63,
+      "line_count": 326,
+      "sha256": "f9a835eb3f368af032abbe38a0cda1e104e37e4155e9b2be67f24e0767ea4a2f",
+      "document_relative_path": "../../../../../../../code-insight/override-implement/src/org/cangnova/cangjie/ide/core/overrideImplement/GenerateMembersHandler.kt",
+      "scope": "pointer、renderer、成员生成与写入的复用点"
+    },
+    {
+      "id": "P07",
+      "root": "M",
+      "path": "prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide/build.gradle.kts",
+      "line": 7,
+      "line_count": 15,
+      "sha256": "a8e7404dc0aae903a2c1bcd8fcdacf5344cbae264f0a2d8754356534816a9abf",
+      "document_relative_path": "../../../../../../../prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide/build.gradle.kts",
+      "scope": "fat jar 制品的现有范式"
+    },
+    {
+      "id": "P08",
+      "root": "M",
+      "path": "prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module/build.gradle.kts",
+      "line": 7,
+      "line_count": 20,
+      "sha256": "4d7cb69cc6e7f3f396aaaf1e96241e44586a96984e194891e6d083a8a09989fa",
+      "document_relative_path": "../../../../../../../prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module/build.gradle.kts",
+      "scope": "源码桥接制品的现有范式"
+    },
+    {
+      "id": "P09",
+      "root": "M",
+      "path": "repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjieIdePublishing.kt",
+      "line": 21,
+      "line_count": 72,
+      "sha256": "3c2534adad90cbfe4f86c88c1efd868748c23b472799e757b81368891af5eb48",
+      "document_relative_path": "../../../../../../../repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/cangjieIdePublishing.kt",
+      "scope": "显式 merge 项目 jar 的行为"
+    },
+    {
+      "id": "H01",
+      "root": "H",
+      "path": "product/idea-plugin/src/main/resources/META-INF/plugin.xml",
+      "line": 14,
+      "line_count": 26,
+      "sha256": "54d26320ccba47a4b0802688037693eb1ba06e60e6bee1c0fb37b3fc636468f1",
+      "document_relative_path": "../../../product/idea-plugin/src/main/resources/META-INF/plugin.xml",
+      "scope": "实际生产模块描述符聚合"
+    },
+    {
+      "id": "H02",
+      "root": "H",
+      "path": "modules/ide/base/src/main/resources/org.cangnova.cangjie.ide.base.xml",
+      "line": 2,
+      "line_count": 25,
+      "sha256": "004b8568c481eb1427ba6ec81285b067d35874c79ff647cec2046521190cc4cf",
+      "document_relative_path": "../../../modules/ide/base/src/main/resources/org.cangnova.cangjie.ide.base.xml",
+      "scope": "include 上游 code-insight XML 的位置"
+    },
+    {
+      "id": "H03",
+      "root": "H",
+      "path": "product/idea-plugin/build.gradle.kts",
+      "line": 28,
+      "line_count": 66,
+      "sha256": "8c66163e64289e376d0c89996ee8a36d42f1b9c6afca296eab6ed9177e5c4a00",
+      "document_relative_path": "../../../product/idea-plugin/build.gradle.kts",
+      "scope": "产品统一 runtimeOnly/test 制品依赖"
+    },
+    {
+      "id": "H04",
+      "root": "H",
+      "path": "gradle/libs.versions.toml",
+      "line": 93,
+      "line_count": 130,
+      "sha256": "a80589967882b75a8ad817d53cbd9ea22cb83ff19823014625d4afacefd8e874",
+      "document_relative_path": "../../../gradle/libs.versions.toml",
+      "scope": "现有 code-insight 工件坐标"
+    },
+    {
+      "id": "H05",
+      "root": "H",
+      "path": "settings.gradle.kts",
+      "line": 35,
+      "line_count": 162,
+      "sha256": "391cb8e04f40c40a0de446b7f8c89e4adb510bb2b5761d3986db95ef177af6a3",
+      "document_relative_path": "../../../settings.gradle.kts",
+      "scope": "字面 includeBuild ../，当前工作树父目录无 settings"
+    },
+    {
+      "id": "T01",
+      "root": "M",
+      "path": "TESTING_CONVENTIONS.md",
+      "line": 5,
+      "line_count": 39,
+      "sha256": "9177be786389c117072326172a20b8e9ff9786c65071a57183b035f9b71ec81c",
+      "document_relative_path": "../../../../../../../TESTING_CONVENTIONS.md",
+      "scope": "共享测试基座、窄层验证、生成文件约束"
+    },
+    {
+      "id": "T02",
+      "root": "M",
+      "path": "analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiCfirComponentExecutionTest.kt",
+      "line": 43,
+      "line_count": 289,
+      "sha256": "f59237e5ae094d95517dbd39553de799a9d1cef94acda37cb2da426d691ab77c",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiCfirComponentExecutionTest.kt",
+      "scope": "三态/导入/缩短断言，不是完整候选集合测试"
+    },
+    {
+      "id": "T03",
+      "root": "M",
+      "path": "analysis/analysis-api/testData/components/expressionTypeProvider/expectedExpressionType/propertyInitializer.cj",
+      "line": 7,
+      "line_count": 7,
+      "sha256": "60c792322431f495a29e1e0adceb6d82e90a25fe7d18868eaf8638e49fbd989b",
+      "document_relative_path": "../../../../../../../analysis/analysis-api/testData/components/expressionTypeProvider/expectedExpressionType/propertyInitializer.cj",
+      "scope": "已有 initializer caret fixture，不能忽略取到的表达式种类"
+    },
+    {
+      "id": "T03a",
+      "root": "M",
+      "path": "analysis/analysis-api/testData/components/expressionTypeProvider/expectedExpressionType/propertyInitializer.txt",
+      "line": 1,
+      "line_count": 2,
+      "sha256": "d6c89957822fd6e7367ac7bce2a11607aaf8b7310cdede9d131575ecfdec49ae",
+      "document_relative_path": "../../../../../../../analysis/analysis-api/testData/components/expressionTypeProvider/expectedExpressionType/propertyInitializer.txt",
+      "scope": "现有 callee 定位 golden，不直接改成 RHS 类型"
+    },
+    {
+      "id": "T03b",
+      "root": "M",
+      "path": "analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/expressionTypeProvider/AbstractExpectedExpressionTypeTest.kt",
+      "line": 23,
+      "line_count": 43,
+      "sha256": "15f63a0cc0081f04a84f90c80168d13cf67cc8cc23120ba73f322d823eeb18cf",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/expressionTypeProvider/AbstractExpectedExpressionTypeTest.kt",
+      "scope": "bottommost CjExpression 定位"
+    },
+    {
+      "id": "T04",
+      "root": "M",
+      "path": "analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/AnalysisApiTestGroup.kt",
+      "line": 81,
+      "line_count": 237,
+      "sha256": "f32ee78a82e19eb32a2d677d41038ab4d4e34525e0a624f1d1f9b5e6319902c9",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/dsl/AnalysisApiTestGroup.kt",
+      "scope": "共享 testData/model DSL"
+    },
+    {
+      "id": "T05",
+      "root": "H",
+      "path": "modules/test-support/src/testFixtures/org/cangnova/cangjie/test/CangJieLightCodeInsightFixtureTestCase.kt",
+      "line": 14,
+      "line_count": 38,
+      "sha256": "aafb606d2fede5b4beb2894f34cd1011272b070015e478b4752613d65e6df693",
+      "document_relative_path": "../../../modules/test-support/src/testFixtures/org/cangnova/cangjie/test/CangJieLightCodeInsightFixtureTestCase.kt",
+      "scope": "宿主 light fixture 及 descriptor"
+    },
+    {
+      "id": "T06",
+      "root": "H",
+      "path": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/CangJieFileIconRegistrationTest.kt",
+      "line": 46,
+      "line_count": 61,
+      "sha256": "1f7e37562f6d0b10d4d9b1775999d89c63bbe4fd9cde8c54b0bb5fe09a2d5381",
+      "document_relative_path": "../../../modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/CangJieFileIconRegistrationTest.kt",
+      "scope": "真运行时服务接线测试范例"
+    },
+    {
+      "id": "T07",
+      "root": "H",
+      "path": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/quickfix/CangJieQuickFixRegistrationTest.kt",
+      "line": 40,
+      "line_count": 81,
+      "sha256": "bd2b2f57e647ac84510c12e91bc211a8792c83132712ec70f67e635f2eff290f",
+      "document_relative_path": "../../../product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/quickfix/CangJieQuickFixRegistrationTest.kt",
+      "scope": "产品真实扩展/结果/唯一性断言"
+    },
+    {
+      "id": "T08",
+      "root": "H",
+      "path": "modules/test-support/build.gradle.kts",
+      "line": 41,
+      "line_count": 59,
+      "sha256": "680e3f0dfe6d0f715d6db2c277ac9ece7621147a0b40ed9c3a306582182be51a",
+      "document_relative_path": "../../../modules/test-support/build.gradle.kts",
+      "scope": "测试运行时依赖与测试描述符隔离"
+    },
+    {
+      "id": "T09",
+      "root": "P",
+      "path": "completion/tests-shared/test/org/jetbrains/kotlin/idea/completion/test/ExpectedCompletionUtils.kt",
+      "line": 85,
+      "line_count": 450,
+      "sha256": "711d9a7983360441ff38db9ac9e1cd99f679374b6265101d41f3d2418540b558",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/tests-shared/test/org/jetbrains/kotlin/idea/completion/test/ExpectedCompletionUtils.kt",
+      "scope": "候选存在/缺席/数量/顺序 DSL"
+    },
+    {
+      "id": "T09a",
+      "root": "P",
+      "path": "completion/tests-shared/test/org/jetbrains/kotlin/idea/completion/test/handlers/CompletionHandlerTestBase.kt",
+      "line": 48,
+      "line_count": 152,
+      "sha256": "09659072319a0a7f0fc63ba3057bbdcd05ce0cd05a80dd942afc9e909c7d1984",
+      "document_relative_path": "../../../../../../../external/kotlin-plugin/completion/tests-shared/test/org/jetbrains/kotlin/idea/completion/test/handlers/CompletionHandlerTestBase.kt",
+      "scope": "实际选择并校验 after 文件"
+    },
+    {
+      "id": "T10",
+      "root": "M",
+      "path": "analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollectorTest.kt",
+      "line": 40,
+      "line_count": 136,
+      "sha256": "1e59e5cac90a07d9b224332c18720f8694b57cc3408cd527795a646920680fb1",
+      "document_relative_path": "../../../../../../../analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/util/ContextCollectorTest.kt",
+      "scope": "已有原件/副本 match 分支 binding 隔离测试"
+    },
+    {
+      "id": "T10a",
+      "root": "M",
+      "path": "analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/diagnosticProvider/AbstractDanglingFileCollectDiagnosticsTest.kt",
+      "line": 35,
+      "line_count": 66,
+      "sha256": "f0d7209680ccac2ba45dff831ed51c3f8e2cdf1f4f563c05488b06a5a504c112",
+      "document_relative_path": "../../../../../../../analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/diagnosticProvider/AbstractDanglingFileCollectDiagnosticsTest.kt",
+      "scope": "模式指令声明与准备文件实际消费需要核对"
+    },
+    {
+      "id": "L01",
+      "root": "M",
+      "path": "lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiCangjieAnalysisFacade.kt",
+      "line": 185,
+      "line_count": 1157,
+      "sha256": "a768f3604d1c54665e0f619d377b8d005b7b9eef56e49b15fbd15384dee94220",
+      "document_relative_path": "../../../../../../../lsp/src/org/cangnova/cangjie/lsp/analysis/AnalysisApiCangjieAnalysisFacade.kt",
+      "scope": "reference variants/文件/工作区回退；909 附近 item 转换"
+    },
+    {
+      "id": "L02",
+      "root": "M",
+      "path": "lsp/test/org/cangnova/cangjie/lsp/server/CangjieSemanticFeatureIntegrationTest.kt",
+      "line": 29,
+      "line_count": 204,
+      "sha256": "1ee4ef480f8c338b0e05f6284ca05bfb50a3413bbd4eb38bad0010ae09f6b1f1",
+      "document_relative_path": "../../../../../../../lsp/test/org/cangnova/cangjie/lsp/server/CangjieSemanticFeatureIntegrationTest.kt",
+      "scope": "真实语义测试，但补全只断言部分 label 存在"
+    },
+    {
+      "id": "D01",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/extension/direct_extension.md",
+      "line": 36,
+      "line_count": 123,
+      "sha256": "ce6e48f95d1753a55d5add68aee47310bc04ae70aee60755c5cbe1f89610784a",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/extension/direct_extension.md",
+      "scope": "完全实例化匹配、泛型与约束"
+    },
+    {
+      "id": "D02",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/enum_and_pattern_match/enum.md",
+      "line": 23,
+      "line_count": 140,
+      "sha256": "649046dfd720056cf0995e7721cdc4ed2fe1622cb52aed17751f150d56d7559f",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/enum_and_pattern_match/enum.md",
+      "scope": "同名不同参数个数、无参/有参和限定访问"
+    },
+    {
+      "id": "D03",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/basic_data_type/strings.md",
+      "line": 20,
+      "line_count": 140,
+      "sha256": "beaddb75e88930e63dc9b6e00637bc3cdcac29dfbdf08363e532980cd4a44a8a",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/basic_data_type/strings.md",
+      "scope": "插值和原始字符串规则"
+    },
+    {
+      "id": "D04",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/function/define_functions.md",
+      "line": 25,
+      "line_count": 200,
+      "sha256": "4e776009fe34488a5bcebb0976983b8cfdad7c16d51abb544b76942af9c51550",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/function/define_functions.md",
+      "scope": "命名参数声明与默认值"
+    },
+    {
+      "id": "D05",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/function/call_functions.md",
+      "line": 5,
+      "line_count": 118,
+      "sha256": "fbcae5ea9102a89afe875c1375765e4b007d0a35853bfa7902116d164756c018",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/function/call_functions.md",
+      "scope": "命名实参冒号形式"
+    },
+    {
+      "id": "D06",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/package/import.md",
+      "line": 5,
+      "line_count": 337,
+      "sha256": "20b0590bb5c8ce2c16d50907342924d753ff9815cee1e8d590af674fa1842c4c",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/package/import.md",
+      "scope": "组织名前缀、alias 与表达式访问边界"
+    },
+    {
+      "id": "D07",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/Appendix/cjo_artifacts.md",
+      "line": 7,
+      "line_count": 165,
+      "sha256": "ab9805f762681a6ab39716d97d5651914f59d9c8f1861b7c7c216dc5ca4b5a4c",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/Appendix/cjo_artifacts.md",
+      "scope": ".cjo 语义接口工件"
+    },
+    {
+      "id": "D08",
+      "root": "M",
+      "path": "external/cangjie_docs/docs/dev-guide/source_zh_cn/Macro/implementation_of_macros.md",
+      "line": 18,
+      "line_count": 671,
+      "sha256": "c4c4b0c280ce60e2fb359d2249efea06921e2c9652c8590a0759b2e46ba5c342",
+      "document_relative_path": "../../../../../../../external/cangjie_docs/docs/dev-guide/source_zh_cn/Macro/implementation_of_macros.md",
+      "scope": "Tokens 与宏展开阶段"
+    }
+  ]
+}

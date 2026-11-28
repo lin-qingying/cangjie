@@ -1,0 +1,4 @@
+FILE: comments.cj
+    internal? func comments(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

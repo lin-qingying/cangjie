@@ -1,0 +1,6 @@
+FILE: macroDeclVariants.cj
+    package macrodecls
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>

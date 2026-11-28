@@ -1,0 +1,48 @@
+FILE: lambdaParameters.cj
+    internal? func useLambdas(): R|Int64| {
+        local? let f: R|(R|Int64|, R|Int64|) -> R|Int64|| = ...
+            initializer:
+                LAMBDA(a: <implicit>, b: <implicit>) {
+                    FUNCTION_CALL(*operator_times) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            NAMED_ACCESS(b)
+                    }
+                }
+        local? let g: <implicit> = ...
+            initializer:
+                LAMBDA(a: R|Int64|, b: R|Int64|) {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            NAMED_ACCESS(b)
+                    }
+                }
+        local? let h: <implicit> = ...
+            initializer:
+                LAMBDA() {
+                    INT(1)
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(f) {
+                                INT(1)
+                                INT(2)
+                            }
+                        arguments:
+                            FUNCTION_CALL(g) {
+                                INT(3)
+                                INT(4)
+                            }
+                    }
+                arguments:
+                    FUNCTION_CALL(h) {
+                    }
+            }
+        }
+    }

@@ -8,9 +8,9 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendK
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.defaultExtension
 import org.cangnova.cangjie.utils.capitalizeAsciiOnly
-import org.jetbrains.kotlin.generators.dsl.TestGroup
-import org.jetbrains.kotlin.generators.dsl.TestGroupSuite
-import org.jetbrains.kotlin.generators.dsl.getDefaultSuiteTestClassName
+import org.cangnova.cangjie.test.generators.dsl.TestGroup
+import org.cangnova.cangjie.test.generators.dsl.TestGroupSuite
+import org.cangnova.cangjie.test.generators.dsl.getDefaultSuiteTestClassName
 
 /**
  * Analysis API generated tests 的分组 DSL。

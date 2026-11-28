@@ -1,0 +1,250 @@
+FILE: deepNesting.cj
+    internal? func deepNesting(): R|Int64| {
+        local? let seed: <implicit> = ...
+            initializer:
+                INT(1)
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(1)
+                }
+            body:
+                local? let outer: <implicit> = ...
+                    initializer:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(i)
+                            arguments:
+                                NAMED_ACCESS(seed)
+                        }
+                FOR_IN(<anonymous>: <implicit>) {
+                    iterable:
+                        RANGE(..) {
+                            INT(0)
+                            INT(1)
+                        }
+                    body:
+                        local? let inner: <implicit> = ...
+                            initializer:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(j)
+                                    arguments:
+                                        NAMED_ACCESS(outer)
+                                }
+                        IF {
+                            condition:
+                                COMPARISON(GT) {
+                                    NAMED_ACCESS(inner)
+                                    INT(0)
+                                }
+                            then:
+                                local? let v0: <implicit> = ...
+                                    initializer:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                NAMED_ACCESS(inner)
+                                            arguments:
+                                                INT(0)
+                                        }
+                                IF {
+                                    condition:
+                                        COMPARISON(GT) {
+                                            NAMED_ACCESS(inner)
+                                            INT(1)
+                                        }
+                                    then:
+                                        local? let v1: <implicit> = ...
+                                            initializer:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        NAMED_ACCESS(inner)
+                                                    arguments:
+                                                        INT(1)
+                                                }
+                                        IF {
+                                            condition:
+                                                COMPARISON(GT) {
+                                                    NAMED_ACCESS(inner)
+                                                    INT(2)
+                                                }
+                                            then:
+                                                local? let v2: <implicit> = ...
+                                                    initializer:
+                                                        FUNCTION_CALL(*operator_plus) {
+                                                            receiver:
+                                                                NAMED_ACCESS(inner)
+                                                            arguments:
+                                                                INT(2)
+                                                        }
+                                                IF {
+                                                    condition:
+                                                        COMPARISON(GT) {
+                                                            NAMED_ACCESS(inner)
+                                                            INT(3)
+                                                        }
+                                                    then:
+                                                        local? let v3: <implicit> = ...
+                                                            initializer:
+                                                                FUNCTION_CALL(*operator_plus) {
+                                                                    receiver:
+                                                                        NAMED_ACCESS(inner)
+                                                                    arguments:
+                                                                        INT(3)
+                                                                }
+                                                        IF {
+                                                            condition:
+                                                                COMPARISON(GT) {
+                                                                    NAMED_ACCESS(inner)
+                                                                    INT(4)
+                                                                }
+                                                            then:
+                                                                local? let v4: <implicit> = ...
+                                                                    initializer:
+                                                                        FUNCTION_CALL(*operator_plus) {
+                                                                            receiver:
+                                                                                NAMED_ACCESS(inner)
+                                                                            arguments:
+                                                                                INT(4)
+                                                                        }
+                                                                IF {
+                                                                    condition:
+                                                                        COMPARISON(GT) {
+                                                                            NAMED_ACCESS(inner)
+                                                                            INT(5)
+                                                                        }
+                                                                    then:
+                                                                        local? let v5: <implicit> = ...
+                                                                            initializer:
+                                                                                FUNCTION_CALL(*operator_plus) {
+                                                                                    receiver:
+                                                                                        NAMED_ACCESS(inner)
+                                                                                    arguments:
+                                                                                        INT(5)
+                                                                                }
+                                                                        local? let deepest: <implicit> = ...
+                                                                            initializer:
+                                                                                FUNCTION_CALL(*operator_plus) {
+                                                                                    receiver:
+                                                                                        FUNCTION_CALL(*operator_minus) {
+                                                                                            receiver:
+                                                                                                FUNCTION_CALL(*operator_times) {
+                                                                                                    receiver:
+                                                                                                        NAMED_ACCESS(v5)
+                                                                                                    arguments:
+                                                                                                        INT(6)
+                                                                                                }
+                                                                                            arguments:
+                                                                                                FUNCTION_CALL(*operator_div) {
+                                                                                                    receiver:
+                                                                                                        INT(7)
+                                                                                                    arguments:
+                                                                                                        INT(2)
+                                                                                                }
+                                                                                        }
+                                                                                    arguments:
+                                                                                        FUNCTION_CALL(*operator_rem) {
+                                                                                            receiver:
+                                                                                                INT(8)
+                                                                                            arguments:
+                                                                                                INT(3)
+                                                                                        }
+                                                                                }
+                                                                    else:
+                                                                        local? let v5: <implicit> = ...
+                                                                            initializer:
+                                                                                INT(0)
+                                                                }
+                                                            else:
+                                                                local? let v4: <implicit> = ...
+                                                                    initializer:
+                                                                        INT(0)
+                                                        }
+                                                    else:
+                                                        local? let v3: <implicit> = ...
+                                                            initializer:
+                                                                INT(0)
+                                                }
+                                            else:
+                                                local? let v2: <implicit> = ...
+                                                    initializer:
+                                                        INT(0)
+                                        }
+                                    else:
+                                        local? let v1: <implicit> = ...
+                                            initializer:
+                                                INT(0)
+                                }
+                            else:
+                                FOR_IN(<anonymous>: <implicit>) {
+                                    iterable:
+                                        RANGE(..) {
+                                            INT(0)
+                                            INT(2)
+                                        }
+                                    body:
+                                        local? let m: <implicit> = ...
+                                            initializer:
+                                                FUNCTION_CALL(*operator_times) {
+                                                    receiver:
+                                                        NAMED_ACCESS(k)
+                                                    arguments:
+                                                        NAMED_ACCESS(inner)
+                                                }
+                                        IF {
+                                            condition:
+                                                COMPARISON(GT) {
+                                                    NAMED_ACCESS(m)
+                                                    INT(1)
+                                                }
+                                            then:
+                                                local? let n1: <implicit> = ...
+                                                    initializer:
+                                                        FUNCTION_CALL(*operator_plus) {
+                                                            receiver:
+                                                                NAMED_ACCESS(m)
+                                                            arguments:
+                                                                INT(1)
+                                                        }
+                                                IF {
+                                                    condition:
+                                                        COMPARISON(GT) {
+                                                            NAMED_ACCESS(n1)
+                                                            INT(2)
+                                                        }
+                                                    then:
+                                                        local? let n2: <implicit> = ...
+                                                            initializer:
+                                                                FUNCTION_CALL(*operator_plus) {
+                                                                    receiver:
+                                                                        NAMED_ACCESS(n1)
+                                                                    arguments:
+                                                                        INT(2)
+                                                                }
+                                                        local? let n3: <implicit> = ...
+                                                            initializer:
+                                                                FUNCTION_CALL(*operator_plus) {
+                                                                    receiver:
+                                                                        NAMED_ACCESS(n2)
+                                                                    arguments:
+                                                                        INT(3)
+                                                                }
+                                                    else:
+                                                        local? let n2: <implicit> = ...
+                                                            initializer:
+                                                                INT(0)
+                                                }
+                                            else:
+                                                local? let n1: <implicit> = ...
+                                                    initializer:
+                                                        INT(0)
+                                        }
+                                }
+                        }
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(seed)
+        }
+    }

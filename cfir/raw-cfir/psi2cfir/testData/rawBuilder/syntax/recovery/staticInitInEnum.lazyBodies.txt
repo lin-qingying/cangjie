@@ -1,0 +1,8 @@
+FILE: staticInitInEnum.cj
+    internal? enum StaticInitEnum {
+        A
+        init()
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }

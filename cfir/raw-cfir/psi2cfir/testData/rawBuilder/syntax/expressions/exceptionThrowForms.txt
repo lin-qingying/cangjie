@@ -1,0 +1,80 @@
+FILE: exceptionThrowForms.cj
+    internal? open class BaseErr <: R|Exception| {
+        init(msg: R|String|) {
+            FUNCTION_CALL(super) {
+                NAMED_ACCESS(msg)
+            }
+        }
+    }
+    internal? class SubErr <: R|BaseErr| {
+        init() {
+            FUNCTION_CALL(super) {
+                STRING("sub")
+            }
+        }
+    }
+    internal? func fail(): R|Nothing| {
+        THROW {
+            FUNCTION_CALL(Exception) {
+            }
+        }
+    }
+    internal? func consume(x: R|Nothing|): R|Int64| {
+        RETURN {
+            INT(0)
+        }
+    }
+    internal? func exceptionThrowForms(x: R|Int64|): R|Int64| {
+        THROW {
+            FUNCTION_CALL(SubErr) {
+            }
+        }
+    }
+    internal? func exceptionThrowAsExpr(x: R|Int64|): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                IF {
+                    condition:
+                        COMPARISON(GT) {
+                            NAMED_ACCESS(x)
+                            INT(0)
+                        }
+                    then:
+                        INT(1)
+                    else:
+                        THROW {
+                            FUNCTION_CALL(SubErr) {
+                            }
+                        }
+                }
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func exceptionThrowNothing(): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(fail) {
+                    }
+                arguments:
+                    FUNCTION_CALL(consume) {
+                        FUNCTION_CALL(fail) {
+                        }
+                    }
+            }
+        }
+    }
+    internal? func catchDerived(): R|Int64| {
+        TRY {
+            try:
+                THROW {
+                    FUNCTION_CALL(SubErr) {
+                    }
+                }
+            catch(e: R|BaseErr|):
+                RETURN {
+                    INT(1)
+                }
+        }
+    }

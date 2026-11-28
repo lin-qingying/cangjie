@@ -1,0 +1,4 @@
+FILE: varDeclForms.cj
+    internal? func varDeclForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

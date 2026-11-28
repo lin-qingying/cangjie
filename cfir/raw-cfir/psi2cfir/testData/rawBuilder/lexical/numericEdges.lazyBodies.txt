@@ -1,0 +1,4 @@
+FILE: numericEdges.cj
+    internal? func numericEdges(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

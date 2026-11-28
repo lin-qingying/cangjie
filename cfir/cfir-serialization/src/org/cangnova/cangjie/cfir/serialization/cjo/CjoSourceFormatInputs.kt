@@ -341,7 +341,7 @@ internal class CjoSourceFormatInputs(
         if (status.isAbstract) values += CfirAttribute.ABSTRACT
         // SetDefaultFunc 的独立 DEFAULT 位必须原样保存，不能由 body 或 COMMON_WITH_DEFAULT 重建。
         if (status.isDefault) values += CfirAttribute.DEFAULT
-        if (status.isOpen) values += CfirAttribute.OPEN
+        if (status.isOpen || status.modality == org.cangnova.cangjie.descriptors.Modality.OPEN) values += CfirAttribute.OPEN
         if (status.isSealed) values += CfirAttribute.SEALED
         if (status.isOverride) values += CfirAttribute.OVERRIDE
         if (status.isRedef) values += CfirAttribute.REDEF

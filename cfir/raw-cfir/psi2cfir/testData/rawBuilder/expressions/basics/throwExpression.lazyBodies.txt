@@ -1,0 +1,7 @@
+FILE: throwExpression.cj
+    internal? class MyError <: R|Exception| {
+        init()
+    }
+    internal? func mayThrow(flag: R|Bool|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

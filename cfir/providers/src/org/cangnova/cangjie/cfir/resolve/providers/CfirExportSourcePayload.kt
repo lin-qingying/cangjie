@@ -147,7 +147,7 @@ sealed interface CfirExportSourcePayload {
     data class LetPattern(val initializer: CfirExpression, val pattern: CfirPattern) : CfirExportSourcePayload
 
     data class Try(
-        val resources: List<CfirFieldVariable>,
+        val resources: List<CfirResourceVariable>,
         val body: CfirBlock,
         val catches: List<CfirCatch>,
         val handlers: List<CfirHandleClause>,

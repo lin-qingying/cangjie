@@ -1,0 +1,13 @@
+common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/DiagnosticCommitPolicy.kt
+common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/impl/CfirDiagnosticCommitPolicy.kt
+common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt
+cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt
+cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirFunctionBodyTypeMismatchChecker.kt
+cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirMatchTargetTypeMismatchChecker.kt
+cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirReturnTypeMismatchChecker.kt
+cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTargetTypedTailExpressionUtils.kt
+cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirTryTargetTypeMismatchChecker.kt
+analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt
+analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/SourcePostSemaDiagnosticsTest.kt
+analysis/low-level-api-cfir/testData/diagnostics/postSema/enumEntryShadowedByTypeName.cj
+cfir/analysis-tests/testData/diagnostics2/enum/enumEntryShadowedByTypeName.cj

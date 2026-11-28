@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PreservedState
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.StateKeeper
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.resolveWithKeeper
@@ -39,8 +40,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
+import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
@@ -49,12 +54,15 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataB
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirRawMacroUsageSlot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjMacroExpression
+import org.cangnova.cangjie.source.psi as sourcePsi
 import org.jetbrains.annotations.TestOnly
 
 /**
@@ -161,7 +169,7 @@ private inline fun <reified T : CfirDeclaration> revive(
             psi = psi,
         )
 
-    return RawCfirNonLocalDeclarationBuilder.buildWithFunctionSymbolRebind(
+    val recreatedDeclaration = RawCfirNonLocalDeclarationBuilder.buildWithFunctionSymbolRebind(
         session = session,
         scopeProvider = session.cangjieScopeProvider,
         designation = designation,
@@ -169,6 +177,38 @@ private inline fun <reified T : CfirDeclaration> revive(
         annotationMetadata = annotationMetadata,
         macroSurfaces = macroSurfaces,
     ) as T
+    recreateMacroExpandedExpressions(session, rootNonLocalDeclaration, recreatedDeclaration)
+    return recreatedDeclaration
+}
+
+/**
+ * 把物理 PSI raw rebuild 中重新生成的宏错误 carrier 替换为当前语义快照记录的 CFIR 节点。
+ *
+ * 宏快照中的展开函数体在 lazy resolve 前会被状态保持器暂时换成 lazy placeholder；
+ * 从物理 PSI revive 时必须恢复同一代展开结果，否则解析器会把宏调用重新当作 raw error carrier。
+ * replacement 以精确宏调用 PSI 身份匹配，并复用快照中的 CFIR 节点身份，使文件结构映射、部分解析和展开结果保持一致。
+ */
+private fun recreateMacroExpandedExpressions(
+    session: CfirSession,
+    rootPsi: CjElement,
+    recreatedDeclaration: CfirDeclaration,
+) {
+    val snapshot = (session as? LLCfirResolvableModuleSession)?.macroSemanticSnapshot ?: return
+    val expressionReplacements = snapshot.expressionReplacementsForSource(rootPsi.containingCjFile)
+    if (expressionReplacements.isEmpty()) return
+
+    val transformer = object : CfirDefaultTransformer<Unit>() {
+        override fun transformErrorExpression(
+            errorExpression: CfirErrorExpression,
+            data: Unit,
+        ): CfirExpression {
+            val macroSource = errorExpression.source?.sourcePsi as? CjMacroExpression
+                ?: return super.transformErrorExpression(errorExpression, data)
+            return expressionReplacements[macroSource]
+                ?: super.transformErrorExpression(errorExpression, data)
+        }
+    }
+    recreatedDeclaration.transformSingle(transformer, Unit)
 }
 
 /** 所有结构与归属校验完成后才采用；OPEN metadata 由本次 publications 持有到根 postProcess。 */
@@ -227,8 +267,25 @@ private fun replaceLazyValueParameters(target: CfirFunction, copy: CfirFunction)
     }
 }
 
+/** 用重建结果填充正文槽位，并核对 return 仍绑定到采用正文的真实宿主。 */
 private fun replaceLazyBody(target: CfirFunction, copy: CfirFunction) {
-    if (target.body is CfirLazyBlock) target.replaceBody(copy.body)
+    if (target.body !is CfirLazyBlock) return
+    val body = copy.body
+    body?.acceptChildren(object : CfirVisitorVoid() {
+        override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
+            // raw rebuild 会优先复用真实函数目标，仍绑定副本的 target 只在采用该副本时迁移。
+            val returnTarget = returnExpression.target
+            if (returnTarget.isBound && returnTarget.labeledElement === copy) {
+                returnTarget.bind(target)
+            }
+            returnExpression.acceptChildren(this)
+        }
+
+        override fun visitElement(element: CfirElement) {
+            element.acceptChildren(this)
+        }
+    })
+    target.replaceBody(body)
 }
 
 private val CfirCallableDeclaration.originalPsi: PsiElement?

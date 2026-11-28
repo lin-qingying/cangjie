@@ -1,0 +1,4 @@
+FILE: parenthesizedExpression.cj
+    internal? func useParen(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

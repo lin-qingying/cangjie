@@ -11,11 +11,11 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
-import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirTuplePatternImpl @CfirImplementationDetail constructor(
@@ -23,8 +23,34 @@ class CfirTuplePatternImpl @CfirImplementationDetail constructor(
     override var semanticTypeRef: CfirTypeRef?,
     override val constantValues: MutableList<CfirConstantValue>,
     override var contextExpression: CfirExpression?,
-    override val elements: MutableList<CfirPattern>,
+    elements: List<CfirPattern>,
 ) : CfirTuplePattern() {
+    override var patternTreeOwner: CfirPatternTreeOwner? = null
+        private set(value) {
+            if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                field = value
+            } else {
+                org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
+                field = value
+            }
+        }
+    override var elements: List<CfirPattern> = java.util.Collections.unmodifiableList(elements.toList())
+        private set(value) {
+            val owner = patternTreeOwner
+            val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
+            val previousValue = field
+            field = java.util.Collections.unmodifiableList(value.toList())
+            try {
+                if (owner != null) {
+                    org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
+                } else {
+                    org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
+                }
+            } catch (failure: Throwable) {
+                field = previousValue
+                throw failure
+            }
+        }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         semanticTypeRef?.accept(visitor, data)
@@ -43,7 +69,17 @@ class CfirTuplePatternImpl @CfirImplementationDetail constructor(
     }
 
     override fun <D> transformElements(transformer: CfirTransformer<D>, data: D): CfirTuplePatternImpl {
-        elements.transformInplace(transformer, data)
+        val owner = patternTreeOwner
+        val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
+        try {
+            elements = elements.map { it.transform(transformer, data) }
+        } finally {
+            if (owner != null) {
+                org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
+            } else {
+                org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
+            }
+        }
         return this
     }
 
@@ -66,9 +102,11 @@ class CfirTuplePatternImpl @CfirImplementationDetail constructor(
         contextExpression = newContextExpression
     }
 
+    override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?) {
+        patternTreeOwner = newPatternTreeOwner
+    }
+
     override fun replaceElements(newElements: List<CfirPattern>) {
-        if (elements === newElements) return
-        elements.clear()
-        elements.addAll(newElements)
+        elements = newElements
     }
 }

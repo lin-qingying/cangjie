@@ -1,0 +1,89 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package macros.expression
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    import macros.expression.EchoTokens
+    import macros.expression.MakeInt64
+    internal? func increment(value: R|Int64|): R|Int64| {
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+            arguments:
+                INT(1)
+        }
+    }
+    internal? func expressionMacroBodySemantics(): R|Int64| {
+        local? let literal: R|Int64| = ...
+            initializer:
+                INT(42)
+        local? let binary: R|Int64| = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        INT(1)
+                    arguments:
+                        INT(1)
+                }
+        local? let parenthesized: R|Int64| = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        INT(1)
+                    arguments:
+                        INT(1)
+                }
+        local? let called: R|Int64| = ...
+            initializer:
+                FUNCTION_CALL(increment -> CfirNamedFunctionSymbol(increment)) {
+                    INT(1)
+                }
+        local? let lambdaBlock: R|Int64| = ...
+            initializer:
+                FUNCTION_CALL(*operator_invoke -> CfirNamedFunctionSymbol(*operator_invoke)) {
+                    receiver:
+                        LAMBDA() {
+                            local? let local: R|Int64| = ...
+                                initializer:
+                                    INT(40)
+                            RETURN {
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(local -> CfirPatternBindingSymbol(local))
+                                    arguments:
+                                        INT(2)
+                                }
+                            }
+                        }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            NAMED_ACCESS(literal -> CfirPatternBindingSymbol(literal))
+                                        arguments:
+                                            NAMED_ACCESS(binary -> CfirPatternBindingSymbol(binary))
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(parenthesized -> CfirPatternBindingSymbol(parenthesized))
+                            }
+                        arguments:
+                            NAMED_ACCESS(called -> CfirPatternBindingSymbol(called))
+                    }
+                arguments:
+                    NAMED_ACCESS(lambdaBlock -> CfirPatternBindingSymbol(lambdaBlock))
+            }
+        }
+    }

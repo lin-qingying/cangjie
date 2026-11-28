@@ -4,7 +4,7 @@ main(): Int64 {
         a
         return 1;
     }
-    if (<!INVALID_UNARY_EXPR!>!val<!>) {
+    if (<!INVALID_UNARY_EXPR_WITH_TARGET!>!val<!>) {
         return 1
     }
     return 0

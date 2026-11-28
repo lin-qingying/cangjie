@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 import org.cangnova.cangjie.analysis.api.impl.base.test.dsl.AnalysisApiTestGenerator
 import org.cangnova.cangjie.analysis.api.impl.base.test.dsl.generateAnalysisApiTests
 import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.jetbrains.kotlin.generators.dsl.junit5.generateTestGroupSuiteWithJUnit5
+import org.cangnova.cangjie.test.generators.dsl.junit5.generateTestGroupSuiteWithJUnit5
 
 /**
  * 生成 CFIR Analysis API IDE-mode 测试套件入口。

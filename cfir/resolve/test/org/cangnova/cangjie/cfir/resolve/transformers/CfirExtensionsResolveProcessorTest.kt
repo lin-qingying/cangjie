@@ -4,6 +4,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.resolve.ExtendTestFixtures
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures
+import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildFunctionSymbol
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -42,5 +45,33 @@ class CfirExtensionsResolveProcessorTest {
 
         assertEquals(CfirResolvePhase.EXTENSIONS, shouldAdvance.resolvePhase)
         assertEquals(CfirResolvePhase.RAW_CFIR, shouldStayRaw.resolvePhase)
+    }
+
+    /**
+     * 验证源码 extend 成员在 EXTENSIONS 阶段获得被扩展类型作为 dispatch receiver。
+     */
+    @Test
+    fun `transformDeclaration assigns extended type as member dispatch receiver`() {
+        val session = CallResolutionTestFixtures.newTestSession()
+        val moduleData = session.moduleData
+        val targetClassId = ClassId(FqName("sample.pkg"), Name.identifier("Target"))
+        val memberSymbol = buildFunctionSymbol(session, "bar")
+        val extend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = emptyList(),
+            declarations = listOf(memberSymbol.cfir),
+        ).also {
+            it.replaceResolvePhase(CfirResolvePhase.STATUS)
+        }
+
+        CfirExtensionsResolveTransformer(session).transformDeclaration(extend, null)
+
+        val receiverType = memberSymbol.cfir.dispatchReceiverType as? ConeClassLikeType
+        assertEquals(
+            targetClassId,
+            receiverType?.lookupTag?.classId,
+            "extend 成员的 dispatch receiver 必须是 `extend Target` 的 Target",
+        )
     }
 }

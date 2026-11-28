@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
+import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSessionSnapshot
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -18,12 +20,22 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 internal class CfirLambdaBodyReinferenceData(
     val lambdaExpression: CfirAnonymousFunctionExpression,
     private val preBodyResolveSnapshot: CfirResolutionSnapshot,
+    private val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession?,
+    private val preImplicitBodyResolveSnapshot: CfirImplicitBodyResolveComputationSessionSnapshot?,
+    private val preRetainedSnapshot: org.cangnova.cangjie.cfir.resolve.inference.CfirImplicitTypeReplaySnapshot?,
 ) {
+    init {
+        check((implicitBodyResolveComputationSession == null) == (preImplicitBodyResolveSnapshot == null))
+    }
+
     /** 在恢复树之前计算签名，确保参数 placeholder 仍可由当前 substitutor 替换。 */
     fun applyCompletionResult(
         substitutor: ConeSubstitutor,
         restoreBodyResolveState: Boolean = false,
+        cacheOwner: ImplicitBodyResolveComputationSession?,
+        actualSystem: org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl,
     ): Boolean {
+        check(cacheOwner === implicitBodyResolveComputationSession) { "Lambda reinference changed cache owner" }
         val lambda = lambdaExpression.anonymousFunction
         val previousType = lambda.typeRef.coneTypeOrNull as? ConeFunctionType ?: return false
         val parameterTypes = lambda.valueParameters.map { parameter ->
@@ -38,7 +50,10 @@ internal class CfirLambdaBodyReinferenceData(
             hasVariableLenArg = previousType.hasVariableLenArg,
             attributes = previousType.attributes,
         )
-        if (restoreBodyResolveState) preBodyResolveSnapshot.restore()
+        if (restoreBodyResolveState) {
+            preBodyResolveSnapshot.restoreWithImplicitBodyCache(preImplicitBodyResolveSnapshot, cacheOwner)
+            preRetainedSnapshot?.restoreForReinference(actualSystem)
+        }
         lambda.valueParameters.zip(parameterTypes).forEach { (parameter, type) ->
             parameter.replaceReturnTypeRef(type.toCfirResolvedTypeRef(parameter.returnTypeRef.source, parameter.returnTypeRef))
         }

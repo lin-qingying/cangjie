@@ -56,40 +56,58 @@ class TokenBackedMacroFragmentParser(
         }
         // baseline Batch 8: 先按 token-stage 重组到稳定点（newTokens token-stage re-eval）
         val reEvaluatedTokens = MacroTokenReEvaluator.reTokenizeUntilStable(tokens, reTokenize)
-        val untrimmedSource = if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
-            // `@!` 是官方 AST 的 compile-time-visible provenance，不能为了
-            // 让临时 parser 接受文本而把它降成普通 `@`。annotation-only
-            // parser 已经支持 `@!`，因此这里必须把原始 spelling 原样交给它。
-            input.annotationSnapshot!!.rawSyntax
+        val hasSyntaxOutput = reEvaluatedTokens.any { !it.isTrivia }
+        val parseTokens = if (mode == MacroFragmentParser.Mode.DECLARATION && hasSyntaxOutput) {
+            input.inheritedAnnotationTokens + reEvaluatedTokens
         } else {
-            MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens)
+            reEvaluatedTokens
         }
-        val source = untrimmedSource.trim()
-        val trimmedPrefixLength = untrimmedSource.indexOfFirst { !it.isWhitespace() }
-            .takeIf { it >= 0 } ?: untrimmedSource.length
-        if (source.isEmpty()) {
+        val untrimmedSourceMap = MacroFragmentSourceMap.materialize(parseTokens, node.surface.surfaceId)
+        val trimmedPrefixLength = untrimmedSourceMap.text.indexOfFirst { !it.isWhitespace() }
+            .takeIf { it >= 0 } ?: untrimmedSourceMap.text.length
+        val sourceMap = untrimmedSourceMap.trimmed()
+        val source = sourceMap.text
+        if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION &&
+            source != input.annotationSnapshot!!.rawSyntax.trim()
+        ) {
+            return MacroFragmentResult.Failure(
+                originNode = node,
+                reason = "Custom annotation token text differs from its retained original syntax.",
+            )
+        }
+        val reparseInput = input.copy(tokens = reEvaluatedTokens, sourceMap = sourceMap)
+        if (source.isEmpty() || mode == MacroFragmentParser.Mode.DECLARATION && !hasSyntaxOutput) {
+            if (mode == MacroFragmentParser.Mode.DECLARATION) {
+                return MacroFragmentResult.Success(
+                    originNode = node,
+                    tokens = reEvaluatedTokens,
+                    mode = mode,
+                    payload = MacroFragmentPayload.EMPTY,
+                    sourceMapping = reparseInput.sourceMapping,
+                )
+            }
             return MacroFragmentResult.Failure(
                 originNode = node,
                 reason = "Macro fragment text is empty after token re-evaluation",
             )
         }
 
-        val sourceMap = MacroFragmentSourceMap.fromTokens(
-            tokens = reEvaluatedTokens,
+        val diagnosticSourceMap = MacroParserDiagnosticSourceMap.fromTokens(
+            tokens = parseTokens,
             defaultSourceRange = input.node.surface.sourceRange,
             trimmedPrefixLength = trimmedPrefixLength,
             textLength = source.length,
         )
 
         // 用户语法/形状失败使用类型化结果；内部不变量与取消必须传播，不能转成可降级结果。
-        val reparsed = reparse(source, input)
+        val reparsed = reparse(source, reparseInput)
         when (reparsed) {
             is MacroFragmentReparseResult.SyntaxFailure -> return MacroFragmentResult.SyntaxFailure(
                 node,
                 reparsed.parsedText,
                 reparsed.diagnosticPublication,
                 reparsed.parsedFileFacts,
-                sourceMap,
+                diagnosticSourceMap,
             )
             is MacroFragmentReparseResult.Failure -> return MacroFragmentResult.Failure(node, reparsed.reason, reparsed.parsedFileFacts)
             else -> Unit
@@ -116,7 +134,8 @@ class TokenBackedMacroFragmentParser(
                     payload = annotationPayload,
                     tokens = reEvaluatedTokens,
                     parsedFileFacts = reparsed.parsedFileFacts,
-                    sourceMap = sourceMap,
+                    sourceMap = diagnosticSourceMap,
+                    sourceMapping = reparseInput.sourceMapping,
                     diagnosticPublication = reparsed.diagnosticPublication,
                 )
             }
@@ -133,7 +152,8 @@ class TokenBackedMacroFragmentParser(
                     mode = mode,
                     payload = macroPayload,
                     parsedFileFacts = reparsed.parsedFileFacts,
-                    sourceMap = sourceMap,
+                    sourceMap = diagnosticSourceMap,
+                    sourceMapping = reparseInput.sourceMapping,
                     diagnosticPublication = reparsed.diagnosticPublication,
                 )
             }
@@ -158,5 +178,6 @@ class TokenBackedMacroFragmentParser(
  */
 object IdentityMacroStableSplicer : MacroStableSplicer {
     /** 占位 splice：返回原文件列表，不宣称完成节点级替换。 */
-    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> = files
+    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult =
+        MacroStableSpliceResult(files, emptyList())
 }

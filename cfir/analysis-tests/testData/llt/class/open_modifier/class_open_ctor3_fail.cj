@@ -16,10 +16,10 @@ extend A {
 open class B <: A {
     public init() {
         { // lambda
-            => <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
+            => <!THIS_AS_EXPRESSION_IN_FUNC!>this<!>
         }
-        let v = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
-        test(<!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his)
+        let v = <!THIS_AS_EXPRESSION_IN_FUNC!>this<!>
+        test(<!THIS_AS_EXPRESSION_IN_FUNC!>this<!>)
     }
 }
 

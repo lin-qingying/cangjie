@@ -6,16 +6,20 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.containers.addIfNotNull
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.declarations.createDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.createPackageProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.tolerateMissingCachedSymbol
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
@@ -23,7 +27,9 @@ import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.caches.getValue
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLazySymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
@@ -33,9 +39,14 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -46,8 +57,10 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.stubs.impl.CangJieNamedFunctionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
+import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 import org.cangnova.cangjie.utils.ifNotEmpty
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import kotlin.time.TimeSource
 
 /**
  * typealias 反序列化后处理函数。
@@ -74,12 +87,27 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
      * 根据声明类型和 stub 来源创建反序列化 container source 的提供器。
      */
     private val deserializedContainerSourceProvider: DeserializedContainerSourceProvider,
-    scope: GlobalSearchScope,
+    /**
+     * 当前库搜索范围的提供方式。
+     *
+     * 以工厂形式接收而不是 `GlobalSearchScope`：`createBuiltinsScope` 在 IDE 宿主下会遍历整个 SDK 目录，
+     * session 构造期不得求值，否则 builtins session 创建会重入 `.cjo` stub 构建。
+     */
+    private val scope: () -> GlobalSearchScope,
 ) : LLCangJieSymbolProvider(session) {
     /**
      * 当前会话的仓颉作用域提供器，用于类和成员反序列化。
      */
     private val cangjieScopeProvider: CfirCangJieScopeProvider get() = session.cangjieScopeProvider
+
+    /**
+     * stub 反序列化统计域；统计未启用时为 `null`。
+     *
+     * 延迟解析：符号提供器在 session 构造期就被创建，而工程级统计服务此时可能还没注册好。
+     */
+    private val deserializationStatistics by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLCfirGlobalResolveComponents.getInstance(session).deserializationStatistics
+    }
     /**
      * 当前低阶 CFIR 模块数据。
      */
@@ -92,19 +120,34 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         get() = moduleData.caModule
 
     /**
-     * 当前库搜索范围内的仓颉声明索引。
+     * 当前库搜索范围内的仓颉声明索引；首次查询时才创建。
+     *
+     * IDE 宿主创建声明提供器会遍历搜索作用域并触碰 stub 索引（`CaIdeScopeCangJieFileCollector`），
+     * 在 builtins session 构造期求值会让该构造同线程重入 `getBuiltinsSession`。
+     * 对位 Kotlin `LLKotlinStubBasedLibrarySymbolProvider`：那里构造期求值成立，是因为
+     * Kotlin builtins 不来自 stub 索引；仓颉 `.cjo` 走 stub，必须延迟。
      */
-    final override val declarationProvider = session.project.createDeclarationProvider(
-        scope,
-        contextualModule = session.caModule,
-    )
+    final override val declarationProvider: CangJieDeclarationProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        session.project.createDeclarationProvider(
+            scope(),
+            contextualModule = session.caModule,
+        )
+    }
 
     /**
-     * 基于 [declarationProvider] 的缓存名称索引。
+     * 基于 [declarationProvider] 的缓存名称索引；同样是首次查询时才创建。
      */
     @OptIn(CaPlatformInterface::class)
-    override val symbolNamesProvider: CfirSymbolNamesProvider =
+    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirLazySymbolNamesProvider {
         LLCfirCangJieSymbolNamesProvider.cached(session, declarationProvider)
+    }
+
+    /**
+     * 本 provider 只服务库模块：其声明来自库自己的 stub（IDE 宿主经 stub 索引取文件），
+     * 不是被编辑的项目源码，因此整份名称视图都属于库侧。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = symbolNamesProvider
 
     /**
      * typealias 符号缓存，支持按 class ID 和按 PSI 精确反序列化。
@@ -154,10 +197,20 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
      */
     private val propertyCache = session.cfirCachesFactory.createCache(::loadPropertiesByCallableId)
 
+    /** 每个已编译 global wire 记录的容器与叶子由这一份缓存共同持有。 */
+    private val patternBindingCache = session.cfirCachesFactory.createCache(::loadPatternBindingsByCallableId)
+
     /**
-     * 当前库搜索范围内的包索引。
+     * 已编译 enum constructor 的包级 callable 视图复用所属 enum CFIR 中的符号对象。
      */
-    final override val packageProvider = session.project.createPackageProvider(scope)
+    private val enumConstructorCache = session.cfirCachesFactory.createCache(::loadEnumConstructorsByCallableId)
+
+    /**
+     * 当前库搜索范围内的包索引；首次查询时才创建，原因同 [declarationProvider]。
+     */
+    final override val packageProvider: CangJiePackageProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        session.project.createPackageProvider(scope())
+    }
 
     /**
      * 计算 [file] 中反序列化声明的 CFIR 来源。
@@ -245,6 +298,31 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
 
         checkDeclarationAndContextConsistency(declaration, parentContext)
 
+        // 库 class-like 符号首次被查询时才走到这里，因此这里就是"首次触碰延迟"的真实成本：
+        // 一次类型解析可能触发一整棵嵌套类的反序列化。只在缓存未命中时计时。
+        val statistics = deserializationStatistics
+        if (statistics == null) return deserializeClass(classId, declaration, parentContext)
+
+        statistics.onClassLikeDeserializationStarted()
+        val startedAt = TimeSource.Monotonic.markNow()
+        try {
+            return deserializeClass(classId, declaration, parentContext)
+        } finally {
+            statistics.onClassLikeDeserialized(startedAt.elapsedNow().inWholeNanoseconds)
+        }
+    }
+
+    /**
+     * 实际执行 class-like 符号的 stub 反序列化；由 [findAndDeserializeClass] 在计时包装内调用。
+     */
+    private fun deserializeClass(
+        classId: ClassId,
+        declaration: CjClassLikeDeclaration,
+        parentContext: StubBasedCfirDeserializationContext?,
+    ): CfirClassLikeSymbol<*>? {
+        // 调用方已判过，这里再收窄一次：deserializeClassToSymbol 只接受 type statement。
+        if (declaration !is CjTypeStatement) return null
+
         val symbol = createClassLikeSymbol(classId, declaration)
         deserializeClassToSymbol(
             classId,
@@ -321,6 +399,53 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 
+    private fun loadPatternBindingsByCallableId(
+        callableId: CallableId,
+        foundBindings: Collection<CjNamedPattern>?,
+    ): List<CfirPatternBindingSymbol> {
+        val bindings = declarationProvider.getTopLevelPatternBindings(callableId)
+        require(foundBindings == null || foundBindings.toSet() == bindings.toSet()) {
+            "Known pattern bindings must contain the complete declaration-provider result"
+        }
+        return bindings.map { binding ->
+            val owner = checkNotNull(binding.getStrictParentOfType<CjPatternVariable>())
+            check(owner.isTopLevel && owner.pattern === binding) { "CJO global bindings must be single-name projections" }
+            val ownerSymbol = CfirPatternVariableSymbol(CallableId(callableId.packageName, Name.special("<pattern:${callableId.callableName.asString()}>")))
+            val context = StubBasedCfirDeserializationContext.createRootContext(
+                session, session.moduleData, callableId, owner, ownerSymbol,
+                getDeclarationOriginFor(owner.containingCjFile), containerSource = null,
+            )
+            val root = context.memberDeserializer.loadPatternVariable(owner, ownerSymbol)
+            root.pattern.bindingVariables().single().symbol
+        }
+    }
+
+    /**
+     * 将已编译 enum 的成员构造器投影到包级 callable 查询，同时保留其唯一的 enum-owned CFIR 符号。
+     */
+    @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+    private fun loadEnumConstructorsByCallableId(
+        callableId: CallableId,
+        foundConstructors: Collection<CjEnumConstructor>?,
+    ): List<CfirEnumConstructorSymbol> {
+        val constructors = foundConstructors ?: declarationProvider.getTopLevelEnumConstructors(callableId)
+        return constructors.map { constructor ->
+            val enumDeclaration = requireNotNull(constructor.parentEnum) {
+                "Top-level enum constructor ${constructor.name} must have an owning enum"
+            }
+            val classId = requireNotNull(enumDeclaration.getClassId()) {
+                "Top-level enum ${enumDeclaration.name} must have a class id"
+            }
+            val enumSymbol = getClassLikeSymbolByPsi(classId, enumDeclaration) as? CfirEnumSymbol
+                ?: error("Top-level enum $classId must deserialize as a CfirEnumSymbol")
+            val cfirConstructor = enumSymbol.cfir.declarations
+                .filterIsInstance<CfirEnumConstructor>()
+                .singleOrNull { it.realPsi === constructor }
+                ?: error("Enum constructor ${constructor.name} must be present in its deserialized enum CFIR")
+            cfirConstructor.symbol
+        }
+    }
+
     /**
      * 将指定包和名称下的顶层函数与属性符号追加到 [destination]。
      */
@@ -329,6 +454,8 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val callableId = CallableId(packageFqName, name)
         destination += functionCache.getCallablesWithoutContext(callableId)
         destination += propertyCache.getCallablesWithoutContext(callableId)
+        destination += patternBindingCache.getCallablesWithoutContext(callableId)
+        destination += enumConstructorCache.getCallablesWithoutContext(callableId)
     }
 
     /**
@@ -356,6 +483,14 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
 
         callables.filterIsInstance<CjProperty>().ifNotEmpty {
             destination += propertyCache.getValue(callableId, this)
+        }
+        val patternBindings = callables.filterIsInstance<CjPatternVariable>()
+            .flatMap { it.pattern.getAllPatternDeclarations() }
+            .filterIsInstance<CjNamedPattern>()
+            .filter { it.nameAsName == callableId.callableName }
+        if (patternBindings.isNotEmpty()) {
+            // 单 PSI 查询也先完整加载该名字，不能用一个 leaf 把名字缓存截断。
+            destination += patternBindingCache.getCallablesWithoutContext(callableId)
         }
     }
 
@@ -442,13 +577,18 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
 
     /**
      * 根据已知 [classLikeDeclaration] 精确查询或反序列化 [classId] 对应的 class-like 符号。
+     *
+     * 已知精确声明时必须按 PSI 键查询：同一个 [ClassId] 可能对应多处声明（重声明、
+     * 源码/宏展开双视图），而 ClassId 键只保证「任意命中」，用它当命中会返回**另一处**
+     * 声明对应的符号。精度要求必须体现在 key 上，不能只体现在 context 上。
      */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
         val cache = if (classLikeDeclaration is CjTypeStatement) classCache else typeAliasCache
-        cache.getCachedSymbolByClassId(classId)?.let { return it }
 
-        return cache.getSymbolByClassId(classId, createClassLikeDeserializationContext(classId, classLikeDeclaration))
+        return tolerateMissingCachedSymbol(classId) {
+            cache.getSymbolByPsi(classId, classLikeDeclaration, createClassLikeDeserializationContext(classId, classLikeDeclaration))
+        }
     }
 
     /**
@@ -461,7 +601,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val cache = if (declaration is CjTypeStatement) classCache else typeAliasCache
         cache.getCachedSymbolByPsi(classId, declaration)?.let { return it }
 
-        return cache.getSymbolByPsi(classId, declaration, createClassLikeDeserializationContext(classId, declaration))
+        return tolerateMissingCachedSymbol(classId) {
+            cache.getSymbolByPsi(classId, declaration, createClassLikeDeserializationContext(classId, declaration))
+        }
     }
 
     /**
@@ -512,10 +654,12 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val callableSymbols = when (callableDeclaration) {
             is CjNamedFunction -> functionCache.getValue(callableId)
             is CjProperty -> propertyCache.getValue(callableId)
+            is CjPatternVariable -> patternBindingCache.getValue(callableId)
             else -> null
         }
 
-        return callableSymbols?.singleOrNull { it.cfir.realPsi == callableDeclaration }
+        val declarationPsi = if (callableDeclaration is CjPatternVariable) callableDeclaration.pattern else callableDeclaration
+        return callableSymbols?.singleOrNull { it.cfir.realPsi === declarationPsi }
     }
 
     /**
@@ -534,6 +678,12 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
             }
             propertyCache.cachedValues.forEach { properties ->
                 properties.forEach { add(it.cfir) }
+            }
+            patternBindingCache.cachedValues.forEach { bindings ->
+                bindings.forEach { binding ->
+                    add(binding.cfir)
+                    (binding.cfir.patternTreeOwner as? CfirDeclaration)?.let(::add)
+                }
             }
         }
 
@@ -625,3 +775,5 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 }
+
+

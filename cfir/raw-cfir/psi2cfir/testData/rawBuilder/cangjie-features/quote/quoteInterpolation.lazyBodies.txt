@@ -1,0 +1,5 @@
+FILE: quoteInterpolation.cj
+    import std.ast.*
+    internal? func useQuote(x: R|Int64|): R|Tokens| {
+        <element: CfirLazyBlock>
+    }

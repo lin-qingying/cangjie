@@ -3,7 +3,7 @@
 
 func f(x: String) {
     match (x) {
-        case "${x.size}" => 0
+        case <!INTERPOLATION_IN_CONST_PATTERN!>"${x.size}"<!> => 0
         case _ => 1
     }
 }

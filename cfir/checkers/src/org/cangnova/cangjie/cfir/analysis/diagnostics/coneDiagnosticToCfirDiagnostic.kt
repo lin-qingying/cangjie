@@ -55,6 +55,7 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariabl
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.semantics.AbstractCallKind
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
+import org.cangnova.cangjie.cfir.semantics.BareEnumConstructorInsufficientInformation
 import org.cangnova.cangjie.cfir.semantics.AmbiguousClassifierTypeInCandidateSignature
 import org.cangnova.cangjie.cfir.semantics.ConeCyclicTypeBound
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInCandidateSignature
@@ -119,8 +120,12 @@ fun ConeDiagnostic.toCfirDiagnostics(
             session,
         )
         is ConeNoMatchingFunctionReferenceError -> listOfNotNull(
+            argumentMappingCandidate?.parametersAndArgumentsMismatchDiagnostic(
+                session,
+                hasFunctionReferenceNoMatch = true,
+            ),
             CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF.on(
-                (callOrAssignmentSource ?: source)?.firstCharacterDiagnosticSource() ?: return emptyList(),
+                source ?: return emptyList(),
                 session,
             )
         )
@@ -165,7 +170,7 @@ private fun ConeNoMatchingFunctionCallError.mapNoMatchingFunctionCallError(
         ?.let { callEnd -> tokenEnd.coerceAtMost(callEnd) }
         ?: tokenEnd
     return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(
-        CjOffsetsOnlySourceElement(anchor.startOffset, boundedEnd.coerceAtLeast(anchor.endOffset), sourceAnchor = anchor),
+        anchor.withRange(anchor.startOffset, boundedEnd.coerceAtLeast(anchor.endOffset)),
         session,
     )
 }
@@ -331,7 +336,7 @@ private fun ConstraintSystemError.mapConstraintSystemError(
         }
 
         is NotEnoughInformationForTypeParameter<*> ->
-            if (candidate.hasBareGenericFunctionReferencePayloadArgument()) {
+            if (belongsToBareEnumArgument(candidate) || candidate.hasBareGenericFunctionReferencePayloadArgument()) {
                 null
             } else if (candidate.hasNonCallBareStaticGenericQualifierTypeVariable(typeVariable, session)) {
                 null
@@ -407,6 +412,7 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             session,
             source,
             qualifiedAccessSource,
+            candidate = candidate,
             preferCallSourceForTooManyArguments = candidate.prefersCallSourceForTooManyArguments(),
         )
         .takeIf { it.isNotEmpty() }
@@ -418,6 +424,7 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             session,
             source,
             qualifiedAccessSource,
+            candidate = candidate,
             preferCallSourceForTooManyArguments = candidate.prefersCallSourceForTooManyArguments(),
         )
         .takeIf { it.isNotEmpty() }
@@ -446,7 +453,10 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             // 而不是把同一结构性错误继续泛化为泛型推断失败。
             return listOfNotNull(candidate.ambiguousClassifierSignatureNoMatchDiagnostic(session))
         }
-        if (errors.any { it is NotEnoughInformationForTypeParameter<*> && it.typeVariable is ConeTypeParameterBasedTypeVariable } &&
+        if (errors.any {
+                it is NotEnoughInformationForTypeParameter<*> &&
+                    it.typeVariable is ConeTypeParameterBasedTypeVariable && !it.belongsToBareEnumArgument(candidate)
+            } &&
             !candidate.hasExplicitTypeArgumentsInCall()
         ) {
             // 泛型参数被推断为失败类型且调用未提供显式实参时，即使实参子树自身含有错误
@@ -572,6 +582,11 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     }
 }
 
+/** 借入的裸枚举 owner 变量缺参由原实参报告，不能归为外层调用自身的推断失败。 */
+private fun NotEnoughInformationForTypeParameter<*>.belongsToBareEnumArgument(candidate: AbstractCallCandidate<*>): Boolean {
+    return this is BareEnumConstructorInsufficientInformation && origin !== candidate
+}
+
 /**
  * 判断错误是否来自 bare static generic qualifier 的类型参数推断失败。
  */
@@ -664,6 +679,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             session,
             source,
             qualifiedAccessSource,
+            candidate = candidate,
             preferCallSourceForTooManyArguments = candidate.prefersCallSourceForTooManyArguments(),
         )
         .takeIf { it.isNotEmpty() }
@@ -740,10 +756,13 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
-            is BuiltinCFuncConstructorTooManyArguments -> CfirErrors.CFUNC_TOO_MANY_ARGUMENTS.on(
-                rootCause.source,
-                session,
-            )
+            is BuiltinCFuncConstructorTooManyArguments -> {
+                val diagnosticSource = rootCause.source ?: return@mapNotNull null
+                CfirErrors.CFUNC_TOO_MANY_ARGUMENTS.on(
+                    diagnosticSource.completeReferencedNameDiagnosticSource(),
+                    session,
+                )
+            }
 
             is BuiltinCFuncConstructorArgumentType -> CfirErrors.CFUNC_CTOR_MUST_BE_CPOINTER.on(
                 rootCause.argument.source ?: source ?: return@mapNotNull null,
@@ -782,6 +801,13 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     // 固定native调用级Unit诊断只持begin位置，literal及推断为Unit的调用都锚首字符。
                     argumentSource.firstCharacterDiagnosticSource()
                 },
+                session,
+            )
+
+            is LiteralNumericOverflow -> CfirErrors.LITERAL_NUMERIC_OVERFLOW.on(
+                rootCause.literal.source ?: source ?: return@mapNotNull null,
+                rootCause.literalText,
+                rootCause.targetType,
                 session,
             )
 
@@ -865,7 +891,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     ?: candidate.callInfo.callSite.source
                     ?: return@mapNotNull null
                 CfirErrors.AMBIGUOUS_ARG_TYPE.on(
-                    diagnosticSource.firstCharacterDiagnosticSource(),
+                    diagnosticSource,
                     candidate.callInfo.name,
                     session,
                 )
@@ -905,7 +931,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
-            is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
+            is NamedParameterNotFound -> CfirErrors.UNKNOWN_NAMED_ARGUMENT.on(
                 rootCause.source,
                 rootCause.name,
                 session,
@@ -988,6 +1014,44 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
 }
 
+/** CFunc 构造器诊断标记被引用的完整名称 token，不扩展到泛型实参或调用括号。 */
+private fun AbstractCjSourceElement.completeReferencedNameDiagnosticSource(): AbstractCjSourceElement {
+    val sourcePsi = psi
+    if (sourcePsi == null) {
+        return (this as? CjLightSourceElement)?.lightTreeReferencedNameDiagnosticSource() ?: this
+    }
+    val nameElement = when (sourcePsi) {
+        is CjSimpleNameExpression -> sourcePsi.referencedNameElement
+        is CjCallExpression -> sourcePsi.referenceExpression?.referencedNameElement
+        else -> PsiTreeUtil.getParentOfType(sourcePsi, CjCallExpression::class.java, false)
+            ?.referenceExpression
+            ?.referencedNameElement
+    }
+    return nameElement?.toCjPsiSourceElement() ?: this
+}
+
+/** 从 LightTree 引用节点取得完整名称 token，与 PSI 的 referencedNameElement 使用同一范围。 */
+private fun CjLightSourceElement.lightTreeReferencedNameDiagnosticSource(): AbstractCjSourceElement? {
+    fun findReferenceExpression(node: LighterASTNode): LighterASTNode? {
+        if (node.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) return node
+        for (child in lightTreeChildren(node)) {
+            findReferenceExpression(child)?.let { return it }
+        }
+        return null
+    }
+
+    val referenceExpression = findReferenceExpression(lighterASTNode) ?: return null
+    val nameToken = lightTreeChildren(referenceExpression)
+        .firstOrNull { it.tokenType == CjTokens.IDENTIFIER }
+        ?: return null
+    return nameToken.toCjLightSourceElement(
+        tree = treeStructure,
+        kind = kind,
+        startOffset = treeStructure.getStartOffset(nameToken),
+        endOffset = treeStructure.getEndOffset(nameToken),
+    )
+}
+
 /** 错误返回类型使整个 overload 集合失效时，在 callable 名称上报告调用级 no-match。 */
 private fun AbstractCallCandidate<*>.invalidReturnTypeOverloadNoMatchDiagnostic(session: CfirSession): CjDiagnostic? {
     if (callInfo.semanticCallKind != AbstractCallKind.Function) return null
@@ -1001,7 +1065,7 @@ private fun AbstractCallCandidate<*>.ambiguousClassifierSignatureNoMatchDiagnost
     if (callInfo.semanticCallKind != AbstractCallKind.Function) return null
     val call = callInfo.callSite as? CfirFunctionCall ?: return null
     val calleeSource = call.calleeReference.source ?: return null
-    val source = CjOffsetsOnlySourceElement(
+    val source = calleeSource.withRange(
         startOffset = calleeSource.startOffset,
         endOffset = (calleeSource.startOffset + callInfo.name.asString().length)
             .coerceAtMost(call.source?.endOffset ?: calleeSource.endOffset),
@@ -1017,7 +1081,7 @@ private fun CfirAnonymousFunction.lambdaParameterListSource(): AbstractCjSourceE
     val parameterSources = valueParameters.mapNotNull { it.source }
     val first = parameterSources.firstOrNull() ?: return null
     val last = parameterSources.last()
-    return CjOffsetsOnlySourceElement(first.startOffset, last.endOffset, sourceAnchor = first)
+    return first.withRange(first.startOffset, last.endOffset)
 }
 
 /**
@@ -1063,7 +1127,7 @@ private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagno
     val diagnosticSource = diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: callInfo.callSite.source ?: return null
     return listOfNotNull(
         CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF.on(
-            diagnosticSource.firstCharacterDiagnosticSource(),
+            diagnosticSource,
             session,
         )
     )
@@ -1085,15 +1149,28 @@ private fun CfirExpression.hasPrimaryErrorInCallableReferenceReceiver(): Boolean
 }
 
 /**
- * 映射仓颉普通可变参数调用中的参数映射诊断。
+ * 映射仓颉变参尝试失败后保留的普通调用诊断，包含参数形状和正常类型检查。
  */
 private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
     session: CfirSession,
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
+    candidate: AbstractCallCandidate<*>,
     preferCallSourceForTooManyArguments: Boolean = false,
 ): List<CjDiagnostic> = coalesceArgumentMappingDiagnostics().mapNotNull { diagnostic ->
     when (diagnostic) {
+        is ArgumentTypeMismatch -> argumentTypeMismatch(
+            source = diagnostic.argument.source ?: source,
+            argument = diagnostic.argument,
+            expectedType = diagnostic.expectedType.substituteTypeVariableTypes(candidate, session),
+            actualType = diagnostic.actualType.substituteTypeVariableTypes(candidate, session),
+            isMismatchDueToNullability = diagnostic.isMismatchDueToNullability,
+            isInoutArgument = diagnostic.isInoutArgument,
+            anonymousFunction = diagnostic.anonymousFunctionIfReturnExpression,
+            candidate = candidate,
+            session = session,
+        )
+
         is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
             diagnostic.source,
             session,
@@ -1110,7 +1187,7 @@ private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
             session,
         )
 
-        is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
+        is NamedParameterNotFound -> CfirErrors.UNKNOWN_NAMED_ARGUMENT.on(
             diagnostic.source,
             diagnostic.name,
             session,
@@ -1409,6 +1486,7 @@ private fun CfirExpression.isBareFunctionReferenceValue(): Boolean {
  */
 private fun AbstractCallCandidate<*>.parametersAndArgumentsMismatchDiagnostic(
     session: CfirSession,
+    hasFunctionReferenceNoMatch: Boolean = false,
 ): CjDiagnostic? {
     // 下标读脱糖调用（a[i] → a.get(i)）的索引实参为字面量且不能转换时，官方除实参级
     // cannot_convert_literal 外还报一次调用级 parameters and arguments mismatch，锚在
@@ -1422,24 +1500,39 @@ private fun AbstractCallCandidate<*>.parametersAndArgumentsMismatchDiagnostic(
         val receiverSource = callInfo.explicitReceiver?.source ?: return null
         return CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH.on(receiverSource, session)
     }
-    if (symbol.cfir !is CfirConstructor || !hasExplicitTypeArgumentsInCall()) return null
-    val hasFunctionReferenceMappingFailure = diagnostics.filterIsInstance<ArgumentTypeMismatch>().any { diagnostic ->
+    if (!hasGenericArgumentMapping(session)) return null
+    val hasFunctionReferenceTypeMismatch = diagnostics.filterIsInstance<ArgumentTypeMismatch>().any { diagnostic ->
         diagnostic.argument.isBareFunctionReferenceValue() &&
             diagnostic.actualType.isFunctionTypeLike() &&
             !diagnostic.expectedType.isFunctionTypeLike()
     }
-    if (!hasFunctionReferenceMappingFailure) return null
+    val hasUnsuccessfulFunctionReference = hasFunctionReferenceNoMatch ||
+            diagnostics.filterIsInstance<UnsuccessfulCallableReferenceArgument>().any {
+        it.failureKind == CallableReferenceFailureKind.NO_MATCH
+    }
+    if (!hasFunctionReferenceTypeMismatch && !hasUnsuccessfulFunctionReference) return null
 
-    val calleeSource = (callInfo.callSite as? CfirQualifiedAccessExpression)
-        ?.calleeReference
-        ?.source
-        ?: return null
-    val source = CjOffsetsOnlySourceElement(
-        startOffset = calleeSource.startOffset,
-        endOffset = (calleeSource.startOffset + callInfo.name.asString().length).coerceAtMost(calleeSource.endOffset),
-        sourceAnchor = calleeSource,
+    val callSource = callInfo.callSite.source ?: return null
+    return CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH.on(
+        callSource,
+        session,
     )
-    return CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH.on(source, session)
+}
+
+/**
+ * 判断调用是否进入了泛型映射阶段且映射可以完整形成。
+ *
+ * 官方仅在已有映射被实参检查全部淘汰后报告调用级参数不匹配；类型参数仍缺少信息时，
+ * 调用尚未进入该兼容性诊断阶段。
+ */
+private fun AbstractCallCandidate<*>.hasGenericArgumentMapping(session: CfirSession): Boolean {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+    val hasGenericDeclaration = genericInferenceDeclaredTypeParameters(session).isNotEmpty() ||
+            callableSymbol.getContainingClass()?.cfir?.typeParameters?.isNotEmpty() == true ||
+            callableSymbol.getContainingExtend()?.typeParameters?.isNotEmpty() == true
+    if (!hasGenericDeclaration) return false
+    if (!hasExplicitTypeArgumentsInCall() && errors.any { it is NotEnoughInformationForTypeParameter<*> }) return false
+    return true
 }
 
 /**
@@ -1651,7 +1744,11 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     val ambiguitySource = if (factory == CfirErrors.AMBIGUOUS_USE) {
         val completeTypeUseSource = typeUseSource
         if (completeTypeUseSource != null) {
-            CjOffsetsOnlySourceElement(completeTypeUseSource.startOffset, completeTypeUseSource.endOffset, sourceAnchor = completeTypeUseSource)
+            // 官方 `sema_ambiguous_use` 由 `DiagAmbiguousUse` 以整节点锚定，覆盖整条类型使用。
+            // `AMBIGUOUS_USE` 的定位策略是 DEFAULT，直接标记锚点元素自身范围，因此这里必须
+            // 保留 `typeUseSource` 的 PSI/LightTree 锚点；降级成 offsets-only 元素会丢失锚点，
+            // 使 analysis API 的 low-level reporter 无法把该诊断投影成 PSI 诊断。
+            completeTypeUseSource
         } else if (isFunctionValueAmbiguity()) {
             source.callableReferenceSelectorWithTypeArgumentsSource()
                 ?: source
@@ -1659,7 +1756,6 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         } else {
             callOrAssignmentSource
                 ?.takeIf { source == null || it.startOffset < source.startOffset || it.endOffset > source.endOffset }
-                ?.offsetRangeSourceWhenPsiElementIsNarrower()
                 ?: source?.qualifiedAmbiguousUseSource()
                 ?: callOrAssignmentSource?.qualifiedAmbiguousUseSource()
                 ?: diagnosticSource
@@ -1844,7 +1940,7 @@ private fun CjSourceElement?.callableReferenceSelectorWithTypeArgumentsSource():
                 else -> null
             } ?: return null
             val typeArgumentList = selector.getTypeArgumentList() ?: return null
-            CjOffsetsOnlySourceElement(
+            selector.toCjPsiSourceElement().withRange(
                 startOffset = selector.textRange.startOffset,
                 endOffset = typeArgumentList.textRange.endOffset,
                 sourceAnchor = this,
@@ -1878,7 +1974,7 @@ private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLight
         child.tokenType == CjNodeTypes.TYPE_ARGUMENT_LIST
     } ?: return null
 
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset = treeStructure.getStartOffset(selector),
         endOffset = treeStructure.getEndOffset(typeArgumentList),
         sourceAnchor = this,
@@ -1905,17 +2001,6 @@ private fun CjSourceElement.qualifiedAmbiguousUseSource(): AbstractCjSourceEleme
     qualifiedAmbiguousUsePsiSource()?.let { return it }
     qualifiedAmbiguousUseLightTreeSource()?.let { return it }
     return qualifiedAmbiguousUseTextSource()
-}
-
-/**
- * PSI fake source 可能用 selector PSI 携带整条 qualified access 的自定义 offsets。
- * 渲染诊断时必须尊重 offsets，否则会退回只标 selector。
- */
-private fun CjSourceElement.offsetRangeSourceWhenPsiElementIsNarrower(): AbstractCjSourceElement {
-    val psi = psi ?: return this
-    val range = psi.textRange
-    if (startOffset == range.startOffset && endOffset == range.endOffset) return this
-    return CjOffsetsOnlySourceElement(startOffset, endOffset, sourceAnchor = this)
 }
 
 /**
@@ -1956,7 +2041,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseLightTreeSource(): AbstractCjSo
         node = parent
     }
     val qualifiedNode = selected ?: return null
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset = treeStructure.getStartOffset(qualifiedNode),
         endOffset = treeStructure.getEndOffset(qualifiedNode),
         sourceAnchor = this,
@@ -1977,7 +2062,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseTextSource(): AbstractCjSourceE
     }
     val qualifiedStart = index + 1
     if (qualifiedStart >= startOffset) return null
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset = qualifiedStart,
         endOffset = endOffset,
         sourceAnchor = this,
@@ -2452,10 +2537,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
         is ConeNoMatchingInvokeOperatorError -> {
             val invokeDiagnosticSource = source ?: diagnosticSource
+            // 保留 PSI/LightTree 锚点，并覆盖定位策略为 DEFAULT 以维持整元素范围：
+            // 原先的 offsets-only 锚点在任何组合策略下都落到 offsets-only 分量并取
+            // `element.startOffset..element.endOffset`，DEFAULT 与之等价。
             CfirErrors.NO_MATCHING_OPERATOR_INVOKE.on(
-                CjOffsetsOnlySourceElement(invokeDiagnosticSource.startOffset, invokeDiagnosticSource.endOffset, sourceAnchor = invokeDiagnosticSource),
+                invokeDiagnosticSource,
                 name.asString(),
                 receiverType,
+                SourceElementPositioningStrategies.DEFAULT,
                 session,
             )
         }
@@ -2463,7 +2552,7 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         is ConeNoMatchOperatorFunctionCallError -> {
             val invokeDiagnosticSource = source ?: diagnosticSource
             CfirErrors.NO_MATCH_OPERATOR_FUNCTION_CALL.on(
-                CjOffsetsOnlySourceElement(invokeDiagnosticSource.startOffset, invokeDiagnosticSource.endOffset, sourceAnchor = invokeDiagnosticSource),
+                invokeDiagnosticSource,
                 session,
             )
         }
@@ -2519,6 +2608,11 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             session,
         )
 
+        is ConePostponedInferenceDiagnostic -> CfirErrors.NEW_INFERENCE_ERROR.on(
+            diagnosticSource,
+            reason,
+            session,
+        )
         is ConeSimpleDiagnostic -> when (kind) {
             DiagnosticKind.CannotInferParameterType -> {
                 if (genericCallDiagnosticSource != null) {
@@ -2752,8 +2846,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             diagnosticSource, expectedType, actualType, because, session,
         )
 
-        is ConeMismatchedTypesMultipleAssignError -> CfirErrors.TYPE_MISMATCH.on(
-            diagnosticSource, expectedType, actualType, false, session,
+        // 该 cone 诊断在 resolve 侧始终被 `ConeUnreportedDuplicateDiagnostic` 包裹（映射层对其
+        // 直接跳过），实际由 `CfirAssignmentTypeMismatchChecker` 专用分支上报；此处仅保持语义一致。
+        is ConeMismatchedTypesMultipleAssignError -> CfirErrors.MISMATCHED_TYPES_MULTIPLE_ASSIGN.on(
+            diagnosticSource, actualType, session,
         )
 
         is ConeParamCountMismatchError -> CfirErrors.PARAM_COUNT_MISMATCH.on(
@@ -3545,24 +3641,39 @@ private fun ConeCangJieType.containsErrorType(): Boolean {
  * 判断实参表达式子树中是否已经包含错误诊断。
  */
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.containsErrorDiagnosticInArgument(): Boolean {
-    if (coneTypeOrNull?.containsErrorType() == true) return true
-    if (this is CfirDiagnosticHolder) return true
-    if (this is CfirResolvable && calleeReference is CfirDiagnosticHolder) return true
+    if (coneTypeOrNull?.containsErrorTypeForSuppressingAmbiguityError() == true) return true
+    if (this is CfirDiagnosticHolder && diagnostic.isSourceErrorDiagnostic()) return true
+    if (this is CfirResolvable && (calleeReference as? CfirDiagnosticHolder)?.diagnostic?.isSourceErrorDiagnostic() == true) return true
 
     var hasErrorDiagnostic = false
     acceptChildren(object : CfirVisitorVoid() {
         override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
             if (hasErrorDiagnostic) return
             when {
-                element is CfirDiagnosticHolder -> hasErrorDiagnostic = true
-                element is CfirResolvable && element.calleeReference is CfirDiagnosticHolder -> hasErrorDiagnostic = true
+                element is CfirDiagnosticHolder && element.diagnostic.isSourceErrorDiagnostic() -> hasErrorDiagnostic = true
+                element is CfirResolvable &&
+                    (element.calleeReference as? CfirDiagnosticHolder)?.diagnostic?.isSourceErrorDiagnostic() == true -> hasErrorDiagnostic = true
                 element is org.cangnova.cangjie.cfir.expressions.CfirExpression &&
-                    element.coneTypeOrNull?.containsErrorType() == true -> hasErrorDiagnostic = true
+                    element.coneTypeOrNull?.containsErrorTypeForSuppressingAmbiguityError() == true -> hasErrorDiagnostic = true
                 else -> element.acceptChildren(this, null)
             }
         }
     }, null)
     return hasErrorDiagnostic
+}
+
+/** postponed 表示候选尚未完成，歧义抑制只消费已经确定的源码错误。 */
+private tailrec fun ConeDiagnostic.isSourceErrorDiagnostic(): Boolean = when (this) {
+    is ConeUnreportedDuplicateDiagnostic -> original.isSourceErrorDiagnostic()
+    else -> this !== ConePostponedInferenceDiagnostic
+}
+
+/** 对位 Kotlin 的歧义抑制检查，继续遍历 postponed 分量以发现真实子树错误。 */
+private fun ConeCangJieType.containsErrorTypeForSuppressingAmbiguityError(): Boolean = contains { component ->
+    when (component) {
+        is ConeErrorType -> component.diagnostic.isSourceErrorDiagnostic()
+        else -> component.isError
+    }
 }
 
 /**
@@ -3725,6 +3836,7 @@ private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(sess
 
     return errors.any { error ->
         val notEnough = error as? NotEnoughInformationForTypeParameter<*> ?: return@any false
+        if (notEnough.belongsToBareEnumArgument(this)) return@any false
         val typeParameterSymbol = notEnough.typeVariable.asDeclaredTypeParameterSymbolOrNull() ?: return@any false
         typeParameterSymbol in declaredTypeParameters
     }
@@ -3815,8 +3927,8 @@ private fun CjSourceElement.toApproxTypeName(): Name {
 /**
  * 构造只覆盖 source 首字符的诊断 source。
  */
-private fun CjSourceElement.firstCharacterDiagnosticSource(): CjOffsetsOnlySourceElement {
-    return CjOffsetsOnlySourceElement(startOffset, (startOffset + 1).coerceAtMost(endOffset), sourceAnchor = this)
+private fun CjSourceElement.firstCharacterDiagnosticSource(): CjSourceElement {
+    return withRange(startOffset, (startOffset + 1).coerceAtMost(endOffset))
 }
 
 /**
@@ -3852,7 +3964,7 @@ private fun CjSourceElement.receiverTokenDiagnosticSource(): AbstractCjSourceEle
     val tokenStart = lexer.tokenStart
     val tokenEnd = lexer.tokenEnd
     if (tokenEnd <= tokenStart) return this
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset + tokenStart,
         (startOffset + tokenEnd).coerceAtMost(endOffset),
         sourceAnchor = this,
@@ -4010,6 +4122,21 @@ private fun <A, B> CjDiagnosticFactory2<A, B>.on(
     b: B,
     session: CfirSession,
 ): CjDiagnostic? = on(source, a, b, null, diagnosticContext(session))
+
+/**
+ * 使用当前 session 上下文创建二参数诊断，并显式覆盖定位策略。
+ *
+ * 覆盖用于"高亮必须取锚点元素整体"的场景：工厂默认策略会把 PSI 锚点收窄到被引用的名称，
+ * 而该诊断在改为保留 PSI 锚点后需要与原先 offsets-only 锚点完全一致的整体范围。
+ */
+@OptIn(InternalDiagnosticFactoryMethod::class)
+private fun <A, B> CjDiagnosticFactory2<A, B>.on(
+    source: AbstractCjSourceElement,
+    a: A,
+    b: B,
+    positioningStrategy: AbstractSourceElementPositioningStrategy?,
+    session: CfirSession,
+): CjDiagnostic? = on(source, a, b, positioningStrategy, diagnosticContext(session))
 
 /**
  * 使用当前 session 上下文创建 unresolved-reference 风格的二参数字符串诊断。

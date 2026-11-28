@@ -1,0 +1,9 @@
+FILE: invalidModifierMutFunc.cj
+    internal? class InvalidMut {
+        init()
+        public mut mut func bump(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }

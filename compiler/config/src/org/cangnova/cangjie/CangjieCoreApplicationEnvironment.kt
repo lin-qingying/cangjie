@@ -24,14 +24,14 @@ class CangjieCoreApplicationEnvironment private constructor(
     }
 
     /**
-     * 创建 IntelliJ mock application，并在单测模式下替换为支持写动作状态跟踪的实现。
+     * 创建 Core application；运行模式保留上游创建顺序，两个模式共享实际平台读写互斥。
      */
     override fun createApplication(parentDisposable: Disposable): MockApplication {
         val application = super.createApplication(parentDisposable)
         return if (application.isUnitTestMode) {
             CangJieCoreUnitTestApplication(parentDisposable)
         } else {
-            application
+            CangJieCoreHeadlessApplication(parentDisposable, unitTestMode = false)
         }
     }
 

@@ -15,4 +15,4 @@ extend<T> A<T> where T <: C2 {
     public func f() {}
 }
 
-<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend<T> A<T> <: I where T <: C1 {}
+<!NEED_MEMBER_IMPLEMENTATION!>extend<T> A<T> <: I where T <: C1 {}<!>

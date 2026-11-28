@@ -23,6 +23,10 @@ abstract class CfirEnumPattern : CfirPattern() {
     abstract override val semanticTypeRef: CfirTypeRef?
     abstract override val constantValues: List<CfirConstantValue>
     abstract override val contextExpression: CfirExpression?
+    /**
+     * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
+     */
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract val constructor: CfirExpression
     abstract val constructorReference: CfirReference?
     abstract val arguments: List<CfirPattern>
@@ -50,6 +54,8 @@ abstract class CfirEnumPattern : CfirPattern() {
     abstract override fun replaceConstantValues(newConstantValues: List<CfirConstantValue>)
 
     abstract override fun replaceContextExpression(newContextExpression: CfirExpression?)
+
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
 
     abstract fun replaceConstructor(newConstructor: CfirExpression)
 

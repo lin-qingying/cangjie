@@ -71,6 +71,8 @@ sealed class CfirFunction : CfirCallableDeclaration(), CfirFunctionBodyOwner, Cf
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
     abstract override fun replaceBody(newBody: CfirBlock?)

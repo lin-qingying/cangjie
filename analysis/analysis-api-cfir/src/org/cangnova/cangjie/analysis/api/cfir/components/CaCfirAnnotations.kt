@@ -146,12 +146,22 @@ private fun CfirLiteralExpression.asPublicLiteralAnnotationValue(
     return CaBaseAnnotationValues.constant(constant, psi, token)
 }
 
+/** 仓颉显式整数后缀：`i8`/`i16`/`i32`/`i64`/`i128`/`u8`…`u128`/`isize`/`usize`。 */
+private val EXPLICIT_INTEGER_SUFFIX = Regex("(i|u)(8|16|32|64|128)|i?size")
+
 private fun publicIntegralConstant(
     value: Any?,
     kind: PrimitiveTypeKind?,
     psi: CjElement?,
 ): CaConstantValue? {
-    val integer = value as? BigInteger ?: return null
+    // 未定型（IDEAL）整数字面量的 value 以源码文本保存，而不是已定型的 BigInteger；
+// 显式后缀字面量（`2i64` / `300u8` …）同样保存带后缀的源码文本。后缀类型已经由
+// [kind] 承载，这里只取数字部分，避免把"未定型"或"带后缀"误报成常量求值未完成。
+val integer = when (val raw = value) {
+    is BigInteger -> raw
+    is String -> raw.replace(EXPLICIT_INTEGER_SUFFIX, "").toBigIntegerOrNull()
+    else -> null
+} ?: return null
     return when (kind) {
         PrimitiveTypeKind.INT8 -> CaBaseAnnotationValues.int8Value(integer.byteValueExact(), psi)
         PrimitiveTypeKind.INT16 -> CaBaseAnnotationValues.int16Value(integer.shortValueExact(), psi)
@@ -183,15 +193,15 @@ private fun publicFloatingConstant(
     }
 }
 
-/** 对象字段来自 const 解释器的实际存储，不能把 ctor 调用实参冒充字段值。 */
+/** CFIR 常量只关联根表达式 PSI; 嵌套值没有独立位置时不继承根 PSI。 */
 private fun CfirConstantValue.asPublicValue(psi: CjElement?, token: CaLifetimeToken): CaAnnotationValue = when (this) {
     is CfirConstantValue.Primitive -> CaBaseAnnotationValues.constant(asPublicConstant(psi), psi, token)
-    is CfirConstantValue.Tuple -> CaBaseAnnotationValues.tupleValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
-    is CfirConstantValue.ArrayValue -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
-    is CfirConstantValue.VArray -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
-    is CfirConstantValue.EnumValue -> CaBaseAnnotationValues.enumValue(constructor.callableId, arguments.map { it.asPublicValue(psi, token) }, psi, token)
+    is CfirConstantValue.Tuple -> CaBaseAnnotationValues.tupleValue(elements.map { it.asPublicValue(null, token) }, psi, token)
+    is CfirConstantValue.ArrayValue -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(null, token) }, psi, token)
+    is CfirConstantValue.VArray -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(null, token) }, psi, token)
+    is CfirConstantValue.EnumValue -> CaBaseAnnotationValues.enumValue(constructor.callableId, arguments.map { it.asPublicValue(null, token) }, psi, token)
     is CfirConstantValue.ObjectValue -> {
-        val fields = fields.map { (symbol, value) -> CaBaseNamedAnnotationValue(symbol.name, value.asPublicValue(psi, token)) }
+        val fields = fields.map { (symbol, value) -> CaBaseNamedAnnotationValue(symbol.name, value.asPublicValue(null, token)) }
         if (type is ConeStructType) CaBaseAnnotationValues.structInstanceValue(type.classIdOrPrimitiveClassId, fields, psi, token)
         else CaBaseAnnotationValues.classInstanceValue(type.classIdOrPrimitiveClassId, fields, psi, token)
     }

@@ -2405,6 +2405,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/generic/primitive_default_implement.cj")
             }
 
+            @TestMetadata("primitive_static_extend_uint8.cj")
+            @Test
+            fun testPrimitiveStaticExtendUint8() {
+                runTest("cfir/analysis-tests/testData/llt/Extend/generic/primitive_static_extend_uint8.cj")
+            }
+
             @TestMetadata("primitive_static_generic_func.cj")
             @Test
             fun testPrimitiveStaticGenericFunc() {
@@ -3107,6 +3113,22 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             @Test
             fun testDuplicateImplBuiltin() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/specialization_duplicate_check/duplicate_impl_builtin.cj")
+            }
+        }
+
+        @TestMetadata("sql_parameter_extend")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class SqlParameterExtend : AbstractCfirPsiLlTDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/sql_parameter_extend")
+            }
+
+            @TestMetadata("main.cj")
+            @Test
+            fun testMain() {
+                runTest("cfir/analysis-tests/testData/llt/Extend/sql_parameter_extend/main.cj")
             }
         }
 
@@ -4877,6 +4899,18 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             @Test
             fun testMatch031() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/match031.cj")
+            }
+
+            @TestMetadata("operator_operand_ideal_user_calls.cj")
+            @Test
+            fun testOperatorOperandIdealUserCalls() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/operator_operand_ideal_user_calls.cj")
+            }
+
+            @TestMetadata("operator_operand_proper_inputs.cj")
+            @Test
+            fun testOperatorOperandProperInputs() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/operator_operand_proper_inputs.cj")
             }
 
             @TestMetadata("or_kind_diagnostics.cj")
@@ -11200,6 +11234,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/enum/enum45_generic_extend_staticFunc.cj")
         }
 
+        @TestMetadata("enum46_stdlib_bare_constructor.cj")
+        @Test
+        fun testEnum46StdlibBareConstructor() {
+            runTest("cfir/analysis-tests/testData/llt/enum/enum46_stdlib_bare_constructor.cj")
+        }
+
         @TestMetadata("enum5_2_test.cj")
         @Test
         fun testEnum52Test() {
@@ -12802,6 +12842,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testRecursiveCtor08() {
             runTest("cfir/analysis-tests/testData/llt/function/recursive_ctor_08.cj")
+        }
+
+        @TestMetadata("static_nonstatic_same_signature.cj")
+        @Test
+        fun testStaticNonstaticSameSignature() {
+            runTest("cfir/analysis-tests/testData/llt/function/static_nonstatic_same_signature.cj")
         }
 
         @TestMetadata("throwable_00.cj")
@@ -17111,6 +17157,40 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         }
     }
 
+    @TestMetadata("library_member_call")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class LibraryMemberCall : AbstractCfirPsiLlTDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/library_member_call")
+        }
+
+        @TestMetadata("library_digest_cross_package.cj")
+        @Test
+        fun testLibraryDigestCrossPackage() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_cross_package.cj")
+        }
+
+        @TestMetadata("library_digest_default_impl.cj")
+        @Test
+        fun testLibraryDigestDefaultImpl() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_default_impl.cj")
+        }
+
+        @TestMetadata("library_digest_invalid_element.cj")
+        @Test
+        fun testLibraryDigestInvalidElement() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_invalid_element.cj")
+        }
+
+        @TestMetadata("library_digest_overload.cj")
+        @Test
+        fun testLibraryDigestOverload() {
+            runTest("cfir/analysis-tests/testData/llt/library_member_call/library_digest_overload.cj")
+        }
+    }
+
     @TestMetadata("linkage")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested
@@ -18114,6 +18194,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testPowInferErr() {
             runTest("cfir/analysis-tests/testData/llt/operator/pow_infer_err.cj")
+        }
+
+        @TestMetadata("pow_inference_isolation.cj")
+        @Test
+        fun testPowInferenceIsolation() {
+            runTest("cfir/analysis-tests/testData/llt/operator/pow_inference_isolation.cj")
         }
 
         @TestMetadata("pow_int64_infer.cj")
@@ -20650,6 +20736,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testErrRecursiveFunc02() {
             runTest("cfir/analysis-tests/testData/llt/type/err_recursive_func_02.cj")
+        }
+
+        @TestMetadata("float_literal_range.cj")
+        @Test
+        fun testFloatLiteralRange() {
+            runTest("cfir/analysis-tests/testData/llt/type/float_literal_range.cj")
         }
 
         @TestMetadata("int64max.cj")

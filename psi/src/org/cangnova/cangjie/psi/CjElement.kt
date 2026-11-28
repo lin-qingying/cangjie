@@ -40,7 +40,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiManager
-import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.StubBasedPsiElement
 import com.intellij.psi.stubs.PsiFileStub
 import com.intellij.psi.stubs.StubElement
@@ -126,30 +125,28 @@ fun <E : CjElement> E.restoreCurrentCjElement(preferredProject: Project? = null)
 }
 
 /**
- * compiled `.cjo`` 可能跨测试 / 跨项目被 session cache 暂时持有。
+ * compiled `.cjo` 可以由跨项目/session 的缓存持有；旧 Project 可能已释放。
  *
- * 这时 `containingFile.project` 指向的往往是已经失效的旧 Project，
- * 继续用它去 `PsiManager.findFile()` 会直接把恢复链断掉，最终让 `symbol.psi` 退化成 `null`。
- *
- * 因此 live file 的查找必须先尝试当前元素自带 project，
- * 再退回平台级 `ProjectLocator`，按 virtual file 找到当前仍然活着的 Project。
+ * 按原优先顺序，在真实 preferred/current Project 中查询 actual virtual file 的当前 PSI；
+ * 只有这些已知项目未恢复出文件时，才消费后续平台 ProjectLocator 候选。
+ * 候选按需产生，禁止全局服务的可用性抢在 owned Project 的恢复之前成为前置条件。
  */
 private fun CjFile.findCurrentCompiledFileForRestore(preferredProject: Project?): CjFile? {
     val virtualFile = virtualFile ?: return null
-    val candidateProjects = LinkedHashSet<Project>()
+    val candidateProjects = sequence<Project> {
+        preferredProject
+            ?.takeUnless(Project::isDisposed)
+            ?.let { yield(it) }
+        project.takeUnless(Project::isDisposed)?.let { yield(it) }
 
-    preferredProject
-        ?.takeUnless(Project::isDisposed)
-        ?.let(candidateProjects::add)
-    project.takeUnless(Project::isDisposed)?.let(candidateProjects::add)
-
-    val projectLocator = ProjectLocator.getInstance()
-    projectLocator.guessProjectForFile(virtualFile)
-        ?.takeUnless(Project::isDisposed)
-        ?.let(candidateProjects::add)
-    ProjectLocator.getPreferredProject(virtualFile)
-        ?.takeUnless(Project::isDisposed)
-        ?.let(candidateProjects::add)
+        val projectLocator = ProjectLocator.getInstance()
+        projectLocator.guessProjectForFile(virtualFile)
+            ?.takeUnless(Project::isDisposed)
+            ?.let { yield(it) }
+        ProjectLocator.getPreferredProject(virtualFile)
+            ?.takeUnless(Project::isDisposed)
+            ?.let { yield(it) }
+    }.distinct()
 
     for (candidateProject in candidateProjects) {
         val liveFile = PsiManager.getInstance(candidateProject).findFile(virtualFile) as? CjFile
@@ -255,6 +252,8 @@ private fun CjFile.findCompiledPsiByStubPath(path: List<CjCompiledStubPathSegmen
  * @param node AST节点
  */
 open class CjElementImpl(node: ASTNode) : ASTWrapperPsiElement(node), CjElement {
+
+    override fun getNavigationElement(): PsiElement = findMacroNavigationElement() ?: super.getNavigationElement()
 
     /**
      * 返回元素的字符串表示

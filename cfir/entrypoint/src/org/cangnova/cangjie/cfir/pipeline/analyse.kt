@@ -261,6 +261,7 @@ fun CfirSession.runCheckers(
         delegate = diagnosticsCollector,
         sourceMapper = { source -> registry?.originSourceForGeneratedSource(source) },
     )
+    diagnosticsReporter.beginDiagnosticCollection()
     for (file in firFiles) {
         withFileAnalysisExceptionWrapping(file) {
             collector.collectDiagnostics(file, diagnosticsReporter)
@@ -542,6 +543,7 @@ fun buildAndResolveCfirAfterConstruction(
         session.register(MacroExpansionRegistry::class, registry)
         return MacroConstructionService.failedOf(pre, registry) to null
     }
+    // 展开耗时由 MacroConstructionService.expand 模板方法统一统计。
     val result = constructionService.expand(
         pre = pre,
         context = context,

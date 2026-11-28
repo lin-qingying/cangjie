@@ -1,0 +1,157 @@
+FILE: memberModifierForms.cj
+    internal? let MEMBER_MOD_LIMIT: R|Int64|
+    internal? var memberModShared: R|Int64|
+    <element: CfirMainFunction>
+    internal? class MemberModClass {
+        internal? static var shared: R|Int64|
+        internal? static let K: R|Int64|
+        internal? func implicit(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        private func priv(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal static func intStatic(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        private static func privStatic(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? static func staticConst(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? unsafe func uns(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? mut prop writable: R|Int64|
+        internal mut prop intWritable: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class MemberModOpen {
+        protected open func hook(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class MemberModOpenImpl <: R|MemberModOpen| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func hook(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface MemberModInterface {
+        public? static func origin(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public? static prop originProp: R|Int64|
+        public? mut mut func bump(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public? mut prop writable: R|Int64|
+        public? unsafe func uns(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public? func tag(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public? func plain(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class MemberModInterfaceImpl <: R|MemberModInterface| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct MemberModStruct {
+        private var hidden: R|Int64|
+        private static var store: R|Int64|
+        public static let ZERO: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public static func make(): R|MemberModStruct| {
+            <element: CfirLazyBlock>
+        }
+        public mut mut func bump(): <implicit> {
+            <element: CfirLazyBlock>
+        }
+        private mut mut func privateBump(): <implicit> {
+            <element: CfirLazyBlock>
+        }
+        public mut prop mutableView: R|Int64|
+        internal? static mut prop mutableStatic: R|Int64|
+    }
+    internal? struct MemberModConstTarget {
+        internal? let limit: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|MemberModConstTarget| {
+        public func plusOne(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum MemberModEnum {
+        A
+        B(R|Int64|)
+        init()
+        internal? func base(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        private func privateTag(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        protected func protTag(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal static func make(v: R|Int64|): R|MemberModEnum| {
+            <element: CfirLazyBlock>
+        }
+        internal? func tag(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? unsafe func uns(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct MemberModTarget {
+        public var v: R|Int64|
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|MemberModTarget| {
+        private mut mut func bumpPrivate(): <implicit> {
+            <element: CfirLazyBlock>
+        }
+        public mut mut func bump(): <implicit> {
+            <element: CfirLazyBlock>
+        }
+        internal mut mut func bumpInternal(): <implicit> {
+            <element: CfirLazyBlock>
+        }
+        public static func make(v: R|Int64|): R|MemberModTarget| {
+            <element: CfirLazyBlock>
+        }
+        internal? static func bareStatic(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        private static func privStatic(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? unsafe func uns(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? static prop staticView: R|Int64|
+    }
+    internal? func memberModTotal(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -45,15 +45,12 @@ fun createDefaultCfirSessionFactoryContext(
     configuration: CompilerConfiguration,
     commonPartInputs: CjmpCommonPartInputs = configuration.requireCjmpCommonPartInputs(),
 ): CfirDefaultSessionFactory.Context {
-    val classpath = configuration.classpathRoots.map { it.path }.filter { it.isNotBlank() }
-    // Common-part CJO 由显式文件路径加载；其父目录不属于通用库搜索根。
+    // 配置决定普通库根；common part 始终由显式文件身份加载。
+    val classpath = configuration.classpathRoots.mapNotNull { root ->
+        root.path.takeIf(String::isNotBlank)?.let { File(it).absoluteFile.normalize() }
+    }.distinct()
     val cjoManager = CjoManager(
-        searchPath = CjoSearchPath { key ->
-            when (key) {
-                "CANGJIE_LIBRARY" -> classpath.takeIf { it.isNotEmpty() }?.joinToString(File.pathSeparator)
-                else -> System.getenv(key)
-            }
-        },
+        searchPath = CjoSearchPath.forRoots(builtinsRoots = emptyList(), libraryRoots = classpath),
         formatVersionPolicy = CjoFormatVersionPolicy.Compilation(configuration.languageVersionSettings),
         canInline = configuration.nativeMetadataExportConfiguration.canInlineImported(
             configuration.enableCompileTest, configuration.cjmpModuleOptLevel.cjoValue.toInt(),

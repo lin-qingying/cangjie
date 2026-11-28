@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceExportSnapshotProvid
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceExportSnapshot
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoFormatVersionPolicy
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext
 import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
@@ -55,14 +56,34 @@ class CfirDeserializedSymbolProvider(
      *
      * CJMP specific 编译中 common part cjo 属于 depends-on 模块（D1：common/specific 双模块），
      * 其声明必须带 depends-on 模块数据，配对查找（`CfirCjmpResolver`）才能按 refinement 依赖识别它；
-     * 为 null 或路径无专属模块时统一归入 [libraryModuleData]。
+     * 必须由原装配方提供路径 owner 服务；缺失服务或无法确认实际来源时明确拒绝物化。
      */
     private val moduleDataProvider: ModuleDataProvider? = null,
+    /**
+     * 解析导入包（跨包 `FullId`）时使用的 `.cjo` 管理器。
+     *
+     * 库模块的 `.cjo` 会在包头依赖表里引用 SDK 的 `std.*` 包等外部包；这些包不在库模块根里，
+     * 但本 provider 也不能因此把它们当作自己的包对外暴露（会与 builtins provider 重复，
+     * 表现为 `Array` / `Byte` 等 `ambiguous use`）。因此包暴露与包依赖解析必须分开：
+     * [cjoManager] 决定本 provider 的包集合，本字段决定反序列化期间导入包能从哪里加载。
+     */
+    private val dependencyCjoManager: CjoManager = cjoManager,
+    private val deserializationMode: CjoDeserializationMode = CjoDeserializationMode.FULL,
+    /** LL 的导入 owner 由实际依赖 session 提供；配置此入口后缺失目标直接拒绝，不借 consumer manager 造副本。 */
+    private val importedPackageContextProvider: CjoPackageContextProvider? = null,
+    binding: CjoDeserializationBinding? = null,
 ) : AbstractCfirDeserializedSymbolProvider(
     session = session,
     cangjieScopeProvider = cangjieScopeProvider,
     libraryModuleData = libraryModuleData,
-), CjoSourceExportSnapshotProvider, CfirImportedSourceGraphProvider {
+), CjoPackageContextProvider, CjoSourceExportSnapshotProvider, CfirImportedSourceGraphProvider {
+
+    /** 装配身份由原 producer 创建一次；所有 mode/owner 派生保持原服务。 */
+    val deserializationBinding: CjoDeserializationBinding = binding ?: CjoDeserializationBinding(
+        session, cjoManager, cangjieScopeProvider, libraryModuleData,
+        checkNotNull(moduleDataProvider) { "Named CJO producer requires its original ModuleDataProvider" },
+        dependencyCjoManager, importedPackageContextProvider,
+    )
 
     override fun sourceGraphOf(function: CfirFunction): CfirSourceGraph? {
         val origin = function.cjoDeclarationOrigin ?: return if (function is org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction)
@@ -113,7 +134,38 @@ class CfirDeserializedSymbolProvider(
 
     /** 当前 provider 暴露的反序列化名称索引。 */
     override val symbolNamesProvider: CfirSymbolNamesProvider =
-        CfirDeserializedSymbolNamesProvider(cjoManager)
+        CfirDeserializedSymbolNamesProvider(cjoManager, deserializationBinding, deserializationMode)
+
+    init {
+        if (binding == null) {
+            dependencyCjoManager.deserializedSymbolLookups.register(deserializationBinding, deserializationMode, this)
+        } else {
+            binding.requireImportedRouterAuthority(importedPackageContextProvider)
+            require(binding.session === session && binding.ownManager === cjoManager &&
+                binding.dependencyManager === dependencyCjoManager && binding.scopeProvider === cangjieScopeProvider &&
+                binding.libraryModuleData === libraryModuleData && binding.moduleDataProvider === moduleDataProvider) {
+                "Derived CJO provider does not match its original binding"
+            }
+        }
+    }
+
+    /** 外部并发查询不能从 provider 的 class cache 观察 annotation 完成中的 header。 */
+    override fun getClassLikeSymbolByClassId(classId: org.cangnova.cangjie.name.ClassId):
+        org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>? {
+        return dependencyCjoManager.deserializedSymbolLookups.materialization().read {
+            super.getClassLikeSymbolByClassId(classId)
+        }
+    }
+
+    override fun getClassLikeSymbolsByClassId(classId: org.cangnova.cangjie.name.ClassId):
+        List<org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*>> =
+        dependencyCjoManager.deserializedSymbolLookups.materialization().read {
+            super.getClassLikeSymbolsByClassId(classId)
+        }
+
+    override fun postComputeClassSymbol(classId: org.cangnova.cangjie.name.ClassId, publish: () -> Unit) {
+        dependencyCjoManager.deserializedSymbolLookups.materialization().publishWhenComplete(publish)
+    }
 
     /** 返回由本 provider 加载指定包时产生的事实。 */
     override fun getCjmpLoadDiagnostics(packageFqName: FqName): List<CfirCjmpLoadDiagnostic> {
@@ -190,61 +242,36 @@ class CfirDeserializedSymbolProvider(
         if (loadedPackages.isEmpty()) return null
 
         return loadedPackages.map { loaded ->
-            val header = loaded.header
-            val moduleData = moduleDataFor(loaded.sourcePath)
-            val context = CfirDeserializationContext(
-                pkg = loaded.pkg,
-                header = header,
-                moduleData = moduleData,
-                cjoManager = cjoManager,
-                sourcePath = loaded.sourcePath,
-                loadedPackage = loaded,
-                initializationDependencyResolver = { targetSourcePath, fullPackageName, ownerDeclarationIndex, declarationIndex ->
-                    deserializeCjoInitializationDependency(
-                        targetSourcePath,
-                        fullPackageName,
-                        ownerDeclarationIndex,
-                        declarationIndex,
-                    )
-                },
-                declarationResolver = { path, fullPackageName, declarationIndex ->
-                    deserializeCjoDeclaration(path, fullPackageName, declarationIndex)
-                },
-                dependencySnapshotResolver = { fullPackageName ->
-                    selectImportedSnapshot(moduleData, fullPackageName)
-                },
-                parameterDefaultsResolver = { path, fullPackageName, indices ->
-                    deserializeCjoParameterDefaults(path, fullPackageName, indices)
-                },
-            )
-            recordLoadGateDiagnostics(packageFqName, loaded.sourcePath, moduleData, header)
+            val context = createPackageContext(loaded, deserializationMode)
+            recordLoadGateDiagnostics(packageFqName, loaded.sourcePath, context.moduleData, loaded.header)
             PackageDeserializers(loaded, context)
         }
     }
 
-    /** 同包多快照按请求输入的真实依赖闭包选择；缺少唯一证据不能按列表顺序取值。 */
-    internal fun selectImportedSnapshot(requestingModule: CfirModuleData, fullPackageName: String): CjoLoadedPackage? {
-        val candidates = cjoManager.loadPackageSnapshots(fullPackageName)
-        if (candidates.size <= 1) return candidates.singleOrNull()
-        val reachable = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirModuleData, Boolean>())
-        val queue = ArrayDeque<CfirModuleData>()
-        queue.add(requestingModule)
-        while (queue.isNotEmpty()) {
-            val module = queue.removeFirst()
-            if (!reachable.add(module)) continue
-            queue.addAll(module.dependencies)
-            queue.addAll(module.refinementDependencies)
+    internal fun selectImportedSnapshot(requestingModule: CfirModuleData, fullPackageName: String): CjoLoadedPackage? =
+        deserializationBinding.selectOwnSnapshot(fullPackageName, requestingModule)
+
+    /** named provider 的暴露面只读自身 roots；跨模块选择只能检查此方法返回的真实资源。 */
+    fun getOwnPackageContext(packageName: String, mode: CjoDeserializationMode): CfirDeserializationContext? =
+        deserializationBinding.getOwnPackageContext(packageName, mode)
+
+    override fun getPackageContext(packageName: String, mode: CjoDeserializationMode): CfirDeserializationContext? =
+        deserializationBinding.getPackageContext(packageName, mode)
+
+    /** actual-file 读取复用本 binding 与 manager，版本/包名仍由 snapshot producer 检查。 */
+    fun getOwnPackageContext(packageName: String, sourcePath: java.nio.file.Path, content: ByteArray, mode: CjoDeserializationMode): CfirDeserializationContext {
+        checkNotNull(deserializationBinding.moduleDataProvider.getModuleData(sourcePath)) {
+            "No module owner for CJO " + sourcePath
         }
-        val selected = candidates.filter { moduleDataFor(it.sourcePath) in reachable }
-        check(selected.size == 1) {
-            "Ambiguous imported CJO snapshots for '$fullPackageName' in module '${requestingModule.name}'"
-        }
-        return selected.single()
+        return createPackageContext(cjoManager.loadPackageSnapshot(packageName, sourcePath, content), mode)
     }
 
-    /** cjo 文件所属模块：专属路径过滤命中的模块优先，否则为库模块。 */
-    private fun moduleDataFor(sourcePath: java.nio.file.Path?): CfirModuleData =
-        moduleDataProvider?.getModuleData(sourcePath) ?: libraryModuleData
+    override fun existingPackageContexts(): Sequence<PackageDeserializers> =
+        dependencyCjoManager.deserializedSymbolLookups.existingContexts(deserializationBinding, deserializationMode)
+            .mapNotNull { context -> context.loadedPackage?.let { PackageDeserializers(it, context) } }
+
+    private fun createPackageContext(loaded: CjoLoadedPackage, mode: CjoDeserializationMode): CfirDeserializationContext =
+        deserializationBinding.contextForSnapshot(loaded, mode)
 
     /**
      * 收集本包触发的 CJMP 加载门诊断。

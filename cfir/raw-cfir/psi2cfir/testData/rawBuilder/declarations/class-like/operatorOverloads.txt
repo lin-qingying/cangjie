@@ -1,0 +1,67 @@
+FILE: operatorOverloads.cj
+    internal? class Vec {
+        init()
+        private let data: R|Array<R|Int64|>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    INT(0)
+                    INT(0)
+                }
+        internal? operator func *operator_get(index: R|Int64|): R|Int64| {
+            RETURN {
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(data) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                    indices:
+                        NAMED_ACCESS(index)
+                }
+            }
+        }
+        internal? operator func *operator_set(index: R|Int64|, value: R|Int64|): R|Unit| {
+            ASSIGNMENT {
+                lValue:
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(data) {
+                                receiver:
+                                    <element: CfirThisReceiverExpression>
+                            }
+                        indices:
+                            NAMED_ACCESS(index)
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+        internal? operator func *operator_plus(other: R|Vec|): R|Vec| {
+            RETURN {
+                FUNCTION_CALL(Vec) {
+                }
+            }
+        }
+        internal? operator func *operator_minus(other: R|Int64|): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(other)
+            }
+        }
+        internal? operator func *operator_unaryMinus(): R|Vec| {
+            RETURN {
+                FUNCTION_CALL(Vec) {
+                }
+            }
+        }
+    }
+    internal? struct Point {
+        init()
+    }
+    extend R|Point| {
+        internal? operator func *operator_plus(other: R|Point|): R|Point| {
+            RETURN {
+                FUNCTION_CALL(Point) {
+                }
+            }
+        }
+    }

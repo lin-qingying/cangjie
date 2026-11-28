@@ -1,0 +1,2 @@
+warning: in the working copy of 'chir/cfir2chir/src/org/cangnova/cangjie/chir/cfir2chir/Cfir2ChirDeclarationStorage.kt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'chir/cfir2chir/src/org/cangnova/cangjie/chir/cfir2chir/Cfir2ChirIds.kt', LF will be replaced by CRLF the next time Git touches it

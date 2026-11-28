@@ -68,6 +68,13 @@ class CangJieParser(project: Project) : PsiParser {
         ): ParsedCangJiePsiFile = parsePsiCompilationFragment(file, seed, targetContext)
 
         /**
+         * PsiBuilder 的 debug 模式会为每个 `mark()` 抓取完整分配栈，并在 `done()`/`drop()` 时做
+         * O(n) 的 marker 平衡检查（整文件 O(n²)）。它只用于定位 unbalanced marker，
+         * 默认必须关闭；需要排查时用 `-Dcangjie.parser.debug=true` 临时打开。
+         */
+        private val PARSER_DEBUG: Boolean = java.lang.Boolean.getBoolean("cangjie.parser.debug")
+
+        /**
          * 优先继承已完成解析的模块来源，已确认的空模块同样是有效结果。
          * 组织名属于官方 prefixPaths；不能把 org::std.foo 的语义包 std.foo 再解释为 std 模块。
          */
@@ -90,25 +97,25 @@ class CangJieParser(project: Project) : PsiParser {
 
         @JvmStatic
         fun parseLambdaExpression(psiBuilder: PsiBuilder, seed: CjParserSeed): ASTNode =
-            parseSeeded(psiBuilder, seed) { with(seed.context) { it.parseLambdaExpression() } }
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.LAMBDA_EXPRESSION) { with(seed.context) { it.parseLambdaExpression() } }
 
         @JvmStatic
         fun parseBlockCodeFragment(psiBuilder: PsiBuilder, seed: CjParserSeed): ASTNode =
-            parseSeeded(psiBuilder, seed, rootResultRequired = true) {
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.BLOCK_CODE_FRAGMENT, rootResultRequired = true) {
                 with(seed.context) { it.parseBlockCodeFragment() }
             }
 
         internal fun parseBlockCodeFragment(psiBuilder: PsiBuilder, seed: CjParserSeed, file: CjCodeFragment?): ASTNode =
-            parseSeeded(psiBuilder, seed, file, rootResultRequired = true) { with(seed.context) { it.parseBlockCodeFragment() } }
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.BLOCK_CODE_FRAGMENT, file = file, rootResultRequired = true) { with(seed.context) { it.parseBlockCodeFragment() } }
 
         @JvmStatic
         fun parseExpressionCodeFragment(psiBuilder: PsiBuilder, seed: CjParserSeed): ASTNode =
-            parseSeeded(psiBuilder, seed, rootResultRequired = true) {
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.EXPRESSION_CODE_FRAGMENT, rootResultRequired = true) {
                 with(seed.context) { it.parseExpressionCodeFragment() }
             }
 
         internal fun parseExpressionCodeFragment(psiBuilder: PsiBuilder, seed: CjParserSeed, file: CjCodeFragment?): ASTNode =
-            parseSeeded(psiBuilder, seed, file, rootResultRequired = true) { with(seed.context) { it.parseExpressionCodeFragment() } }
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.EXPRESSION_CODE_FRAGMENT, file = file, rootResultRequired = true) { with(seed.context) { it.parseExpressionCodeFragment() } }
 
         @JvmStatic
         fun parseMacroCodeFragment(psiBuilder: PsiBuilder, seed: CjParserSeed): ASTNode =
@@ -123,18 +130,18 @@ class CangJieParser(project: Project) : PsiParser {
 
         @JvmStatic
         fun parseTypeCodeFragment(psiBuilder: PsiBuilder, seed: CjParserSeed): ASTNode =
-            parseSeeded(psiBuilder, seed, rootResultRequired = true) {
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.TYPE_CODE_FRAGMENT, rootResultRequired = true) {
                 with(seed.context) { it.parseTypeCodeFragment() }
             }
 
         internal fun parseTypeCodeFragment(psiBuilder: PsiBuilder, seed: CjParserSeed, file: CjCodeFragment?): ASTNode =
-            parseSeeded(psiBuilder, seed, file, rootResultRequired = true) { with(seed.context) { it.parseTypeCodeFragment() } }
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.TYPE_CODE_FRAGMENT, file = file, rootResultRequired = true) { with(seed.context) { it.parseTypeCodeFragment() } }
 
         @NotNull
         @JvmStatic
         fun parse(psiBuilder: PsiBuilder, psiFile: PsiFile): ASTNode {
-            psiBuilder.setDebugMode(true)
             require(psiFile is CjFile) { "A Cangjie file parser requires its actual CjFile input." }
+            psiBuilder.putUserData(ANNOTATION_MODULE_PROVENANCE, psiFile.getUserData(ANNOTATION_MODULE_PROVENANCE))
 
             // 当前文件的 AST 尚未建立，不能在这里读取它自己的 packageFqName。
             // factory 已从外部 context 写入片段 seed；真实 package 由 parser 随后覆盖。
@@ -163,7 +170,7 @@ class CangJieParser(project: Project) : PsiParser {
                 0, context,
             )
             psiFile.putCopyableUserData(ROOT_PARSER_SEED_KEY, seed)
-            return parseSeeded(psiBuilder, seed, psiFile) { cjParsing ->
+            return parseSeeded(psiBuilder, seed, psiFile, timingKind = CangjiePsiParseKind.FILE) { cjParsing ->
                 when (entryKind) {
                     CjSourceKind.MACRO_CALL -> cjParsing.parseMacroExpansionFile()
                     CjSourceKind.SOURCE, CjSourceKind.DECLARATION -> cjParsing.parseFile()
@@ -173,38 +180,44 @@ class CangJieParser(project: Project) : PsiParser {
 
         @JvmStatic
         fun parseBlockExpression(psiBuilder: PsiBuilder, seed: CjParserSeed): ASTNode =
-            parseSeeded(psiBuilder, seed) { with(seed.context) { it.parseBlockExpression(seed.context.diagnosticScopeOwner) } }
+            parseSeeded(psiBuilder, seed, timingKind = CangjiePsiParseKind.BLOCK_EXPRESSION) { with(seed.context) { it.parseBlockExpression(seed.context.diagnosticScopeOwner) } }
 
-        private inline fun parseSeeded(
+        private fun parseSeeded(
             psiBuilder: PsiBuilder,
             seed: CjParserSeed,
             file: CjFile? = null,
             rootResultRequired: Boolean = file != null,
+            timingKind: CangjiePsiParseKind? = null,
             action: (CangJieParsing) -> Unit,
         ): ASTNode {
-            psiBuilder.setDebugMode(true)
-            val ownBuilder = psiBuilder as? CangJiePsiBuilder
-            val inputSource = ownBuilder?.sourceContext ?: seed.sourceContext
-                ?: CjParserSourceContext.complete(psiBuilder.originalText)
-            val lexicalInput = if (ownBuilder?.sourceContext != null) checkNotNull(ownBuilder.lexicalInput)
-                else seed.lexicalInput?.also { require(it.source === inputSource.snapshot) }
-                    ?: CjLexicalSourceInput(inputSource.snapshot)
-            val semantic = SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder, inputSource, lexicalInput)
-            val cjParsing = if (file?.psiCompilationInput == null) {
-                createForTopLevel(semantic, seed.languageModuleName, seed.sourceKind, seed.cjmpContext, seed.settings)
-            } else {
-                CangJieParsing.createForTopLevelNonLazy(semantic, seed.languageModuleName, seed.sourceKind, seed.cjmpContext, seed.settings)
+            fun runParse(): ASTNode {
+                seed.annotationModuleProvenance?.let { psiBuilder.putUserData(ANNOTATION_MODULE_PROVENANCE, it) }
+                if (PARSER_DEBUG) psiBuilder.setDebugMode(true)
+                val ownBuilder = psiBuilder as? CangJiePsiBuilder
+                val inputSource = ownBuilder?.sourceContext ?: seed.sourceContext
+                    ?: CjParserSourceContext.complete(psiBuilder.originalText)
+                val lexicalInput = if (ownBuilder?.sourceContext != null) checkNotNull(ownBuilder.lexicalInput)
+                    else seed.lexicalInput?.also { require(it.source === inputSource.snapshot) }
+                        ?: CjLexicalSourceInput(inputSource.snapshot)
+                val semantic = SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder, inputSource, lexicalInput)
+                val cjParsing = if (file?.psiCompilationInput == null) {
+                    createForTopLevel(semantic, seed.languageModuleName, seed.sourceKind, seed.cjmpContext, seed.settings)
+                } else {
+                    CangJieParsing.createForTopLevelNonLazy(semantic, seed.languageModuleName, seed.sourceKind, seed.cjmpContext, seed.settings)
+                }
+                cjParsing.restoreSeed(seed)
+                action(cjParsing)
+                val result = if (!rootResultRequired) null else CjParsedFileResult(
+                    seed, cjParsing.languageModuleName, cjParsing.parsedFileFacts, cjParsing.macroFragmentInfo,
+                    sourceText = psiBuilder.originalText.toString(),
+                    sourceContext = inputSource,
+                )
+                val finished = psiBuilder.finishCangJieParsing(semantic.macroParsingJournal, result)
+                if (file != null) file.publishParsedFileResult(checkNotNull(finished.fileResult))
+                return finished.tree
             }
-            cjParsing.restoreSeed(seed)
-            action(cjParsing)
-            val result = if (!rootResultRequired) null else CjParsedFileResult(
-                seed, cjParsing.languageModuleName, cjParsing.parsedFileFacts, cjParsing.macroFragmentInfo,
-                sourceText = psiBuilder.originalText.toString(),
-                sourceContext = inputSource,
-            )
-            val finished = psiBuilder.finishCangJieParsing(semantic.macroParsingJournal, result)
-            if (file != null) file.publishParsedFileResult(checkNotNull(finished.fileResult))
-            return finished.tree
+            return if (timingKind == null) runParse()
+            else CangjiePsiParseTimingService.getInstance(psiBuilder.project).measure(timingKind, ::runParse)
         }
     }
 }

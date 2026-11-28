@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.lsp.server
 
+import org.cangnova.cangjie.lsp.analysis.LspCodeActionResolveData
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.eclipse.lsp4j.CodeAction
 import org.eclipse.lsp4j.CodeActionParams
@@ -51,6 +52,7 @@ import org.eclipse.lsp4j.WorkspaceEdit
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either3
 import org.eclipse.lsp4j.services.TextDocumentService
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
@@ -82,14 +84,16 @@ class CangjieTextDocumentService(
      * 方法写入文档存储、通知分析层、刷新项目结构，并在诊断启用时重发打开文档诊断。
      */
     override fun didOpen(params: DidOpenTextDocumentParams) {
-        logger.info("====> didOpen: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.open(params.textDocument)
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didOpen(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didOpen: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.open(params.textDocument)
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didOpen(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**
@@ -98,14 +102,16 @@ class CangjieTextDocumentService(
      * 方法按 LSP 变更列表更新文档快照，并刷新依赖该文档的语义状态。
      */
     override fun didChange(params: DidChangeTextDocumentParams) {
-        logger.info("====> didChange: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.applyChanges(params)
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didChange(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didChange: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.applyChanges(params)
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didChange(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**
@@ -114,15 +120,17 @@ class CangjieTextDocumentService(
      * 方法移除文档快照，向客户端清空该文档诊断，并重发其他打开文档诊断。
      */
     override fun didClose(params: DidCloseTextDocumentParams) {
-        logger.info("====> didClose: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.close(params.textDocument.uri) ?: return
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didClose(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.publishDiagnostics(document, emptyList())
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didClose: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.close(params.textDocument.uri) ?: return@executeNotification
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didClose(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.publishDiagnostics(document, emptyList())
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**
@@ -131,14 +139,16 @@ class CangjieTextDocumentService(
      * 保存不会改变内存文本，但会通知分析层并刷新项目结构相关诊断。
      */
     override fun didSave(params: DidSaveTextDocumentParams) {
-        logger.info("====> didSave: ${params.textDocument.uri}")
-        val document = serverContext.documentStore.get(params.textDocument.uri) ?: return
-        val context = serverContext.requestContext()
-        serverContext.analysisFacade.didSave(context, document)
-        serverContext.refreshProjectStructure()
-        if (serverContext.enabledFeatures.diagnostics) {
-            serverContext.republishOpenDiagnostics()
-        }
+        serverContext.requestExecutor.executeNotification {
+            logger.info("====> didSave: ${params.textDocument.uri}")
+            val document = serverContext.documentStore.get(params.textDocument.uri) ?: return@executeNotification
+            val context = serverContext.requestContext()
+            serverContext.analysisFacade.didSave(context, document)
+            serverContext.refreshProjectStructure()
+            if (serverContext.enabledFeatures.diagnostics) {
+                serverContext.republishOpenDiagnostics()
+            }
+        }.join()
     }
 
     /**
@@ -151,9 +161,39 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.completion) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
-            serverContext.analysisFacade.completion(serverContext.requestContext(), document, params)
-        }.also { it.thenAccept { logger.info("<==== completion") } }
+        /*
+         * 取消要显式传进去：客户端 `$/cancelRequest` 后 LSP4J 对下面的 future 调 `cancel(true)`
+         * （`RemoteEndpoint` 收到取消通知即如此），但工作跑在执行器自己的线程上，
+         * `supplyAsync` 的取消**不中断**正在跑的 supplier。所以这里把取消状态翻给管线，
+         * 让 `ProgressManager.checkCanceled()` 真正能抛出。
+         */
+        val cancellation = CancellableRequest()
+        val future = serverContext.requestExecutor.compute(CangjieLspRequest.COMPLETION) {
+            serverContext.analysisFacade.completion(
+                serverContext.requestContext(cancellation),
+                document,
+                params,
+            )
+        }
+        future.whenComplete { _, failure ->
+            if (failure is CancellationException) cancellation.cancel()
+        }
+        return future.also { it.thenAccept { logger.info("<==== completion") } }
+    }
+
+    /**
+     * 处理补全候选的 resolve 请求（LSP `completionItem/resolve`）。
+     *
+     * 协议上 resolve **不带文档 URI**：候选自己携带定位信息（会话键 + 下标），
+     * 因此这里不查文档存储，直接转发给分析 facade 延迟补齐文档。
+     * 补全能力关闭时原样返回候选——resolve 只是补文档，失败不得让候选消失。
+     */
+    override fun resolveCompletionItem(item: CompletionItem): CompletableFuture<CompletionItem> {
+        logger.info("====> completionItem/resolve: ${item.label}")
+        if (!serverContext.enabledFeatures.completion) return completed(item)
+        return serverContext.requestExecutor.compute(CangjieLspRequest.RESOLVE_COMPLETION_ITEM) {
+            serverContext.analysisFacade.resolveCompletionItem(serverContext.requestContext(), item)
+        }.also { it.thenAccept { logger.info("<==== completionItem/resolve") } }
     }
 
     /**
@@ -166,7 +206,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Hover(emptyList()))
         if (!serverContext.enabledFeatures.hover) return completed(Hover(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.HOVER) {
             serverContext.analysisFacade.hover(serverContext.requestContext(), document, params) ?: Hover(emptyList())
         }.also { it.thenAccept { logger.info("<==== hover") } }
     }
@@ -179,7 +219,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(SignatureHelp(emptyList(), null, null))
         if (!serverContext.enabledFeatures.signatureHelp) return completed(SignatureHelp(emptyList(), null, null))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SIGNATURE_HELP) {
             serverContext.analysisFacade.signatureHelp(serverContext.requestContext(), document, params)
                 ?: SignatureHelp(emptyList(), null, null)
         }.also { it.thenAccept { logger.info("<==== signatureHelp") } }
@@ -193,7 +233,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.declaration) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DECLARATION) {
             serverContext.analysisFacade.declaration(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== declaration") } }
     }
@@ -206,7 +246,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.definition) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DEFINITION) {
             serverContext.analysisFacade.definition(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== definition") } }
     }
@@ -219,7 +259,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.typeDefinition) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.TYPE_DEFINITION) {
             serverContext.analysisFacade.typeDefinition(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== typeDefinition") } }
     }
@@ -232,7 +272,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.implementation) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.IMPLEMENTATION) {
             serverContext.analysisFacade.implementation(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== implementation") } }
     }
@@ -245,7 +285,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.references) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.REFERENCES) {
             serverContext.analysisFacade.references(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== references") } }
     }
@@ -258,7 +298,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.documentHighlight) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DOCUMENT_HIGHLIGHT) {
             serverContext.analysisFacade.documentHighlight(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== documentHighlight") } }
     }
@@ -271,7 +311,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.documentSymbol) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DOCUMENT_SYMBOL) {
             serverContext.analysisFacade.documentSymbols(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== documentSymbol") } }
     }
@@ -284,9 +324,25 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.codeAction) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
-            serverContext.analysisFacade.codeActions(serverContext.requestContext(), document, params)
+        return serverContext.requestExecutor.compute(CangjieLspRequest.CODE_ACTION) {
+            serverContext.codeActions(document, params)
         }.also { it.thenAccept { logger.info("<==== codeAction") } }
+    }
+
+    /**
+     * 处理 code action resolve 请求（LSP `codeAction/resolve`）。
+     *
+     * 通用延迟 CodeAction 可通过 data 中的 URI 找回文档；ModCommand quick fix 已携带 command，
+     * 不依赖此 resolve 阶段。
+     */
+    override fun resolveCodeAction(params: CodeAction): CompletableFuture<CodeAction> {
+        logger.info("====> codeAction/resolve: ${params.title}")
+        if (!serverContext.enabledFeatures.codeAction) return completed(params)
+        val data = LspCodeActionResolveData.parse(params.data) ?: return completed(params)
+        val document = serverContext.documentStore.get(data.documentUri) ?: return completed(params)
+        return serverContext.requestExecutor.compute(CangjieLspRequest.RESOLVE_CODE_ACTION) {
+            serverContext.resolveCodeAction(document, params)
+        }.also { it.thenAccept { logger.info("<==== codeAction/resolve") } }
     }
 
     /**
@@ -297,7 +353,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.formatting) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.FORMATTING) {
             serverContext.analysisFacade.formatting(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== formatting") } }
     }
@@ -320,7 +376,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(WorkspaceEdit())
         if (!serverContext.enabledFeatures.rename) return completed(WorkspaceEdit())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.RENAME) {
             serverContext.analysisFacade.rename(serverContext.requestContext(), document, params) ?: WorkspaceEdit()
         }.also { it.thenAccept { logger.info("<==== rename") } }
     }
@@ -335,7 +391,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyPrepareRenameResult())
         if (!serverContext.enabledFeatures.rename) return completed(emptyPrepareRenameResult())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.PREPARE_RENAME) {
             serverContext.analysisFacade.prepareRename(
                 serverContext.requestContext(),
                 document,
@@ -352,7 +408,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.foldingRange) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.FOLDING_RANGE) {
             serverContext.analysisFacade.foldingRanges(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== foldingRange") } }
     }
@@ -365,7 +421,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.selectionRange) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SELECTION_RANGE) {
             serverContext.analysisFacade.selectionRanges(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== selectionRange") } }
     }
@@ -378,7 +434,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(SemanticTokens(emptyList()))
         if (!serverContext.enabledFeatures.semanticTokens) return completed(SemanticTokens(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SEMANTIC_TOKENS_FULL) {
             serverContext.analysisFacade.semanticTokensFull(serverContext.requestContext(), document, params)
                 ?: SemanticTokens(emptyList())
         }.also { it.thenAccept { logger.info("<==== semanticTokensFull") } }
@@ -392,7 +448,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(SemanticTokens(emptyList()))
         if (!serverContext.enabledFeatures.semanticTokens) return completed(SemanticTokens(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SEMANTIC_TOKENS_RANGE) {
             serverContext.analysisFacade.semanticTokensRange(serverContext.requestContext(), document, params)
                 ?: SemanticTokens(emptyList())
         }.also { it.thenAccept { logger.info("<==== semanticTokensRange") } }
@@ -406,9 +462,24 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.inlayHints) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.INLAY_HINT) {
             serverContext.analysisFacade.inlayHints(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== inlayHint") } }
+    }
+
+    /**
+     * 处理 inlay hint 的 resolve 请求（LSP `inlayHint/resolve`）。
+     *
+     * 协议上 resolve **不带文档 URI**：提示自己携带 `data` 定位信息，
+     * 因此这里不查文档存储，直接转发给分析 facade。能力关闭或实现未就绪时原样返回——
+     * resolve 只是补悬浮提示，失败不得让提示消失。
+     */
+    override fun resolveInlayHint(hint: InlayHint): CompletableFuture<InlayHint> {
+        logger.info("====> inlayHint/resolve")
+        if (!serverContext.enabledFeatures.inlayHints) return completed(hint)
+        return serverContext.requestExecutor.compute(CangjieLspRequest.RESOLVE_INLAY_HINT) {
+            serverContext.analysisFacade.resolveInlayHint(serverContext.requestContext(), hint)
+        }.also { it.thenAccept { logger.info("<==== inlayHint/resolve") } }
     }
 
     /**
@@ -421,7 +492,7 @@ class CangjieTextDocumentService(
         if (!serverContext.enabledFeatures.diagnostics) {
             return completed(DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(emptyList())))
         }
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DIAGNOSTIC) {
             val diagnostics = serverContext.collectDiagnostics(document)
             DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(diagnostics))
         }.also { it.thenAccept { logger.info("<==== diagnostic") } }

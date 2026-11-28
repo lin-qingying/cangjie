@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentSourceMap
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroParserDiagnosticSourceMap
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
@@ -76,7 +76,7 @@ private fun mapMacroParsingReports(
     context: CjParserSourceContext,
     surface: MacroSurface,
     publication: CjParsingDiagnosticPublication,
-    sourceMap: MacroFragmentSourceMap?,
+    sourceMap: MacroParserDiagnosticSourceMap?,
     syntaxFailure: Boolean,
 ): List<CjParsingDiagnosticReport> {
     if (publication.reports.isEmpty()) return emptyList()

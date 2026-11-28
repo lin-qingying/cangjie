@@ -71,7 +71,9 @@ data class CfirCjoDeclarationOrigin(
     }
 }
 
-private object CjoDeclarationPositionKey : CfirDeclarationDataKey()
+private object CjoDeclarationPositionKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.cjoPosition
+}
 
 /** CJO 携带的原始声明位置，供二进制诊断锚点与反序列化候选 note 共用。 */
 var CfirDeclaration.cjoDeclarationPosition: CfirCjoDeclarationPosition?
@@ -88,3 +90,11 @@ private object CjoDeclarationOriginKey : CfirDeclarationDataKey()
 /** 原始 CJO 包路径与声明索引；不从显示名称、源码位置或模块名反推。 */
 var CfirDeclaration.cjoDeclarationOrigin: CfirCjoDeclarationOrigin?
     by CfirDeclarationDataRegistry.data(CjoDeclarationOriginKey)
+
+private object CjoDeclarationIndexKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.cjoDeclarationIndex
+}
+
+/** 当前 CJO 的零基 declaration pool 下标，compiled header 用它定位同一份只读 signature。 */
+var CfirDeclaration.cjoDeclarationIndex: Int?
+    by CfirDeclarationDataRegistry.data(CjoDeclarationIndexKey)

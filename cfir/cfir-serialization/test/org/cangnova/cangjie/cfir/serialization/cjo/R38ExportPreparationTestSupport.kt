@@ -3,6 +3,7 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.explicitUpperBounds
@@ -228,4 +229,16 @@ internal fun r38PhysicalMembers(declaration: CfirDeclaration): List<CfirDeclarat
     is CfirClassLikeDeclaration -> declaration.declarations
     is CfirExtend -> declaration.declarations
     else -> error("Only nominal/extend declarations have member inventories")
+}
+
+/** 包作用域暴露 wire binding；它仍属于同一个 d 索引的实际模式声明根。 */
+internal fun CfirDeserializedSymbolProvider.packageVariableBinding(packageName: String, name: String): CfirPatternBindingVariable {
+    val symbol = getTopLevelCallableSymbols(FqName(packageName), Name.identifier(name)).single()
+    val binding = kotlin.test.assertIs<CfirPatternBindingVariable>(symbol.cfir)
+    val root = kotlin.test.assertIs<CfirPatternVariable>(binding.patternTreeOwner)
+    kotlin.test.assertSame(symbol, binding.symbol)
+    kotlin.test.assertSame(binding, root.pattern.bindingVariables().single())
+    kotlin.test.assertEquals(name, binding.name.asString())
+    kotlin.test.assertEquals(kotlin.test.assertNotNull(root.cjoDeclarationOrigin), binding.cjoDeclarationOrigin)
+    return binding
 }

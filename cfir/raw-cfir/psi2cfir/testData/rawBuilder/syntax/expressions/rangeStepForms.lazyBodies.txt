@@ -1,0 +1,4 @@
+FILE: rangeStepForms.cj
+    internal? func rangeStepForms(xs: R|Array<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

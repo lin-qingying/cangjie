@@ -286,6 +286,7 @@ abstract class AbstractBuilderConfigurator<Element, Implementation, ElementField
          */
         override val builder: IntermediateBuilder<ElementField, Element>
     ) : BuilderConfigurationContext() {
+
         inner class Fields {
 
             /**

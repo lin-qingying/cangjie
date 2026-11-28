@@ -47,9 +47,51 @@ public class CfirIdeNormalAnalysisLibraryBinaryModuleExpectedExpressionTypeTestG
   }
 
   @Test
+  @TestMetadata("assignmentLhs.cj")
+  public void testAssignmentLhs() {
+    run("assignmentLhs.cj");
+  }
+
+  @Test
+  @TestMetadata("assignmentRhs.cj")
+  public void testAssignmentRhs() {
+    run("assignmentRhs.cj");
+  }
+
+  @Test
   @TestMetadata("functionArgument.cj")
   public void testFunctionArgument() {
     run("functionArgument.cj");
+  }
+
+  @Test
+  @TestMetadata("ifBranchWithElse.cj")
+  public void testIfBranchWithElse() {
+    run("ifBranchWithElse.cj");
+  }
+
+  @Test
+  @TestMetadata("ifBranchWithoutElse.cj")
+  public void testIfBranchWithoutElse() {
+    run("ifBranchWithoutElse.cj");
+  }
+
+  @Test
+  @TestMetadata("ifCondition.cj")
+  public void testIfCondition() {
+    run("ifCondition.cj");
+  }
+
+  @Test
+  @TestMetadata("namedParameterDefault.cj")
+  public void testNamedParameterDefault() {
+    run("namedParameterDefault.cj");
+  }
+
+  @Test
+  @TestMetadata("nonLastStatement.cj")
+  public void testNonLastStatement() {
+    run("nonLastStatement.cj");
   }
 
   @Test
@@ -68,5 +110,17 @@ public class CfirIdeNormalAnalysisLibraryBinaryModuleExpectedExpressionTypeTestG
   @TestMetadata("stringArgument.cj")
   public void testStringArgument() {
     run("stringArgument.cj");
+  }
+
+  @Test
+  @TestMetadata("typedInitializer.cj")
+  public void testTypedInitializer() {
+    run("typedInitializer.cj");
+  }
+
+  @Test
+  @TestMetadata("untypedInitializer.cj")
+  public void testUntypedInitializer() {
+    run("untypedInitializer.cj");
   }
 }

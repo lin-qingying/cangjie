@@ -1,0 +1,135 @@
+diff --git a/modules/domain/toolchain/build.gradle.kts b/modules/domain/toolchain/build.gradle.kts
+index d2f966e..a39e228 100644
+--- a/modules/domain/toolchain/build.gradle.kts
++++ b/modules/domain/toolchain/build.gradle.kts
+@@ -19,12 +19,17 @@ kotlin {
+     compilerOptions {
+         jvmTarget.set(JvmTarget.JVM_21)
+         freeCompilerArgs.add("-Xjvm-default=all")
++        freeCompilerArgs.add("-Xskip-prerelease-check")
+     }
+ }
+ 
+ dependencies {
+     implementation(kotlin("stdlib"))
+     implementation(project(":modules:foundation"))
++    // 声明文件种类复用上游公共模型，不能在 SDK 枚举层另写扩展名判断。
++    compileOnly(files(rootProject.projectDir.parentFile.resolve(
++        "common/build/libs/common-${providers.gradleProperty("cangjieIdeVersion").get()}.jar",
++    )))
+ 
+     testImplementation(kotlin("test"))
+ 
+diff --git a/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt b/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt
+index a50c421..47fcb9c 100644
+--- a/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt
++++ b/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt
+@@ -78,7 +78,7 @@ fun getElementTextWithContext(psiElement: PsiElement): String {
+     val containingFile = psiElement.containingFile
+ 
+     // 按优先级查找最近的上下文容器
+-    val context = psiElement.parentOfType("CjImportDirectiveItem")
++    val context = psiElement.parentOfType("CjImportDirective")
+         ?: psiElement.parentOfType("CjPackageDirective")
+         ?: psiElement.parentOfType("CjDeclarationWithBody")
+         ?: psiElement.parentOfType("CjProperty")
+diff --git a/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt b/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt
+index 49a5988..1104174 100644
+--- a/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt
++++ b/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt
+@@ -46,7 +46,6 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+ import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+-import org.cangnova.cangjie.config.ApiVersion
+ import org.cangnova.cangjie.facet.CangJieFacetModificationTracker
+ import org.cangnova.cangjie.facet.CangJieFacetSettingsProvider
+ import org.cangnova.cangjie.projectStructure.getCaModule
+@@ -152,14 +151,12 @@ class LanguageVersionSettingsProvider(private val project: Project) : Disposable
+         val languageVersion = DefaultCangJieLanguageVersionProvider.getInstance()?.getDefaultLanguageVersion()
+             ?: LanguageVersion.LATEST_STABLE
+ 
+-        val apiVersion = ApiVersion.createByLanguageVersion(languageVersion)
+-
+         // 仓颉 facet 当前不承载 analysisFlags / languageFeatures，
+         // 因此项目级设置只合并 IDE 专用分析开关。
+         val analysisFlags: AnalysisFlagMap = getIdeSpecificAnalysisFlags()
+         val languageFeatures: LanguageFeatureMap = emptyMap()
+ 
+-        return LanguageVersionSettingsImpl(languageVersion, apiVersion, analysisFlags, languageFeatures)
++        return LanguageVersionSettingsImpl(languageVersion, analysisFlags, languageFeatures)
+     }
+ 
+     private fun computeModuleLanguageVersionSettings(module: Module): LanguageVersionSettings? {
+diff --git a/product/build.gradle.kts b/product/build.gradle.kts
+index 6a53a82..4f4330d 100644
+--- a/product/build.gradle.kts
++++ b/product/build.gradle.kts
+@@ -42,6 +42,12 @@ val cangjieFrontendRuntimeProjectPaths = listOf(
+     ":code-insight:folding",
+     ":code-insight:highlighting",
+     ":code-insight:refactoring",
++    // 补全：contributor（impl-cfir）+ 契约（contracts）+ 共享实现（impl-shared）。
++    // 三个缺一不可——缺 contracts 时服务接口不存在，缺 impl-shared 时渲染/插入实现缺失，
++    // 缺 impl-cfir 时 contributor 类加载失败（平台会静默跳过该 contributor，补全静默失效）。
++    ":code-insight:completion:contracts",
++    ":code-insight:completion:impl-shared",
++    ":code-insight:completion:impl-cfir",
+     ":analysis:analysis-api",
+     ":analysis:analysis-api-platform-interface",
+     ":analysis:analysis-api-impl-base",
+diff --git a/product/src/main/resources/META-INF/plugin.xml b/product/src/main/resources/META-INF/plugin.xml
+index c3b8f50..814b12d 100644
+--- a/product/src/main/resources/META-INF/plugin.xml
++++ b/product/src/main/resources/META-INF/plugin.xml
+@@ -427,6 +427,18 @@
+              CangJieMacroDeclarationShortNameIndex 在整个代码库中不存在（官方孤儿引用），不可移植 -->
+     </extensions>
+ 
++    <!-- ===== 补全（cangjie-code-insight-completion.xml，主仓库 code-insight/completion） =====
++         本描述符是扁平化的（见文件头：DevEco 6.1 的 descriptor 不支持 xi:include），因此这里
++         **手工内联**上游那唯一一条注册项，而不是 include 上游 XML；上游 XML 同时注明
++         「宿主从 modules/ide/base 的模块描述符 include 本文件，不得复制其中的注册项」，
++         本产品是那条规则的记录在案例外（形态所限）。
++         **不得重复注册**：重复会让每次补全执行两遍——症状只是变慢，不报错。 -->
++    <extensions defaultExtensionNs="com.intellij">
++        <completion.contributor
++            language="CangJie"
++            implementationClass="org.cangnova.cangjie.ide.completion.impl.cfir.CangJieCfirCompletionContributor"/>
++    </extensions>
++
+     <!-- ===== 重命名/重构支持（cangjie-code-insight-refactoring.xml，主仓库 code-insight/refactoring） ===== -->
+     <extensions defaultExtensionNs="com.intellij">
+         <lang.namesValidator
+@@ -840,6 +852,9 @@
+         <projectService
+             serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory"
+             serviceImplementation="org.cangnova.cangjie.ide.base.analysisApiPlatform.CaIdeDeclarationProviderFactory"/>
++        <projectService
++            serviceInterface="org.cangnova.cangjie.psi.CangJiePsiFacade"
++            serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.packages.CangJiePsiFacadeImpl"/>
+         <projectService
+             serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger"
+             serviceImplementation="org.cangnova.cangjie.ide.base.analysisApiPlatform.CaIdeDeclarationProviderMerger"/>
+@@ -1236,4 +1251,4 @@
+             <separator/>
+         </group>
+     </actions>
+-</idea-plugin>
+\ No newline at end of file
++</idea-plugin>
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index c7522a1..4d75f9d 100644
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -39,6 +39,10 @@ if (useSourceFrontend) {
+                 .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-highlighting-for-ide-module"))
+             substitute(module("org.cangnova.cangjie:cangjie-frontend-code-insight-refactoring-for-ide"))
+                 .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-refactoring-for-ide-module"))
++            // 补全（contracts / impl-shared / impl-cfir 三模块的聚合制品）：与其它 code-insight 特性同形，
++            // 源码模式下解析到 -module 项目，非源码模式取 Maven 制品。
++            substitute(module("org.cangnova.cangjie:cangjie-frontend-code-insight-completion-for-ide"))
++                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-completion-for-ide-module"))
+             substitute(module("org.cangnova.cangjie:cangjie-frontend-cfir-for-ide"))
+                 .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module"))
+             substitute(module("org.cangnova.cangjie:cangjie-frontend-analysis-api-for-ide"))

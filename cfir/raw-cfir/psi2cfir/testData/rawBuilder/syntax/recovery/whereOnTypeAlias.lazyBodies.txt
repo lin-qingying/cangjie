@@ -1,0 +1,4 @@
+FILE: whereOnTypeAlias.cj
+    internal? interface Bounded {
+    }
+    internal? typealias BoundedAlias<T> = R|T|

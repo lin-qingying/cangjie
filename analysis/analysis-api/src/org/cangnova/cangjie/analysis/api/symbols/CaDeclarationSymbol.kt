@@ -16,11 +16,16 @@ interface CaDeclarationSymbol : CaSymbol ,CaAnnotatedSymbol{
      */
     val visibility: CaSymbolVisibility
 
+    /** 可见性 modifier 的显式性；`UNKNOWN` 不等同于源码隐式默认。 */
+    val visibilityExplicitness: CaModifierExplicitness
+        get() = if (isVisibilityExplicit) CaModifierExplicitness.EXPLICIT else CaModifierExplicitness.UNKNOWN
+
     /**
      * 可见性是否由源码显式写出。
      *
      * 用于区分"显式 public"与"省略修饰但语义为 public"等场景，方便渲染、迁移与诊断。
      */
+    @Deprecated("Use visibilityExplicitness to distinguish implicit from unknown visibility.")
     val isVisibilityExplicit: Boolean
 
     /**
@@ -30,8 +35,17 @@ interface CaDeclarationSymbol : CaSymbol ,CaAnnotatedSymbol{
      */
     val modality: CaSymbolModality?
 
+    /** modality modifier 的显式性；没有 modality 的声明始终返回 `UNKNOWN`。 */
+    val modalityExplicitness: CaModifierExplicitness
+        get() = when {
+            modality == null -> CaModifierExplicitness.UNKNOWN
+            isModalityExplicit -> CaModifierExplicitness.EXPLICIT
+            else -> CaModifierExplicitness.UNKNOWN
+        }
+
     /**
      * 模态是否由源码显式写出。
      */
+    @Deprecated("Use modalityExplicitness to distinguish implicit from unknown modality.")
     val isModalityExplicit: Boolean
 }

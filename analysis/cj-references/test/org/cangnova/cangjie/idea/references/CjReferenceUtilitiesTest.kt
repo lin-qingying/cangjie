@@ -4,6 +4,15 @@ import com.intellij.mock.MockProject
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.ResolveResult
+import com.intellij.psi.impl.light.LightElement
+import com.intellij.openapi.util.TextRange
+import com.intellij.model.psi.PsiSymbolService
+import org.cangnova.cangjie.lang.CangJieLanguage
+import org.cangnova.cangjie.psi.CangJieResolveResult
+import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjNamedFunction
+import org.junit.jupiter.api.Assertions.assertFalse
 import com.intellij.psi.impl.source.resolve.ResolveCache
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
@@ -145,6 +154,74 @@ class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
         }
 
         assertEquals(setOf(target), reference.unwrappedTargets)
+    }
+
+
+    /** 两个正式结果共享导航位置，但 PSI Symbol/isReferenceTo 必须保持不同声明。 */
+    @Test
+    fun canonicalDeclarationResults(mainFile: CjFile) {
+        val binders = PsiTreeUtil.findChildrenOfType(mainFile, CjBindingPattern::class.java).sortedBy { it.name }
+        val navigation = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java).single()
+        val expressions = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .filter { it.parent !is CjBindingPattern }.takeLast(2)
+        var version = 0
+        var target: PsiElement = binders[0]
+        var resolutions = 0
+        val reference = object : CjSimpleNameReference(expressions[0]) {
+            override fun getImportAlias() = null
+            override fun resolveTargetElements(): Collection<PsiElement> = error("Formal ResolveResult producer must be used")
+            override val resolver = ResolveCache.PolyVariantResolver<CjReference> { _, _ ->
+                resolutions++
+                val capturedVersion = version
+                arrayOf<ResolveResult>(CangJieResolveResult(target, navigation) { capturedVersion == version })
+            }
+        }
+        val service = mainFile.project.getService(CangJieReferenceProvidersService::class.java) as TestReferenceProvidersService
+        service.referenceFactory = { element -> if (element === expressions[0]) arrayOf(reference) else PsiReference.EMPTY_ARRAY }
+
+        assertSame(navigation, reference.resolve())
+        assertEquals(setOf(binders[0]), reference.unwrappedTargets)
+        assertTrue(reference.isReferenceTo(binders[0]))
+        assertFalse(reference.isReferenceTo(binders[1]))
+        assertFalse(reference.isReferenceTo(navigation))
+        val symbolService = PsiSymbolService.getInstance()
+        assertEquals(
+            setOf(binders[0]),
+            expressions[0].ownReferences.flatMap { it.resolveReference() }.mapNotNull(symbolService::extractElementFromSymbol).toSet(),
+        )
+        assertEquals(1, resolutions, "canonical 与 navigation 必须共用平台已有 cache")
+
+        version++
+        target = binders[1]
+        assertSame(navigation, reference.resolve())
+        assertEquals(setOf(binders[1]), reference.unwrappedTargets)
+        assertFalse(reference.isReferenceTo(binders[0]))
+        assertTrue(reference.isReferenceTo(binders[1]))
+        assertEquals(2, resolutions, "失效结果必须经同一 cache/resolver 正式重建")
+    }
+
+    /** 平台已经判为不同对象时，相同文件、范围、运行时类或导航终点都不能制造身份。 */
+    @Test
+    fun identityNeverComesFromRangeOrNavigation(mainFile: CjFile) {
+        val navigation = mainFile.declarations.single()
+        val left = SameRangeElement(mainFile, navigation)
+        val right = SameRangeElement(mainFile, navigation)
+        assertEquals(left.textRange, right.textRange)
+        assertSame(left.navigationElement, right.navigationElement)
+        assertFalse(left.manager.areElementsEquivalent(left, right))
+        assertFalse(CangJieReferenceSearchSupport.matchesResolvedTargets(setOf(left), right))
+        assertFalse(CangJieReferenceSearchSupport.matchesResolvedTargets(setOf(left), navigation))
+    }
+
+    private class SameRangeElement(
+        private val file: CjFile,
+        private val destination: PsiElement,
+    ) : LightElement(file.manager, CangJieLanguage) {
+        override fun getContainingFile(): CjFile = file
+        override fun getTextRange(): TextRange = destination.textRange
+        override fun getNavigationElement(): PsiElement = destination
+        override fun isEquivalentTo(another: PsiElement?): Boolean = this === another
+        override fun toString(): String = "Distinct canonical test element"
     }
 
     /**

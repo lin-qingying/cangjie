@@ -341,6 +341,30 @@ class AbstractCjmpMatcherTest {
     }
 
     @Test
+    fun `body inference retains candidate before checking its inferred return`() {
+        val beforeBody = Declaration("specific pending body", returnType = null, questReturnType = true)
+        val afterBody = beforeBody.copy(returnType = "Box<Error>", questReturnType = false)
+        val common = Declaration("common", returnType = "Box<String>")
+        val context = Context()
+
+        val pendingFacts = AbstractCjmpMatcher.matchSpecificAgainstPotentialCommon(beforeBody, listOf(common), context)
+        assertSame(common, pendingFacts.single().common)
+        assertEquals(CjmpMatchResult.Matched, pendingFacts.single().compatibility)
+
+        val completedFacts = AbstractCjmpMatcher.matchSpecificAgainstPotentialCommon(afterBody, listOf(common), context)
+        assertSame(common, completedFacts.single().common)
+        assertEquals(CjmpMatchResult.TypeNotResolved, completedFacts.single().compatibility)
+    }
+
+    @Test
+    fun `explicit erroneous return type is not deferred`() {
+        val specific = Declaration("specific", returnType = "Error")
+        val common = Declaration("common", returnType = "Int64")
+
+        assertEquals(CjmpMatchResult.TypeNotResolved, AbstractCjmpMatcher.match(specific, common, Context()))
+    }
+
+    @Test
     fun `true specific Quest matches resolved Unit and concrete value returns`() {
         val specific = Declaration("specific", returnType = null, questReturnType = true)
         val commonCandidates = listOf(

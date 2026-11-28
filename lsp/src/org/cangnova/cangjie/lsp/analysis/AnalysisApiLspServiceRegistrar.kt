@@ -8,9 +8,13 @@ import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotation
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexQueryService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
+import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieGlobalOpenTelemetryProvider
+import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
@@ -19,9 +23,16 @@ import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvide
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneAnnotationsResolverFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderMerger
+import org.cangnova.cangjie.analysis.api.standalone.base.index.CaStandaloneSymbolIndexQueryService
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger
 import org.cangnova.cangjie.codeinsight.refactoring.CangJieRefactoringHeadlessRegistrar
+import org.cangnova.cangjie.ide.completion.api.CangJieCompletionServiceRegistry
+import org.cangnova.cangjie.ide.completion.api.statistics.CangJieCompletionStatistics
+import org.cangnova.cangjie.ide.completion.impl.shared.resolve.CompletionDeclarationResolverRegistry
+import org.cangnova.cangjie.ide.completion.impl.shared.statistics.installOtelCompletionStatistics
+import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionServiceProvider
+import org.cangnova.cangjie.ide.core.overrideImplement.CangJieMemberGenerationHeadlessRegistrar
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
 /**
@@ -42,6 +53,31 @@ internal object AnalysisApiLspServiceRegistrar {
     private val analysisPluginXmls = listOf(
         "META-INF/analysis-api/cangjie-analysis-api-cfir.xml",
         "META-INF/analysis-api/cangjie-cj-references.xml",
+        // 统计开关 `cangjie.analysis.statistics` 声明在这里；不加载它，Registry 读到的永远是默认值
+        // false，LSP 侧的请求耗时与 analysis 侧的分析耗时都会静默不上报。
+        "META-INF/analysis-api/cangjie-analysis-api-platform-interface.xml",
+    )
+
+    /**
+     * LSP 运行时需要显式加载的 code-insight 插件 XML。
+     *
+     * 必须先加载 api 描述符（声明 quick-fix registrar 扩展点与 [CangJieQuickFixService] 服务），
+     * 再加载 fixes 描述符（把 registrar 实现挂到扩展点上）——扩展注册要求扩展点已存在。
+     */
+    private val quickFixPluginXmls = listOf(
+        "META-INF/code-insight/cangjie-code-insight-api.xml",
+        "META-INF/code-insight/cangjie-code-insight-fixes.xml",
+    )
+
+    /**
+     * LSP 运行时需要显式加载的 formatter 插件 XML。
+     *
+     * 声明 formatter 依赖的 registry 键（如 `cangjie.formatter.allowTrailingCommaOnCallSite`）。
+     * 不加载它，格式化路径读 registry 会抛 MissingResourceException——
+     * headless 容器没有 IDE 插件描述符，键声明必须在这里显式装载。
+     */
+    private val formatterPluginXmls = listOf(
+        "META-INF/code-insight/cangjie-formatter.xml",
     )
 
     /**
@@ -61,12 +97,26 @@ internal object AnalysisApiLspServiceRegistrar {
             PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
             PluginStructureProvider.registerProjectServices(project, pluginXmlPath)
         }
+        // quick-fix 框架：EP + 服务 + registrar 扩展（见 quickFixPluginXmls 的顺序注释）。
+        // `CangJieQuickFixService` 是惰性构建的：首次取用时才聚合 registrar 列表，
+        // 因此这里的装配顺序只影响扩展注册，不会触发过早构造。
+        quickFixPluginXmls.forEach { pluginXmlPath ->
+            PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
+        }
+        // formatter registry 键（纯 application 级声明，无服务/扩展）。
+        formatterPluginXmls.forEach { pluginXmlPath ->
+            PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
+        }
         CangJieRefactoringHeadlessRegistrar.registerExtensionPoints(application)
         CangJieRefactoringHeadlessRegistrar.registerProjectServices(project)
         PluginStructureProvider.registerApplicationServices(
             application,
             CangJieRefactoringHeadlessRegistrar.PLUGIN_XML_PATH,
         )
+        // 成员生成服务（quick fix 的 headless 应用路径）。
+        CangJieMemberGenerationHeadlessRegistrar.registerProjectServices(project)
+        // ModCommand.psiUpdate 在生成编辑时已查询 POM postprocess aspect，必须在列表动作之前完成装配。
+        org.cangnova.cangjie.formatter.CangJieFormatter.ensureModifiablePsiServicesRegistered(project)
 
         /*
          * LSP 运行时要保留自己的 project structure / modification 服务实现，
@@ -93,6 +143,54 @@ internal object AnalysisApiLspServiceRegistrar {
             CangJiePackageProviderMerger::class.java,
             CangJieStandalonePackageProviderMerger::class.java,
         )
+        /*
+         * 名称索引是补全「未导入声明」的唯一源码侧来源：源码声明的名字必须由宿主索引给出，
+         * 不能让每个符号源自己遍历源码文件（那正是索引要取代的代价）。
+         * LSP 不加载 standalone 的整份描述符，因此这一条必须在这里显式补上，
+         * 否则源码模块的候选会整类缺席。
+         */
+        project.registerService(
+            CaSymbolIndexQueryService::class.java,
+            CaStandaloneSymbolIndexQueryService::class.java,
+        )
+        /*
+         * 补全服务的项目级提供者与注册表。
+         *
+         * 上游补全描述符只声明了 `completion.contributor`，**没有** `<projectService>` 条目；
+         * LSP 走分支 B（不注册 contributor，直接驱动管线），因此这两条必须在这里手工注册。
+         * 缺第一条 `cfirCompletionServiceOrNull` 取到 `null`；缺第二条更隐蔽——
+         * 提供者内部走 `project.service()` 取注册表，异常被 `runCatching` 吞掉后同样得到 `null`，
+         * 表现都是**零候选且不报错**。
+         */
+        project.registerService(
+            CangJieCompletionServiceRegistry::class.java,
+            CangJieCompletionServiceRegistry::class.java,
+        )
+        project.registerService(
+            CfirCompletionServiceProvider::class.java,
+            CfirCompletionServiceProvider::class.java,
+        )
+        /*
+         * 补全统计装配点。
+         *
+         * 服务本身要注册（`completionStatistics(project)` 走 `project.service(...)`）；实现默认是 noop，
+         * 有 OpenTelemetry provider 时才装上 OTel 实现——用户关掉遥测时就不该产生任何信号。
+         */
+        project.registerService(
+            CangJieCompletionStatistics::class.java,
+            CangJieCompletionStatistics::class.java,
+        )
+        /*
+         * 候选声明解析器的装配点：`resolve`（延迟文档）用它按候选身份重进分析恢复符号。
+         * 服务未注册时 `resolve` 只是不填文档（旁路能力不得影响主路径）。
+         */
+        project.registerService(
+            CompletionDeclarationResolverRegistry::class.java,
+            CompletionDeclarationResolverRegistry::class.java,
+        )
+        if (!installOtelCompletionStatistics(project)) {
+            LOG.info("LSP 容器没有 OpenTelemetry provider，补全统计保持 noop")
+        }
 
         project.registerService(
             AnalysisApiLspProjectStructureState::class.java,
@@ -111,6 +209,10 @@ internal object AnalysisApiLspServiceRegistrar {
             AnalysisApiLspModuleProvider::class.java,
         )
         project.registerService(
+            CangJieModuleDependentsProvider::class.java,
+            AnalysisApiLspModuleDependentsProvider::class.java,
+        )
+        project.registerService(
             CaModificationTracker::class.java,
             AnalysisApiLspModificationTracker::class.java,
         )
@@ -126,5 +228,33 @@ internal object AnalysisApiLspServiceRegistrar {
             CaPlatformSettings::class.java,
             AnalysisApiLspPlatformSettings::class.java,
         )
+
+        registerStatisticsBackend(project)
     }
+
+    /**
+     * 注册统计后端服务。
+     *
+     * `cangjie-analysis-api-cfir.xml` 只声明了 `CaStatisticsService`，没有声明
+     * `CangJieOpenTelemetryProvider`——IDE 插件在自己的描述符里注册它。LSP 没有插件描述符，
+     * 必须在这里补上，否则 `LLStatisticsService.getInstance` 永远返回 null，整个统计链路
+     * （含 analysis 侧的所有域）在 LSP 里都是空的。
+     *
+     * 注册的是全局 provider：宿主若已把 OpenTelemetry SDK 初始化为全局实例就直接复用；
+     * 未初始化时 `GlobalOpenTelemetry` 退化为 noop，统计调用不产生上报也不会抛错。
+     */
+    @OptIn(CaPlatformInterface::class)
+    private fun registerStatisticsBackend(project: MockProject) {
+        if (CangJieOpenTelemetryProvider.getInstance(project) == null) {
+            project.registerService(
+                CangJieOpenTelemetryProvider::class.java,
+                CangJieGlobalOpenTelemetryProvider(),
+            )
+        }
+    }
+    /**
+     * 注册器日志：记录统计装配这类「静默生效/静默不生效」的装配结果。
+     */
+    private val LOG: java.util.logging.Logger =
+        java.util.logging.Logger.getLogger("org.cangnova.cangjie.lsp.analysis.registrar")
 }

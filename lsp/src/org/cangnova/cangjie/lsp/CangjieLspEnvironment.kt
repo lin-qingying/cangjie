@@ -8,7 +8,10 @@ import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import com.intellij.lang.LanguageParserDefinitions
 import org.cangnova.cangjie.lang.CangJieLanguage
+import org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticExpansionEnvironment
 import org.cangnova.cangjie.lsp.analysis.AnalysisApiLspServiceRegistrar
+import org.cangnova.cangjie.lsp.analysis.LspMacroExpansionOptions
+import org.cangnova.cangjie.lsp.analysis.LspMacroSemanticExpansionEnvironment
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -66,15 +69,25 @@ class CangjieLspEnvironment private constructor(
         /**
          * 创建完整的 LSP 运行环境。
          *
-         * 该方法负责建立根 disposable、核心环境、仓颉 PSI 基础设施，并注册 Analysis API 所需服务。
+         * 该方法负责建立根 disposable、核心环境、仓颉 PSI 基础设施，并注册 Analysis API 所需服务；
+         * 提供 [macroExpansion] 时还会注册宏语义展开环境（未提供则保持无宏展开）。
          */
         fun create(
             mode: CangJieCoreEnvironmentMode = CangJieCoreEnvironmentMode.Production,
+            macroExpansion: LspMacroExpansionOptions? = null,
         ): CangjieLspEnvironment {
             val rootDisposable = Disposer.newDisposable("cangjie-lsp-root")
             val coreEnvironment = CangJieCoreEnvironment.create(rootDisposable, mode)
             ensureCangjiePsiInfrastructure()
-            return CangjieLspEnvironment(rootDisposable, coreEnvironment).also(AnalysisApiLspServiceRegistrar::register)
+            return CangjieLspEnvironment(rootDisposable, coreEnvironment).also { environment ->
+                AnalysisApiLspServiceRegistrar.register(environment)
+                if (macroExpansion != null) {
+                    MacroSemanticExpansionEnvironment.registerExtension(
+                        environment.project,
+                        LspMacroSemanticExpansionEnvironment(environment.project, macroExpansion),
+                    )
+                }
+            }
         }
 
         /**

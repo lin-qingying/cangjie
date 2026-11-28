@@ -1,0 +1,2 @@
+FILE: mainWithArgs.cj
+    <element: CfirMainFunction>

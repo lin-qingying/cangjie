@@ -1,0 +1,10 @@
+FILE: privateInitCalledOutside.cj
+    internal? class C {
+        internal? var v: R|Int64|
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func privateInitCalledOutside(): R|C| {
+        <element: CfirLazyBlock>
+    }

@@ -57,6 +57,10 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
     open fun visitFieldInitializerEnterNode(node: FieldInitializerEnterNode, data: D): R = visitNode(node, data)
     /** 访问字段初始化出口节点。 */
     open fun visitFieldInitializerExitNode(node: FieldInitializerExitNode, data: D): R = visitNode(node, data)
+    /** 访问资源 initializer 执行根入口。 */
+    open fun visitResourceInitializerEnterNode(node: ResourceInitializerEnterNode, data: D): R = visitNode(node, data)
+    /** 访问资源 initializer 执行根出口。 */
+    open fun visitResourceInitializerExitNode(node: ResourceInitializerExitNode, data: D): R = visitNode(node, data)
 
     /** 访问 spawn 表达式节点。 */
     open fun visitSpawnExpressionNode(node: SpawnExpressionNode, data: D): R = visitNode(node, data)
@@ -97,8 +101,12 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
 
     /** 访问 if 入口节点。 */
     open fun visitIfEnterNode(node: IfEnterNode, data: D): R = visitNode(node, data)
-
+    /** 访问 if 条件分叉。 */
+    open fun visitIfConditionExitNode(node: IfConditionExitNode, data: D): R = visitNode(node, data)
+    /** 访问 if 的独立分支入口。 */
     open fun visitIfBranchResultEnterNode(node: IfBranchResultEnterNode, data: D): R = visitNode(node, data)
+    /** 访问 if 的独立分支出口。 */
+    open fun visitIfBranchResultExitNode(node: IfBranchResultExitNode, data: D): R = visitNode(node, data)
     /** 访问 if 出口节点。 */
     open fun visitIfExitNode(node: IfExitNode, data: D): R = visitNode(node, data)
 
@@ -151,6 +159,16 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
     /** 访问 catch 子句入口节点。 */
     open fun visitCatchClauseEnterNode(node: CatchClauseEnterNode, data: D): R = visitNode(node, data)
     /** 访问 catch 子句出口节点。 */
+    open fun visitCompletionOverrideNode(node: CompletionOverrideNode, data: D): R = visitNode(node, data)
+
+    open fun visitExceptionExitNode(node: ExceptionExitNode, data: D): R = visitNode(node, data)
+
+    open fun visitExceptionTransferNode(node: ExceptionTransferNode, data: D): R = visitNode(node, data)
+
+    open fun visitExceptionDispatchNode(node: ExceptionDispatchNode, data: D): R = visitNode(node, data)
+
+    open fun visitResourceCleanupNode(node: ResourceCleanupNode, data: D): R = visitNode(node, data)
+
     open fun visitCatchClauseExitNode(node: CatchClauseExitNode, data: D): R = visitNode(node, data)
     /** 访问 handle 子句入口节点。 */
     open fun visitHandleClauseEnterNode(node: HandleClauseEnterNode, data: D): R = visitNode(node, data)

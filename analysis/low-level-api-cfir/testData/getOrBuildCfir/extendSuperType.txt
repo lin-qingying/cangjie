@@ -1,0 +1,19 @@
+CJ element: CjTypeReference
+CJ element text:
+Host
+CFIR element: CfirResolvedTypeRefImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+R|Host|
+
+CFIR FILE:
+FILE: extendSuperType.cj
+    package lowlevel.getorbuild
+    internal? interface Marker {
+    }
+    extend R|Host| <: R|Marker| {
+        internal? func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }

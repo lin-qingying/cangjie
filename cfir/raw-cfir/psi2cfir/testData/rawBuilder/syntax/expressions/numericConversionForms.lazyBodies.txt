@@ -1,0 +1,4 @@
+FILE: numericConversionForms.cj
+    internal? func numericConversionForms(i: R|Int64|, u: R|UInt8|, fl: R|Float64|, r: R|Rune|, s: R|String|, b: R|Bool|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

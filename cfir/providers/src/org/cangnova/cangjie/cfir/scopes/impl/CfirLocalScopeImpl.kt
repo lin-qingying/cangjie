@@ -5,6 +5,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -62,6 +63,14 @@ class CfirLocalScope private constructor(
      * 当前局部 scope 所属的 use-site session。
      */
     val useSiteSession: CfirSession,
+    /**
+     * 该 scope 是否是代码片段自身的顶层声明作用域。
+     *
+     * 片段作用域在查找行为上与普通局部作用域一致（都是 `CfirLocalScope`），
+     * 但对上层必须可区分：公开层要把它投影成 `CaScopeKind.CODE_FRAGMENT_MEMBER_SCOPE`，
+     * 否则片段顶层声明与片段内的 `let` 局部会被算成同一层，遮蔽次序就错了。
+     */
+    val isCodeFragmentMemberScope: Boolean = false,
 ) : CfirContainingNamesAwareScope() {
     /** 访问实际持有的局部声明，不查询非局部 provider 或触发新的语义解析。 */
     fun acceptSourceChildren(visitor: CfirSourceVisitor) {
@@ -69,6 +78,23 @@ class CfirLocalScope private constructor(
         properties.values.forEach { visitor.visitElement(it.cfir) }
         functions.keys.forEach { name -> functions[name].forEach { visitor.visitElement(it.cfir) } }
         classLikeSymbols.values.forEach { visitor.visitElement(it.cfir) }
+    }
+
+    /**
+     * 创建代码片段自身的顶层声明作用域。
+     */
+    companion object {
+        /**
+         * 创建空片段成员作用域。
+         */
+        fun forCodeFragment(session: CfirSession): CfirLocalScope = CfirLocalScope(
+            persistentMapOf(),
+            persistentMapOf(),
+            PersistentMultimap(),
+            persistentMapOf(),
+            session,
+            isCodeFragmentMemberScope = true,
+        )
     }
 
     /**
@@ -88,7 +114,8 @@ class CfirLocalScope private constructor(
     fun storeClassOrTypeAlias(classLikeDeclaration: CfirClassLikeDeclaration, session: CfirSession): CfirLocalScope {
         val name = classLikeDeclaration.name
         return CfirLocalScope(
-            variables, properties, functions, classLikeSymbols.put(name, classLikeDeclaration.symbol), session
+            variables, properties, functions, classLikeSymbols.put(name, classLikeDeclaration.symbol), session,
+            isCodeFragmentMemberScope,
         )
     }
 
@@ -97,7 +124,8 @@ class CfirLocalScope private constructor(
      */
     fun storeFunction(function: CfirNamedFunction, session: CfirSession): CfirLocalScope {
         return CfirLocalScope(
-            variables, properties, functions.put(function.name, function.symbol), classLikeSymbols, session
+            variables, properties, functions.put(function.name, function.symbol), classLikeSymbols, session,
+            isCodeFragmentMemberScope,
         )
     }
 
@@ -107,6 +135,7 @@ class CfirLocalScope private constructor(
     fun storeVariable(variable: CfirVariable, session: CfirSession): CfirLocalScope {
         val name = when (variable) {
             is CfirFieldVariable -> variable.name
+            is CfirResourceVariable -> variable.name
             is CfirPatternBindingVariable -> variable.name
             // PatternVariable 本身不直接入作用域，
             // 它内部的 PatternBindingVariable 才是真正的绑定名
@@ -117,7 +146,8 @@ class CfirLocalScope private constructor(
             is CfirValueParameter -> variable.name
         }
         return CfirLocalScope(
-            variables.put(name, variable.symbol), properties, functions, classLikeSymbols, session
+            variables.put(name, variable.symbol), properties, functions, classLikeSymbols, session,
+            isCodeFragmentMemberScope,
         )
     }
 
@@ -126,7 +156,8 @@ class CfirLocalScope private constructor(
      */
     fun storeProperty(property: CfirProperty, session: CfirSession): CfirLocalScope {
         return CfirLocalScope(
-            variables, properties.put(property.name, property.symbol), functions, classLikeSymbols, session
+            variables, properties.put(property.name, property.symbol), functions, classLikeSymbols, session,
+            isCodeFragmentMemberScope,
         )
     }
 

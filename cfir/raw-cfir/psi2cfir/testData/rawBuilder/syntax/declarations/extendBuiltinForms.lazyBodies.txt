@@ -1,0 +1,42 @@
+FILE: extendBuiltinForms.cj
+    internal? struct P {
+        internal? var x: R|Int64|
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        public func d(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|P| {
+        public operator func *operator_plus(o: R|P|): R|P| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func zero(): R|P| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|Int64| {
+        public func twice(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|String| {
+        public func shout(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class G<T> {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend<T> R|G<R|T|>| {
+        public func g(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func extendBuiltinForms(p: R|P|, n: R|Int64|, s: R|String|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

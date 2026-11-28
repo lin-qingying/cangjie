@@ -1,0 +1,14 @@
+FILE: doWhileMissingCondition.cj
+    internal? func doWhileWithoutCondition(): R|Unit| {
+        DO_WHILE {
+            condition:
+                ERROR_EXPR(Missing do-while condition)
+            body:
+                local? let a: <implicit> = ...
+                    initializer:
+                        INT(1)
+                local? let _: <implicit> = ...
+                    initializer:
+                        NAMED_ACCESS(a)
+        }
+    }

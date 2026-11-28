@@ -1,0 +1,33 @@
+FILE: stepFunctionCall.cj
+    internal? func stepFunctionCall(): R|Int64| {
+        local? var t: <implicit> = ...
+            initializer:
+                INT(0)
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                FUNCTION_CALL(step) {
+                    RANGE(..) {
+                        INT(1)
+                        INT(10)
+                    }
+                    INT(2)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                TUPLE_LITERAL {
+                    RANGE(..) {
+                        INT(1)
+                        INT(10)
+                    }
+                    INT(2)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            NAMED_ACCESS(t)
+        }
+    }

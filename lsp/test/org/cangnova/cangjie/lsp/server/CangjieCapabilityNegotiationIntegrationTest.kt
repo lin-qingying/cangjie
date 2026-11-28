@@ -84,7 +84,10 @@ class CangjieCapabilityNegotiationIntegrationTest : AbstractLspIntegrationTest()
             assertTrue(capabilities.foldingRangeProvider.isLeft)
             assertTrue(capabilities.selectionRangeProvider.isLeft)
             assertNotNull(capabilities.semanticTokensProvider)
-            assertTrue(capabilities.inlayHintProvider.isLeft)
+            // inlay hint 走注册选项而不是纯布尔：只有 InlayHintRegistrationOptions
+            // 能携带 resolveProvider（lsp4j 1.0.0 的字段类型是 Either）。
+            assertTrue(capabilities.inlayHintProvider.isRight)
+            assertTrue(capabilities.inlayHintProvider.right.resolveProvider)
             assertNotNull(capabilities.diagnosticProvider)
             assertEquals(listOf("cangjie.reindex"), capabilities.executeCommandProvider.commands)
             assertTrue(capabilities.workspace.workspaceFolders.supported)

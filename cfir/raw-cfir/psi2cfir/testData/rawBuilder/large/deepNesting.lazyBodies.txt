@@ -1,0 +1,4 @@
+FILE: deepNesting.cj
+    internal? func deepNesting(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

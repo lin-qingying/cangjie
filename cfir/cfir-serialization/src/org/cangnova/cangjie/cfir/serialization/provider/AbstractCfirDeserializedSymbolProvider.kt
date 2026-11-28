@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationCo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.CallableId
@@ -56,10 +57,16 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     protected val cangjieScopeProvider: CfirCangJieScopeProvider,
     /** 库声明归属的模块数据。 */
     protected val libraryModuleData: CfirModuleData,
-) : CfirSymbolProvider(session) {
+) : CfirSymbolProvider(session), CfirClassLikeSymbolLookup {
 
     /** 反序列化包的顶层名称索引提供器。 */
     abstract override val symbolNamesProvider: CfirSymbolNamesProvider
+
+    /**
+     * 反序列化声明全部来自 `.cjo`，本身就是库侧视图，不需要另建一份。
+     */
+    final override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = symbolNamesProvider
 
     /** 完整包名到包级反序列化器持有对象的缓存。 */
     private val contextCache = ConcurrentHashMap<String, List<PackageDeserializers>>()
@@ -73,8 +80,11 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     /** 已确认不存在的 classId 集合。 */
     private val missingClasses = ConcurrentHashMap.newKeySet<ClassId>()
 
+    /** canonical context 同时包含 binding/module/source/mode；同名 target 不能跨图复用。 */
+    private data class CallableContextKey(val context: CfirDeserializationContext, val callableId: CallableId)
+
     /** 顶层 callableId 到 callable symbol 列表的统一缓存。 */
-    private val callableCache = ConcurrentHashMap<CallableId, List<CfirCallableSymbol<*>>>()
+    private val callableCache = ConcurrentHashMap<CallableContextKey, List<CfirCallableSymbol<*>>>()
     /** 顶层函数 callableId 到函数 symbol 列表的缓存。 */
     private val functionCache = ConcurrentHashMap<CallableId, List<CfirNamedFunctionSymbol>>()
     /** 顶层属性 callableId 到属性 symbol 列表的缓存。 */
@@ -82,7 +92,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     /** 包名到顶层 extend 声明列表的缓存。 */
     private val extendCache = ConcurrentHashMap<FqName, List<CfirExtend>>()
     /** enum constructor 提升为顶层 callable 查询结果时使用的缓存。 */
-    private val promotedEnumCallableCache = ConcurrentHashMap<CallableId, List<CfirCallableSymbol<*>>>()
+    private val promotedEnumCallableCache = ConcurrentHashMap<CallableContextKey, List<CfirCallableSymbol<*>>>()
 
     /** 反序列化 scope 初始化使用的共享 scope session。 */
     private val scopeSession = ScopeSession()
@@ -92,13 +102,16 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     /** 加载指定完整包名的包级 deserializer；加载失败返回 null。 */
     protected abstract fun loadPackageDeserializers(packageFqName: String): List<PackageDeserializers>?
 
+    /** 与 symbol header 的 postCompute 完成事务共同发布 class cache。 */
+    protected abstract fun postComputeClassSymbol(classId: ClassId, publish: () -> Unit)
+
     /** 按 classId 查询库 class-like symbol，必要时递归跟随 public import re-export。 */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         classCache[classId]?.let { return it }
         val loaded = getClassLikeSymbolsByClassId(classId).firstOrNull() ?: return null
         missingClasses.remove(classId)
-        classCache.putIfAbsent(classId, loaded)
-        return classCache[classId] ?: loaded
+        postComputeClassSymbol(classId) { classCache.putIfAbsent(classId, loaded) }
+        return loaded
     }
 
     /** 多 parent matching 需要保留同一 ClassId 下各输入 parent 的原始 classifier。 */
@@ -111,8 +124,8 @@ abstract class AbstractCfirDeserializedSymbolProvider(
             return emptyList()
         }
         missingClasses.remove(classId)
-        classSymbolsCache.putIfAbsent(classId, loaded)
-        return classSymbolsCache[classId] ?: loaded
+        postComputeClassSymbol(classId) { classSymbolsCache.putIfAbsent(classId, loaded) }
+        return loaded
     }
 
     @CfirSymbolProviderInternals
@@ -167,9 +180,10 @@ abstract class AbstractCfirDeserializedSymbolProvider(
 
         val deserializers = getOrCreateDeserializers(packageFqName.asString()) ?: return emptyList()
         val loaded = deserializers.flatMap { packageDeserializers ->
-            val declDeserializer = packageDeserializers.createDeclDeserializer()
-            packageDeserializers.header.topLevelExtendIndices.mapNotNull { declIndex ->
-                declDeserializer.deserializeDecl(declIndex) as? CfirExtend
+            val indices = packageDeserializers.header.topLevelExtendIndices
+            val reader = packageDeserializers.createDeclDeserializer()
+            session.cjoDeserializationTimingObserverOrNull.measureCjoDeclaration(indices.size) {
+                indices.mapNotNull { reader.deserializeDecl(it) as? CfirExtend }
             }
         }
 
@@ -186,6 +200,20 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         contextCache[fullPkgName]?.let { return it }
         if (fullPkgName in missingContexts) return null
 
+        // Timing starts after the cache guard: a cache hit costs no loading, and counting it
+        // dilutes "package load duration" into "symbol query duration". The first miss on a search
+        // root also builds that root .cjo directory index (reading every .cjo header); that cost
+        // lands in the first package-load sample, which is where it belongs - it is part of
+        // "opening this library".
+        return session.cjoDeserializationTimingObserverOrNull.measureCjoPackageLoad {
+            loadDeserializersAndInitializeScope(fullPkgName)
+        }
+    }
+
+    /**
+     * The cache-miss load path of [getOrCreateDeserializers]; called inside its timing wrapper.
+     */
+    private fun loadDeserializersAndInitializeScope(fullPkgName: String): List<PackageDeserializers>? {
         val created = loadPackageDeserializers(fullPkgName)
         if (created.isNullOrEmpty()) {
             missingContexts += fullPkgName
@@ -250,13 +278,16 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     protected fun importedSourceGraph(function: CfirFunction, fullPackageName: String): CfirSourceGraph? {
         val origin = function.cjoDeclarationOrigin ?: return null
         val path = java.nio.file.Path.of(origin.packagePath).toAbsolutePath().normalize()
-        val candidates = getOrCreateDeserializers(fullPackageName).orEmpty()
-        val selected = candidates.singleOrNull { it.sourcePath == path } ?: return null
+        val selected = existingPackageContexts().singleOrNull { it.sourcePath == path && it.header.fullPkgName == fullPackageName }
+            ?: return null
         return selected.sourceGraphOf(function, origin.declarationIndex)
     }
 
+    protected open fun existingPackageContexts(): Sequence<PackageDeserializers> =
+        contextCache.values.asSequence().flatten()
+
     private fun contentContextOf(declaration: CfirDeclaration): PackageDeserializers? =
-        contextCache.values.asSequence().flatten().singleOrNull { it.ownsDeclaration(declaration) }
+        existingPackageContexts().singleOrNull { it.ownsDeclaration(declaration) }
 
     protected fun importedSourceHeader(function: CfirCallableDeclaration): CfirSourceImportedFunctionHeader? {
         val selected = contentContextOf(function) ?: return null
@@ -296,8 +327,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     /** 已归属声明、snapshot和context三者同代；只用路径定位候选，再验证实际装载身份。 */
     protected fun importedPackageSourceGraph(declaration: CfirDeclaration, snapshot: org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage): CfirSourceGraph? {
         val origin = declaration.cjoDeclarationOrigin ?: return null
-        val selected = getOrCreateDeserializers(snapshot.header.fullPkgName).orEmpty()
-            .singleOrNull { it.snapshot === snapshot } ?: return null
+        val selected = existingPackageContexts().singleOrNull { it.snapshot === snapshot } ?: return null
         return selected.packageSourceGraphOf(declaration, origin.declarationIndex)
     }
 
@@ -307,8 +337,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         includeContent: Boolean,
     ): org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceExportSnapshot? {
         val origin = declaration.cjoDeclarationOrigin ?: return null
-        val selected = getOrCreateDeserializers(snapshot.header.fullPkgName).orEmpty()
-            .singleOrNull { it.snapshot === snapshot } ?: return null
+        val selected = existingPackageContexts().singleOrNull { it.snapshot === snapshot } ?: return null
         return selected.sourceExportSnapshotOf(declaration, origin.declarationIndex, includeContent)
     }
 
@@ -319,7 +348,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     /** 原 request 联合 source/binder/session 准入；不以同包名或仅 source 字节认领。 */
     protected fun importedDefinitionExportSnapshot(request: org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotRequest,
         completedOnly: Boolean): org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotResult {
-        val owners = contextCache.values.asSequence().flatten().filter { it.matchesDefinitionSource(request) }.toList()
+        val owners = existingPackageContexts().filter { it.matchesDefinitionSource(request) }.toList()
         check(owners.size <= 1) { "A definition request resolves to multiple actual contexts" }
         val owner = owners.singleOrNull() ?: return org.cangnova.cangjie.cfir.serialization.cjo.CjoDefinitionSnapshotResult.NotOwner
         return if (completedOnly) owner.completedDefinitionExportSnapshotOf(request) else owner.definitionExportSnapshotOf(request)
@@ -345,173 +374,112 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     private fun loadTopLevelClassSymbolsRecursively(
         classId: ClassId,
         visitingPackages: LinkedHashSet<FqName>,
+        targetContext: CfirDeserializationContext? = null,
     ): List<CfirClassLikeSymbol<*>> {
-        val direct = loadDirectTopLevelClassSymbols(classId)
-        if (!visitingPackages.add(classId.packageFqName)) return direct
-        val exported = loadExportedTopLevelClassSymbols(classId, visitingPackages)
-        visitingPackages.remove(classId.packageFqName)
-        return (direct + exported).distinct()
-    }
-
-    /** 从同包的每份独立 CJO 快照中读取物理顶层 class-like 声明。 */
-    private fun loadDirectTopLevelClassSymbols(classId: ClassId): List<CfirClassLikeSymbol<*>> {
-        val deserializers = getOrCreateDeserializers(classId.packageFqName.asString()) ?: return emptyList()
+        if (targetContext == null) {
+            return getOrCreateDeserializers(classId.packageFqName.asString()).orEmpty().flatMap {
+                loadTopLevelClassSymbolsRecursively(classId, visitingPackages, it.context)
+            }.distinct()
+        }
+        check(classId.packageFqName.asString() == targetContext.header.fullPkgName)
+        val reader = targetContext.createDeclDeserializer()
         val shortName = classId.shortClassName.asString()
-        return deserializers.flatMap { packageDeserializers ->
-            val declDeserializer = packageDeserializers.createDeclDeserializer()
-            packageDeserializers.header.topLevelClassifierNameToIndices[shortName].orEmpty().mapNotNull { declIndex ->
-                val decl = declDeserializer.deserializeDecl(declIndex)
-                if (decl is CfirClassLikeDeclaration && decl.symbol is CfirClassLikeSymbol<*> && declSymbolName(decl) == shortName) {
-                    decl.symbol
-                } else {
-                    null
+        val indices = targetContext.header.topLevelClassifierNameToIndices[shortName].orEmpty()
+        val direct = session.cjoDeserializationTimingObserverOrNull.measureCjoDeclaration(indices.size) {
+            indices.mapNotNull { index ->
+                (reader.deserializeSymbolForReference(index)?.cfir as? CfirClassLikeDeclaration)
+                    ?.takeIf { declSymbolName(it) == shortName }?.symbol
+            }
+        }
+        if (direct.isNotEmpty() || !visitingPackages.add(classId.packageFqName)) return direct
+        return try {
+            targetContext.header.fileImportEntries.flatMap { entry ->
+                if (!entry.isPublicExportImport()) return@flatMap emptyList()
+                val importedPackage = entry.importedPackageFqName() ?: return@flatMap emptyList()
+                val importedName = if (entry.isAllUnder) classId.shortClassName else {
+                    if (entry.exportedMemberName() != classId.shortClassName) return@flatMap emptyList()
+                    entry.importedMemberName() ?: return@flatMap emptyList()
                 }
-            }
-        }
-    }
-
-    /**
-     * `public import` 导出的 classifier 在本包里没有物理 `Decl`，
-     * 因此必须沿着导出 import 递归到真实声明包取 symbol。
-     */
-    private fun loadExportedTopLevelClassSymbols(
-        classId: ClassId,
-        visitingPackages: LinkedHashSet<FqName>,
-    ): List<CfirClassLikeSymbol<*>> {
-        val headers = getOrCreateDeserializers(classId.packageFqName.asString())
-            ?.map { it.header }
-            .orEmpty()
-        val result = mutableListOf<CfirClassLikeSymbol<*>>()
-        for (entry in headers.flatMap { it.fileImportEntries }) {
-            if (!entry.isPublicExportImport()) continue
-            val importedPackageFqName = entry.importedPackageFqName() ?: continue
-            if (entry.isAllUnder) {
-                result += loadTopLevelClassSymbolsRecursively(
-                    ClassId(importedPackageFqName, classId.shortClassName),
-                    visitingPackages,
+                loadTopLevelClassSymbolsRecursively(
+                    ClassId(importedPackage, importedName), visitingPackages, exportedContext(targetContext, importedPackage),
                 )
-                continue
-            }
-
-            val exportedName = entry.exportedMemberName() ?: continue
-            if (exportedName != classId.shortClassName) continue
-
-            val importedMemberName = entry.importedMemberName() ?: continue
-            result += loadTopLevelClassSymbolsRecursively(
-                ClassId(importedPackageFqName, importedMemberName),
-                visitingPackages,
-            )
+            }.distinct()
+        } finally {
+            visitingPackages.remove(classId.packageFqName)
         }
-        return result.distinct()
     }
 
-    /**
-     * 解析顶层 callable symbol 列表。
-     *
-     * 结果包含物理顶层声明、提升后的 enum constructor 和 public import re-export 的 callable。
-     */
+    /** actual snapshot 不借 ClassId-only cache，复用原声明/re-export traversal 与原循环守卫。 */
+    internal fun getClassLikeSymbolInContext(classId: ClassId, context: CfirDeserializationContext): CfirClassLikeSymbol<*>? =
+        loadTopLevelClassSymbolsRecursively(classId, linkedSetOf(), context).firstOrNull()
+
     private fun resolveTopLevelCallableSymbols(
         packageFqName: FqName,
         name: Name,
         visitingPackages: LinkedHashSet<FqName>,
+        targetContext: CfirDeserializationContext? = null,
     ): List<CfirCallableSymbol<*>> {
-        val callableId = CallableId(packageFqName, name)
-        callableCache[callableId]?.let { return it }
-
-        val directLoaded = loadDirectTopLevelCallableSymbols(packageFqName, name)
-        val promotedEnumCtors = getPromotedTopLevelEnumConstructors(packageFqName, name)
-        val exportedLoaded = if (visitingPackages.add(packageFqName)) {
-            val symbols = loadExportedTopLevelCallableSymbols(packageFqName, name, visitingPackages)
-            visitingPackages.remove(packageFqName)
-            symbols
-        } else {
-            emptyList()
+        if (targetContext == null) {
+            return getOrCreateDeserializers(packageFqName.asString()).orEmpty().flatMap {
+                resolveTopLevelCallableSymbols(packageFqName, name, visitingPackages, it.context)
+            }.distinct()
         }
-        val loaded = (directLoaded + promotedEnumCtors + exportedLoaded).distinct()
-
-        callableCache.putIfAbsent(callableId, loaded)
-        return callableCache[callableId] ?: loaded
-    }
-
-    /** 只从指定包的物理顶层声明索引中加载 callable symbol。 */
-    private fun loadDirectTopLevelCallableSymbols(
-        packageFqName: FqName,
-        name: Name,
-    ): List<CfirCallableSymbol<*>> {
-        val deserializers = getOrCreateDeserializers(packageFqName.asString()) ?: return emptyList()
-        return deserializers.flatMap { packageDeserializers ->
-            val declDeserializer = packageDeserializers.createDeclDeserializer()
-            packageDeserializers.header.topLevelNameToIndices[name.asString()]
-                .orEmpty()
-                .mapNotNull { declIndex ->
-                    val decl = declDeserializer.deserializeDecl(declIndex)
-                    (decl as? CfirCallableDeclaration)?.symbol as? CfirCallableSymbol<*>
-                }
-        }
-    }
-
-    /**
-     * `public import` 导出的 callable 与顶层物理声明一样参与普通包成员查询。
-     */
-    private fun loadExportedTopLevelCallableSymbols(
-        packageFqName: FqName,
-        name: Name,
-        visitingPackages: LinkedHashSet<FqName>,
-    ): List<CfirCallableSymbol<*>> {
-        val headers = getOrCreateDeserializers(packageFqName.asString())?.map { it.header }.orEmpty()
-        val result = mutableListOf<CfirCallableSymbol<*>>()
-
-        for (entry in headers.flatMap { it.fileImportEntries }) {
-            if (!entry.isPublicExportImport()) continue
-            val importedPackageFqName = entry.importedPackageFqName() ?: continue
-            if (entry.isAllUnder) {
-                result += resolveTopLevelCallableSymbols(importedPackageFqName, name, visitingPackages)
-                continue
-            }
-
-            val exportedName = entry.exportedMemberName() ?: continue
-            if (exportedName != name) continue
-
-            val importedMemberName = entry.importedMemberName() ?: continue
-            result += resolveTopLevelCallableSymbols(importedPackageFqName, importedMemberName, visitingPackages)
-        }
-
-        return result.distinct()
-    }
-
-    /**
-     * 收集 enum constructor 作为包级 callable 的提升查询结果。
-     *
-     * 仓颉 enum constructor 需要像顶层 callable 一样被普通名称查询命中。
-     */
-    private fun getPromotedTopLevelEnumConstructors(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
-        val callableId = CallableId(packageFqName, name)
-        promotedEnumCallableCache[callableId]?.let { return it }
-
-        val deserializers = getOrCreateDeserializers(packageFqName.asString()) ?: return emptyList()
-        val result = mutableListOf<CfirCallableSymbol<*>>()
-
-        for (className in deserializers.flatMap { it.header.topLevelClassNames }.distinct()) {
-            val classId = ClassId(packageFqName, className)
-            for (classSymbol in getClassLikeSymbolsByClassId(classId)) {
-                if (!classSymbol.isBound) continue
-                val klass = classSymbol.cfir
-                if (klass !is CfirEnum) continue
-                klass.declarations.asSequence()
-                    .filterIsInstance<CfirEnumConstructor>()
-                    .mapNotNull { declaration ->
-                        if (declaration.name != name) return@mapNotNull null
-                        val symbol = declaration.symbol as? CfirCallableSymbol<*> ?: return@mapNotNull null
-                        symbol
+        val context = targetContext.canonical()
+        check(context.header.fullPkgName == packageFqName.asString())
+        val cacheKey = CallableContextKey(context, CallableId(packageFqName, name))
+        callableCache[cacheKey]?.let { return it }
+        return context.materialization.read {
+            val direct = loadDirectTopLevelCallableSymbols(context, name)
+            val promoted = getPromotedTopLevelEnumConstructors(context, name)
+            if (!visitingPackages.add(packageFqName)) return@read (direct + promoted).distinct()
+            val exported = try {
+                context.header.fileImportEntries.flatMap { entry ->
+                    if (!entry.isPublicExportImport()) return@flatMap emptyList()
+                    val importedPackage = entry.importedPackageFqName() ?: return@flatMap emptyList()
+                    val importedName = if (entry.isAllUnder) name else {
+                        if (entry.exportedMemberName() != name) return@flatMap emptyList()
+                        entry.importedMemberName() ?: return@flatMap emptyList()
                     }
-                    .forEach(result::add)
+                    resolveTopLevelCallableSymbols(importedPackage, importedName, visitingPackages, exportedContext(context, importedPackage))
+                }
+            } finally {
+                visitingPackages.remove(packageFqName)
             }
+            val loaded = (direct + promoted + exported).distinct()
+            context.materialization.publishWhenComplete { callableCache.putIfAbsent(cacheKey, loaded) }
+            loaded
         }
-
-        val distinct = result.distinct()
-        promotedEnumCallableCache.putIfAbsent(callableId, distinct)
-        return promotedEnumCallableCache[callableId] ?: distinct
     }
+
+    /** 顶层 callable 只读取选定来源的索引，避免整个包物化。 */
+    private fun loadDirectTopLevelCallableSymbols(context: CfirDeserializationContext, name: Name): List<CfirCallableSymbol<*>> {
+        val indices = context.header.topLevelCallableNameToIndices[name.asString()].orEmpty()
+        val reader = context.createDeclDeserializer()
+        return session.cjoDeserializationTimingObserverOrNull.measureCjoDeclaration(indices.size) {
+            indices.mapNotNull { reader.deserializeSymbol(it) as? CfirCallableSymbol<*> }
+        }
+    }
+
+    /** 枚举构造器来自实际 wire 索引；没有名称匹配时不物化 enum header。 */
+    private fun getPromotedTopLevelEnumConstructors(context: CfirDeserializationContext, name: Name): List<CfirCallableSymbol<*>> {
+        val cacheKey = CallableContextKey(context, CallableId(FqName(context.header.fullPkgName), name))
+        promotedEnumCallableCache[cacheKey]?.let { return it }
+        val indices = context.header.promotedEnumConstructorNameToIndices[name.asString()].orEmpty()
+        val reader = context.createDeclDeserializer()
+        val symbols = indices.map { index ->
+            val symbol = reader.deserializeSymbol(index)
+            check(symbol is CfirEnumConstructorSymbol) { "Indexed enum constructor has the wrong wire family" }
+            symbol
+        }.distinct()
+        context.materialization.publishWhenComplete { promotedEnumCallableCache.putIfAbsent(cacheKey, symbols) }
+        return symbols
+    }
+
+    /** 重导出只沿真实 import 目标；不能扩大 named provider 的 own 包暴露面。 */
+    private fun exportedContext(context: CfirDeserializationContext, packageName: FqName): CfirDeserializationContext =
+        checkNotNull(context.packageContextOrNull(packageName.asString())) {
+            "Cannot load CJO public import target " + packageName
+        }
 
     /** 提取 class-like 声明对应的源码级名称文本。 */
     private fun declSymbolName(declaration: CfirClassLikeDeclaration): String = when (declaration) {
@@ -533,7 +501,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         /** 实际装载快照与context一对一；包名或路径相同不能替代其身份。 */
         val snapshot: org.cangnova.cangjie.cfir.serialization.cjo.CjoLoadedPackage,
         /** 当前包的共享反序列化上下文。 */
-        private val context: CfirDeserializationContext,
+        val context: CfirDeserializationContext,
     ) {
         val header: CjoPackageHeader get() = snapshot.header
         val sourcePath: java.nio.file.Path get() = snapshot.sourcePath
@@ -549,8 +517,9 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         fun createDeclDeserializer() = context.createDeclDeserializer()
 
         /** 已发表的 d/F 身份用于正式内容路由，包 context 本体不跨层泄露。 */
-        fun ownsDeclaration(declaration: CfirDeclaration): Boolean = context.isPublishedDeclaration(declaration)
-        fun completeHeader(declaration: CfirDeclaration) = context.publishedContentSource.completeHeader(declaration)
+        fun ownsDeclaration(declaration: CfirDeclaration): Boolean = context.publishedDeclarationRoot(declaration) != null
+        fun completeHeader(declaration: CfirDeclaration) =
+            context.publishedContentSource.completeHeader(checkNotNull(context.publishedDeclarationRoot(declaration)))
 
         fun sourceHeaderOf(function: CfirCallableDeclaration): CfirSourceImportedFunctionHeader? =
             context.completedSourceHeaders[function]
@@ -586,7 +555,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         }
 
         fun packageSourceGraphOf(declaration: CfirDeclaration, index: Int): CfirSourceGraph? {
-            if (context.createDeclDeserializer().deserializeCanonicalDeclaration(index) !== declaration) return null
+            if (context.createDeclDeserializer().deserializeCanonicalDeclaration(index) !== context.publishedDeclarationRoot(declaration)) return null
             return CfirSourceGraphLoader(context).load().graph
         }
 
@@ -595,15 +564,16 @@ abstract class AbstractCfirDeserializedSymbolProvider(
             index: Int,
             includeContent: Boolean,
         ): org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceExportSnapshot? {
-            if (context.createDeclDeserializer().deserializeCanonicalDeclaration(index) !== declaration) return null
+            if (context.createDeclDeserializer().deserializeCanonicalDeclaration(index) !== context.publishedDeclarationRoot(declaration)) return null
             val loader = CfirSourceGraphLoader(context)
             if (includeContent) loader.load() else loader.loadHeaders()
             return context.sourceExportSnapshot(snapshot, includeContent)
         }
 
         fun completedSourceExportSnapshotOf(declaration: CfirDeclaration, includeContent: Boolean): org.cangnova.cangjie.cfir.serialization.cjo.CjoSourceExportSnapshot {
-            check(declaration.symbol.isBound && declaration.symbol.cfir === declaration &&
-                declaration.contentSource === context.publishedContentSource && ownsDeclaration(declaration)) {
+            val owner = checkNotNull(context.publishedDeclarationRoot(declaration))
+            check(owner.symbol.isBound && owner.symbol.cfir === owner &&
+                owner.contentSource === context.publishedContentSource) {
                 "Completed SOURCE export requires the actual canonical declaration and content owner"
             }
             return context.sourceExportSnapshot(snapshot, includeContent)

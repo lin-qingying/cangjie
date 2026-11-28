@@ -12,6 +12,7 @@ enum class MacroSdkOrigin {
     CANGJIE_HOME,
     CJC_HOME_PROPERTY,
     PATH,
+    USER_HOME,
 }
 
 /** 一次编译调用的不可变 SDK 选择结果；缺失与明确的无效配置是不同事实。 */
@@ -33,6 +34,7 @@ data class MacroSdkSelectionInputs(
     val cangjieHome: String?,
     val cjcHome: String?,
     val path: String?,
+    val userHome: Path? = null,
 )
 
 /** SDK 只在调用边界选择；locator、compiler 与 executor 消费同一份结果。 */
@@ -43,6 +45,7 @@ object MacroSdkSelector {
             System.getenv("CANGJIE_HOME"),
             System.getProperty("cjc.home"),
             System.getenv("PATH"),
+            System.getProperty("user.home")?.let(Path::of),
         ),
     )
 
@@ -72,6 +75,20 @@ object MacroSdkSelector {
                 )
             }
             return fromHome(bin.parent.toString(), MacroSdkOrigin.PATH)
+        }
+        val userHome = inputs.userHome ?: return MacroSdkSelection.Absent
+        val installedRoots = listOf(userHome.resolve(".cangjie/sdks"), userHome.resolve("sdk"))
+        for (root in installedRoots) {
+            val installs = root.toFile().listFiles().orEmpty().asSequence()
+                .filter(File::isDirectory)
+                .sortedByDescending(File::getName)
+            for (install in installs) {
+                val installRoot = install.toPath()
+                val sdk = sequenceOf(installRoot.resolve("cangjie"), installRoot).firstOrNull {
+                    Files.isRegularFile(it.resolve("bin").resolve(macroToolName("cjc")))
+                }
+                if (sdk != null) return fromHome(sdk.toString(), MacroSdkOrigin.USER_HOME)
+            }
         }
         return MacroSdkSelection.Absent
     }

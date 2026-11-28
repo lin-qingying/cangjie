@@ -3,11 +3,10 @@ package org.cangnova.cangjie.analysis.api.symbols
 /**
  * 模式绑定符号。
  *
- * 表示模式匹配场景下整体绑定整个匹配子表达式的局部变量绑定，
- * 例如 `let p = ...` 中作为绑定根的 `p`。
- *
- * 与 [CaPatternVariableSymbol] 的区别：
- * - binding 指代"模式根的绑定"；
- * - pattern variable 指代"出现在模式内部、按结构解构得到的子绑定"。
+ * 表示 Binding、Type 或语义确认后的 VarOrEnum 所引入的具名叶子。
+ * 每个叶子拥有独立名称、类型与作用域；声明容器由 [CaPatternVariableSymbol] 表示。
  */
-abstract class CaPatternBindingSymbol : CaLocalVariableSymbol()
+abstract class CaPatternBindingSymbol : CaVariableSymbol() {
+    /** 绑定是否来自 const 声明，与 let/var 的可变性分别保存。 */
+    abstract val isConst: Boolean
+}

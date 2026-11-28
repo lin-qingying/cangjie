@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.references
 
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
@@ -16,6 +17,14 @@ import com.intellij.util.containers.MultiMap
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CjNamedPattern
+import org.cangnova.cangjie.analysis.api.analyze
+import org.cangnova.cangjie.analysis.api.CaAllowAnalysisOnEdt
+import org.cangnova.cangjie.analysis.api.CaAllowAnalysisFromWriteAction
+import org.cangnova.cangjie.analysis.api.permissions.allowAnalysisOnEdt
+import org.cangnova.cangjie.analysis.api.permissions.allowAnalysisFromWriteAction
+import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor.ReferenceProvider
 import org.cangnova.cangjie.psi.psiUtil.parentOfType
@@ -65,24 +74,85 @@ internal class CangJieReferenceProvidersServiceImpl(
 
     /**
      * 从仓颉 contributor provider 中收集指定上下文元素的 references。
+     *
+     * 返回 `null` 表示收集过程中有 provider 失败（例如索引/分析尚未就绪）。这种结果
+     * **不能**进入缓存：缓存依赖 `PsiModificationTracker.MODIFICATION_COUNT`，只有用户
+     * 修改文件才会失效，否则一次加载期的失败会让导航一直为空，直到用户重新输入。
      */
-    private fun doGetCangJieReferencesFromProviders(context: CjElement): Array<PsiReference> {
-        if (context is CjSimpleNameExpression && context.isDeclarationNameExpression()) {
+    private fun doGetCangJieReferencesFromProviders(context: CjElement): Array<PsiReference>? {
+        if (context is CjSimpleNameExpression && isDeclarationNameExpression(context)) {
             return PsiReference.EMPTY_ARRAY
         }
 
         val providers = providersBindingCache[context.javaClass]
         if (providers.isNullOrEmpty()) return PsiReference.EMPTY_ARRAY
 
+        var failed = false
         val result = buildList {
             for (provider in providers) {
-                runSafely {
+                try {
                     addAll(provider(context))
+                } catch (t: Throwable) {
+                    failed = true
+                    // 索引/分析未就绪时的 provider 失败是可恢复的，不应升级为 IDE internal error。
+                    LOG.warn(t)
                 }
             }
         }
 
+        if (failed) return null
         return if (result.isEmpty()) PsiReference.EMPTY_ARRAY else result.toTypedArray()
+    }
+
+    /** 成功解析结果中的当前 active binder 才是声明；constructor 保留引用使用身份。 */
+    @OptIn(CaAllowAnalysisOnEdt::class, CaAllowAnalysisFromWriteAction::class)
+    override fun getNamedDeclarationTarget(psiElement: PsiElement): PsiNameIdentifierOwner? {
+        val namedOwner = psiElement.parentOfType<PsiNameIdentifierOwner>(withSelf = true) ?: return null
+        val owner = if (namedOwner is org.cangnova.cangjie.psi.CjParameter && namedOwner.parent is org.cangnova.cangjie.psi.CjTryResource) {
+            namedOwner.parent as PsiNameIdentifierOwner
+        } else namedOwner
+        val name = owner.nameIdentifier ?: return null
+        if (psiElement !== owner && !name.textRange.contains(psiElement.textRange)) return null
+        val semanticOwner = when (owner) {
+            is CjNamedPattern -> owner
+            is org.cangnova.cangjie.psi.CjCatchParameter -> owner
+            is org.cangnova.cangjie.psi.CjCommandTypePattern -> owner
+            is org.cangnova.cangjie.psi.CjTryResource -> owner
+            else -> return owner
+        }
+        return allowAnalysisOnEdt {
+            allowAnalysisFromWriteAction {
+                analyze(semanticOwner) {
+                    val success = semanticOwner.tryResolveSymbols() as? CaSymbolResolutionSuccess ?: return@analyze null
+                    success.symbols.singleOrNull { symbol ->
+                        (symbol is CaPatternBindingSymbol || symbol is org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol) && symbol.psi === owner
+                    }?.let { owner }
+                }
+            }
+        }
+    }
+
+    /** 导入别名使用真实 CallableId/ClassId，生成 fragment 的 PSI 包名不能替代声明身份。 */
+    @OptIn(CaAllowAnalysisOnEdt::class, CaAllowAnalysisFromWriteAction::class)
+    override fun getDeclarationFqName(declaration: PsiNameIdentifierOwner): org.cangnova.cangjie.name.FqName? {
+        val element = declaration as? CjElement ?: return null
+        return allowAnalysisOnEdt {
+            allowAnalysisFromWriteAction {
+                analyze(element) {
+                    val success = element.tryResolveSymbols() as? CaSymbolResolutionSuccess ?: return@analyze null
+                    when (val symbol = success.symbols.singleOrNull()) {
+                        is org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol -> symbol.callableId?.asSingleFqName()
+                        is org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol -> symbol.classId?.asSingleFqName()
+                        else -> null
+                    }
+                }
+            }
+        }
+    }
+
+    private fun isDeclarationNameExpression(expression: CjSimpleNameExpression): Boolean {
+        val owner = getNamedDeclarationTarget(expression) ?: return false
+        return expression.referencedNameElement == owner.nameIdentifier
     }
 
     /**
@@ -90,15 +160,24 @@ internal class CangJieReferenceProvidersServiceImpl(
      *
      * IntelliJ contributed reference host 交回平台 registry；仓颉 PSI 走本模块 contributor 分发，
      * 非仓颉 PSI 直接返回空引用。
+     *
+     * 索引构建期（dumb mode）或 provider 失败时不写缓存，保证分析就绪后能重新收集到引用，
+     * 而不是等用户修改文件（PSI 修改计数变化）才恢复导航。
      */
     override fun getReferences(psiElement: PsiElement): Array<PsiReference> = when (psiElement) {
         is ContributedReferenceHost -> ReferenceProvidersRegistry.getReferencesFromProviders(psiElement)
         !is CjElement -> PsiReference.EMPTY_ARRAY
-        else -> CachedValuesManager.getCachedValue(psiElement) {
-            CachedValueProvider.Result.create(
-                doGetCangJieReferencesFromProviders(psiElement),
-                PsiModificationTracker.MODIFICATION_COUNT,
-            )
+        else -> {
+            val references = doGetCangJieReferencesFromProviders(psiElement)
+            if (references == null || references.isEmpty() || DumbService.isDumb(project)) {
+                // 失败/空结果不缓存：空结果可能来自索引或分析尚未就绪，缓存后只能等
+                // 用户修改文件（PSI 修改计数变化）才会重算，表现为“重新输入后才能跳转”。
+                references ?: PsiReference.EMPTY_ARRAY
+            } else {
+                CachedValuesManager.getCachedValue(psiElement) {
+                    CachedValueProvider.Result.create(references, PsiModificationTracker.MODIFICATION_COUNT)
+                }
+            }
         }
     }
 
@@ -134,9 +213,7 @@ internal class CangJieReferenceProvidersServiceImpl(
  * Kotlin 的声明名通常不会沿着 simple-name reference provider 这条链路分发，
  * 但仓颉这里如果不先过滤，会把 `let result = ...` 里的 `result` 错当成引用。
  * 因此统一在 reference service 入口排除 declaration-name 场景，再继续 contributor 分发。
+ *
+ * `extend` 没有声明名（[org.cangnova.cangjie.psi.CjExtend.getNameIdentifier] 返回 null），
+ * 其接收者类型名是普通引用位置，不会被这里过滤。
  */
-private fun CjSimpleNameExpression.isDeclarationNameExpression(): Boolean {
-    val owner = parentOfType<PsiNameIdentifierOwner>(withSelf = true) ?: return false
-    val nameIdentifier = owner.nameIdentifier ?: return false
-    return referencedNameElement == nameIdentifier
-}

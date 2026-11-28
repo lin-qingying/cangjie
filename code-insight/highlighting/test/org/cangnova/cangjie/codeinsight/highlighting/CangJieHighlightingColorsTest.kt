@@ -3,7 +3,9 @@ package org.cangnova.cangjie.codeinsight.highlighting
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.cangnova.cangjie.lexer.CjTokens
 
 /**
  * 验证仓颉高亮属性 key 与语义 HighlightInfoType 的稳定性。
@@ -39,6 +41,26 @@ class CangJieHighlightingColorsTest {
             CangJieHighlightInfoTypeSemanticNames.STRUCT.attributesKey,
         )
         assertEquals(
+            CangJieHighlightingColors.BASIC_TYPE_REFERENCE,
+            CangJieHighlightInfoTypeSemanticNames.BASIC_TYPE_REFERENCE.attributesKey,
+        )
+        assertEquals(
+            CangJieHighlightingColors.STATIC_FUNCTION_CALL,
+            CangJieHighlightInfoTypeSemanticNames.STATIC_FUNCTION_CALL.attributesKey,
+        )
+        assertEquals(
+            CangJieHighlightingColors.ANNOTATION,
+            CangJieHighlightInfoTypeSemanticNames.ANNOTATION.attributesKey,
+        )
+        assertEquals(
+            CangJieHighlightingColors.ANNOTATION_ATTRIBUTE_NAME_ATTRIBUTES,
+            CangJieHighlightInfoTypeSemanticNames.ANNOTATION_ATTRIBUTE_NAME_ATTRIBUTES.attributesKey,
+        )
+        assertEquals(
+            CangJieHighlightingColors.STRUCT_CONSTRUCTOR_CALL,
+            CangJieHighlightInfoTypeSemanticNames.STRUCT_CONSTRUCTOR_CALL.attributesKey,
+        )
+        assertEquals(
             CangJieHighlightingColors.FUNCTION_DECLARATION,
             CangJieHighlightInfoTypeSemanticNames.FUNCTION_DECLARATION.attributesKey,
         )
@@ -46,6 +68,36 @@ class CangJieHighlightingColorsTest {
             CangJieHighlightingColors.MACRO_CALL,
             CangJieHighlightInfoTypeSemanticNames.MACRO_CALL.attributesKey,
         )
+        assertEquals(
+            CangJieHighlightingColors.MACRO_DECLARATION,
+            CangJieHighlightInfoTypeSemanticNames.MACRO_DECLARATION.attributesKey,
+        )
+        assertEquals(
+            CangJieHighlightingColors.MACRO_ESCAPE,
+            CangJieHighlightInfoTypeSemanticNames.MACRO_ESCAPE.attributesKey,
+        )
+        assertEquals(
+            CangJieHighlightingColors.SAFE_ACCESS,
+            CangJieHighlightInfoTypeSemanticNames.SAFE_ACCESS.attributesKey,
+        )
+    }
+
+    @Test
+    fun testBasicTypeReferencesHaveTheirOwnSemanticKind() {
+        assertEquals(
+            CangJieSemanticHighlightingKind.BASIC_TYPE_REFERENCE,
+            CangJieSemanticHighlightingRules.classifyBasicType().kind,
+        )
+    }
+
+    @Test
+    fun testSafeAccessQuestionMarkUsesOnlyOptionalChainSuffixes() {
+        listOf(CjTokens.DOT, CjTokens.LBRACKET, CjTokens.LPAR, CjTokens.LBRACE).forEach { suffix ->
+            assertTrue(CangJieSemanticHighlightingRules.isSafeAccessQuestionMark(CjTokens.QUEST, suffix))
+        }
+
+        assertFalse(CangJieSemanticHighlightingRules.isSafeAccessQuestionMark(CjTokens.QUEST, CjTokens.IDENTIFIER))
+        assertFalse(CangJieSemanticHighlightingRules.isSafeAccessQuestionMark(CjTokens.PLUS, CjTokens.DOT))
     }
 
     /**
@@ -68,7 +120,7 @@ class CangJieHighlightingColorsTest {
         CangJieHighlightingColors.NUMBER,
         CangJieHighlightingColors.STRING,
         CangJieHighlightingColors.STRING_ESCAPE,
-        CangJieHighlightingColors.INVALID_STRING_ESCAPE,
+        CangJieHighlightingColors.MACRO_ESCAPE,
         CangJieHighlightingColors.OPERATOR_SIGN,
         CangJieHighlightingColors.PARENTHESIS,
         CangJieHighlightingColors.BRACES,
@@ -83,6 +135,7 @@ class CangJieHighlightingColorsTest {
         CangJieHighlightingColors.DOUBLE_ARROW,
         CangJieHighlightingColors.TYPE_DEFINED,
         CangJieHighlightingColors.TYPE_REFERENCE,
+        CangJieHighlightingColors.BASIC_TYPE_REFERENCE,
         CangJieHighlightingColors.CLASS,
         CangJieHighlightingColors.TYPE_PARAMETER,
         CangJieHighlightingColors.ABSTRACT_CLASS,
@@ -96,34 +149,32 @@ class CangJieHighlightingColorsTest {
         CangJieHighlightingColors.LOCAL_VARIABLE,
         CangJieHighlightingColors.PROPERTY,
         CangJieHighlightingColors.PACKAGE_VARIABLE,
+        CangJieHighlightingColors.STATIC_VARIABLE,
         CangJieHighlightingColors.PARAMETER,
         CangJieHighlightingColors.INSTANCE_PROPERTY,
         CangJieHighlightingColors.INSTANCE_VARIABLE,
-        CangJieHighlightingColors.WRAPPED_INTO_REF,
-        CangJieHighlightingColors.BACKING_FIELD_VARIABLE,
         CangJieHighlightingColors.EXTENSION_PROPERTY,
         CangJieHighlightingColors.FUNCTION_DECLARATION,
         CangJieHighlightingColors.FUNCTION_CALL,
+        CangJieHighlightingColors.INSTANCE_FUNCTION_CALL,
+        CangJieHighlightingColors.STATIC_FUNCTION_CALL,
         CangJieHighlightingColors.PACKAGE_FUNCTION_CALL,
         CangJieHighlightingColors.EXTENSION_FUNCTION_CALL,
         CangJieHighlightingColors.CONSTRUCTOR_CALL,
+        CangJieHighlightingColors.CLASS_CONSTRUCTOR_CALL,
+        CangJieHighlightingColors.STRUCT_CONSTRUCTOR_CALL,
         CangJieHighlightingColors.VARIABLE_AS_FUNCTION_CALL,
-        CangJieHighlightingColors.VARIABLE_AS_FUNCTION_LIKE_CALL,
         CangJieHighlightingColors.FUNCTION_LITERAL_BRACES_AND_ARROW,
         CangJieHighlightingColors.ANNOTATION,
         CangJieHighlightingColors.ANNOTATION_ATTRIBUTE_NAME_ATTRIBUTES,
         CangJieHighlightingColors.MACRO_DECLARATION,
         CangJieHighlightingColors.MACRO_CALL,
-        CangJieHighlightingColors.SMART_CAST_VALUE,
-        CangJieHighlightingColors.SMART_CONSTANT,
-        CangJieHighlightingColors.SMART_CAST_RECEIVER,
-        CangJieHighlightingColors.DEBUG_INFO,
         CangJieHighlightingColors.BAD_CHARACTER,
-        CangJieHighlightingColors.LABEL,
         CangJieHighlightingColors.RESOLVED_TO_ERROR,
         CangJieHighlightingColors.NAMED_ARGUMENT,
         CangJieHighlightingColors.LT_COLON,
         CangJieHighlightingColors.INSTANCE_PROPERTY_CUSTOM_PROPERTY_DECLARATION,
+        CangJieHighlightingColors.STATIC_PROPERTY_CUSTOM_PROPERTY_DECLARATION,
         CangJieHighlightingColors.DOUBLE_COLON,
         CangJieHighlightingColors.EXCLEXCL,
     )

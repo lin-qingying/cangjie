@@ -73,6 +73,8 @@ abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner, C
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun replaceInitializer(newInitializer: CfirExpression?)
 
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)

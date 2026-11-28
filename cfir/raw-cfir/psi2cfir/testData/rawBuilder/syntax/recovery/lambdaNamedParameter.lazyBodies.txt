@@ -1,0 +1,4 @@
+FILE: lambdaNamedParameter.cj
+    internal? func lambdaNamedParameter(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

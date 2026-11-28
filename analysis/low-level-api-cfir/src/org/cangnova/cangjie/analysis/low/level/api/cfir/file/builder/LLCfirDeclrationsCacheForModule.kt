@@ -9,6 +9,8 @@ import com.google.common.collect.MapMaker
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.psi
@@ -54,15 +56,19 @@ internal abstract class ModuleFileCache {
     abstract fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile?
 
     /**
-     * 返回指定 PSI 文件已经构建过的 CFIR 文件。
+     * 返回指定 PSI 文件已经构建过的 raw CFIR 文件。
      */
     abstract fun getCachedCfirFile(cjFile: CjFile): CfirFile?
 
     /**
-     * 返回当前 low-level session 已构建的 CFIR 文件。
+     * 丢弃按当前源码语义版本构建的 raw CFIR 文件。
+     */
+    abstract fun invalidateRawCfirFiles()
+
+    /**
+     * 返回当前 low-level session 可参与 lazy resolve 的 CFIR 文件。
      *
-     * LL CFIR 没有主编译器 `CfirProviderImpl.getAllFiles()` 那样的全量文件入口；
-     * 已构建文件缓存就是 lazy resolve 阶段能安全推进的文件集合。
+     * 宏语义快照发布后，解析阶段使用快照中的 expanded 文件；未发布快照时使用已构建的 raw 文件。
      */
     abstract fun getAllCachedCfirFilesForResolution(): Collection<CfirFile>
 
@@ -78,12 +84,14 @@ internal abstract class ModuleFileCache {
  */
 internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleResolveComponents) : ModuleFileCache() {
     /**
-     * PSI 文件到 CFIR 文件的弱 key 缓存。
+     * 物理 PSI 文件到 raw CFIR 文件的弱 key 缓存。
      */
     private val cjFileToSource: ConcurrentMap<CjFile, LLCfirFileSourceGeneration> = MapMaker().weakKeys().makeMap()
 
     /**
-     * 返回缓存中的 CFIR 文件，缺失时原子创建并缓存。
+     * 返回物理 PSI 对应的 raw CFIR 文件，缺失时原子创建并缓存。
+     *
+     * 宏语义快照属于 provider 的 expanded 视图，不能替换这份按 PSI 身份映射的源树。
      */
     override fun fileCached(file: CjFile, createValue: () -> LLCfirFileSourceGeneration): CfirFile = synchronized(moduleComponents.session) {
         val suppliedProduct = file.compilationParsingResultOrNull()
@@ -101,8 +109,12 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
     }
 
     override fun compilationElement(element: PsiElement): PsiElement? = synchronized(moduleComponents.session) {
-        val entry = cjFileToSource[element.containingFile as? CjFile] ?: return@synchronized null
-        entry.compilationElement(element, moduleComponents.session)
+        val psiFile = element.containingFile as? CjFile ?: return@synchronized null
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        if (snapshot != null && (snapshot.fileForSource(psiFile) != null || snapshot.ownsReparsedPsi(element))) {
+            return@synchronized snapshot.compilationElement(element)
+        }
+        cjFileToSource[psiFile]?.compilationElement(element, moduleComponents.session)
     }
 
     override fun getFileSourceForModification(originFile: CjFile): LLCfirFileSourceGeneration? = synchronized(moduleComponents.session) {
@@ -128,29 +140,67 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
             is org.cangnova.cangjie.source.CjOffsetsOnlySourceElement -> source.sourceAnchor ?: return@synchronized null
         }
         val file = syntax.psi?.containingFile as? CjFile ?: return@synchronized null
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        if (snapshot?.fileForSource(file) != null) {
+            return@synchronized mapPsiSource(syntax, snapshot::originalElement)
+        }
         cjFileToSource[file]?.originalSource(source, moduleComponents.session)
     }
 
     /**
-     * 从弱 key cache 中查询已构建 CFIR 文件。
+     * 从弱 key cache 中查询已构建 raw CFIR 文件。
      */
     override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = synchronized(moduleComponents.session) {
         cjFileToSource[cjFile]?.also { it.requireConsistentInput(moduleComponents.session) }?.cfirFile
     }
 
     /**
+     * 快照发布改变了 raw CFIR 后续解析所依赖的符号视图，旧树的已解析引用必须整体退役。
+     */
+    override fun invalidateRawCfirFiles() = synchronized(moduleComponents.session) {
+        cjFileToSource.clear()
+    }
+
+    /**
      * 通过声明 PSI 所在文件定位包含它的已缓存 CFIR 文件。
      */
     override fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile? {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.containerFile(declaration)
+        }
         val cjFile = declaration.psi?.containingFile as? CjFile ?: return null
-        return getCachedCfirFile(cjFile)
+        val cfirFile = getCachedCfirFile(cjFile) ?: return null
+        return cfirFile.takeIf { it.containsDeclarationIdentity(declaration) }
+    }
+
+    /**
+     * 同一 PSI 可同时作为 live raw 与未发布 construction 的 source。
+     * container 查询必须确认声明实际位于当前树中，不能由相同 PSI 文件替另一棵树授予 source 身份。
+     * 读取当前树而非缓存成员索引，使正式 body reanalysis 后的节点替换继续遵守同一所有权。
+     */
+    private fun CfirFile.containsDeclarationIdentity(declaration: CfirDeclaration): Boolean {
+        var found = false
+        accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (found) return
+                if (element === declaration) {
+                    found = true
+                } else {
+                    element.acceptChildren(this)
+                }
+            }
+        })
+        return found
     }
 
     @LLStatisticsOnlyApi
     /**
-     * 返回当前缓存中的全部 CFIR 文件。
+     * 返回当前语义解析要推进的全部 CFIR 文件。
      */
     override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> = synchronized(moduleComponents.session) {
-        cjFileToSource.values.distinct().map { it.requireConsistentInput(moduleComponents.session); it.cfirFile }
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.files ?: cjFileToSource.values.distinct().map { source ->
+            source.requireConsistentInput(moduleComponents.session)
+            source.cfirFile
+        }
     }
 }

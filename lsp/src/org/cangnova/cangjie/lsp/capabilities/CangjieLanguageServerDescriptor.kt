@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.lsp.capabilities
 
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
+import org.cangnova.cangjie.lsp.quickfix.LspQuickFixCommands
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenModifier
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenType
 import org.eclipse.lsp4j.CodeActionKind
@@ -55,13 +57,24 @@ data class CangjieLanguageServerDescriptor(
 
     /**
      * completion item 是否支持 resolve 阶段。
+     *
+     * 服务端实现了延迟文档（按候选身份重进分析、取回 CDoc 再渲染 Markdown），
+     * 因此默认声明支持；客户端据此才会在候选被选中时发 `completionItem/resolve`。
      */
-    val completionResolveProvider: Boolean = false,
+    val completionResolveProvider: Boolean = true,
 
     /**
      * 触发补全请求的字符集合。
      */
     val completionTriggerCharacters: List<String> = listOf(".", ":", "@"),
+
+    /**
+     * code action 是否支持 resolve 阶段。
+     *
+     * 编辑延迟到用户真正选中动作后才计算（列表阶段绝不修改 PSI），
+     * 因此默认声明支持；客户端据此才会在动作被选中时发 `codeAction/resolve`。
+     */
+    val codeActionResolveProvider: Boolean = true,
 
     /**
      * 触发 signature help 请求的字符集合。
@@ -105,9 +118,23 @@ data class CangjieLanguageServerDescriptor(
     val semanticTokenModifiers: List<String> = CangJieSemanticTokenModifier.lspValues,
 
     /**
-     * workspace/executeCommand 可接受的命令名称集合。
+     * 是否回退到旧补全实现。
+     *
+     * **默认关闭**：补全走与 IDE 共用的候选管线（设计 L1），旧实现只在需要对照时打开。
+     * 旧实现按击键遍历工作区源码、类别一律 `Text`、不带导入计划，因此不混用两条路径——
+     * 混用会让「候选质量」这类验收无法判定（设计 §7.11.5）。
      */
-    val executeCommands: List<String> = emptyList(),
+    val useLegacyCompletion: Boolean = false,
+
+    /**
+     * workspace/executeCommand 可接受的命令名称集合。
+     *
+     * 默认声明服务端实际路由的补全插入与 quick-fix 命令；未声明的命令不会由客户端调用。
+     */
+    val executeCommands: List<String> = listOf(
+        LspCompletionCommands.APPLY_COMPLETION,
+        LspQuickFixCommands.APPLY_MOD_COMMAND,
+    ),
 
     /**
      * 服务端框架层默认愿意暴露的功能集合。

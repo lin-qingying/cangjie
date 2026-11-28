@@ -1,0 +1,4 @@
+FILE: ifAvailableBracketForm.cj
+    @R|IfAvailable|(<expr>, <expr>, <expr>) internal? func ifAvailableBracketForm(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

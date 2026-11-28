@@ -54,7 +54,7 @@ open class Class_sub_1 <: Clazz_1 {
     public var map_subCla_1: HashMap<UInt16, Int64> = HashMap<UInt16, Int64>([(12, 17750), (23, 1836), (56, 3594)])
 
     public static func fun_sub_cs1(par_1: Rune): HashMap<Int32, Rune> {
-        var map_subcla_fun_s1: HashMap<Int32, Rune> = Clazz_1.fun_cs1(Int32(<!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>m<!>ap_subCla_1[23]), r'Z')
+        var map_subcla_fun_s1: HashMap<Int32, Rune> = Clazz_1.fun_cs1(Int32(<!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>map_subCla_1<!>[23]), r'Z')
         map_subcla_fun_s1.add(Int32(map_subcla_fun_s1.size), par_1)
         return map_subcla_fun_s1
     }

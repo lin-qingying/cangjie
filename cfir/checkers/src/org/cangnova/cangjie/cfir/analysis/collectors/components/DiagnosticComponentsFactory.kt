@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationChecke
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.CliDiagnosticsCollector
+import org.cangnova.cangjie.cfir.analysis.collectors.CfirCheckerComponentKind
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -30,6 +31,18 @@ object DiagnosticComponentsFactory {
                 add(CfirCjmpBinaryDiagnosticsCollectorComponent(session, reporter))
             }
         }.toTypedArray()
+        val checkerComponentKinds = buildList {
+            add(CfirCheckerComponentKind.DECLARATION)
+            add(CfirCheckerComponentKind.EXPRESSION)
+            add(CfirCheckerComponentKind.TYPE)
+            if (mppCheckerKind == MppCheckerKind.Common) {
+                add(CfirCheckerComponentKind.MACRO_CONSTRUCTION)
+                add(CfirCheckerComponentKind.ERROR_NODE)
+                add(CfirCheckerComponentKind.LANGUAGE_VERSION_SETTINGS)
+            } else {
+                add(CfirCheckerComponentKind.CJMP_BINARY)
+            }
+        }.toTypedArray()
         val postSemaComponents = if (mppCheckerKind == MppCheckerKind.Common) arrayOf<AbstractDiagnosticCollectorComponent>(
             ControlFlowAnalysisDiagnosticComponent(session, reporter),
             CfirChirArithmeticDiagnosticCollectorComponent(session, reporter),
@@ -38,6 +51,7 @@ object DiagnosticComponentsFactory {
             regularComponents = regularComponents,
             postSemaComponents = postSemaComponents,
             reportCommitter = ReportCommitterDiagnosticComponent(session, reporter),
+            checkerComponentKinds = checkerComponentKinds,
         )
     }
 

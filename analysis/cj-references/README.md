@@ -18,9 +18,8 @@
 
 ## 依赖
 
-- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`
-- `:psi`
-- `:cfir:cfir-tree`（用于引用目标）
+- `:analysis:analysis-api`、`:analysis:analysis-api-platform-interface`、`:analysis:analysis-internal-utils`
+- `:common`、`:psi`
 
 ## 命令
 

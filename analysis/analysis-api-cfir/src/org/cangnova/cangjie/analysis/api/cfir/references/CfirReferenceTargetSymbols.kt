@@ -38,7 +38,7 @@ internal fun CfirReference.toCaTargetSymbols(symbolBuilder: CaSymbolByCfirBuilde
  * 对齐 Kotlin `FirUtils.ConeDiagnostic.getCandidateSymbols`：隐藏候选不可导航，
  * 重复诊断继续向原始诊断取候选。
  */
-private fun ConeDiagnostic.getCaCandidateSymbols(): List<CfirBasedSymbol<*>> = when (this) {
+internal fun ConeDiagnostic.getCaCandidateSymbols(): List<CfirBasedSymbol<*>> = when (this) {
     is ConeHiddenCandidateError -> emptyList()
     is ConeDiagnosticWithCandidates -> candidateSymbols.toList()
     is ConeUnreportedDuplicateDiagnostic -> original.getCaCandidateSymbols()
@@ -46,5 +46,5 @@ private fun ConeDiagnostic.getCaCandidateSymbols(): List<CfirBasedSymbol<*>> = w
 }
 
 /** 错误占位符号不产出公开符号，导航目标需要真实声明。 */
-private fun CfirBasedSymbol<*>.toCaTargetSymbolOrNull(symbolBuilder: CaSymbolByCfirBuilder): CaSymbol? =
+internal fun CfirBasedSymbol<*>.toCaTargetSymbolOrNull(symbolBuilder: CaSymbolByCfirBuilder): CaSymbol? =
     if (this is CfirErrorCallableSymbol<*>) null else symbolBuilder.buildSymbol(this)

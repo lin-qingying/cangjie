@@ -2,6 +2,11 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
+import org.cangnova.cangjie.test.bindCjoFixture
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeclarationMaterialization
+import org.cangnova.cangjie.cfir.serialization.provider.CjoPackageContextProvider
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.AnnoKind
 import PackageFormat.DeclKind
 import PackageFormat.ExprKind
@@ -754,8 +759,8 @@ class CjoDeclarationCompletionLifecycleTest {
         assertEquals(0, loaded.pkg.allTypesLength)
         assertEquals(0, loaded.pkg.allExprsLength)
         val module = Module()
-        val context = CfirDeserializationContext(loaded.pkg, loaded.header, module, manager,
-            sourcePath = loaded.sourcePath, loadedPackage = loaded)
+        val binding = bindCjoFixture(module, manager, setOf(root))
+        val context = binding.contextForSnapshot(loaded, CjoDeserializationMode.FULL)
         // 只由原 loader 的成功根事务生产图和 membership，不构造 Published Builder 或替代 owner。
         val graph = CfirSourceGraphLoader(context).load().graph
         val owner = assertIs<CjoSourceGraphPublicationOwner>(assertIs<CfirSourceGraphProvenance.Published>(graph.provenance).owner)
@@ -1067,7 +1072,10 @@ class CjoDeclarationCompletionLifecycleTest {
         val module = Module()
         module.session.register(org.cangnova.cangjie.cfir.types.TypeComponents::class,
             org.cangnova.cangjie.cfir.types.TypeComponents(module.session))
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.session.register(CfirSymbolProvider::class, provider)
         module.session.register(org.cangnova.cangjie.cfir.source.CfirImportedSourceGraphProvider::class, provider)
         return provider to path
@@ -1153,7 +1161,7 @@ class CjoDeclarationCompletionLifecycleTest {
         val self = assertIs<ConeClassLikeType>(context.typeCache[11])
         assertSame(parameter.symbol, assertIs<ConeTypeParameterType>(self.typeArguments.single().type).lookupTag.typeParameterSymbol)
         val bound = assertIs<ConeClassLikeType>(parameter.bounds.single().coneType)
-        val marker = assertIs<CfirClassLikeDeclaration>(assertNotNull(fixture.provider.getClassLikeSymbolByClassId(bound.classId)).cfir)
+        val marker = assertIs<CfirClassLikeDeclaration>(assertNotNull(fixture.markerProvider.getClassLikeSymbolByClassId(bound.classId)).cfir)
         assertSame(marker.symbol, assertIs<ConeClassLikeLookupTagWithFixedSymbol>(bound.lookupTag).symbol)
         val constraint = assertNotNull(context.genericConstraints[relation.symbol]).single()
         assertSame(parameter.symbol, assertIs<ConeTypeParameterType>(constraint.subject).lookupTag.typeParameterSymbol)
@@ -1205,7 +1213,11 @@ class CjoDeclarationCompletionLifecycleTest {
     }
 
     /** observer 位于真实 imported FullId binder；不替代 loader，也不查询/驱动 completion queue。 */
-    private class Fixture(val context: CfirDeserializationContext, val provider: CfirDeserializedSymbolProvider) {
+    private class Fixture(
+        val context: CfirDeserializationContext,
+        val provider: CfirDeserializedSymbolProvider,
+        val markerProvider: CfirDeserializedSymbolProvider,
+    ) {
         var beforeMarkerHeader: (() -> Unit)? = null
     }
 
@@ -1215,25 +1227,42 @@ class CjoDeclarationCompletionLifecycleTest {
             declarations = listOf(CjoPackageDeclaration("Marker", DeclKind.InterfaceDecl, type = 1u,
                 attributes = flags(Attribute.PUBLIC), exportId = "lifecycle.marker::Marker", info = CjoInterfaceInfo())),
             types = listOf(nominal(TypeKind.Interface, 1u)))
-        CjoPackageWriter.write(root.resolve("lifecycle.marker.cjo"), marker)
-        val manager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = listOf(root.toFile())),
-            CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
+        val coreRoot = Files.createDirectories(root.resolve("core"))
+        val markerRoot = Files.createDirectories(root.resolve("marker"))
+        CjoPackageWriter.write(markerRoot.resolve("lifecycle.marker.cjo"), marker)
+        CjoPackageWriter.write(coreRoot.resolve("std.core.cjo"), seed(message))
+        val materialization = CjoDeclarationMaterialization()
+        val policy = CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT)
+        val markerManager = CjoManager(
+            CjoSearchPath(additionalLibrarySearchPaths = listOf(markerRoot.toFile()), envProvider = { null }),
+            policy,
+            declarationMaterialization = materialization,
+        )
+        val markerModule = Module()
+        val markerProvider = CfirDeserializedSymbolProvider(
+            markerModule.session, markerManager, CfirCangJieScopeProvider(), markerModule,
+            moduleDataProvider = cjoFixtureModuleDataProvider(markerModule, setOf(markerRoot)),
+        )
+        markerModule.session.register(CfirSymbolProvider::class, markerProvider)
+        val manager = CjoManager(
+            CjoSearchPath(additionalLibrarySearchPaths = listOf(coreRoot.toFile()), envProvider = { null }),
+            policy,
+            declarationMaterialization = materialization,
+        )
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
-        module.session.register(CfirSymbolProvider::class, provider)
-        val sourcePath = CjoPackageWriter.write(root.resolve("std.core.cjo"), seed(message))
-        val pkg = Package.getRootAsPackage(ByteBuffer.wrap(Files.readAllBytes(sourcePath)))
         lateinit var fixture: Fixture
-        val context = CfirDeserializationContext(pkg, CjoPackageHeader.fromPackage(pkg), module, manager,
-            sourcePath = sourcePath,
-            declarationResolver = { path, packageName, index ->
-                assertEquals("lifecycle.marker", packageName)
-                assertEquals(0, index)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(coreRoot)),
+            importedPackageContextProvider = CjoPackageContextProvider { packageName, mode ->
+                assertEquals(marker.fullPackageName, packageName)
                 fixture.beforeMarkerHeader?.invoke()
-                provider.deserializeCjoDeclaration(path, packageName, index)
+                markerProvider.getOwnPackageContext(packageName, mode)
             },
-            dependencySnapshotResolver = { provider.selectImportedSnapshot(module, it) })
-        fixture = Fixture(context, provider)
+        )
+        module.session.register(CfirSymbolProvider::class, provider)
+        val context = assertNotNull(provider.getOwnPackageContext("std.core", CjoDeserializationMode.FULL))
+        fixture = Fixture(context, provider, markerProvider)
         return fixture
     }
 

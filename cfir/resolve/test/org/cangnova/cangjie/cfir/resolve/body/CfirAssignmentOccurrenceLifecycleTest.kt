@@ -510,7 +510,7 @@ class CfirAssignmentOccurrenceLifecycleTest {
             symbol = CfirPatternBindingSymbol(CallableId(name))
             returnTypeRef = buildResolvedTypeRef { coneType = checkNotNull(initializer.coneTypeOrNull) }
             isVar = mutable
-            this.initializer = initializer
+            this.ownedInitializer = initializer
         }
 
         fun access(variable: CfirPatternBindingVariable) = buildNamedAccessExpression {

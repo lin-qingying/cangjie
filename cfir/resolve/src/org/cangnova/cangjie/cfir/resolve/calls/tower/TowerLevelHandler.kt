@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.resolve.calls.tower
 
+import org.cangnova.cangjie.cfir.resolve.recoverableFunctionTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.functionTypeOrNull
 import org.cangnova.cangjie.cfir.calls.ExpressionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
@@ -276,11 +278,24 @@ internal class ScopeBasedTowerLevel(
         var result = ProcessResult.SCOPE_EMPTY
         for (candidate in callablesByName(info.name)) {
             val symbol = candidate.symbol
-            // 仓颉 enum constructor 在普通名字访问中不是普通 callable。
-            // 裸 enum 值访问由 CfirCallResolver 的 EnumConstructorCall fallback 单独进入，
-            // 否则同名顶层变量/函数会被错误地与 enum constructor 合并成歧义。
+            // 官方 enum body scope 会把本 enum 的 constructor 当作成员名优先查找。
+            // 普通裸值访问只接纳当前 lexical enum 的无参 constructor；其它 enum sugar
+            // 仍由 CfirCallResolver 的 EnumConstructorCall fallback 处理，避免全局同名项
+            // 越过局部变量、classifier 的名称优先级。
             if (info.callKind == CallKind.NamedValueAccess && symbol is CfirEnumConstructorSymbol) {
-                continue
+                val lexicalOwnerClassId = lexicalEnumOwnerClassId(info)
+                if (
+                    lexicalOwnerClassId == null ||
+                    !symbol.isBound ||
+                    symbol.enumOwnerClassId() != lexicalOwnerClassId
+                ) {
+                    continue
+                }
+
+                symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+                if (!symbol.isBound || symbol.cfir.valueParameters.isNotEmpty()) {
+                    continue
+                }
             }
             if (consumeCallableCandidate(symbol, processor, candidate.provenance).isFoundByThisLevel) {
                 result = ProcessResult.FOUND
@@ -404,15 +419,6 @@ private enum class CallableCandidateDiscovery {
         get() = this != NOT_DISCOVERABLE
 }
 
-/**
- * 错误类型携带函数 delegated type 时仍可作为函数值进入调用解析。
- */
-private fun ConeCangJieType?.recoverableFunctionTypeOrNull(): ConeFunctionType? =
-    when (this) {
-        is ConeFunctionType -> this
-        is ConeErrorType -> delegatedType as? ConeFunctionType
-        else -> null
-    }
 
 /**
  * 基于 dispatch receiver 成员作用域的 tower level。
@@ -512,6 +518,7 @@ internal class TowerLevelHandler {
         )
 
         return when (info.callKind) {
+            CallKind.SyntheticSelect -> error("Synthetic select candidate must come from its expression producer")
             CallKind.NamedValueAccess -> towerLevel.processCallablesByName(info, processor)
             CallKind.Function,
             CallKind.DelegatingConstructorCall,
@@ -609,7 +616,7 @@ internal class TowerLevelProcessor(
         receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
         dispatchReceiver: ReceiverValue,
     ): CandidateApplicability {
-        val functionType = receiverExpression.resolvedType.recoverableFunctionTypeOrNull()
+        val functionType = receiverExpression.resolvedType.recoverableFunctionTypeOrNull(callInfo.session, expandDelegated = false)
             ?: error("Expected function type or recoverable error function type receiver")
 
         return resultCollector.consumeCandidate(
@@ -648,7 +655,7 @@ internal class FunctionTypeInvokeTowerLevel(
         if (info.callKind != CallKind.Function || info.name != OperatorNameConventions.INVOKE) {
             return ProcessResult.SCOPE_EMPTY
         }
-        if (receiverExpression.resolvedType.recoverableFunctionTypeOrNull() == null) return ProcessResult.SCOPE_EMPTY
+        if (receiverExpression.resolvedType.recoverableFunctionTypeOrNull(info.session, expandDelegated = false) == null) return ProcessResult.SCOPE_EMPTY
 
         val functionTypeReceiver = ExpressionReceiverValue(receiverExpression)
         processor.consumeFunctionTypeInvokeCandidate(receiverExpression, functionTypeReceiver)

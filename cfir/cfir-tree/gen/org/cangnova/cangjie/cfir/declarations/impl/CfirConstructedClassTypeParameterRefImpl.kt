@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
-internal class CfirConstructedClassTypeParameterRefImpl(
+class CfirConstructedClassTypeParameterRefImpl @CfirImplementationDetail constructor(
     override var source: CjSourceElement?,
     override val symbol: CfirTypeParameterSymbol,
 ) : CfirConstructedClassTypeParameterRef() {

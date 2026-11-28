@@ -332,6 +332,7 @@ private class CfirInitializationFlowAnalyzer(
             )
         }
         val recursiveStaticFunctionReads = mutableListOf<StaticGlobalUseEdge>()
+        val staticInitThrowTerminatedOwners = linkedSetOf<ClassId>()
         var state = InitializationState.empty().declareAll(trackedInfos, emptySet())
         var nextVisitOrder = 0
 
@@ -363,14 +364,17 @@ private class CfirInitializationFlowAnalyzer(
                         nextVisitOrder = nextVisitOrder,
                         recursiveStaticFunctionReads = recursiveStaticFunctionReads,
                     )
-                    state = result.state
+                    if (result.state.terminationKind == InitializationTerminationKind.THROW) {
+                        declaration.nominalOwnerClassId?.let(staticInitThrowTerminatedOwners::add)
+                    }
+                    state = result.state.withoutTermination()
                     nextVisitOrder = result.nextVisitOrder
                 }
             }
         }
 
         reportRecursiveStaticFunctionReadsBeforeInitialization(recursiveStaticFunctionReads)
-        reportUninitializedStaticFields(trackedBySymbol.values)
+        reportUninitializedStaticFields(trackedBySymbol.values, staticInitThrowTerminatedOwners)
     }
 
     /**
@@ -1134,26 +1138,27 @@ private class CfirInitializationFlowAnalyzer(
         if (native.availability != CfirNativeInitializationDiagnosticAvailability.COMPLETE) return
         val obligations = native.obligations.associateBy { it.field.symbol.initializationSymbol() }
         val nativeConstructor = native.constructors.getValue(constructor.symbol)
-        owner.instanceFieldInfos(context, includeInherited = true)
-            .filter { it.symbol.initializationSymbol() in obligations }
-            .filter { fieldInfo ->
+        val firstUninitializedField = owner.instanceFieldInfos(context, includeInherited = true)
+            .firstOrNull { fieldInfo ->
                 val key = fieldInfo.symbol.initializationSymbol()
-                if (obligations.getValue(key).parentBoundary == null) {
+                val obligation = obligations[key] ?: return@firstOrNull false
+                if (obligation.parentBoundary == null) {
                     // own 义务按已核证的 Cangjie finally 正常出口，不恢复 N 的首次 return 缺陷。
                     normalExitStates.any { exitState -> !exitState.getValue(key).definitelyInitialized }
                 } else {
                     !nativeConstructor.endFields.getValue(key).definitelyInitialized
                 }
-            }
-            .forEach { fieldInfo ->
-                with(context) {
-                    reporter.reportOn(
-                        source = constructor.constructorNameDiagnosticSource(),
-                        factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
-                        a = fieldInfo.diagnosticName,
-                    )
-                }
-            }
+            } ?: return
+
+        // 官方逐字段调用 Diagnose，但全部锚在同一个构造器名；DiagnosticEngine 按该 source 去重，
+        // 保留声明顺序中第一个未初始化字段的消息。CFIR 在 checker 侧复现这一可见结果。
+        with(context) {
+            reporter.reportOn(
+                source = constructor.constructorNameDiagnosticSource(),
+                factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
+                a = firstUninitializedField.diagnosticName,
+            )
+        }
     }
 
     /**
@@ -1321,6 +1326,7 @@ private class CfirInitializationFlowAnalyzer(
     ): InitializationState = when (statement) {
         is CfirPatternVariable -> analyzePatternVariable(statement, state)
         is CfirFieldVariable -> analyzeFieldVariable(statement, state)
+        is CfirResourceVariable -> analyzeResourceVariable(statement, state)
         is CfirFunction -> analyzeNestedFunctionDeclaration(statement, state)
         is CfirExpression -> analyzeExpression(statement, state)
         else -> state
@@ -1422,7 +1428,7 @@ private class CfirInitializationFlowAnalyzer(
             val afterException = analyzeExpression(expression.exception, state)
             if (!afterException.terminated) dispatchAbruptExit(AbruptExit(AbruptExitKind.THROW,
                 afterException, thrownType = expression.exception.coneTypeOrNull))
-            afterException.terminate()
+            afterException.terminate(InitializationTerminationKind.THROW)
         }
         is CfirThisReceiverExpression -> analyzeThisReceiver(expression, state)
         is CfirFunctionCall -> analyzeFunctionCall(expression, state)
@@ -1873,7 +1879,17 @@ private class CfirInitializationFlowAnalyzer(
         abruptExitFrame = exits
         val mergedWithoutFinally: InitializationState
         try {
-            val tryState = analyzeScopedBlock(expression.tryBlock, state)
+            // 资源名字同时可见，初始化状态仍按源码顺序推进；前向读取必须命中未初始化的真实资源。
+            val declaredResources = state.declareAll(
+                trackedVariables = expression.resources.map { resource ->
+                    TrackedVariableInfo(resource.symbol, resource.name, TrackedVariableKind.LOCAL_VARIABLE)
+                },
+                initializedSymbols = emptySet(),
+            )
+            val resourceState = expression.resources.fold(declaredResources) { current, resource ->
+                analyzeResourceInitializer(resource, current)
+            }
+            val tryState = analyzeScopedBlock(expression.tryBlock, resourceState).retainOnly(state.tracked.keys)
             // 已由该 try 的实际 catch 类型覆盖的 throw 不再作为 uncaught 退出路由。
             // catch 自身的 return/throw 在后续分析中独立进入同一 finally。
             exits.exits.removeAll { exit -> exit.kind == AbruptExitKind.THROW && expression.catches.any { clause ->
@@ -1889,10 +1905,13 @@ private class CfirInitializationFlowAnalyzer(
         // 不可达而漏报（cjc 实测 terminated_01：`try { c = throw Exception() } catch {}`
         // 之后 use(c) 报 sema_used_before_initialization）。
             val catchEntryState = tryState.withoutTermination()
-            val catchStates = expression.catches.map { catchClause ->
-                analyzeScopedBlock(catchClause.body, catchEntryState)
+            val catchStates = expression.catches.map { clause ->
+                analyzePatternHostBody(clause.body, clause.pattern.bindingVariables(), catchEntryState)
             }
-            mergedWithoutFinally = (listOf(tryState) + catchStates).reduce(::mergeBranchStates)
+            val handleStates = expression.handlers.map { handler ->
+                analyzePatternHostBody(handler.body, handler.commandPattern.bindingVariables(), catchEntryState)
+            }
+            mergedWithoutFinally = (listOf(tryState) + catchStates + handleStates).reduce(::mergeBranchStates)
         } finally {
             abruptExitFrame = outer
         }
@@ -1945,6 +1964,38 @@ private class CfirInitializationFlowAnalyzer(
     /**
      * 分析循环表达式。
      */
+    /** 在语句入口登记资源身份，再分析其 initializer；try 宿主使用批量登记入口。 */
+    private fun analyzeResourceVariable(variable: CfirResourceVariable, state: InitializationState): InitializationState {
+        val declared = state.declare(
+            TrackedVariableInfo(variable.symbol, variable.name, TrackedVariableKind.LOCAL_VARIABLE),
+            initialized = false,
+        )
+        return analyzeResourceInitializer(variable, declared)
+    }
+
+    /** initializer 按源码顺序求值，完成后才将当前资源标记为已初始化。 */
+    private fun analyzeResourceInitializer(variable: CfirResourceVariable, state: InitializationState): InitializationState {
+        val hasTypeMismatch = with(context) {
+            with(EmptyDiagnosticReporter) { checkVariableInitializerTypeMismatch(variable) }
+        }
+        val afterInitializer = if (hasTypeMismatch) state
+        else variable.initializer?.let { analyzeExpression(it, state) } ?: state
+        return if (variable.initializer != null) afterInitializer.markInitialized(variable.symbol) else afterInitializer
+    }
+
+    /** catch/command 在进入正文之前已初始化，退出子句后移除该宿主绑定。 */
+    private fun analyzePatternHostBody(
+        body: CfirBlock,
+        bindings: List<CfirPatternBindingVariable>,
+        state: InitializationState,
+    ): InitializationState {
+        val entryState = state.declareAll(
+            trackedVariables = bindings.map { TrackedVariableInfo(it.symbol, it.name, TrackedVariableKind.LOCAL_VARIABLE) },
+            initializedSymbols = bindings.mapTo(hashSetOf()) { it.symbol },
+        )
+        return analyzeScopedBlock(body, entryState).retainOnly(state.tracked.keys)
+    }
+
     private fun analyzeLoopExpression(
         expression: CfirLoopExpression,
         state: InitializationState,
@@ -2388,7 +2439,7 @@ private class CfirInitializationFlowAnalyzer(
         left: InitializationState,
         right: InitializationState,
     ): InitializationState {
-        if (left.terminated && right.terminated) return left.intersect(right).terminate()
+        if (left.terminated && right.terminated) return left.intersect(right)
         if (left.terminated) return right
         if (right.terminated) return left
         return left.intersect(right)
@@ -2580,7 +2631,7 @@ private class CfirInitializationFlowAnalyzer(
 
                 with(context) {
                     reporter.reportOn(
-                        source = staticField.source?.firstCharacterDiagnosticSource(),
+                        source = staticField.source,
                         factory = CfirErrors.STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER,
                         a = memberName,
                     )
@@ -2906,12 +2957,16 @@ private class CfirInitializationFlowAnalyzer(
     /**
      * 报告最终仍未初始化的 static 字段。
      */
-    private fun reportUninitializedStaticFields(variables: Collection<StaticGlobalInitializerVariable>) {
+    private fun reportUninitializedStaticFields(
+        variables: Collection<StaticGlobalInitializerVariable>,
+        staticInitThrowTerminatedOwners: Set<ClassId>,
+    ) {
         for (variable in variables) {
             // 完成初始化图分析后发布真实状态，SOURCE writer 只能捕获此结果，不能按 initializer 猜 static 状态。
             publishInitialized(variable.symbol, variable.initialized)
             val field = variable.field ?: continue
             if (!field.status.isStatic) continue
+            if (variable.nominalOwnerClassId in staticInitThrowTerminatedOwners) continue
             if (variable.initialized) continue
             with(context) {
                 reporter.reportOn(
@@ -3411,6 +3466,9 @@ private data class TrackedVariableInfo(
      * 线性遍历尚未看到第二个语法赋值，也必须按重复赋值处理。
      */
     val declarationRepeatableDepth: Int = 0,
+
+    /** 局部存储声明所属的函数层级；同一函数内的前向读取不属于闭包捕获。 */
+    val declarationFunctionDepth: Int = 0,
 ) {
     /**
      * 是否为实例字段或主构造成员属性。
@@ -3477,6 +3535,9 @@ private data class InitializationState(
      */
     val terminated: Boolean,
 
+    /** 当前终止路径的原因；分支终止原因不同时置空。 */
+    val terminationKind: InitializationTerminationKind?,
+
     /**
      * 当前是否处于成员初始化器求值上下文。
      */
@@ -3491,6 +3552,9 @@ private data class InitializationState(
      * 当前是否在嵌套具名函数或匿名函数体内。
      */
     val inNestedFunction: Boolean,
+
+    /** 每次进入嵌套 callable 都建立独立层级，不能把已有嵌套状态复用为同一捕获边界。 */
+    val functionDepth: Int,
 
     /**
      * 当前是否处于 static 字段初始化器求值上下文。
@@ -3528,9 +3592,11 @@ private data class InitializationState(
             possiblyInitialized = emptySet(),
             expectedReceiver = expectedReceiver,
             terminated = false,
+            terminationKind = null,
             inMemberInitializer = false,
             memberInitializerOwner = null,
             inNestedFunction = false,
+            functionDepth = 0,
             inStaticFieldInitializer = false,
             repeatableDepth = 0,
             aliases = aliases,
@@ -3548,6 +3614,7 @@ private data class InitializationState(
         val normalizedTrackedVariable = trackedVariable.copy(
             symbol = normalizedSymbol,
             declarationRepeatableDepth = repeatableDepth,
+            declarationFunctionDepth = functionDepth,
         )
         val nextTracked = tracked + (normalizedSymbol to normalizedTrackedVariable)
         val nextInitialized = if (initialized) {
@@ -3705,6 +3772,8 @@ private data class InitializationState(
         val variableInfo = tracked[normalizedSymbol] ?: return false
         return inNestedFunction &&
                 variableInfo.kind.canBeCapturedBeforeInitialization &&
+                (variableInfo.kind != TrackedVariableKind.LOCAL_VARIABLE ||
+                        variableInfo.declarationFunctionDepth < functionDepth) &&
                 normalizedSymbol !in initialized
     }
 
@@ -3740,13 +3809,14 @@ private data class InitializationState(
      * 进入嵌套函数体上下文。
      */
     fun withNestedFunctionContext(): InitializationState =
-        if (inNestedFunction) this else copy(inNestedFunction = true)
+        copy(inNestedFunction = true, functionDepth = functionDepth + 1)
 
     /**
      * 取两个分支状态的交集。
      */
     fun intersect(other: InitializationState): InitializationState {
         require(aliases == other.aliases) { "Initialization branches must retain the same actual field bindings" }
+        check(functionDepth == other.functionDepth) { "Initialization flows from different functions cannot be merged" }
         val sharedTrackedSymbols = tracked.keys.intersect(other.tracked.keys)
         return InitializationState(
             tracked = tracked.filterKeys { symbol -> symbol in sharedTrackedSymbols },
@@ -3758,9 +3828,11 @@ private data class InitializationState(
             },
             expectedReceiver = commonExpectedReceiver(other),
             terminated = terminated && other.terminated,
+            terminationKind = terminationKind.takeIf { it == other.terminationKind },
             inMemberInitializer = inMemberInitializer && other.inMemberInitializer,
             memberInitializerOwner = commonMemberInitializerOwner(other),
             inNestedFunction = inNestedFunction && other.inNestedFunction,
+            functionDepth = functionDepth,
             inStaticFieldInitializer = inStaticFieldInitializer && other.inStaticFieldInitializer,
             repeatableDepth = minOf(repeatableDepth, other.repeatableDepth),
             aliases = aliases,
@@ -3803,12 +3875,21 @@ private data class InitializationState(
     /**
      * 标记当前控制流已终止。
      */
-    fun terminate(): InitializationState = if (terminated) this else copy(terminated = true)
+    fun terminate(
+        kind: InitializationTerminationKind = InitializationTerminationKind.OTHER,
+    ): InitializationState = if (terminated) this else copy(terminated = true, terminationKind = kind)
 
     /**
      * 清除当前控制流终止标记。
      */
-    fun withoutTermination(): InitializationState = if (!terminated) this else copy(terminated = false)
+    fun withoutTermination(): InitializationState =
+        if (!terminated && terminationKind == null) this else copy(terminated = false, terminationKind = null)
+}
+
+/** 初始化流分析需要保留的终止原因。 */
+private enum class InitializationTerminationKind {
+    OTHER,
+    THROW,
 }
 
 /**

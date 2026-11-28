@@ -1,0 +1,77 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_not_member_of",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'boundedValue' is not a member of class 'ProbeBox<Class-Misses>'",
+                "Location": {
+                    "File": "bounded-unsatisfied\\Use.cj",
+                    "Line": 6,
+                    "Column": 24
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "bounded-unsatisfied\\Use.cj",
+                            "Line": 6,
+                            "Column": 24
+                        },
+                        "End": {
+                            "File": "bounded-unsatisfied\\Use.cj",
+                            "Line": 6,
+                            "Column": 36
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_unused_import",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "sema",
+                "Message": "unused import 'g4provider.Bound'",
+                "Location": {
+                    "File": "bounded-unsatisfied\\Use.cj",
+                    "Line": 3,
+                    "Column": 38
+                },
+                "MainHint": {
+                    "Content": "unused import",
+                    "Range": {
+                        "Begin": {
+                            "File": "bounded-unsatisfied\\Use.cj",
+                            "Line": 3,
+                            "Column": 38
+                        },
+                        "End": {
+                            "File": "bounded-unsatisfied\\Use.cj",
+                            "Line": 3,
+                            "Column": 43
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 1,
+        "PrintedWarnings": 1
+    }
+}

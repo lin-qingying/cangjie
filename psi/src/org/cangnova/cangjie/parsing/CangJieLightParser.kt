@@ -156,6 +156,7 @@ object CangJieLightParser {
         errorListener: LightTreeParsingErrorListener?,
         diagnosticOwnership: CangJieLightDiagnosticOwnership,
     ): ParsedCangJieMacroFragment {
+        seed.annotationModuleProvenance?.let { builder.putUserData(ANNOTATION_MODULE_PROVENANCE, it) }
         val inputText = builder.originalText.toString()
         val ownBuilder = builder as? CangJiePsiBuilder
         val inputSource = ownBuilder?.sourceContext ?: seed.sourceContext

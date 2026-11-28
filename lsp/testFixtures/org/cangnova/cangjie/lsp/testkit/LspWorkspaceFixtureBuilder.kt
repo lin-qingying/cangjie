@@ -47,6 +47,7 @@ class LspWorkspaceFixtureBuilder {
         sourceRoots: List<String> = listOf("src"),
         outputRelativePath: String = "target",
         packageSearchPaths: List<String> = emptyList(),
+        requiredModuleNames: List<String> = emptyList(),
     ): LspWorkspaceFixtureBuilder {
         modules[normalizeRelative(rootRelativePath)] = ModuleSpec(
             name = name,
@@ -54,6 +55,7 @@ class LspWorkspaceFixtureBuilder {
             sourceRoots = sourceRoots.map(::normalizeRelative),
             outputRelativePath = normalizeRelative(outputRelativePath),
             packageSearchPaths = packageSearchPaths,
+            requiredModuleNames = requiredModuleNames,
         )
         return this
     }
@@ -72,6 +74,21 @@ class LspWorkspaceFixtureBuilder {
     fun source(relativePath: String, text: String): LspWorkspaceFixtureBuilder {
         return file("src/$relativePath", text)
     }
+
+    /**
+     * 从 `lsp/testData` 读取源码并放到默认 `src` 源码根下。
+     *
+     * 测试源码属于**数据**：放在 testData 里才能被编辑器按 `.cj` 高亮/检查、能被多个用例复用、
+     * 也能给同一份输入配 sidecar 期望文件。内联多行字符串做不到这三点。
+     */
+    fun sourceFromTestData(relativePath: String, testDataPath: String): LspWorkspaceFixtureBuilder =
+        source(relativePath, LspTestData.text(testDataPath))
+
+    /**
+     * 从 `lsp/testData` 读取任意相对路径文件（可放到 `src` 之外，例如资源或配置）。
+     */
+    fun fileFromTestData(relativePath: String, testDataPath: String): LspWorkspaceFixtureBuilder =
+        file(relativePath, LspTestData.text(testDataPath))
 
     /**
      * 禁用标准库 cjo 夹具复制。
@@ -253,14 +270,17 @@ class LspWorkspaceFixture internal constructor(
         workspaceFolders: List<WorkspaceFolder>,
         includeMultiModuleOption: Boolean,
     ): Map<String, Any> {
+        val moduleRootPathsByName = modules.associate { module ->
+            module.name to workspaceRoot.resolve(module.rootRelativePath.ifBlank { "." }).normalize()
+        }
         val options = linkedMapOf<String, Any>(
             "targetLib" to cacheRoot.toString(),
         )
         stdlibRoot?.let { options["stdLibPathOption"] = it.toString() }
         if (includeMultiModuleOption) {
             options["multiModuleOption"] = modules.associate { module ->
-                val moduleRoot = workspaceRoot.resolve(module.rootRelativePath.ifBlank { "." }).normalize()
-                moduleRoot.toUri().toString() to mapOf(
+                val moduleRoot = moduleRootPathsByName.getValue(module.name)
+                val definition = linkedMapOf<String, Any>(
                     "name" to module.name,
                     "package_requires" to mapOf(
                         "path_option" to module.packageSearchPaths,
@@ -279,6 +299,12 @@ class LspWorkspaceFixture internal constructor(
                         ),
                     ),
                 )
+                if (module.requiredModuleNames.isNotEmpty()) {
+                    definition["requires"] = module.requiredModuleNames.associateWith { requiredName ->
+                        mapOf("path" to moduleRootPathsByName.getValue(requiredName).toUri().toString())
+                    }
+                }
+                moduleRoot.toUri().toString() to definition
             }
         } else if (workspaceFolders.isEmpty()) {
             options.remove("targetLib")
@@ -315,4 +341,55 @@ internal data class ModuleSpec(
      * 模块 package 依赖搜索路径。
      */
     val packageSearchPaths: List<String>,
+
+    /**
+     * 该模块依赖的其它工作区模块名称。
+     */
+    val requiredModuleNames: List<String>,
 )
+
+
+/**
+ * `lsp/testData` 的读取入口。
+ *
+ * 只负责「定位仓库内的测试数据 + 原样读取」，不做换行规范化：
+ * CRLF 与空文件都是被测输入，必须保持字节原样（`readText` 保留 `\r`，空文件读到空串）。
+ */
+object LspTestData {
+    /**
+     * `lsp/testData` 根目录。
+     */
+    val root: Path by lazy {
+        var current = Path.of("").toAbsolutePath()
+        while (current != current.root) {
+            if (current.resolve("settings.gradle.kts").exists()) {
+                return@lazy current.resolve("lsp").resolve("testData")
+            }
+            current = current.parent
+        }
+        error("Cannot locate repository root from ${Path.of("").toAbsolutePath().invariantSeparatorsPathString}")
+    }
+
+    /**
+     * 测试数据文件的绝对路径。
+     */
+    fun path(relativePath: String): Path {
+        val file = root.resolve(relativePath.replace('\\', '/'))
+        check(file.exists()) { "缺少测试数据：$file（相对路径 $relativePath）" }
+        return file
+    }
+
+    /**
+     * 原样读取测试数据文本。
+     */
+    fun text(relativePath: String): String = path(relativePath).readText()
+
+    /**
+     * 把测试数据文件拷贝到指定位置（用于「运行期新建文件」类用例）。
+     */
+    fun copyTo(relativePath: String, target: Path): Path {
+        target.parent?.createDirectories()
+        Files.copy(path(relativePath), target, StandardCopyOption.REPLACE_EXISTING)
+        return target
+    }
+}

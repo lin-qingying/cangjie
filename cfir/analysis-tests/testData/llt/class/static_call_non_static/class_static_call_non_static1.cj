@@ -28,7 +28,7 @@ class Data {
     }
 
     static func g() {
-        var x = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>w<!>idth
+        var x = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>width<!>
         return x
     }
 }

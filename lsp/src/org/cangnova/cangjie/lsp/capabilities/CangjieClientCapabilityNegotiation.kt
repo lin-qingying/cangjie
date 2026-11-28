@@ -31,6 +31,14 @@ data class CangjieClientCapabilityNegotiation(
     val workspaceFolders: Boolean,
 
     /**
+     * 客户端是否支持 `workspace/applyEdit`。
+     *
+     * 补全插入靠它落盘：服务端算好编辑后**请求**客户端应用。客户端没声明支持时服务端不该声明
+     * 该能力——那会发出对方无法处理的请求，表现是「接受候选后没有反应」。
+     */
+    val workspaceApplyEdit: Boolean,
+
+    /**
      * 服务端最终采用的 position encoding；为 null 时表示不显式声明。
      */
     val positionEncoding: String?,
@@ -90,6 +98,7 @@ object CangjieClientCapabilityNegotiator {
                 negotiatedFeatures.diagnostics &&
                 supportsPullDiagnostics(textDocument, workspace),
             workspaceFolders = descriptor.workspaceFoldersSupported && workspace?.workspaceFolders == true,
+            workspaceApplyEdit = workspace?.applyEdit == true,
             positionEncoding = negotiatePositionEncoding(general?.positionEncodings, descriptor.positionEncoding),
         )
     }

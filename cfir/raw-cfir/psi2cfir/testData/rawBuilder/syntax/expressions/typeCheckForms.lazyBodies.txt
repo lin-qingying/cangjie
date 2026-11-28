@@ -1,0 +1,14 @@
+FILE: typeCheckForms.cj
+    internal? open class A {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class B <: R|A| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func typeCheckForms(x: R|Any|, a: R|A|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

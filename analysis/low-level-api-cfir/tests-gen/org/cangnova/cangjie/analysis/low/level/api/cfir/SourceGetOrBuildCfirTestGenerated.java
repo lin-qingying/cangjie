@@ -29,4 +29,16 @@ public class SourceGetOrBuildCfirTestGenerated extends AbstractSourceGetOrBuildC
   public void testBasic() {
     run("basic.cj");
   }
+
+  @Test
+  @TestMetadata("extendSuperType.cj")
+  public void testExtendSuperType() {
+    run("extendSuperType.cj");
+  }
+
+  @Test
+  @TestMetadata("rangeOperationReference.cj")
+  public void testRangeOperationReference() {
+    run("rangeOperationReference.cj");
+  }
 }

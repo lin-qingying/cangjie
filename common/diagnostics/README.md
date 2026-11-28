@@ -27,7 +27,9 @@
 
 ## 依赖
 
+- `:psi`
 - `:common`
+- `:util`
 
 ## 命令
 
@@ -39,6 +41,5 @@
 ## 相关文档
 
 - `../../docs/official-compiler-diagnostics.md` — 官方诊断清单
-- `../../docs/diagnostics-gap-vs-official-cpp-full.md` — 与官方对照
 - `../../cfir/checkers/README.md` — 诊断定义与报告
 - `../../cfir/diagnostic-renderers/README.md` — 诊断渲染

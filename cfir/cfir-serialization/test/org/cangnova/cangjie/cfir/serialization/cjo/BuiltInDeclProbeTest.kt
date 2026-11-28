@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.bindCjoFixture
 import PackageFormat.BuiltInInfo
 import PackageFormat.BuiltInType
 import PackageFormat.Decl
@@ -82,11 +83,14 @@ class BuiltInDeclProbeTest {
             )
             val header = assertNotNull(manager.loadPackageHeader("std.core"))
             val pkg = assertNotNull(manager.loadPackage("std.core"))
+            val metadataBinding = bindCjoFixture(BuiltInTestModuleData, manager, setOf(tempDir))
             val context = CfirDeserializationContext(
                 pkg = pkg,
                 header = header,
                 moduleData = BuiltInTestModuleData,
                 cjoManager = manager,
+                classSymbolLookup = manager.deserializedSymbolLookups.forBinding(metadataBinding, BuiltInTestModuleData,
+                    org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode.FULL),
             )
 
             val expectedKinds = mapOf(

@@ -65,7 +65,6 @@ inline fun buildCatchCopy(original: CfirCatch, init: CfirCatchBuilder.() -> Unit
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.mappedExpression = original.mappedExpression
     copyBuilder.overflowStrategy = original.overflowStrategy
-    copyBuilder.pattern = original.pattern
     copyBuilder.body = original.body
     return copyBuilder.apply(init).build()
 }

@@ -10,7 +10,7 @@ class C<T, V> {}
 class A{}
 class B{}
 
-<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend C<A, B> <: I<A> & I<B> {}
+<!NEED_MEMBER_IMPLEMENTATION!>extend C<A, B> <: I<A> & I<B> {}<!>
 
 main() {
     return 0

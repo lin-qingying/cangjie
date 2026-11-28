@@ -1,4 +1,12 @@
 <idea-plugin>
+  <extensionPoints>
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.generatedReferenceSearchProvider"
+        interface="org.cangnova.cangjie.idea.search.CjGeneratedReferenceSearchProvider"
+        area="IDEA_PROJECT"
+        dynamic="true"/>
+  </extensionPoints>
+
   <extensions defaultExtensionNs="com.intellij">
     <applicationService
         serviceInterface="org.cangnova.cangjie.idea.references.CangJieReferenceMutateService"
@@ -9,6 +17,11 @@
         implementationClass="org.cangnova.cangjie.idea.search.CangJieFindUsagesProvider"
     />
     <referencesSearch implementation="org.cangnova.cangjie.idea.search.CangJieReferencesSearchExecutor" />
+    <targetElementEvaluator
+        language="CangJie"
+        implementationClass="org.cangnova.cangjie.idea.search.ideaExtensions.CangJieTargetElementEvaluator" />
+    <targetElementUtilExtender
+        implementation="org.cangnova.cangjie.idea.search.ideaExtensions.CangJieTargetElementEvaluator" />
     <projectService
         serviceInterface="org.cangnova.cangjie.psi.CangJieReferenceProvidersService"
         serviceImplementation="org.cangnova.cangjie.analysis.references.CangJieReferenceProvidersServiceImpl"

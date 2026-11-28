@@ -1,0 +1,4 @@
+FILE: ifLetWithGuard.cj
+    internal? func firstOrZero(o: R|Option<R|Int64|>|, flag: R|Bool|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

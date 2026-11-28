@@ -1,0 +1,2 @@
+FILE: missingNameInFunc.cj
+    internal? func <no name provided>(): <implicit>

@@ -1,0 +1,42 @@
+FILE: optionAndCoalescing.cj
+    internal? func useOption(o: R|Option<R|Int64|>|): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Some) {
+                    INT(1)
+                }
+        local? let b: R|Option<R|Int64|>| = ...
+            initializer:
+                NAMED_ACCESS(None)
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(getOrThrow) {
+                    receiver:
+                        NAMED_ACCESS(o)
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                BINARY_OP(COALESCING) {
+                    NAMED_ACCESS(o)
+                    INT(2)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(b)
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(getOrThrow) {
+                                receiver:
+                                    NAMED_ACCESS(a)
+                            }
+                        arguments:
+                            NAMED_ACCESS(c)
+                    }
+                arguments:
+                    NAMED_ACCESS(d)
+            }
+        }
+    }

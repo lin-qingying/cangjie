@@ -50,6 +50,9 @@ fun main(args: Array<String>) {
                 cfirVisitorVoidType to { printer, visitorType -> VisitorVoidPrinter(printer, visitorType) },
                 cfirDefaultVisitorVoidType to { printer, visitorType -> DefaultVisitorVoidPrinter(printer, visitorType) },
                 cfirTransformerType to { printer, visitorType -> TransformerPrinter(printer, visitorType, model.rootElement) },
+                deepCopyCfirTreeWithSymbolsType to { printer, visitorType ->
+                    DeepCopyCfirTreeWithSymbolsPrinter(printer, visitorType)
+                },
             )
         )
     }

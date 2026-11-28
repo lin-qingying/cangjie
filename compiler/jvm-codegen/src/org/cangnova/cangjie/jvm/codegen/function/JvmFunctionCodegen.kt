@@ -3,6 +3,7 @@ package org.cangnova.cangjie.jvm.codegen.function
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
+import org.cangnova.cangjie.chir.core.controlflow.ChirCatchDispatchEntry
 import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
 import org.cangnova.cangjie.chir.core.expression.ChirConstantExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
+import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
@@ -26,6 +28,7 @@ import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirTypeRelations
 import org.cangnova.cangjie.chir.core.value.ChirBlockGroupValue
@@ -222,6 +225,7 @@ class JvmFunctionCodegen(
             is ChirCallExpression -> emitCallExpression(method, expression)
             is ChirMemoryExpression -> emitMemoryExpression(method, expression)
             is ChirConstantExpression -> emitConstantExpression(method, expression)
+            is ChirTupleExpression -> emitTuplePack(method, expression.semanticId, expression.resultType, expression.elements)
             is ChirOtherExpression -> emitOtherExpression(method, expression)
             else -> throw JvmCodegenException("unsupported expression ${expression::class.simpleName}", expression.semanticId)
         }
@@ -892,6 +896,11 @@ class JvmFunctionCodegen(
             "select" -> emitSelectExpression(method, expression)
             "bitcast" -> emitJvmBitcast(method, expression)
             ChirOtherOperation.CANGJIE_TYPE_CAST_NA.canonicalName -> emitJvmReferenceTypeCast(method, expression)
+            "chir.string_build" -> emitStringBuild(method, expression)
+            "chir.string_append" -> emitStringAppend(method, expression)
+            "chir.string_result" -> emitStringResult(method, expression)
+            "chir.tuple_pack" -> emitTuplePack(method, expression)
+            "chir.tuple_extract" -> emitTupleExtract(method, expression)
             "jvm.new" -> emitJvmNew(method, expression)
             "jvm.getfield" -> emitJvmGetField(method, expression)
             "jvm.putfield" -> emitJvmPutField(method, expression)
@@ -997,6 +1006,166 @@ class JvmFunctionCodegen(
         emitValue(method, source)
         adaptStackValue(method, source.semanticId, sourceType, targetType, "reference type cast")
         storeExpressionResult(method, expression.semanticId, targetType)
+    }
+
+    /**
+     * 发射 `chir.string_build`：创建字符串构建器。
+     *
+     * 平台载体为 `java.lang.StringBuilder`；结果存入构建器 slot。
+     */
+    private fun emitStringBuild(method: MethodVisitor, expression: ChirOtherExpression) {
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.string_build requires result type", expression.semanticId)
+        val builderType = context.typeMapper.mapValueType(resultTypeRef)
+        if (builderType.descriptor != "Ljava/lang/StringBuilder;") {
+            throw JvmCodegenException(
+                "chir.string_build carrier must be chir.StringBuilder, actual ${builderType.descriptor}",
+                expression.semanticId,
+            )
+        }
+        method.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder")
+        method.visitInsn(Opcodes.DUP)
+        method.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false)
+        storeExpressionResult(method, expression.semanticId, builderType)
+    }
+
+    /**
+     * 发射 `chir.string_append`：向构建器追加片段。
+     *
+     * 片段按其 JVM 载体选择 append 重载：字符串走 `append(String)`，
+     * 原始类型装箱后走 `append(Object)`——StringBuilder 对装箱值调用 toString 语义。
+     */
+    private fun emitStringAppend(method: MethodVisitor, expression: ChirOtherExpression) {
+        val operands = expression.requireOperandCount("chir.string_append", 2)
+        expression.requireNoResultType("chir.string_append")
+        val builder = operands[0]
+        val builderType = context.typeMapper.mapValueType(builder.type)
+        if (builderType.descriptor != "Ljava/lang/StringBuilder;") {
+            throw JvmCodegenException(
+                "chir.string_append builder must be chir.StringBuilder, actual ${builderType.descriptor}",
+                expression.semanticId,
+            )
+        }
+        emitValue(method, builder)
+        emitBoxedValue(method, operands[1])
+        method.visitMethodInsn(
+            Opcodes.INVOKEVIRTUAL,
+            "java/lang/StringBuilder",
+            "append",
+            "(Ljava/lang/Object;)Ljava/lang/StringBuilder;",
+            false,
+        )
+        method.visitInsn(Opcodes.POP)
+    }
+
+    /**
+     * 发射 `chir.string_result`：把构建器内容取为结果字符串。
+     */
+    private fun emitStringResult(method: MethodVisitor, expression: ChirOtherExpression) {
+        val builder = expression.singleOperand("chir.string_result")
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.string_result requires result type", expression.semanticId)
+        val builderType = context.typeMapper.mapValueType(builder.type)
+        if (builderType.descriptor != "Ljava/lang/StringBuilder;") {
+            throw JvmCodegenException(
+                "chir.string_result builder must be chir.StringBuilder, actual ${builderType.descriptor}",
+                expression.semanticId,
+            )
+        }
+        emitValue(method, builder)
+        method.visitMethodInsn(
+            Opcodes.INVOKEVIRTUAL,
+            "java/lang/StringBuilder",
+            "toString",
+            "()Ljava/lang/String;",
+            false,
+        )
+        val resultType = context.typeMapper.mapValueType(resultTypeRef)
+        adaptStackValue(method, expression.semanticId, Type.getObjectType("java/lang/String"), resultType, "string result")
+        storeExpressionResult(method, expression.semanticId, resultType)
+    }
+
+    /**
+     * 发射 `chir.tuple_pack`：把 n 个元素打包为元组载体。
+     *
+     * 元组载体为 `Object[]`：anewarray + 逐元素装箱 aastore；
+     * 结果类型必须是 `ChirTupleType` 且元素数与操作数一致。
+     */
+    private fun emitTuplePack(method: MethodVisitor, expression: ChirOtherExpression) {
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.tuple_pack requires result type", expression.semanticId)
+        emitTuplePack(method, expression.semanticId, resultTypeRef, expression.operands)
+    }
+
+    private fun emitTuplePack(
+        method: MethodVisitor,
+        semanticId: ChirSemanticId,
+        resultTypeRef: ChirTypeRef,
+        elements: List<ChirValue>,
+    ) {
+        val tupleType = (resultTypeRef as? ChirResolvedTypeRef)?.type as? ChirTupleType
+            ?: throw JvmCodegenException(
+                "chir.tuple_pack result must be ChirTupleType, actual ${resultTypeRef.renderName}",
+                semanticId,
+            )
+        if (tupleType.elementTypes.size != elements.size) {
+            throw JvmCodegenException(
+                "chir.tuple_pack element count ${tupleType.elementTypes.size} does not match operands ${elements.size}",
+                semanticId,
+            )
+        }
+        val tupleCarrier = context.typeMapper.mapValueType(resultTypeRef)
+        if (tupleCarrier.descriptor != "[Ljava/lang/Object;") {
+            throw JvmCodegenException(
+                "chir.tuple_pack carrier must be Object[], actual ${tupleCarrier.descriptor}",
+                semanticId,
+            )
+        }
+        method.visitLdcInsn(elements.size)
+        method.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object")
+        elements.forEachIndexed { index, element ->
+            method.visitInsn(Opcodes.DUP)
+            method.visitLdcInsn(index)
+            emitBoxedValue(method, element)
+            method.visitInsn(Opcodes.AASTORE)
+        }
+        storeExpressionResult(method, semanticId, tupleCarrier)
+    }
+
+    /**
+     * 发射 `chir.tuple_extract`：按索引从元组载体取元素。
+     *
+     * 操作数 [tuple, index]；结果类型即元组该位置元素类型，
+     * 装箱值经 checkcast/拆箱适配到结果载体。
+     */
+    private fun emitTupleExtract(method: MethodVisitor, expression: ChirOtherExpression) {
+        val operands = expression.requireOperandCount("chir.tuple_extract", 2)
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.tuple_extract requires result type", expression.semanticId)
+        val tupleType = (operands[0].type as? ChirResolvedTypeRef)?.type as? ChirTupleType
+            ?: throw JvmCodegenException(
+                "chir.tuple_extract operand must be ChirTupleType, actual ${operands[0].type.renderName}",
+                expression.semanticId,
+            )
+        val indexConstant = operands[1] as? ChirConstantValue
+            ?: throw JvmCodegenException("chir.tuple_extract index must be a constant", expression.semanticId)
+        val index = indexConstant.literal.trim().toIntOrNull()
+            ?: throw JvmCodegenException(
+                "chir.tuple_extract index must be integer constant, actual '${indexConstant.literal}'",
+                expression.semanticId,
+            )
+        if (index < 0 || index >= tupleType.elementTypes.size) {
+            throw JvmCodegenException(
+                "chir.tuple_extract index $index out of bounds for tuple of ${tupleType.elementTypes.size} elements",
+                expression.semanticId,
+            )
+        }
+        val resultType = context.typeMapper.mapValueType(resultTypeRef)
+        emitValue(method, operands[0])
+        method.visitLdcInsn(index)
+        method.visitInsn(Opcodes.AALOAD)
+        adaptStackValue(method, expression.semanticId, Type.getObjectType("java/lang/Object"), resultType, "tuple extract")
+        storeExpressionResult(method, expression.semanticId, resultType)
     }
 
     /**
@@ -1426,8 +1595,11 @@ class JvmFunctionCodegen(
     /**
      * 发射 throw 终结符。
      *
-     * 没有 unwind 目标时直接 `athrow`；存在 unwind 目标时生成保护区和 catch-all handler，
-     * 在 handler 中执行 phi 边赋值并跳转到 unwind 目标块。
+     * 没有 unwind 目标时直接 `athrow`；存在 unwind 目标时生成保护区。
+     * 多 catch 类型分派（`catchDispatches` 非空）时为每个分派生成独立的
+     * `tryCatchBlock(type)` 异常表条目与 handler 入口（各 handler 存入
+     * 自己的绑定后跳转各自 catch 块）。
+     * 单 catch（无分派表）保持 catch-all 快捷形态。
      */
     private fun emitThrow(method: MethodVisitor, block: ChirBlock, terminator: ChirThrowTerminator) {
         val exceptionType = context.typeMapper.mapValueType(terminator.exceptionValue.type)
@@ -1436,6 +1608,11 @@ class JvmFunctionCodegen(
         if (unwindTargetBlockId == null) {
             emitValue(method, terminator.exceptionValue)
             method.visitInsn(Opcodes.ATHROW)
+            return
+        }
+
+        if (terminator.catchDispatches.isNotEmpty()) {
+            emitMultiCatchThrow(method, block, terminator)
             return
         }
 
@@ -1448,9 +1625,70 @@ class JvmFunctionCodegen(
         method.visitInsn(Opcodes.ATHROW)
         method.visitLabel(protectedEnd)
         method.visitLabel(handlerEntry)
-        method.visitInsn(Opcodes.POP)
+        val exceptionBinding = terminator.unwindExceptionBinding
+        if (exceptionBinding == null) {
+            method.visitInsn(Opcodes.POP)
+        } else {
+            storeHandlerException(method, exceptionBinding, terminator)
+        }
         emitPhiAssignmentsForEdge(method, block, unwindTargetBlockId)
         method.visitJumpInsn(Opcodes.GOTO, labelFor(unwindTargetBlockId))
+    }
+
+    /**
+     * 发射多 catch 类型分派的 throw：保护区 + 每分派一条类型化异常表条目。
+     *
+     * 各 handler 把异常对象存入自己的绑定（或丢弃）后跳转对应 catch 块；
+     * 兜底分派（类型为 null）生成 catch-all 条目。
+     */
+    private fun emitMultiCatchThrow(method: MethodVisitor, block: ChirBlock, terminator: ChirThrowTerminator) {
+        val protectedStart = Label()
+        val protectedEnd = Label()
+        val handlers = terminator.catchDispatches.map { dispatch ->
+            val handlerEntry = Label()
+            val typeInternalName = dispatch.exceptionTypeName?.let { typeName ->
+                if (typeName.contains('.')) typeName.replace('.', '/') else typeName
+            }
+            method.visitTryCatchBlock(protectedStart, protectedEnd, handlerEntry, typeInternalName)
+            handlerEntry to dispatch
+        }
+        method.visitLabel(protectedStart)
+        emitValue(method, terminator.exceptionValue)
+        method.visitInsn(Opcodes.ATHROW)
+        method.visitLabel(protectedEnd)
+        handlers.forEach { (handlerEntry, dispatch) ->
+            method.visitLabel(handlerEntry)
+            val binding = dispatch.exceptionBinding
+            if (binding == null) {
+                method.visitInsn(Opcodes.POP)
+            } else {
+                storeHandlerException(method, binding, terminator)
+            }
+            emitPhiAssignmentsForEdge(method, block, dispatch.catchBlockId)
+            method.visitJumpInsn(Opcodes.GOTO, labelFor(dispatch.catchBlockId))
+        }
+    }
+
+    /**
+     * 把 handler 栈顶的异常对象按绑定名存入 local slot。
+     *
+     * slot 首次分配时使用引用载体（`java/lang/Object`）：cfir2chir 的绑定
+     * 类型可能是任意异常子类型，catch 体读取时按绑定声明类型做栈值适配。
+     */
+    private fun storeHandlerException(method: MethodVisitor, bindingName: String, terminator: ChirThrowTerminator) {
+        val normalizedBinding = normalizeLocalName(bindingName)
+        val existing = localSlotsByName[normalizedBinding]
+        val slot = existing ?: LocalSlot(nextLocalSlot, Type.getObjectType("java/lang/Object")).also {
+            localSlotsByName[normalizedBinding] = it
+            nextLocalSlot += it.type.size
+        }
+        if (slot.type.sort != Type.OBJECT && slot.type.sort != Type.ARRAY) {
+            throw JvmCodegenException(
+                "JVM catch exception binding '$bindingName' must be a reference slot, actual ${slot.type.descriptor}",
+                terminator.semanticId,
+            )
+        }
+        method.visitVarInsn(Opcodes.ASTORE, slot.index)
     }
 
     /**
@@ -1802,6 +2040,10 @@ class JvmFunctionCodegen(
      * 确保 CHIR ref 地址拥有可读写的 JVM local slot。
      *
      * 对还没有绑定的地址分配新 slot，并用地址 semanticId 与名称同时登记。
+     *
+     * 已存在同名 slot 且类型不一致时：引用载体之间视为兼容（如 catch 绑定
+     * 以 Object 存入、按声明类型读取，读取侧经 checkcast 适配）；原始类型
+     * 冲突仍然报错。
      */
     private fun ensureAddressSlot(address: ChirValue, nodeId: ChirSemanticId): LocalSlot {
         val targetType = refTargetType(address, nodeId)
@@ -1810,7 +2052,8 @@ class JvmFunctionCodegen(
         val existing = localSlots[address.semanticId]
             ?: localSlotsByName[normalizeLocalName(name)]
         if (existing != null) {
-            if (existing.type != type) {
+            val referenceCompatible = existing.type.isReferenceCarrier() && type.isReferenceCarrier()
+            if (existing.type != type && !referenceCompatible) {
                 throw JvmCodegenException("JVM address slot type mismatch: expected ${existing.type}, actual $type", nodeId)
             }
             return existing

@@ -33,6 +33,9 @@ data class LspProjectConfiguration(
      * 三方库或 package 依赖搜索路径。
      */
     val librarySearchPaths: List<String>,
+
+    /** 是否在 LSP 诊断消息中显示诊断工厂名。 */
+    val showDiagnosticFactoryNames: Boolean,
 ) {
     /**
      * CFIR `.cjo` 搜索路径在当前仓库中通过环境变量语义建模。
@@ -55,6 +58,9 @@ data class LspProjectConfiguration(
          * 三方库搜索路径写入的系统属性名。
          */
         const val LIBRARY_PROPERTY: String = "cangjie.library"
+
+        /** LSP 初始化选项：控制诊断消息是否附带诊断定义名。 */
+        const val SHOW_DIAGNOSTIC_FACTORY_NAMES_OPTION: String = "showDiagnosticFactoryNames"
 
         /**
          * 从 LSP initialize 参数构造工程配置。
@@ -93,10 +99,14 @@ data class LspProjectConfiguration(
                 }
             }.distinct()
 
+            val showDiagnosticFactoryNames =
+                initializationOptions[SHOW_DIAGNOSTIC_FACTORY_NAMES_OPTION] as? Boolean ?: false
+
             return LspProjectConfiguration(
                 workspaceModules = workspaceModules,
                 stdlibSearchPaths = stdlibSearchPaths,
                 librarySearchPaths = librarySearchPaths,
+                showDiagnosticFactoryNames = showDiagnosticFactoryNames,
             )
         }
 
@@ -129,8 +139,23 @@ data class LspProjectConfiguration(
                     name = moduleMap["name"].asNonBlankStringOrNull() ?: inferWorkspaceName(moduleRootUri),
                     sourceRootUris = sourceRootUris.ifEmpty { listOf(moduleRootUri) },
                     packageSearchPaths = packageSearchPaths,
+                    requiredModuleNames = parseRequiredModuleNames(moduleMap),
                 )
             }
+        }
+
+        /**
+         * 解析模块依赖的其它工作区模块名。
+         *
+         * 客户端 `requires` 形态为 `{ "<模块名>": { "path": "<uri>" } }`；这里只取模块名，
+         * 路径信息由对应模块自身的 `source_sets` 提供。
+         */
+        private fun parseRequiredModuleNames(moduleMap: Map<*, *>): List<String> {
+            val requires = moduleMap["requires"] as? Map<*, *> ?: return emptyList()
+            return requires.keys
+                .mapNotNull { it as? String }
+                .filter { it.isNotBlank() }
+                .distinct()
         }
 
         /**
@@ -229,6 +254,14 @@ data class LspWorkspaceModuleDefinition(
      * 该模块额外贡献的 package 依赖搜索路径。
      */
     val packageSearchPaths: List<String>,
+
+    /**
+     * 该模块依赖的其它工作区模块名（来自 `requires` 声明）。
+     *
+     * 源码依赖（Git/Path/中心仓源码包）在工作区里各自是一个源码模块，
+     * 只有建立模块依赖边，`import <包名>` 才能跨模块解析。
+     */
+    val requiredModuleNames: List<String> = emptyList(),
 )
 
 /**

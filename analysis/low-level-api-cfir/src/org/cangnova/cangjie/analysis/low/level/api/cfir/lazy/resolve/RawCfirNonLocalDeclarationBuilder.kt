@@ -7,11 +7,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirFunctionBodyOwner
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.builder.MacroSurfaceCollectionMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.psi
@@ -41,7 +43,15 @@ internal class RawCfirNonLocalDeclarationBuilder private constructor(
     private val functionsToRebind: Set<CfirFunctionBodyOwner>,
     annotationMetadata: CfirAnnotationMetadataBuilder,
 ) : PsiRawCfirBuilder(
-    session, baseScopeProvider, BodyBuildingMode.NORMAL, annotationMetadata,
+    session = session,
+    baseScopeProvider = baseScopeProvider,
+    bodyBuildingMode = BodyBuildingMode.NORMAL,
+    annotationMetadata = annotationMetadata,
+    macroSurfaceCollectionMode = if ((session as? LLCfirResolvableModuleSession)?.macroSemanticSnapshot == null) {
+        MacroSurfaceCollectionMode.CONSTRUCTION
+    } else {
+        MacroSurfaceCollectionMode.EXPRESSION_ONLY
+    },
 ) {
     companion object {
         fun buildWithFunctionSymbolRebind(
@@ -72,6 +82,13 @@ internal class RawCfirNonLocalDeclarationBuilder private constructor(
         ): CfirDeclaration {
             check(rootNonLocalDeclaration is CjDeclaration || rootNonLocalDeclaration is CjCodeFragment)
             val original = designation.target as CfirDeclaration
+            if (original is CfirPatternVariable && rootNonLocalDeclaration !is CjPatternVariable) {
+                errorWithCfirSpecificEntries(
+                    "CFIR pattern variable is not backed by CjPatternVariable PSI",
+                    psi = rootNonLocalDeclaration,
+                    cfir = original,
+                )
+            }
             val builder = RawCfirNonLocalDeclarationBuilder(
                 session, scopeProvider, original, rootNonLocalDeclaration, functionsToRebind, annotationMetadata,
             )

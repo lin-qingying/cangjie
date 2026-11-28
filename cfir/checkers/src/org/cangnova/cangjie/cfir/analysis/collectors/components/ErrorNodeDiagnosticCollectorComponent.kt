@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.isMacroOrBuiltinAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
@@ -61,9 +62,12 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConePostponedInferenceDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeArgumentNotMatchConstraintError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprWithTargetError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingFunctionCallError
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -83,13 +87,10 @@ import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.renderForDebugging
-import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
-import org.cangnova.cangjie.cfir.session.macroDemandClassificationOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNodeTypes
-import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 
 /**
  * 错误节点诊断收集组件（对应 Kotlin FIR 的 FirErrorNodeDiagnosticCollectorComponent）。
@@ -168,13 +169,12 @@ class ErrorNodeDiagnosticCollectorComponent(
     /**
      * 访问错误类型引用（[CfirErrorTypeRef]）。
      *
-     * [CfirErrorTypeRef] 表示类型解析完全失败（连 [ConeErrorType] 都未能生成），
-     * 此处直接跳过——其错误由上层 visitResolvedTypeRef 或专项 checker 处理，
-     * 在本组件中无需额外报告。
+     * [CfirErrorTypeRef] 保存需要在此处报告的诊断；其 [CfirErrorTypeRef.coneType] 可以
+     * 是错误类型，也可以是在保留真实解析类型时附带诊断的类型。
      */
 
     override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: CheckerContext) {
-//        if (errorTypeRef.isLambdaReturnTypeRefThatDoesntNeedReporting(data)) return
+        if (errorTypeRef.isPostponedLambdaReturnTypeInAmbiguousCall(data)) return
 //        if (errorTypeRef.hasExpandedTypeAliasDeclarationSiteError()) return
         if (errorTypeRef.isNestedTypeAliasDeclarationSiteCascade(data)) return
         if (errorTypeRef.diagnostic.isUnresolvedCascadeAfterFailedImport(data)) return
@@ -205,6 +205,17 @@ class ErrorNodeDiagnosticCollectorComponent(
         )
     }
 
+    /** 歧义调用拥有未提交的 lambda 返回状态，不能把该 postponed 占位发布成推断失败。 */
+    private fun CfirErrorTypeRef.isPostponedLambdaReturnTypeInAmbiguousCall(context: CheckerContext): Boolean {
+        if (diagnostic.unwrapUnreportedDuplicateDiagnostic() !== ConePostponedInferenceDiagnostic) return false
+        val function = context.containingDeclarations.lastOrNull()?.cfir as? CfirAnonymousFunction ?: return false
+        if (function.returnTypeRef !== this) return false
+        return context.callsOrAssignments.any { element ->
+            val callDiagnostic = (element.toReferenceOrNull() as? CfirDiagnosticHolder)?.diagnostic
+            callDiagnostic?.unwrapUnreportedDuplicateDiagnostic() is ConeAmbiguityError
+        }
+    }
+
     /**
      * declaration macro annotation 的 callee 类型引用不属于普通类型解析域。
      *
@@ -217,7 +228,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         val annotation = context.annotationCallContainingTypeRef(this)
             ?: return false
         // 普通注解的身份由 TYPES 发布；构造期宏注册表不能重新按短名吞掉类型错误。
-        if (annotation.annotationIdentity is CangjieAnnotationIdentity.LanguageBuiltIn) return true
+        if (annotation.isMacroOrBuiltinAnnotation(context.session)) return true
         // 自定义 annotation 的 callee 仍经过普通类型解析器。已解析到泛型 annotation
         // 但省略类型实参时，通用类型诊断不属于 annotation 参数/目标检查；官方 parser
         // 已经把该位置识别为 annotation callee，不能再把它作为普通裸泛型类型使用。
@@ -227,28 +238,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         ) {
             return true
         }
-        val snapshot = context.session.annotationMetadataRegistryOrNull?.snapshot(annotation) ?: return false
-        val classification = context.session.macroDemandClassificationOrNull
-            ?.takeIf { it.isFinalFrozen }
-            ?: return false
-        val decision = classification.finalDecisions.firstOrNull { decision ->
-            val carrier = decision.annotationCarrier ?: return@firstOrNull false
-            carrier.owner === snapshot.owner && carrier.annotationIndex == snapshot.annotationIndex
-        }
-        decision ?: return false
-        return when (decision.resolution) {
-            is MacroResolution.Builtin,
-            is MacroResolution.BuiltinNonMacro,
-            is MacroResolution.Resolved,
-            -> true
-
-            is MacroResolution.BuiltinAnnotation,
-            is MacroResolution.CustomAnnotation,
-            is MacroResolution.KindMismatch,
-            is MacroResolution.SamePackage,
-            is MacroResolution.Unresolved,
-            -> false
-        }
+        return false
     }
 
     /** 查找当前错误类型引用所属的 annotation call。 */
@@ -1153,7 +1143,7 @@ private fun ConeDiagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(
     return lambda.valueParameters.size != expectedFunctionType.parameterTypes.size
 }
 
-/** 判断该诊断是否属于 lambda 体级联类别（歧义、约束矛盾、候选不适用等派生错误）。 */
+/** 判断该诊断是否属于 lambda 体级联类别（包括由未推断参数触发的运算符解析错误）。 */
 private fun ConeDiagnostic.isLambdaBodyCascadeDiagnostic(): Boolean =
     when (unwrapUnreportedDuplicateDiagnosticForLambdaCascade()) {
         is ConeAmbiguityError,
@@ -1161,6 +1151,8 @@ private fun ConeDiagnostic.isLambdaBodyCascadeDiagnostic(): Boolean =
         is ConeInapplicableCandidateError,
         is ConeNoMatchingInvokeOperatorError,
         is ConeTypeMismatchError,
+        is ConeInvalidUnaryExprError,
+        is ConeInvalidUnaryExprWithTargetError,
         is ConeUnresolvedNameError,
         is ConeUnresolvedReferenceError,
         is ConeUnresolvedSymbolError -> true

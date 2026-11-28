@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 
 /**
  * 局部变量 renderer。
@@ -25,8 +26,20 @@ fun interface CaLocalVariableSymbolRenderer {
         /** 预设: 按源码顺序输出修饰符、`let`/`var`、名字、类型与初始化器。 */
         val AS_SOURCE: CaLocalVariableSymbolRenderer = CaLocalVariableSymbolRenderer { analysisSession, symbol, declarationRenderer, printer ->
             printer {
+                val modifiersStartOffset = builder.length
                 declarationRenderer.modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, this)
-                append(if (symbol.isLet) "let" else "var")
+                // 不同 modifier renderer 的尾随空白约定不同；这里保证与 let/var 之间恰好有分隔。
+                if (
+                    builder.length > modifiersStartOffset &&
+                    builder.lastOrNull()?.isWhitespace() != true
+                ) {
+                    append(" ")
+                }
+                append(when {
+                    symbol is CaPatternBindingSymbol && symbol.isConst -> "const"
+                    symbol.isLet -> "let"
+                    else -> "var"
+                })
                 append(" ")
                 declarationRenderer.nameRenderer.renderName(analysisSession, symbol, declarationRenderer, this)
                 withPrefix(": ") {

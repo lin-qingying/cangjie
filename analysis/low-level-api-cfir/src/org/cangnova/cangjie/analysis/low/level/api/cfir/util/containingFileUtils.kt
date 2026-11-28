@@ -22,6 +22,11 @@ fun CfirElementWithResolveState.getContainingFile(): CfirFile? {
         is CfirTypeParameter -> containingDeclarationSymbol.cfir.getContainingFile()
         is CfirPropertyAccessor -> propertySymbol.cfir.getContainingFile()
         is CfirValueParameter -> containingDeclarationSymbol.cfir.getContainingFile()
+        is CfirInvalidDeclaration -> {
+            // invalid 叶节点没有可解析的 owner；有源码时只用于定位文件级 imports。
+            val cjFile = psi?.containingFile as? CjFile ?: return null
+            llCfirResolvableSession?.moduleComponents?.cache?.getCachedCfirFile(cjFile)
+        }
         is CfirCallableDeclaration -> provider.getCfirCallableContainerFile(symbol)
         is CfirClassLikeDeclaration -> provider.getCfirClassifierContainerFileIfAny(symbol)
         is CfirExtend -> {

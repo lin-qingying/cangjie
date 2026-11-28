@@ -4,9 +4,9 @@ import org.jetbrains.annotations.NotNull
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactory
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.jetbrains.kotlin.generators.MethodGenerator
-import org.jetbrains.kotlin.generators.model.MethodModel
-import org.jetbrains.kotlin.utils.Printer
+import org.cangnova.cangjie.test.generators.MethodGenerator
+import org.cangnova.cangjie.test.generators.model.MethodModel
+import org.cangnova.cangjie.test.generators.util.Printer
 import kotlin.reflect.KClass
 
 /**

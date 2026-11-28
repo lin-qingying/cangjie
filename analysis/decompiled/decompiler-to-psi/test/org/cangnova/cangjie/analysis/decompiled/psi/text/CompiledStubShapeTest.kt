@@ -1,9 +1,11 @@
 package org.cangnova.cangjie.analysis.decompiled.psi.text
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.stubs.StubElement
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.testFramework.LightVirtualFile
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
@@ -24,7 +26,9 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -48,7 +52,8 @@ class CompiledStubShapeTest {
             val snapshot = requireNotNull(manager.loadPackageSnapshot("std.core"))
             val module = Module()
             module.session.register(CfirSymbolProvider::class,
-                CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module))
+                CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module,
+                    moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(library))))
             val binary = CjoFileStubBuilder.buildFileStub(LoadedCjoPackage(
                 LightVirtualFile("std.core.cjo"), FqName("std.core"), snapshot.pkg, snapshot.header,
                 manager, true, snapshot.sourcePath,
@@ -58,6 +63,16 @@ class CompiledStubShapeTest {
             val rendered = buildDecompiledText(binary)
             val source = PsiFileFactory.getInstance(environment.project)
                 .createFileFromText("stdCoreReparsed.cj", CangJieFileType.INSTANCE, rendered) as CjFile
+            val renderedFlushParameters = PsiTreeUtil.findChildrenOfType(source, CjNamedFunction::class.java)
+                .filter { it.name == "print" }
+                .flatMap { it.valueParameters }
+                .filter { it.name == "flush" }
+            assertEquals(15, renderedFlushParameters.size, "all std.core.print overloads must render their flush parameter")
+            assertTrue(renderedFlushParameters.all { it.isNamed }, "rendered `flush!` must remain named in every overload")
+            assertTrue(
+                renderedFlushParameters.all { it.hasDefaultValue() },
+                "rendered compiled initializer must preserve every default-parameter contract",
+            )
             val rebuilt = source.calcStubTree().root as CangJieFileStubImpl
             val binaryShape = shape(binary)
             val sourceShape = shape(rebuilt)

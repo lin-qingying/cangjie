@@ -1,0 +1,11 @@
+FILE: quoteOutsideMacroPackage.cj
+    import std.ast.*
+    internal? func quoteOutsideMacroPackage(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                QUOTE("quote(1)") {
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }

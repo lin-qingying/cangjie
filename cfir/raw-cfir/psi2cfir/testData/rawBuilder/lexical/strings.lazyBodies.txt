@@ -1,0 +1,4 @@
+FILE: strings.cj
+    internal? func stringLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

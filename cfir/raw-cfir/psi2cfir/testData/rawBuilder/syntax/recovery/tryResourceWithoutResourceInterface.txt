@@ -1,0 +1,17 @@
+FILE: tryResourceWithoutResourceInterface.cj
+    internal? class NotResource {
+        init() {
+        }
+        public func isClosed(): R|Bool| {
+            RETURN {
+                BOOLEAN(false)
+            }
+        }
+        public func close(): R|Unit| {
+        }
+    }
+    internal? func tryResourceWithoutResourceInterface(): R|Unit| {
+        TRY {
+            try:
+        }
+    }

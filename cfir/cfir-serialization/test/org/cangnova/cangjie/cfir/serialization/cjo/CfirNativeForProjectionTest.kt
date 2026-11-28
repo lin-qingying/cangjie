@@ -533,7 +533,7 @@ class CfirNativeForProjectionTest {
             moduleData = module; resolvePhase = CfirResolvePhase.BODY_RESOLVE; origin = CfirDeclarationOrigin.Source
             attributes = CfirDeclarationAttributes.EMPTY; isLocal = true; status = CfirDeclarationStatusImpl()
             this.name = Name.identifier(name); symbol = CfirPatternBindingSymbol(CallableId(this.name))
-            returnTypeRef = typeRef(type); this.initializer = initializer; isVar = mutable
+            returnTypeRef = typeRef(type); this.ownedInitializer = initializer; isVar = mutable
         }
 
     private fun bindingPattern(binding: CfirPatternBindingVariable): CfirBindingPattern = buildBindingPattern {

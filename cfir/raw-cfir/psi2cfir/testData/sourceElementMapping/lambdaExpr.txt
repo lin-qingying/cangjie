@@ -1,0 +1,8 @@
+LAMBDA(a: <implicit>) {
+    FUNCTION_CALL(*operator_plus) {
+        receiver:
+            NAMED_ACCESS(a)
+        arguments:
+            INT(1)
+    }
+}

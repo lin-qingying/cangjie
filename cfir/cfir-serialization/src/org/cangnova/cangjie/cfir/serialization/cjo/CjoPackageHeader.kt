@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.DeclKind
+import PackageFormat.DeclInfo
+import PackageFormat.EnumInfo
 import PackageFormat.ImportSpec
 import PackageFormat.Package
 import org.cangnova.cangjie.metadata.model.Attribute
@@ -72,6 +74,10 @@ class CjoPackageHeader(
      * 否则匿名或无稳定名称的 extend 会在反序列化入口之前被跳过。
      */
     val topLevelExtendIndices: List<Int>,
+    /** 按真实 enum body / ENUM_CONSTRUCTOR 位建立的包级名称索引，不物化任何 class-like。 */
+    val promotedEnumConstructorNameToIndices: Map<String, List<Int>>,
+    /** 物理顶层 callable 索引与 classifier / promoted constructor 索引分别保留角色。 */
+    val topLevelCallableNameToIndices: Map<String, List<Int>>,
 ) {
     /** 面向 decompiled 文本展示的 import 片段列表，优先使用结构化 file import 信息。 */
     val decompiledImportTexts: List<String>
@@ -153,6 +159,8 @@ class CjoPackageHeader(
             val nameToIndices = linkedMapOf<String, MutableList<Int>>()
             val classifierNameToIndices = linkedMapOf<String, MutableList<Int>>()
             val topLevelExtendIndices = mutableListOf<Int>()
+            val enumConstructorNameToIndices = linkedMapOf<String, MutableList<Int>>()
+            val callableNameToIndices = linkedMapOf<String, MutableList<Int>>()
 
             for (index in 0 until pkg.allDeclsLength) {
                 val decl = pkg.allDecls(index) ?: continue
@@ -173,6 +181,24 @@ class CjoPackageHeader(
                     topLevelExtendIndices += index
                 }
 
+                if (decl.kind == DeclKind.EnumDecl) {
+                    check(decl.infoType == DeclInfo.EnumInfo) { "EnumDecl has no EnumInfo" }
+                    val info = checkNotNull(decl.info(EnumInfo()) as? EnumInfo)
+                    val bit = Attribute.ENUM_CONSTRUCTOR.ordinal
+                    for (member in 0 until info.bodyLength) {
+                        val raw = info.body(member)
+                        check(raw != 0u && raw != UInt.MAX_VALUE && raw <= pkg.allDeclsLength.toUInt())
+                        val memberIndex = raw.toInt() - 1
+                        val child = checkNotNull(pkg.allDecls(memberIndex))
+                        val isConstructor = bit / 64 < child.attributesLength &&
+                            (child.attributes(bit / 64) and (1uL shl (bit % 64))) != 0uL
+                        if (!isConstructor) continue
+                        val constructorName = checkNotNull(child.identifier).also { check(it.isNotBlank()) }
+                        enumConstructorNameToIndices.getOrPut(constructorName) { mutableListOf() }.add(memberIndex)
+                        callableNames += Name.identifier(constructorName)
+                    }
+                }
+
                 if (identifier == null) continue
 
                 val kind = decl.kind
@@ -183,6 +209,7 @@ class CjoPackageHeader(
                     classifierNameToIndices.getOrPut(identifier) { mutableListOf() }.add(index)
                 } else if (kind in CALLABLE_KINDS) {
                     callableNames += name
+                    callableNameToIndices.getOrPut(identifier) { mutableListOf() }.add(index)
                 }
 
                 nameToIndices.getOrPut(identifier) { mutableListOf() }.add(index)
@@ -206,6 +233,8 @@ class CjoPackageHeader(
                 topLevelNameToIndices = nameToIndices,
                 topLevelClassifierNameToIndices = classifierNameToIndices,
                 topLevelExtendIndices = topLevelExtendIndices,
+                promotedEnumConstructorNameToIndices = enumConstructorNameToIndices,
+                topLevelCallableNameToIndices = callableNameToIndices,
             )
         }
     }

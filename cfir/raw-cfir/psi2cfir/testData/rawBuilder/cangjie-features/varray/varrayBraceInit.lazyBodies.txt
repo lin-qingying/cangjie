@@ -1,0 +1,44 @@
+FILE: varrayBraceInit.cj
+    internal? let VArrayBraceStep: R|Int64|
+    internal? func VArrayBraceLetInit(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceReturn(): R|VArray<R|Int64|, 3>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceReturnDirect(): R|VArray<R|Int64|, 2>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceIndex(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceCount(a: R|VArray<R|Int64|, 3>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceAnnotated(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceAdd(a: R|Int64|, b: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceOperands(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceBodies(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceLayout(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceElemTypes(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceElemBoolAndRune(): R|Bool| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceNested(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func VArrayBraceNestedReturn(): R|VArray<R|VArray<R|Int64|, 2>|, 2>| {
+        <element: CfirLazyBlock>
+    }

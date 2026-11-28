@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStruc
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CfirElementsRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CjToCfirMapping
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.findSourceNonLocalCfirDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.requireTypeIntersectionWith
@@ -24,7 +25,6 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhaseRecursively
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
-import org.cangnova.cangjie.utils.ThreadSafe
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
@@ -36,7 +36,6 @@ import org.cangnova.cangjie.utils.exceptions.withPsiEntry
  * @see org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructure
  * @see getNonLocalContainingOrThisElement
  */
-@ThreadSafe
 internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleResolveComponents) {
     companion object {
         private fun getPsiAsCfirElementSource(element: CjElement): CjElement? {
@@ -85,7 +84,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      * @see getCfirForElementInsideFileHeader
      */
     fun getOrBuildCfirFor(element: CjElement): CfirElement? {
-        moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(element.containingCjFile)
+        moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(element.containingCjFile)
         val target = moduleComponents.cache.compilationElement(element) as? CjElement ?: return null
         return if (target is CjFile && target !is CjCodeFragment) {
             getOrBuildCfirForCjFile(target)
@@ -98,7 +97,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      * 构建或读取整个仓颉文件的 raw CFIR，并递归解析到 body resolve。
      */
     private fun getOrBuildCfirForCjFile(cjFile: CjFile): CfirFile {
-        val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        val cfirFile = moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(cjFile)
         cfirFile.lazyResolveToPhaseRecursively(CfirResolvePhase.BODY_RESOLVE)
         return cfirFile
     }
@@ -113,13 +112,27 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
             return null
         }
 
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        if (snapshot?.ownsReparsedPsi(element) == true) {
+            val owner = snapshot.declarationForReparsedPsi(element) ?: return null
+            owner.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            val canonicalPsi = snapshot.canonicalPsiForReparsedPsi(element) ?: return null
+            if (owner.psi === canonicalPsi) return owner
+            return findElementInside(owner, canonicalPsi)
+        }
+
         // 文件头的语法容器没有声明级 CFIR，不能依赖普通声明映射或 BODY_RESOLVE 短路。
         if (element.fileHeaderAnchorElement() != null) {
             return getCfirForElementInsideFileHeader(element)
         }
 
         val nonLocalContainer = element.getNonLocalContainingOrThisElement()
-        tryGetCfirWithoutBodyResolve(nonLocalContainer, element)?.let { return it }
+        val replacementCardinality = moduleComponents.macroSemanticSnapshotStore.snapshot
+            ?.declarationReplacementCardinality(element)
+        if (replacementCardinality != null && replacementCardinality != 1) return null
+        if (replacementCardinality == null) {
+            tryGetCfirWithoutBodyResolve(nonLocalContainer, element)?.let { return it }
+        }
 
         val psi = getPsiAsCfirElementSource(element) ?: return null
         val cjFile = element.containingCjFile
@@ -140,6 +153,13 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
 
         return cfirElement
     }
+
+    /** 查询元素所属的最近 replacement carrier 的语义输出基数，保留零输出与未注册 carrier 的区别。 */
+    private fun LLCfirMacroSemanticSnapshot.declarationReplacementCardinality(element: CjElement): Int? =
+        element.parentsWithSelf
+            .filterIsInstance<CjDeclaration>()
+            .firstOrNull(::isDeclarationReplacementCarrier)
+            ?.let { declarationsForSource(it).size }
 
     /**
      * Provides a fast path for well-known psi-to-fir mappings to avoid [CfirResolvePhase.BODY_RESOLVE] there it is possible.
@@ -185,7 +205,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         val elementOwner = elementOwnerProvider(anchorElement) ?: return null
 
         val cfirElementContainer = if (elementOwner is CjFile) {
-            moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(elementOwner)
+            moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(elementOwner)
         } else {
             if (elementOwner != nonLocalDeclaration) return null
 
@@ -261,7 +281,7 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      */
     private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? {
         val anchor = element.fileHeaderAnchorElement() ?: return null
-        val file = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(element.containingCjFile)
+        val file = moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(element.containingCjFile)
         return when (anchor) {
             is CjPackageDirective -> file.packageDirective
             is CjImportItem -> {
@@ -315,6 +335,16 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
             }
 
             is CfirClass -> {
+                for (typeRef in superTypeRefs) {
+                    if (typeRef.psi == typeReference) {
+                        return typeRef
+                    }
+                }
+            }
+
+            is CfirExtend -> {
+                // extend 的接收者类型引用与父类型列表都不是 class-like 成员的返回类型，需要单独匹配
+                extendedTypeRef.takeIf { it.psi == typeReference }?.let { return it }
                 for (typeRef in superTypeRefs) {
                     if (typeRef.psi == typeReference) {
                         return typeRef

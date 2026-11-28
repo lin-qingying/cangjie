@@ -122,7 +122,7 @@ class CjdSidecarAvailabilityDiagnosticTest : AbstractCfirAnalysisResolveTest() {
                 session,
                 listOf(
                     session.cfirProvider.symbolProvider,
-                    CfirBuiltinSymbolProvider(session),
+                    CfirBuiltinSymbolProvider(librarySession, libraryModule),
                     libraryProvider,
                 ),
             ),

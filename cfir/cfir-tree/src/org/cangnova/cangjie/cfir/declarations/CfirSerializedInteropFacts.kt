@@ -54,7 +54,9 @@ public data class CfirSerializedInteropFacts(
 )
 
 /** [CfirDeclaration.serializedInteropFacts] 扩展属性使用的声明数据键。 */
-private object CfirSerializedInteropFactsKey : CfirDeclarationDataKey()
+private object CfirSerializedInteropFactsKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.serializedInterop
+}
 
 /** Serialized interop facts attached by the CJO declaration owner. */
 public var CfirDeclaration.serializedInteropFacts: CfirSerializedInteropFacts? by
@@ -65,7 +67,9 @@ public data class CfirSerializedDeclarationAttributes(
     val words: List<ULong>,
 )
 
-private object CfirSerializedDeclarationAttributesKey : CfirDeclarationDataKey()
+private object CfirSerializedDeclarationAttributesKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.serializedAttributes
+}
 
 /** CJO reader 在声明发布时写入的完整 attributes snapshot。 */
 public var CfirDeclaration.serializedDeclarationAttributes: CfirSerializedDeclarationAttributes? by

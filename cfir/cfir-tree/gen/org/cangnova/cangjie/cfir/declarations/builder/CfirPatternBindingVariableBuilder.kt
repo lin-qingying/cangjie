@@ -36,11 +36,11 @@ class CfirPatternBindingVariableBuilder {
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
     var contentSource: CfirContentSource = CfirContentSource.Owned
-    var initializer: CfirExpression? = null
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isTypeImplicit: Boolean = false
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var symbol: CfirPatternBindingSymbol
+    var ownedInitializer: CfirExpression? = null
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name
 
@@ -58,11 +58,11 @@ class CfirPatternBindingVariableBuilder {
             dispatchReceiverType,
             status,
             contentSource,
-            initializer,
             isVar,
             isTypeImplicit,
             typeParameters,
             symbol,
+            ownedInitializer,
             returnTypeRef,
             name,
         )
@@ -94,10 +94,10 @@ inline fun buildPatternBindingVariableCopy(original: CfirPatternBindingVariable,
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
-    copyBuilder.initializer = original.initializer
     copyBuilder.isVar = original.isVar
     copyBuilder.isTypeImplicit = original.isTypeImplicit
     copyBuilder.typeParameters.addAll(original.typeParameters)
+    copyBuilder.ownedInitializer = original.ownedInitializer
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()

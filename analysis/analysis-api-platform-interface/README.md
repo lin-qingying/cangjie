@@ -15,7 +15,6 @@
 
 ## 调用方
 
-- `:analysis:analysis-api` — 接口层依赖
 - `:analysis:analysis-api-impl-base` — 实现基础层
 - `:analysis:analysis-api-cfir` / `:analysis:analysis-api-standalone` — 后端实现
 - `intellij-ide/` — IDE 端实现

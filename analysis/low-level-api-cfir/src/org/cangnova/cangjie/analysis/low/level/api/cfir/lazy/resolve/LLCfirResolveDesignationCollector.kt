@@ -81,21 +81,32 @@ internal object LLCfirResolveDesignationCollector {
      * 其他声明走通用 designation 收集逻辑。
      */
     private fun getCfirDesignationToResolve(target: CfirElementWithResolveState): CfirDesignation? {
+        val owner = getResolveOwner(target) ?: return null
+        return when (owner) {
+            is CfirCallableDeclaration if owner.canHaveDeferredReturnTypeCalculation -> CfirDesignation(owner)
+            else -> owner.tryCollectDesignation()
+        }
+    }
+
+    /**
+     * 签名子声明沿 builder 保存的真实 owner 解析，不能用叶子的阶段替代 owner 的签名状态。
+     * 此规则与 designation 共用；宏仍是 CfirMacroDeclaration，不转换为普通命名函数。
+     */
+    internal fun getResolveOwner(target: CfirElementWithResolveState): CfirElementWithResolveState? {
         if (!target.shouldBeResolved()) {
             return null
         }
 
         return when (target) {
-            is CfirPatternBindingVariable if !target.isLocal -> getCfirDesignationToResolve(
+            is CfirPatternBindingVariable if !target.isLocal -> getResolveOwner(
                 requireNotNull(target.moduleData.session.cfirProvider.getCfirPatternVariableForBinding(target.symbol)) {
                     "A declaration binding must have its original pattern owner"
                 },
             )
-            is CfirPropertyAccessor -> getCfirDesignationToResolve(target.propertySymbol.cfir)
-            is CfirTypeParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.cfir)
-            is CfirValueParameter -> getCfirDesignationToResolve(target.containingDeclarationSymbol.cfir)
-            is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> CfirDesignation(target)
-            else -> target.tryCollectDesignation()
+            is CfirPropertyAccessor -> getResolveOwner(target.propertySymbol.cfir)
+            is CfirTypeParameter -> getResolveOwner(target.containingDeclarationSymbol.cfir)
+            is CfirValueParameter -> getResolveOwner(target.containingDeclarationSymbol.cfir)
+            else -> target
         }
     }
 
@@ -113,6 +124,9 @@ internal object LLCfirResolveDesignationCollector {
      * 非 lazy-resolvable origin 必须已经处于 body resolve 阶段，否则说明调用方试图解析不可惰性推进的声明。
      */
     private fun CfirDeclaration.shouldBeResolved(): Boolean {
+        // invalid declaration 是诊断叶节点，不进入 imports / body lazy resolve。
+        if (this is CfirInvalidDeclaration) return false
+
         if (!origin.isLazyResolvable) {
             @OptIn(ResolveStateAccess::class)
             check(resolvePhase == CfirResolvePhase.BODY_RESOLVE) {

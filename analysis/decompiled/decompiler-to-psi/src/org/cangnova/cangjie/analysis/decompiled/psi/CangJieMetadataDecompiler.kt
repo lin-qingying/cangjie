@@ -16,8 +16,13 @@ import org.cangnova.cangjie.analysis.decompiler.stub.file.CangJieMetadataStubBui
 abstract class CangJieMetadataDecompiler : CjoFileDecompilers.Full() {
     /**
      * 判断指定文件是否可由当前 metadata stub builder 处理。
+     *
+     * 这里只按文件类型判断是否属于 `.cjo` 链路，不读包头：头部读会把 1–2 MB 的 `.cjo`
+     * 同步读进内存（每次 `find`、每次平台 `acceptsFile` 各一次），而“能不能反编译”由
+     * `createFileViewProvider` 里唯一一次 [CangJieMetadataStubBuilder.hasStub] 检查负责，
+     * 失败时返回空 PSI 文件，与 Kotlin `KotlinMetadataDecompiler` 的 `isSupported(file)` 同形。
      */
-    override fun accepts(file: VirtualFile): Boolean = getStubBuilder().hasStub(file)
+    override fun accepts(file: VirtualFile): Boolean = getStubBuilder().isSupported(file)
 
     /**
      * 返回当前 decompiler 使用的 `.cjo` stub builder。

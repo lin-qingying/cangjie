@@ -103,12 +103,19 @@ object LspClientCapabilitiesBuilder {
         positionEncodings: List<String> = listOf(PositionEncodingKind.UTF16),
     ): ClientCapabilities = pullDiagnostics().also { capabilities ->
         capabilities.textDocument = capabilities.textDocument.apply {
+            // fullFeatured 的层级符号正例必须通过真实 initialize 声明该协商位；core 保持未声明。
+            documentSymbol = documentSymbol.apply {
+                hierarchicalDocumentSymbolSupport = true
+            }
             publishDiagnostics = PublishDiagnosticsCapabilities().apply {
                 versionSupport = true
             }
         }
         capabilities.workspace = capabilities.workspace.apply {
             workspaceFolders = true
+            // 补全插入靠 `workspace/applyEdit` 落盘（服务端算编辑、客户端应用）：
+            // 「全能力客户端」必须声明它，否则该路径在夹具里根本不会启用。
+            applyEdit = true
         }
         capabilities.general = GeneralClientCapabilities().apply {
             this.positionEncodings = positionEncodings

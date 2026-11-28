@@ -110,7 +110,7 @@ internal fun CfirPartialBodyResolveTransformer.registerScopedPatternBindings(
         is CfirEnumPattern -> {
             val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
             pattern.arguments.withIndex().firstNotNullOfOrNull { (index, argument) ->
-                registerScopedPatternBindings(argument, bindingScope, argumentTypes.getOrNull(index))
+                registerScopedPatternBindings(argument, bindingScope, argumentTypes.componentType(index))
             }
         }
         is CfirOrPattern -> {

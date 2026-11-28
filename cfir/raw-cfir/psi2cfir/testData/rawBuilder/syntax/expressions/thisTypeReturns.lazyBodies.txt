@@ -1,0 +1,17 @@
+FILE: thisTypeReturns.cj
+    internal? class Node {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func me(): R|This| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|Node| {
+        public func alsoMe(): R|Node| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func thisTypeReturns(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -37,9 +37,13 @@ class PhaseConfig(
      */
     val dumpOnlyFqName: String? = null,
     /**
-     * 是否为 phase 主体输出耗时统计。
+     * phase 主体耗时采集器；为 `null` 表示本次编译不采集阶段耗时。
+     *
+     * 此前这里是 `needProfiling: Boolean`，但全仓没有任何地方设置它为 `true`，
+     * `NamedCompilerPhase` 里的消费也只是 `println` 一行。改为直接挂采集器后，
+     * "是否计时"与"计时结果去哪"由同一个对象决定，不再需要两处状态保持一致。
      */
-    val needProfiling: Boolean = false,
+    val profiler: PhaserProfiler? = null,
     /**
      * 是否执行 phase 输入前置条件和输出后置条件检查。
      */

@@ -1,0 +1,10 @@
+FILE: initCallingInit.cj
+    internal? class C {
+        internal? var v: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }

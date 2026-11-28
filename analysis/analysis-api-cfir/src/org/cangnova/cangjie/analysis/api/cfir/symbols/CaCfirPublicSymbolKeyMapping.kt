@@ -1,6 +1,11 @@
+@file:OptIn(CaImplementationDetail::class)
+
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.getAllowedPsi
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
@@ -73,7 +78,7 @@ internal fun CfirTypeParameterSymbol.stableTypeParameterIndex(): Int? {
  * `extend` 成员不再依赖 PSI 父链，而是通过 `extendIndexStore` 的 owner 语义索引恢复。
  */
 internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSession): CaCfirPublicSymbolCacheKey? {
-    val psi = backingPsiIfApplicable
+    val psi = if (this is CfirPatternBindingSymbol) cfir.getAllowedPsi(session.project) else backingPsiIfApplicable
     if ((cfir as? CfirCallableDeclaration)?.isLocal == true) {
         return psi?.let { localPsi ->
             when (this) {
@@ -83,7 +88,11 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
                 )
 
                 is CfirPatternVariableSymbol -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_VARIABLE)
-                is CfirPatternBindingSymbol -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_BINDING)
+                is CfirPatternBindingSymbol -> CaCfirPsiSymbolCacheKey(localPsi,
+                    if (cfir.patternTreeOwner is org.cangnova.cangjie.cfir.expressions.CfirCatch ||
+                        cfir.patternTreeOwner is org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+                    ) CaCfirPsiSymbolKind.LOCAL_VARIABLE else CaCfirPsiSymbolKind.PATTERN_BINDING,
+                )
                 else -> CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.LOCAL_VARIABLE)
             }
         }
@@ -100,9 +109,11 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
                 is CfirFieldVariableSymbol -> CaCfirCallableSymbolKind.FIELD
                 else -> return null
             },
+            signature = stableCallableSignatureOrNull(),
         )
     }
 
+    val signature = stableCallableSignatureOrNull()
     return when (this) {
         is CfirAnonymousFunctionSymbol -> psi?.let {
             CaCfirPsiSymbolCacheKey(
@@ -111,19 +122,30 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
             )
         }
 
-        is CfirNamedFunctionSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.NAMED_FUNCTION)
-        is CfirMainFunctionSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.MAIN_FUNCTION)
-        is CfirMacroDeclarationSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.MACRO)
-        is CfirFinalizerSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.FINALIZER)
-        is CfirConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.CONSTRUCTOR)
-        is CfirPropertySymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PROPERTY)
-        is CfirFieldVariableSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.FIELD)
-        is CfirPatternVariableSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PATTERN_VARIABLE)
-        is CfirPatternBindingSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PATTERN_BINDING)
-        is CfirEnumConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR)
+        is CfirNamedFunctionSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.NAMED_FUNCTION, signature)
+        is CfirMainFunctionSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.MAIN_FUNCTION, signature)
+        is CfirMacroDeclarationSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.MACRO, signature)
+        is CfirFinalizerSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.FINALIZER, signature)
+        is CfirConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.CONSTRUCTOR, signature)
+        is CfirPropertySymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PROPERTY, signature)
+        is CfirFieldVariableSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.FIELD, signature)
+        is CfirPatternVariableSymbol -> psi?.let { CaCfirPsiSymbolCacheKey(it, CaCfirPsiSymbolKind.PATTERN_VARIABLE) }
+        is CfirPatternBindingSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.PATTERN_BINDING, signature)
+        is CfirEnumConstructorSymbol -> CaCfirCallableSymbolCacheKey(callableId, CaCfirCallableSymbolKind.ENUM_CONSTRUCTOR, signature)
         is CfirValueParameterSymbol -> null
         else -> null
     }
+}
+
+/**
+ * 取 callable 声明的稳定签名。
+ *
+ * 签名由参数类型、类型参数数量与返回类型三部分组成，是同名重载之间**唯一**稳定的区分依据。
+ * 声明不是 callable 形态时返回 `null`——那种情况不存在重载，也就没有需要区分的签名。
+ */
+private fun CfirCallableSymbol<*>.stableCallableSignatureOrNull(): CfirCallableSignature? {
+    val declaration = cfir as? CfirCallableDeclaration ?: return null
+    return CfirCallableSignature.createSignature(declaration)
 }
 
 /**
@@ -159,9 +181,7 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
         CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_VARIABLE)
     }
 
-    is CaCfirPatternBindingSymbol -> psi?.let { localPsi ->
-        CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_BINDING)
-    }
+    is CaCfirPatternBindingSymbol -> cfirSymbol.publicSymbolCacheKeyOrNull(analysisSession)
 
     is CaCfirSymbol<*> -> (cfirSymbol as? CfirCallableSymbol<*>)?.publicSymbolCacheKeyOrNull(analysisSession)
     else -> null

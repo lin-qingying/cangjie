@@ -768,7 +768,13 @@ object CfirSourceGraphProducer {
                 symbol = CfirFieldVariableSymbol(CallableId(context(owner).file.packageDirective.packageFqName, nameValue))
                 returnTypeRef = requireType(type).toCfirResolvedTypeRef(source)
                 status = buildResolvedDeclarationStatus {
-                    visibility = Visibilities.Private; modality = Modality.FINAL
+                    visibility = Visibilities.Private
+                    modality = Modality.FINAL
+                    visibilityExplicitness = CfirModifierExplicitness.IMPLICIT
+                    modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+                    bodyPresence = CfirBodyPresence.UNKNOWN
+                    isDeclarationFile = false
+                    isFromCommonPart = false
                     isVisibilityExplicit = false; isModalityExplicit = false; isAbstractExplicit = false
                     isOverride = false; isOperator = false; isStatic = false; isConst = false; isMut = false
                     isUnsafe = false; isForeign = false; isC = false; isCommon = false; isSpecific = false

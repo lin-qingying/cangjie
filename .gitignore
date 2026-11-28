@@ -1,6 +1,9 @@
 ### Kotlin ###
 .kotlin
 
+### IntelliJ IDEA ###
+out/
+
 ### Eclipse ###
 .apt_generated
 .classpath
@@ -37,6 +40,7 @@ bin/
 /NUL
 /external/
 /intellij-ide/
+.idea/workspace.xml
 /deveco/
 /.gradle-user-fresh/
 /.gradle-user-fresh-resolve/
@@ -52,3 +56,4 @@ bin/
 .cjc-probes/
 .codegraph/
 /tmp/
+lsp/wrapper/target/

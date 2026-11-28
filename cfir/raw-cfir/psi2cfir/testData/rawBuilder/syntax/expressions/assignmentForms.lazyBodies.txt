@@ -1,0 +1,8 @@
+FILE: assignmentForms.cj
+    internal? class Counter {
+        init()
+        internal? var count: R|Int64|
+    }
+    internal? func assignmentForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

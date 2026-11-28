@@ -1,0 +1,150 @@
+FILE: primaryConstructorForms.cj
+    internal? struct PctorRect {
+        init(width: R|Int64|, height: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop width: R|Int64|
+        internal? prop height: R|Int64|
+        public func area(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class PctorCounter {
+        init(count: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? mut prop count: R|Int64|
+        private func offset(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public func bump(): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorNamed {
+        internal? var label: R|String|
+        init(label: R|String|, width: R|Int64|, height: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop width: R|Int64|
+        internal? mut prop height: R|Int64|
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorModNone {
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorModInternal {
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorModProtected {
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorModPrivate {
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorModConst {
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class PctorMemberMods {
+        init(secret: R|Int64|, level: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        private mut prop secret: R|Int64|
+        protected mut prop level: R|Int64|
+        public func sum(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorOverloads {
+        init(value: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop value: R|Int64|
+        init(base: R|Int64|, extra: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        public func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class PctorBase {
+        init(seed: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop seed: R|Int64|
+        public open func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class PctorSub <: R|PctorBase| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class PctorGeneric<T> {
+        init(item: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        internal? prop item: R|T|
+        public func get(): R|T| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorPlain {
+        internal? var stored: R|Int64|
+        init(value: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        public func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct PctorEmpty {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        internal? func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func primaryConstructorForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -673,7 +673,11 @@ internal class CfirExportAnalysisInputSnapshot private constructor(
                 (declaration as? CfirTypeAlias)?.expandedTypeRef?.coneTypeOrNull, freeze(superTypes), freeze(bounds),
                 freeze((declaration as? CfirTypeParameter)?.explicitUpperBounds.orEmpty().mapNotNull { it.coneTypeOrNull }),
                 (declaration as? CfirFunction)?.body, (declaration as? CfirValueParameter)?.defaultValue,
-                (declaration as? CfirVariable)?.initializer,
+                when (declaration) {
+                    is CfirPatternBindingVariable -> declaration.ownedInitializer
+                    is CfirVariable -> declaration.initializer
+                    else -> null
+                },
                 declaration.interopInfo?.isFrozen == true,
                 declaration.interopInfo?.abiRequest?.hasExplicitC == true,
                 declaration.annotationInfo?.isIntrinsic == true, freeze(declaration.annotations),

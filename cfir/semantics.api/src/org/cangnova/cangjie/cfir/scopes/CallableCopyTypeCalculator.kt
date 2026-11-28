@@ -122,7 +122,9 @@ abstract class CallableCopyTypeCalculator {
 /**
  * 延迟 callable copy 返回类型属性 key。
  */
-private object DeferredCallableCopyReturnTypeKey : CfirDeclarationDataKey()
+private object DeferredCallableCopyReturnTypeKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<DeferredCallableCopyReturnType>("deferred callable return-type closure")
+}
 
 /**
  * callable copy 返回类型的延迟计算属性。

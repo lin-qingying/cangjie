@@ -1,0 +1,9 @@
+FILE: coalescingOperator.cj
+    internal? func useCoalesce(a: R|Option<R|Int64|>|): R|Int64| {
+        RETURN {
+            BINARY_OP(COALESCING) {
+                NAMED_ACCESS(a)
+                INT(1)
+            }
+        }
+    }

@@ -159,7 +159,7 @@ class DependencyListForCliModule internal constructor(
             if (paths.isEmpty()) return
 
             val filterSet = filtersMap.getOrPut(moduleData) { linkedSetOf() }
-            paths.mapTo(filterSet) { Paths.get(it) }
+            paths.mapTo(filterSet) { Paths.get(it).toAbsolutePath().normalize() }
         }
 
         /**
@@ -185,7 +185,8 @@ class DependencyListForCliModule internal constructor(
             val dependsOnDependencies = allDependsOnDependencies.filterUsedModules(pathFiltersMap)
 
             allRegularDependencies.singleOrNull()?.let { regularModule ->
-                pathFiltersMap.putIfAbsent(regularModule, LibraryPathFilter.TakeAll)
+                // 空依赖组仍属于该 source module，但不能认领任何未登记的二进制来源。
+                pathFiltersMap.putIfAbsent(regularModule, LibraryPathFilter.LibraryList(emptySet()))
                 if (regularModule !in regularDependencies) {
                     regularDependencies += regularModule
                 }

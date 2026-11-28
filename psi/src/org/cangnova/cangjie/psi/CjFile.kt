@@ -152,16 +152,13 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
      * @param fqName 要搜索的完全限定名
      * @return 如果找到导入别名，则返回该别名，否则返回null
      */
-    fun findAliasByFqName(fqName: FqName): CjImportAlias? {
-        if (!hasImportAlias()) return null
+    fun findAliasByFqName(fqName: FqName): CjImportAlias? = findAliasesByFqName(fqName).firstOrNull()
 
-        return importDirectivesItem.firstOrNull {
-            it.aliasName != null && fqName == it.importedFqName
-        }?.let { item ->
-            // 从 CjImportItem 中获取 alias
-            (item as? CjImportItem)?.alias
+    /** 同一声明可通过多个 alias 引入；搜索必须枚举全部匹配项。 */
+    fun findAliasesByFqName(fqName: FqName): List<CjImportAlias> =
+        importDirectivesItem.mapNotNull { item ->
+            if (fqName == item.importedFqName) (item as? CjImportItem)?.alias else null
         }
-    }
     
     /**
      * 接受此文件的访问者。访问者模式实现的一部分。
@@ -372,6 +369,10 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
                     when (child) {
                         is CjPackageDirective -> Unit
                         is CjForeignDirective -> child.body?.declarations?.let(::addAll)
+                        // 顶层宏包装的声明在 PSI 上是 CjExpression 而不是 CjDeclaration，
+                        // 必须按声明宏链解包，否则这类顶层声明会从文件声明列表中整体消失，
+                        // 依赖"包内顶层声明名集合"的平台索引、作用域枚举与 ClassId 查询都会漏掉它们。
+                        is CjMacroExpression -> child.unwrappedDeclaration?.let(::add)
                         is CjDeclaration -> add(child)
                     }
                 }

@@ -81,8 +81,21 @@ class ConeTypeVariableTypeConstructor(
     /** 调试用名称，通常来自对应类型参数的名字。 */
     val debugName: String,
     /** 该类型变量所对应的原始类型参数，可为 null。 */
-    val originalTypeParameter: TypeParameterMarker?,
+    originalTypeParameter: TypeParameterMarker?,
 ) : TypeVariableTypeConstructorMarker, ConeTypeConstructorMarker {
+    @Volatile
+    private var originalTypeParameterOrigin: TypeParameterMarker? = originalTypeParameter
+
+    /** 原始类型参数的只读视图；重定位只改变 origin，不改变构造器身份。 */
+    val originalTypeParameter: TypeParameterMarker?
+        get() = originalTypeParameterOrigin
+
+    /** 精确重定位声明来源；过期或错误来源必须在写入前拒绝。 */
+    @Synchronized
+    fun relocateOriginalTypeParameter(expected: TypeParameterMarker, target: TypeParameterMarker): Unit {
+        check(originalTypeParameterOrigin === expected) { "Type-variable constructor origin does not match the expected type parameter" }
+        originalTypeParameterOrigin = target
+    }
 
     /**
      * 将 debugName 包装为 [Name]，供需要统一 Name 类型的接口使用。

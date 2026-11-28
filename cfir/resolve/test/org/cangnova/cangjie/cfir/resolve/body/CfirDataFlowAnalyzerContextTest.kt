@@ -160,7 +160,7 @@ class CfirDataFlowAnalyzerContextTest {
             symbol = CfirPatternBindingSymbol(CallableId(name))
             returnTypeRef = buildResolvedTypeRef { coneType = intType }
             isVar = true
-            initializer = buildLiteralExpression {
+            ownedInitializer = buildLiteralExpression {
                 source = TestBinarySourceElement("initializer")
                 kind = CfirLiteralKind.INT; value = 2L; coneTypeOrNull = intType
             }

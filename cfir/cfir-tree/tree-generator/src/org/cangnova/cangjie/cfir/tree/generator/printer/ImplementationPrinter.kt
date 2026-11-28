@@ -36,7 +36,8 @@ private class ImplementationFieldPrinter(printer: ImportCollectingPrinter) : Abs
     /**
      * 判断字段在实现类中是否必须生成为可变属性。
      */
-    override fun forceMutable(field: Field): Boolean = field.isMutable && (field !is ListField || field.isMutableOrEmptyList)
+    override fun forceMutable(field: Field): Boolean = field.isMutable &&
+            (field !is ListField || field.isMutableOrEmptyList || field.readOnlyImplementationList)
 
     /**
      * 返回实现类字段使用的实际类型。
@@ -99,11 +100,12 @@ internal class ImplementationPrinter(
      */
     override fun ImportCollectingPrinter.printAdditionalMethods(implementation: Implementation) {
         fun Field.transform() {
-            when (this) {
-                is SimpleField ->
+            when {
+                customTransform != null -> printlnMultiLine(customTransform!!)
+                this is SimpleField ->
                     println("$name = ${name}${call()}transform(transformer, data)")
 
-                is ListField -> {
+                this is ListField -> {
                     addImport(transformInPlaceImport)
                     println("${name}.transformInplace(transformer, data)")
                 }
@@ -113,6 +115,17 @@ internal class ImplementationPrinter(
         with(implementation) {
             val isInterface = kind == ImplementationKind.Interface || kind == ImplementationKind.SealedInterface
             val isAbstract = kind == ImplementationKind.AbstractClass || kind == ImplementationKind.SealedClass
+
+            element.patternTreeRootFieldName?.let { rootFieldName ->
+                val rootField = element.allFields.single { it.name == rootFieldName }
+                val capitalizedRootFieldName = rootFieldName.replaceFirstChar(Char::uppercaseChar)
+                println()
+                println("override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement = $rootFieldName")
+                println("override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) {")
+                println("    require(newPatternTreeRoot is ${rootField.typeRef.render()}) { \"Pattern tree root has an incompatible CFIR node type.\" }")
+                println("}")
+                println("override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) = replace$capitalizedRootFieldName(newPatternTreeRoot as ${rootField.typeRef.render()})")
+            }
 
             val bindingCalls = element.allFields.filter {
                 it.withBindThis && it.hasSymbolType && it !is ListField && it.name != "companionObjectSymbol"
@@ -124,7 +137,7 @@ internal class ImplementationPrinter(
             }.orEmpty()
 
             val customCalls = fieldsInConstructor.filter { it.customInitializationCall != null }
-            if (bindingCalls.isNotEmpty() || customCalls.isNotEmpty()) {
+            if (bindingCalls.isNotEmpty() || customCalls.isNotEmpty() || initializationStatements.isNotEmpty()) {
                 println()
                 println("init {")
                 withIndent {
@@ -146,6 +159,17 @@ internal class ImplementationPrinter(
                         }
                         println("}")
                     }
+                    val sourceField = implementation.allFields.find { it.name == "source" }
+                    val originField = implementation.allFields.find { it.name == "origin" }
+                    if (originField != null && sourceField != null && sourceField.typeRef.nullable) {
+                        println("@Suppress(\"SENSELESS_COMPARISON\")")
+                        println("require(source != null || origin != CfirDeclarationOrigin.Source) { \"\${this::class.simpleName} with Source origin was instantiated without a source element.\" }")
+                    }
+
+                    for (statement in initializationStatements) {
+                        printlnMultiLine(statement)
+                    }
+
                     for (symbolField in bindingCalls) {
                         println("${symbolField.name}${symbolField.call()}bind(this)")
                     }
@@ -155,12 +179,6 @@ internal class ImplementationPrinter(
                         println("${customCall.name} = ${customCall.customInitializationCall}")
                     }
 
-                    val sourceField = implementation.allFields.find { it.name == "source" }
-                    val originField = implementation.allFields.find { it.name == "origin" }
-                    if (originField != null && sourceField != null && sourceField.typeRef.nullable) {
-                        println("@Suppress(\"SENSELESS_COMPARISON\")")
-                        println("require(source != null || origin != CfirDeclarationOrigin.Source) { \"\${this::class.simpleName} with Source origin was instantiated without a source element.\" }")
-                    }
                 }
                 println("}")
             }
@@ -292,6 +310,7 @@ internal class ImplementationPrinter(
                                 !element.needTransformOtherChildren -> field.transform()
                                 else -> {}
                             }
+
                         }
 
                         if (element.needTransformOtherChildren) {
@@ -402,10 +421,9 @@ internal class ImplementationPrinter(
                 val newValue = "new$capitalizedFieldName"
                 generateReplace(field, forceNullable = field.receiveNullableTypeInReplace) {
                     when {
-                        field.implementationDefaultStrategy!!.withGetter && field.customSetter != null -> {
-                            println("${field.name} = $newValue")
-                        }
-                        field.implementationDefaultStrategy!!.withGetter -> {}
+                        field.customReplace != null -> printlnMultiLine(field.customReplace!!)
+                        field.implementationDefaultStrategy!!.withGetter && field.customSetter == null -> {}
+                        field.implementationDefaultStrategy!!.withGetter -> println("${field.name} = $newValue")
                         field is ListField && !field.isMutableOrEmptyList -> {
                             println("if (${field.name} === $newValue) return")
                             println("${field.name}.clear()")

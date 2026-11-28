@@ -1,0 +1,4 @@
+FILE: doWhileWithoutBrace.cj
+    internal? func doWhileWithoutBrace(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

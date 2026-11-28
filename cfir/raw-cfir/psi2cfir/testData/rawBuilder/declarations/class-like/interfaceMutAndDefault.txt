@@ -1,0 +1,9 @@
+FILE: interfaceMutAndDefault.cj
+    internal? interface I {
+        public? abstract? mut mut func go(): R|Unit|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("i")
+            }
+        }
+    }

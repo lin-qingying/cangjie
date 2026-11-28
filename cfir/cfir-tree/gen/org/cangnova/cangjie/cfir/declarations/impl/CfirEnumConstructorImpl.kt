@@ -38,7 +38,7 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
     override val isLocal: Boolean,
     override var returnTypeRef: CfirTypeRef,
     deprecationsProvider: DeprecationsProvider,
-    override val dispatchReceiverType: ConeSimpleCangJieType?,
+    override var dispatchReceiverType: ConeSimpleCangJieType?,
     override val valueParameters: MutableList<CfirValueParameter>,
     body: CfirBlock?,
     override val symbol: CfirEnumConstructorSymbol,
@@ -94,10 +94,10 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
             require(deprecationsProvider === UnresolvedDeprecationProvider) { "Published content must be supplied by its completed snapshot" }
             require(body == null) { "Published content must be supplied by its completed snapshot" }
         }
-        symbol.bind(this)
-        resolveState = resolvePhase.asResolveState()
         @Suppress("SENSELESS_COMPARISON")
         require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
+        symbol.bind(this)
+        resolveState = resolvePhase.asResolveState()
     }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -173,6 +173,10 @@ class CfirEnumConstructorImpl @CfirImplementationDetail constructor(
 
     override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider) {
         deprecationsProvider = newDeprecationsProvider
+    }
+
+    override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?) {
+        dispatchReceiverType = newDispatchReceiverType
     }
 
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {

@@ -132,7 +132,7 @@ public fun <A : Any> parseCommandLineArguments(
             val binding = option.binding
             val argument = binding.argument
             if (valueSeparatorIndex >= 0 && (
-                        option.kind == OptionNameKind.SHORT && !argument.acceptsJoinedAliasValues ||
+                        option.kind == OptionNameKind.SHORT && !argument.acceptsJoinedAliasValues && argument.valueType !is BooleanType ||
                                 argument.shortOptionValueMode != null && isSingleCharacterOptionName(resolvedOptionName)
                         )
             ) {
@@ -325,6 +325,9 @@ public fun <A : Any> parseCommandLineArguments(
 
     private fun optionName(name: String): String = when {
         name.startsWith('-') -> name
+        // `-W` 前缀的告警组参数（-Won/-Woff）是仓颉既定的多字符短选项形态，
+        // 不能按"多字符即长选项"的规则展开成 --Won。
+        name.startsWith('W') && name.length > 1 -> "-$name"
         name.startsWith('X') -> "-$name"
         name.length == 1 -> "-$name"
         else -> "--$name"

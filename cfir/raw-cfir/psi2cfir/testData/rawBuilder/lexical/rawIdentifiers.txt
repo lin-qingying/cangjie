@@ -1,0 +1,67 @@
+FILE: rawIdentifiers.cj
+    internal? func `if`(): R|Int64| {
+        local? let `while`: <implicit> = ...
+            initializer:
+                INT(1)
+        local? var `a1b2c3`: R|Int64| = ...
+            initializer:
+                INT(2)
+        local? let `_abc`: <implicit> = ...
+            initializer:
+                INT(3)
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(`while`)
+                        arguments:
+                            NAMED_ACCESS(`a1b2c3`)
+                    }
+                arguments:
+                    NAMED_ACCESS(`_abc`)
+            }
+        }
+    }
+    internal? class `class` {
+        internal? var `var`: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(`var`) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    INT(1)
+            }
+        }
+    }
+    internal? func `for`(`in`: R|Int64|): R|Int64| {
+        local? let y: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(`in`)
+                    arguments:
+                        INT(1)
+                }
+        local? let z: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(`for`) {
+                    NAMED_ACCESS(y)
+                }
+        RETURN {
+            NAMED_ACCESS(z)
+        }
+    }
+    internal? func cjkRawId(): R|Int64| {
+        local? let `仓颉`: <implicit> = ...
+            initializer:
+                INT(7)
+        RETURN {
+            NAMED_ACCESS(`仓颉`)
+        }
+    }

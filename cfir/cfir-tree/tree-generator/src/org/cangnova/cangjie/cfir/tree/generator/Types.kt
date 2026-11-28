@@ -28,6 +28,9 @@ val cfirDefaultVisitorVoidType = generatedType("visitors", "CfirDefaultVisitorVo
  * 生成的 CFIR transformer 类型引用。
  */
 val cfirTransformerType = generatedType("visitors", "CfirTransformer")
+/** RAW tree copier 与其类型化 context 契约。 */
+val deepCopyCfirTreeWithSymbolsType = generatedType("DeepCopyCfirTreeWithSymbols", TypeKind.Class)
+val cfirRawCopyContextType = generatedType("CfirRawCopyContext", TypeKind.Interface)
 /**
  * 源文件行映射类型引用。
  */

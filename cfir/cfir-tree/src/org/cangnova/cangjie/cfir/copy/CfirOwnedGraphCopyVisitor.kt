@@ -20,7 +20,8 @@ import org.cangnova.cangjie.name.Name
 internal abstract class CfirOwnedGraphCopyVisitor(protected val context: CfirOwnedGraphCopyContext) :
     CfirVisitor<CfirElement, Boolean>() {
     override fun visitElement(element: CfirElement, data: Boolean): CfirElement =
-        error("CFIR node has no owned-copy contract: " + element::class)
+        if (element === CfirStubReference) element
+        else error("CFIR node has no owned-copy contract: " + element::class)
 
     override fun visitDeclarationStatus(original: CfirDeclarationStatus, data: Boolean): CfirElement =
         if (data) context.copyOwned(original) else cloneDeclarationStatus(original)

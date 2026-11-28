@@ -5,9 +5,12 @@ import org.cangnova.cangjie.analysis.api.session.restoreSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.name.Name
@@ -15,6 +18,7 @@ import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjFunctionLiteral
+import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
@@ -101,6 +105,77 @@ class AnalysisApiSymbolEquivalenceTest : AbstractAnalysisApiExecutionTest(
             assertTrue(extendMemberNames.any())
         }
     }
+
+    /**
+     * 同名重载绝不能被判为同一符号，且各自必须恢复到自身而不是兄弟重载。
+     *
+     * 这是缺陷 D-2 的回归锁定。`CallableId` 只含包名与短名，
+     * 单靠 `callableId + kind` 做缓存键时，任意两个重载都会得到同一个键：
+     * `isEquivalentTo` 对不同声明返回 `true`，缓存互相覆盖，
+     * 恢复时 `singleOrNull` 因「命中多个」返回 `null`，两个符号一起丢失。
+     */
+    @Test
+    fun overloadIdentity(mainFile: CjFile) {
+        val functions = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
+        val groups = listOf(
+            "顶层函数" to functions.overloadsNamed("format"),
+            "类成员函数" to functions.overloadsNamed("render"),
+            "extend 成员函数" to functions.overloadsNamed("describe"),
+        )
+
+        // CaFunctionSymbol.createPointer() 的静态返回类型是 CaSymbolPointer<CaFunctionSymbol>，
+        // 恢复后再断言具体种类——pointer 层的 castOrNull 会挡住类型不符的恢复。
+        val captured = mutableListOf<Pair<CaNamedFunctionSymbol, CaSymbolPointer<CaFunctionSymbol>>>()
+
+        analyzeForTest(mainFile) {
+            for ((label, overloads) in groups) {
+                // `.symbol` 是会话提供的属性，必须在 analyze {} 内取；groups 里存的是 PSI。
+                val first = overloads.first.symbol
+                val second = overloads.second.symbol
+                assertFalse(first.isEquivalentTo(second), "$label 的两个重载被判定为同一符号：${first.name}")
+                assertFalse(second.isEquivalentTo(first), "$label 的两个重载被判定为同一符号（反向）：${second.name}")
+                captured.add(first to first.createPointer())
+                captured.add(second to second.createPointer())
+            }
+        }
+
+        analyzeForTest(mainFile) {
+            groups.forEachIndexed { index, (label, _) ->
+                val (firstOriginal, firstPointer) = captured[index * 2]
+                val (secondOriginal, secondPointer) = captured[index * 2 + 1]
+
+                val restoredFirst = restoreSymbol(firstPointer)
+                val restoredSecond = restoreSymbol(secondPointer)
+                assertNotNull(restoredFirst, "$label：${firstOriginal.name} 的重载指针恢复失败")
+                assertNotNull(restoredSecond, "$label：${secondOriginal.name} 的重载指针恢复失败")
+
+                assertTrue(
+                    firstOriginal.isEquivalentTo(restoredFirst!!),
+                    "$label：${firstOriginal.name} 的重载恢复到了别的声明",
+                )
+                assertTrue(
+                    secondOriginal.isEquivalentTo(restoredSecond!!),
+                    "$label：${secondOriginal.name} 的重载恢复到了别的声明",
+                )
+                // 恢复后仍必须两两不等价：若恢复落到兄弟重载，只看「恢复成功」发现不了。
+                assertFalse(
+                    restoredFirst.isEquivalentTo(restoredSecond),
+                    "$label：两个重载恢复后仍被判为同一符号",
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 按名字取出恰好两个重载声明，按出现次序排列。
+ *
+ * 数量不符直接失败：夹具变了却仍然断言「两个重载」，等于把覆盖悄悄丢掉。
+ */
+private fun Collection<CjNamedFunction>.overloadsNamed(name: String): Pair<CjNamedFunction, CjNamedFunction> {
+    val matching = filter { it.name == name }.sortedBy { it.textOffset }
+    if (matching.size != 2) error("夹具中 $name 应有 2 个重载，实际 ${matching.size} 个")
+    return matching[0] to matching[1]
 }
 
 /**

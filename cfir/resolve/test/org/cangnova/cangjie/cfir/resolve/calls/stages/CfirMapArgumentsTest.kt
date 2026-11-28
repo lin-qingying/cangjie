@@ -1,4 +1,4 @@
-﻿@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
+@file:OptIn(org.cangnova.cangjie.cfir.CfirImplementationDetail::class)
 
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
@@ -10,10 +10,13 @@ import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.buildT
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.newTestSession
 import org.cangnova.cangjie.cfir.resolve.calls.CallResolutionTestFixtures.runStagesForTest
+import org.cangnova.cangjie.cfir.diagnostic.WrongNumberOfArguments
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.source.CjLightSourceElement
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -67,9 +70,14 @@ class CfirMapArgumentsTest {
     inner class Defaults {
         @Test
         fun `number of default arguments is counted`() {
+            // 官方语法（cjc 1.0.5 实测）：默认值只允许写在**命名参数**上——
+            // `func f(a: Int64, b: Bool = true)` 报 `expected ',' or ')', found '='`；
+            // `func f(a: Int64, b!: Bool = true)` 合法且可省略。因此这里的 `f(1)`
+            // 对应形参 `a: Int64, b!: Bool = true, c!: Float64 = 1.0`。
             val symbol = buildFunctionSymbol(
                 session, "f",
                 parameterTypes = listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN, ConePrimitiveType.FLOAT64),
+                parameterNamed = listOf(false, true, true),
                 parameterDefaults = listOf(false, true, true),
                 parameterIsNamed = listOf(false, true, true),
             )
@@ -99,6 +107,17 @@ class CfirMapArgumentsTest {
             assertEquals(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR, candidate.applicability)
             assertTrue(candidate.diagnostics.isNotEmpty())
             assertEquals(0, candidate.numDefaults)
+
+            val callSource = callInfo.callSite.source as CjLightSourceElement
+            val diagnosticSource = candidate.diagnostics
+                .filterIsInstance<WrongNumberOfArguments>()
+                .single()
+                .source as CjLightSourceElement
+            assertSame(callSource.lighterASTNode, diagnosticSource.lighterASTNode)
+            assertSame(callSource.treeStructure, diagnosticSource.treeStructure)
+            assertEquals(callSource.kind, diagnosticSource.kind)
+            assertEquals(callSource.startOffset, diagnosticSource.startOffset)
+            assertEquals(callSource.endOffset, diagnosticSource.endOffset)
         }
     }
 

@@ -1,0 +1,7 @@
+FILE: matchBindingPattern.cj
+    internal? open class A {
+        init()
+    }
+    internal? func useBinding(a: R|A|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

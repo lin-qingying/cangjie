@@ -1,0 +1,83 @@
+FILE: integers.cj
+    internal? func integerLiterals(): R|Unit| {
+        local? let dec: <implicit> = ...
+            initializer:
+                INT(1_000_000)
+        local? let bin: <implicit> = ...
+            initializer:
+                INT(0b0001_1000)
+        local? let binUpper: <implicit> = ...
+            initializer:
+                INT(0B1111)
+        local? let oct: <implicit> = ...
+            initializer:
+                INT(0o30)
+        local? let octUpper: <implicit> = ...
+            initializer:
+                INT(0O17)
+        local? let hex: <implicit> = ...
+            initializer:
+                INT(0x18)
+        local? let hexUpper: <implicit> = ...
+            initializer:
+                INT(0X1F)
+        local? let sfxI8: <implicit> = ...
+            initializer:
+                INT(100i8)
+        local? let sfxI16: <implicit> = ...
+            initializer:
+                INT(1i16)
+        local? let sfxI32: <implicit> = ...
+            initializer:
+                INT(1i32)
+        local? let sfxI64: <implicit> = ...
+            initializer:
+                INT(1i64)
+        local? let sfxU8: <implicit> = ...
+            initializer:
+                INT(1u8)
+        local? let sfxU16: <implicit> = ...
+            initializer:
+                INT(1u16)
+        local? let sfxU32: <implicit> = ...
+            initializer:
+                INT(1u32)
+        local? let sfxU64: <implicit> = ...
+            initializer:
+                INT(1u64)
+        local? let neg: <implicit> = ...
+            initializer:
+                INT(-42)
+        local? let negHex: <implicit> = ...
+            initializer:
+                INT(-0x10)
+        local? let zero: <implicit> = ...
+            initializer:
+                INT(0)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(dec)
+                    NAMED_ACCESS(bin)
+                    NAMED_ACCESS(binUpper)
+                    NAMED_ACCESS(oct)
+                    NAMED_ACCESS(octUpper)
+                    NAMED_ACCESS(hex)
+                    NAMED_ACCESS(hexUpper)
+                    NAMED_ACCESS(sfxI8)
+                    NAMED_ACCESS(sfxI16)
+                    NAMED_ACCESS(sfxI32)
+                    NAMED_ACCESS(sfxI64)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(sfxU8)
+                    NAMED_ACCESS(sfxU16)
+                    NAMED_ACCESS(sfxU32)
+                    NAMED_ACCESS(sfxU64)
+                    NAMED_ACCESS(neg)
+                    NAMED_ACCESS(negHex)
+                    NAMED_ACCESS(zero)
+                }
+    }

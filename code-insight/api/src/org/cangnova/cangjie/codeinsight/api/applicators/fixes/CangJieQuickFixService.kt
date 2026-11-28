@@ -47,6 +47,23 @@ class CangJieQuickFixService {
         with(list) { getQuickFixesWithCatchingFor(diagnostic) }
 
     /**
+     * 在当前 analysis session 中为诊断创建延迟 quick fix，并保留单个 factory 的失败信息。
+     */
+    fun CaSession.getLazyQuickFixesWithCatchingFor(diagnostic: CaDiagnosticWithPsi<*>): Sequence<Result<IntentionAction>> =
+        with(lazyList) { getQuickFixesWithCatchingFor(diagnostic) }
+
+    /**
+     * 返回协议客户端可直接展示的普通与延迟 quick fix。
+     *
+     * Import-on-the-fly 是 IDE 高亮消费的旁路，并且相应 factory 已同时注册在普通列表中，
+     * 因此不并入这里，避免同一修复重复出现。
+     */
+    fun CaSession.getAvailableQuickFixesWithCatchingFor(
+        diagnostic: CaDiagnosticWithPsi<*>,
+    ): Sequence<Result<IntentionAction>> =
+        getQuickFixesWithCatchingFor(diagnostic) + getLazyQuickFixesWithCatchingFor(diagnostic)
+
+    /**
      * 判断诊断是否存在可延迟创建的 quick fix。
      */
     fun CaSession.canProduceLazyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): Boolean =
@@ -61,11 +78,18 @@ class CangJieQuickFixService {
     /**
      * 预留与 Kotlin K2 一致的 import-on-the-fly 聚合口。
      *
-     * 当前 CangJie IDE 侧尚未消费这条链，但 registrar 层的形状要先对齐，
-     * 避免后续再回退到 K1 风格扩展点。
+     * 消费方：IDE 高亮 visitor 在构建 HighlightInfo 时把该通道产出的修复一并
+     * 注册进普通 fix 列表（修复即补 import 链路），AddImport 类 factory 同时
+     * 注册在 `list` 与 `importOnTheFlyList` 两条通道上。
      */
-    internal fun CaSession.getImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): List<IntentionAction> =
+    fun CaSession.getImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): List<IntentionAction> =
         with(importOnTheFlyList) { getQuickFixesFor(diagnostic) }
+
+    /**
+     * 判断诊断是否存在 import-on-the-fly 修复。
+     */
+    fun CaSession.canProduceImportOnTheFlyQuickFixesFor(diagnostic: CaDiagnosticWithPsi<*>): Boolean =
+        with(importOnTheFlyList) { canProduceQuickFixesFor(diagnostic) }
 }
 
 /**

@@ -9,125 +9,122 @@ import std.sync.*
 import std.io.OutputStream
 
 @Deprecated[message: "Use related global functions in the std.env instead."]
-class Console {
-    @Annotation
-    static prop stdIn: std.console.ConsoleReader {
+public class Console {
+    public static prop stdIn: std.console.ConsoleReader {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    static prop stdOut: std.console.ConsoleWriter {
+    public static prop stdOut: std.console.ConsoleWriter {
         get() { /* compiled code */ }
     }
 
-    @Annotation
-    static prop stdErr: std.console.ConsoleWriter {
+    public static prop stdErr: std.console.ConsoleWriter {
         get() { /* compiled code */ }
     }
 }
 
 @Deprecated[message: "This class migrate to the std.env."]
-class ConsoleReader <: std.core.Object & std.io.InputStream {
-    var buffer: std.core.Array<UInt8>
+public class ConsoleReader <: std.core.Object & std.io.InputStream {
+    private var buffer: std.core.Array<UInt8>
 
-    var endIndex: Int64
+    private var endIndex: Int64
 
-    var startIndex: Int64
+    private var startIndex: Int64
 
-    func read(): std.core.Option<Rune> { /* compiled code */ }
+    public func read(): std.core.Option<Rune> { /* compiled code */ }
 
-    func readln(): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readln(): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func readToEnd(): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readToEnd(): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func readUntil(ch: Rune): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readUntil(ch: Rune): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func readUntil(predicate: (Rune) -> Bool): std.core.Option<std.core.String> { /* compiled code */ }
+    public func readUntil(predicate: (Rune) -> Bool): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func read(arr: std.core.Array<UInt8>): Int64 { /* compiled code */ }
+    public func read(arr: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 }
 
 @Deprecated[message: "This class migrate to the std.env."]
-class ConsoleWriter <: std.core.Object & std.io.OutputStream {
-    let mutex: std.sync.ReentrantMutex
+public class ConsoleWriter <: std.core.Object & std.io.OutputStream {
+    private let mutex: std.sync.ReentrantMutex
 
-    let bufferSize: Int64
+    private let bufferSize: Int64
 
-    let buffer_: std.core.Array<UInt8>
+    private let buffer_: std.core.Array<UInt8>
 
-    let fd_: Int32
+    private let fd_: Int32
 
-    func flush(): Unit { /* compiled code */ }
+    public func flush(): Unit { /* compiled code */ }
 
-    func write(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    public func write(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-    func writeln(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    public func writeln(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-    func write(v: std.core.String): Unit { /* compiled code */ }
+    public func write(v: std.core.String): Unit { /* compiled code */ }
 
-    func write<T>(v: T): Unit { /* compiled code */ }
+    public func write<T>(v: T): Unit { /* compiled code */ }
 
-    func write(v: Bool): Unit { /* compiled code */ }
+    public func write(v: Bool): Unit { /* compiled code */ }
 
-    func write(v: Int8): Unit { /* compiled code */ }
+    public func write(v: Int8): Unit { /* compiled code */ }
 
-    func write(v: Int16): Unit { /* compiled code */ }
+    public func write(v: Int16): Unit { /* compiled code */ }
 
-    func write(v: Int32): Unit { /* compiled code */ }
+    public func write(v: Int32): Unit { /* compiled code */ }
 
-    func write(v: Int64): Unit { /* compiled code */ }
+    public func write(v: Int64): Unit { /* compiled code */ }
 
-    func write(v: UInt8): Unit { /* compiled code */ }
+    public func write(v: UInt8): Unit { /* compiled code */ }
 
-    func write(v: UInt16): Unit { /* compiled code */ }
+    public func write(v: UInt16): Unit { /* compiled code */ }
 
-    func write(v: UInt32): Unit { /* compiled code */ }
+    public func write(v: UInt32): Unit { /* compiled code */ }
 
-    func write(v: UInt64): Unit { /* compiled code */ }
+    public func write(v: UInt64): Unit { /* compiled code */ }
 
-    func write(v: Float16): Unit { /* compiled code */ }
+    public func write(v: Float16): Unit { /* compiled code */ }
 
-    func write(v: Float32): Unit { /* compiled code */ }
+    public func write(v: Float32): Unit { /* compiled code */ }
 
-    func write(v: Float64): Unit { /* compiled code */ }
+    public func write(v: Float64): Unit { /* compiled code */ }
 
-    func write(v: Rune): Unit { /* compiled code */ }
+    public func write(v: Rune): Unit { /* compiled code */ }
 
-    func writeln(v: std.core.String): Unit { /* compiled code */ }
+    public func writeln(v: std.core.String): Unit { /* compiled code */ }
 
-    func writeln<T>(v: T): Unit { /* compiled code */ }
+    public func writeln<T>(v: T): Unit { /* compiled code */ }
 
-    func writeln(v: Bool): Unit { /* compiled code */ }
+    public func writeln(v: Bool): Unit { /* compiled code */ }
 
-    func writeln(v: Int8): Unit { /* compiled code */ }
+    public func writeln(v: Int8): Unit { /* compiled code */ }
 
-    func writeln(v: Int16): Unit { /* compiled code */ }
+    public func writeln(v: Int16): Unit { /* compiled code */ }
 
-    func writeln(v: Int32): Unit { /* compiled code */ }
+    public func writeln(v: Int32): Unit { /* compiled code */ }
 
-    func writeln(v: Int64): Unit { /* compiled code */ }
+    public func writeln(v: Int64): Unit { /* compiled code */ }
 
-    func writeln(v: UInt8): Unit { /* compiled code */ }
+    public func writeln(v: UInt8): Unit { /* compiled code */ }
 
-    func writeln(v: UInt16): Unit { /* compiled code */ }
+    public func writeln(v: UInt16): Unit { /* compiled code */ }
 
-    func writeln(v: UInt32): Unit { /* compiled code */ }
+    public func writeln(v: UInt32): Unit { /* compiled code */ }
 
-    func writeln(v: UInt64): Unit { /* compiled code */ }
+    public func writeln(v: UInt64): Unit { /* compiled code */ }
 
-    func writeln(v: Float16): Unit { /* compiled code */ }
+    public func writeln(v: Float16): Unit { /* compiled code */ }
 
-    func writeln(v: Float32): Unit { /* compiled code */ }
+    public func writeln(v: Float32): Unit { /* compiled code */ }
 
-    func writeln(v: Float64): Unit { /* compiled code */ }
+    public func writeln(v: Float64): Unit { /* compiled code */ }
 
-    func writeln(v: Rune): Unit { /* compiled code */ }
+    public func writeln(v: Rune): Unit { /* compiled code */ }
 }
 
-struct StructureString {
-    let buffer: CPointer<UInt8>
+internal struct StructureString {
+    internal let buffer: std.core.CPointer<UInt8>
 
-    let length: UIntNative
+    internal let length: UIntNative
 
     init() { /* compiled code */ }
 }

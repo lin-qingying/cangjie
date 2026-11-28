@@ -96,18 +96,18 @@ class SmartList<E> private constructor(
      * 在指定位置插入元素，并根据列表大小维护紧凑存储形态。
      */
     override fun add(index: Int, element: E) {
-        if (index < 0 || index > mySize) {
+        if (index !in 0..mySize) {
             throw IndexOutOfBoundsException("Index: $index, Size: $mySize")
         }
 
-        when {
-            mySize == 0 -> {
+        when (mySize) {
+            0 -> {
                 myElem = element
             }
-            mySize == 1 && index == 0 -> {
+            1 if index == 0 -> {
                 myElem = arrayOf(element, myElem)
             }
-            mySize == 1 -> {
+            1 -> {
                 // index == 1
                 myElem = arrayOf(myElem, element)
             }
@@ -153,12 +153,12 @@ class SmartList<E> private constructor(
     override fun removeAt(index: Int): E {
         checkIndex(index)
         val oldValue: E
-        when {
-            mySize == 1 -> {
+        when (mySize) {
+            1 -> {
                 oldValue = myElem as E
                 myElem = null
             }
-            mySize == 2 -> {
+            2 -> {
                 val array = myElem as Array<Any?>
                 oldValue = array[index] as E
                 myElem = array[1 - index]
@@ -234,7 +234,7 @@ class SmartList<E> private constructor(
      * 校验下标是否位于当前列表范围内。
      */
     private fun checkIndex(index: Int) {
-        if (index < 0 || index >= mySize) {
+        if (index !in 0..<mySize) {
             throw IndexOutOfBoundsException("Index: $index, Size: $mySize")
         }
     }

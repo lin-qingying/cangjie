@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.tests
 import PackageFormat.DeclKind
 import PackageFormat.Package
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.lang.PsiBuilderFactory
 import com.intellij.psi.PsiErrorElement
@@ -91,7 +92,7 @@ import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.config.moduleName
 import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.descriptors.Visibilities
-import org.cangnova.cangjie.frontend.pipeline.CfirFrontendPipelinePhase
+import org.cangnova.cangjie.frontend.pipeline.cfirFrontendPipeline
 import org.cangnova.cangjie.frontend.pipeline.ConfigurationPipelineArtifact
 import org.cangnova.cangjie.frontend.pipeline.DefaultCfirFrontendPipelineArtifact
 import org.cangnova.cangjie.lexer.CangJieLexer
@@ -245,7 +246,8 @@ class CfirDeclarationOwnerTest : AbstractCfirAnalysisTestCase() {
                 }
             }
         } finally {
-            Disposer.dispose(disposable)
+            // 真实 frontend 环境包含平台模型；释放同一 owned 项目也遵守其写访问协议。
+            ApplicationManager.getApplication().runWriteAction { Disposer.dispose(disposable) }
         }
     }
 
@@ -276,7 +278,7 @@ class CfirDeclarationOwnerTest : AbstractCfirAnalysisTestCase() {
             addCangJieSourceRoot(source.toString())
             configure()
         }
-        val result = CfirFrontendPipelinePhase.executePhase(ConfigurationPipelineArtifact(configuration, disposable))
+        val result = cfirFrontendPipeline().executePhase(ConfigurationPipelineArtifact(configuration, disposable))
         assertFalse(messages.hasErrors(), messages.entries.joinToString("\n"))
         assertTrue(
             diagnostics.diagnostics.none { it.severity.isError },

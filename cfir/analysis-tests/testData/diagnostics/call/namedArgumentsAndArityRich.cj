@@ -28,7 +28,7 @@ func testNamedArgumentsNotAllowed(): Unit {
 }
 
 func testNamedParameterNotFound(): Unit {
-    named(top: 1, <!NAMED_PARAMETER_NOT_FOUND!>right<!>: 2)
+    named(top: 1, <!UNKNOWN_NAMED_ARGUMENT!>right<!>: 2)
 }
 
 func testArgumentPassedTwice(): Unit {

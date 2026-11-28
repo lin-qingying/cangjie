@@ -77,7 +77,7 @@ class JvmTypeMapper(
             is ChirCPointerType -> Type.getObjectType("java/nio/ByteBuffer")
             is ChirRefType -> Type.getObjectType("java/lang/Object")
             is ChirBoxType -> Type.getObjectType("java/lang/Object")
-            is ChirTupleType -> Type.getObjectType("java/lang/Object")
+            is ChirTupleType -> Type.getType("[Ljava/lang/Object;")
             is ChirGenericType -> Type.getObjectType("java/lang/Object")
             is ChirThisType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.ownerTypeName))
             is ChirFunctionType -> Type.getObjectType("java/lang/invoke/MethodHandle")
@@ -100,6 +100,7 @@ class JvmTypeMapper(
     private fun mapNamedType(type: ChirNamedType): Type {
         return when (type.renderName) {
             "String", "std.core.String", "std/String", "java.lang.String" -> Type.getObjectType("java/lang/String")
+            "chir.StringBuilder" -> Type.getObjectType("java/lang/StringBuilder")
             else -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, type.renderName))
         }
     }

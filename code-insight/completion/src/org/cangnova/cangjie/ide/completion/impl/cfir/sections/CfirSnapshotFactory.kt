@@ -1,0 +1,405 @@
+package org.cangnova.cangjie.ide.completion.impl.cfir.sections
+
+import com.intellij.openapi.diagnostic.Logger
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.components.asSignature
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolUnavailableException
+import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassKind
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
+import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityData
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSymbolKind
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
+
+/**
+ * callable 符号的展示名。
+ *
+ * 匿名或无名字符号回退到 `callableId`：给空串会让候选在弹窗里显示成空白行，
+ * 比显示标识符更糟。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaCallableSymbol.displayName(): String =
+    (this as? CaNamedSymbol)?.name?.asString() ?: callableId?.toString().orEmpty()
+
+/**
+ * callable 符号的限定名。
+ *
+ * 用于界面期复查与导入计划，不作为弹窗主文本展示。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaCallableSymbol.qualifiedNameText(): String =
+    callableId?.asSingleFqName()?.asString() ?: displayName()
+
+/**
+ * 把 callable 符号转换为稳定的补全快照。
+ *
+ * **必须在 Analysis 会话内调用**：签名渲染依赖会话组件，
+ * 快照离开会话后不再持有符号或签名。
+ *
+ * 渲染完整参数列表而非只给返回类型：仓颉允许同名不同参数的声明共存，
+ * 签名同时承担去重区分职责，不渲染会把合法重载合并成一个候选。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaSession.callableSnapshot(
+    symbol: CaCallableSymbol,
+    kind: CompletionItemKind,
+    origin: CompletionOrigin,
+    importCost: Int = ImportCost.DIRECT,
+    documentStamp: Long = 0L,
+    importResolution: ImportResolution = ImportResolution.NoImport,
+): CompletionSnapshot {
+    val name = symbol.displayName()
+    val signature = with(this) { symbol.asSignature() }
+    val tailText = renderSignatureTail(this, symbol, signature.returnType)
+    return completionSnapshot(
+        lookupString = name,
+        kind = kind,
+        origin = origin,
+        identityKind = CompletionIdentityKind.SYMBOL,
+        tailText = tailText,
+        typeText = signature.returnType.toString(),
+        documentStamp = documentStamp,
+        insertParenthesis = true,
+    ).apply {
+        this.symbolKind = symbol.completionSymbolKind()
+        // 身份句柄 = 稳定调用标识 + 渲染签名。
+        //
+        // 只用短名无法重新解析到具体声明；只用 callableId 又对同名重载给出同一个值，
+        // 恢复时只能落到任意一个重载。两者拼接才同时满足「可定位」与「可区分」。
+        val qualified = symbol.qualifiedNameText()
+        this.identity = CompletionIdentityData(
+            kind = CompletionIdentityKind.SYMBOL,
+            handle = "$qualified$tailText",
+            name = name,
+            qualifiedName = qualified,
+            // 身份键走与 extend 通道同源的 callableIdentityKey，不在这里另写一份公式。
+            deduplicationKey = callableIdentityKey(symbol),
+        )
+        this.importPlan = importResolution
+        this.sort = CompletionSortDataImpl(
+            origin = origin,
+            importCost = importCost,
+            isDeprecated = symbol.isDeprecatedSymbol(),
+            kind = kind,
+        )
+    }.build()
+}
+
+/**
+ * 把分类器符号转换为稳定的补全快照。
+ *
+ * 类型候选不带括号：类型后面跟的是类型实参列表而不是调用实参列表，
+ * 跟一个左括号会让用户写出 `List(` 这样的非法源码。
+ */
+@OptIn(CaExperimentalApi::class)
+/**
+ * 构造器候选：符号 + 它在 owner 内的声明序号。
+ *
+ * 两个字段**必须一起提供**：序号是「声明身份」在字符串去重键下的替身，一旦允许缺省
+ * （例如 `?: 0`），所有构造器都会退化成同一个键，恰好重新合并掉 G3 要拆开的重载，
+ * 而且没有任何编译期或运行期信号。
+ *
+ * 局限：序号来自 owner 内的枚举顺序，不是声明自身携带的身份。当前唯一的生产者是
+ * [CfirTopLevelCompletionSection] 的构造器枚举，顺序与声明顺序一致。
+ */
+internal class ConstructorCompletionCandidate(
+    /** 构造器符号。 */
+    val symbol: CaConstructorSymbol,
+    /** 构造器在 owner 内声明顺序中的下标。 */
+    val ordinal: Int,
+)
+
+internal fun CaSession.classifierSnapshot(
+    classifier: CaClassifierSymbol,
+    kind: CompletionItemKind,
+    origin: CompletionOrigin,
+    importCost: Int = ImportCost.DIRECT,
+    documentStamp: Long = 0L,
+    importResolution: ImportResolution = ImportResolution.NoImport,
+    constructor: ConstructorCompletionCandidate? = null,
+): CompletionSnapshot {
+    val name = (classifier as? CaNamedSymbol)?.name?.asString().orEmpty()
+    val handle = classifierIdentityKey(classifier)
+    val qualifiedName = (classifier as? CaClassLikeSymbol)?.classId?.asSingleFqName()?.asString() ?: name
+    // 构造器候选与类型候选的区别只有两点：尾文本渲染**实参组合**，插入时补一对括号。
+    // 同一个类可以有多个构造器（不同实参组合），它们靠尾文本区分——
+    // 只给一个 `Foo` 会让用户无从选择调用哪一种。
+    // 类型参数进尾文本：`Box` 与 `Box<Int64>` 对用户是两种写法，
+    // 不显示可用的类型参数，他就只能凭记忆写。
+    val typeParameterPrefix = (classifier as? CaTypeParameterOwnerSymbol)
+        ?.typeParameters
+        ?.mapNotNull { it.name?.asString() }
+        ?.takeIf { it.isNotEmpty() }
+        ?.joinToString(", ", prefix = "<", postfix = ">")
+        .orEmpty()
+    val tailText = typeParameterPrefix + constructor?.let { renderConstructorTail(this, it.symbol) }.orEmpty()
+    return completionSnapshot(
+        lookupString = name.ifEmpty { handle },
+        kind = kind,
+        origin = origin,
+        identityKind = CompletionIdentityKind.TYPE,
+        qualifiedName = qualifiedName,
+        tailText = tailText,
+        typeText = name,
+        documentStamp = documentStamp,
+        insertParenthesis = constructor != null,
+        // 尾文本里的类型参数同时是**插入文本**：补 `Box` 时空有尾文本
+        // 用户仍要自己回忆它有几个类型参数，插入 `Box<T>` 才是可直接改写的形态。
+        typeParameterList = typeParameterPrefix,
+    ).apply {
+        this.symbolKind = classifier.completionSymbolKind()
+        this.identity = CompletionIdentityData(
+            kind = CompletionIdentityKind.TYPE,
+            handle = handle,
+            name = name,
+            qualifiedName = qualifiedName,
+            // 去重键必须能区分「同一 ClassId 的不同构造器」：形参名相同 + 类型全未知时尾文本会退化成
+            // 同一个 `(a: ?, b: ?)`，而 callableId 对同类构造器恒定。
+            //
+            // 构造器身份取自**声明本身**（owner 内的构造器序号），与参数名、参数类型都无关：
+            // - 官方重载身份是声明，参数名不进签名；错误类型永不判定为相等
+            //   （`external/cangjie_compiler/src/Sema/TypeManager.cpp:1460-1467`）。
+            // - Kotlin 侧同样以声明身份判等（`KaFirSymbol.kt:100-104` 的 `symbolEquals`）。
+            //   这里没有符号身份可用（字符串键），序号是它在「同一 owner 的构造器集合」里的替身；
+            //   **不能**改用参数类型签名——类型未知时两边都是 `?`，恰恰合并掉要区分的重载。
+            deduplicationKey = handle + tailText + (constructor?.let { "@${it.ordinal}" } ?: ""),
+        )
+        this.importPlan = importResolution
+        this.sort = CompletionSortDataImpl(
+            origin = origin,
+            importCost = importCost,
+            isDeprecated = classifier.isDeprecatedSymbol(),
+            kind = kind,
+        )
+    }.build()
+}
+
+/**
+ * 该符号是否带有内置弃用注解。
+ *
+ * 只认**内置** `@Deprecated`：自定义注解里恰好叫这个名字不是语言层面的弃用，
+ * 把它们也算进来会让一批正常声明被降权。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaSymbol.isDeprecatedSymbol(): Boolean =
+    (this as? CaAnnotatedSymbol)
+        ?.annotations
+        ?.any { it.builtInKind == BuiltInAnnotationKind.DEPRECATED } == true
+
+/** 类状声明按 ClassId 区分来源；局部类型与类型参数没有全局 ClassId。 */
+internal fun classifierIdentityKey(classifier: CaClassifierSymbol): String =
+    (classifier as? CaClassLikeSymbol)?.classId?.toString()
+        ?: (classifier as? CaNamedSymbol)?.name?.asString()
+        ?: classifier.toString()
+
+/**
+ * 符号对应的**声明形态**。
+ *
+ * 判定从具体到一般：认不出来时返回 [CompletionSymbolKind.OTHER]，图标退回按候选类别的粗粒度映射，
+ * 因此漏标只会少一次精细化，不会让候选失去图标。
+ *
+ * 为什么不由候选类别推断：`TOP_LEVEL` 一类里同时有 class、interface、struct、enum、typealias 与函数，
+ * 只按类别取图标会让它们共用一个 class 图标（实测在真机上就是「全是 class 图标」）。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaSymbol.completionSymbolKind(): CompletionSymbolKind = when (this) {
+    // 内建类型（`Int64` / `String` …）的符号没有源码 class-like 形态；库符号也可能在本会话
+    // 不可恢复。两者都用 `classKindOrNull` 落到 OTHER（图标按类别兜底），
+    // 而不是用 `try/catch` 把「无法判定」当成异常来探测。
+    is CaClassSymbol -> when (classKindOrNull) {
+        CaClassKind.CLASS -> CompletionSymbolKind.CLASS
+        CaClassKind.INTERFACE -> CompletionSymbolKind.INTERFACE
+        CaClassKind.STRUCT -> CompletionSymbolKind.STRUCT
+        CaClassKind.ENUM -> CompletionSymbolKind.ENUM
+        // primitive 合成符号（UInt8 等）按内建类型图标兜底即可，与修复前的 OTHER 落点一致。
+        CaClassKind.PRIMITIVE, null -> CompletionSymbolKind.OTHER
+    }
+
+    is CaTypeAliasSymbol -> CompletionSymbolKind.TYPE_ALIAS
+    // 枚举构造器先于普通构造器判定：前者不是 `init`，展示形态也不同。
+    is CaEnumConstructorSymbol -> CompletionSymbolKind.ENUM_CONSTRUCTOR
+    is CaConstructorSymbol -> CompletionSymbolKind.CONSTRUCTOR
+    // 访问器（prop 的 get/set）按属性展示：它们不是用户直接调用的函数。
+    is CaPropertyAccessorSymbol -> CompletionSymbolKind.PROPERTY
+    is CaPropertySymbol -> CompletionSymbolKind.PROPERTY
+    is CaFieldSymbol -> CompletionSymbolKind.FIELD
+    is CaLocalVariableSymbol -> CompletionSymbolKind.VARIABLE
+    is CaVariableSymbol -> CompletionSymbolKind.VARIABLE
+    is CaValueParameterSymbol -> CompletionSymbolKind.PARAMETER
+    is CaParameterSymbol -> CompletionSymbolKind.PARAMETER
+    is CaTypeParameterSymbol -> CompletionSymbolKind.TYPE_PARAMETER
+    is CaNamedFunctionSymbol -> CompletionSymbolKind.FUNCTION
+    is CaFunctionSymbol -> CompletionSymbolKind.FUNCTION
+    is CaMacroSymbol -> CompletionSymbolKind.FUNCTION
+    else -> CompletionSymbolKind.OTHER
+}
+
+/**
+ * 渲染构造器的实参组合。
+ *
+ * 构造函数是**特例**：`renderSignatureTail` 的 `(params): ReturnType` 形态对类型候选合适，
+ * 而构造器候选要写的是一次调用，返回类型在调用位置上没有信息量，
+ * 写上反而让 `Foo(a: Int64): Foo` 这种尾文本显得啰嗦。
+ * 因此只渲染参数列表，并显示参数名（用户可能就是按名字选实参组合的）。
+ *
+ * **形参整体不可用时必须让异常上浮**：这里若降级成 `()`，用户会插入一次无参调用，
+ * 那是一份错误的模板。上浮后由候选级隔离丢弃该构造器候选，
+ * 全部构造器都不可用则退回不带括号的类型候选——「参数未知」不能伪装成「没有参数」。
+ */
+@OptIn(CaExperimentalApi::class)
+private fun renderConstructorTail(session: CaSession, constructor: CaConstructorSymbol): String {
+    val parameters = when (constructor) {
+        is CaValueParameterOwnerSymbol -> constructor.valueParameters.map { renderParameter(session, it) }
+        else -> emptyList()
+    }
+    return "(${parameters.joinToString(", ")})"
+}
+
+/**
+ * 渲染签名尾文本。
+ *
+ * 显式展开参数列表而不是直接用各符号的 `toString()`：三个 callable 家族的
+ * `toString()` 形态并不一致，混用会让同类候选的展示格式参差。
+ *
+ * 参数标注遵循仓颉源码形态：
+ * - `!` 表示该形参在调用侧是命名实参；
+ * - `vararg` 前缀表示可变长；
+ * - `= ...` 表示声明了默认值。
+ */
+private fun renderSignatureTail(session: CaSession, symbol: CaCallableSymbol, returnType: CaType): String {
+    val parameters = when (symbol) {
+        is CaEnumConstructorSymbol -> symbol.payloadTypes.map { it.toString() }
+        is CaValueParameterOwnerSymbol -> symbol.valueParameters.map { renderParameter(session, it) }
+        else -> emptyList()
+    }
+    return "(${parameters.joinToString(", ")}): $returnType"
+}
+
+/**
+ * 渲染单个形参。
+ *
+ * 形参属于库声明时符号可能不可恢复（索引未就绪、反编译 PSI 失效）。此时**只**输出
+ * `name: ?`：命名标记、`vararg`、默认值这三个形态全由符号决定，符号缺失时它们一律不可信，
+ * 拼进尾文本会得到「看起来正常但形态错误」的调用模板，比少显示信息更糟。
+ */
+@OptIn(CaExperimentalApi::class)
+private fun renderParameter(session: CaSession, parameter: CaValueParameterSymbol): String = try {
+    val name = (parameter as? CaNamedSymbol)?.name?.asString() ?: "_"
+    val type = parameter.returnType
+    if (with(session) { type.isErrorType }) {
+        "$name: ?"
+    } else {
+        val namedMark = if (parameter.isNamed) "!" else ""
+        val varargMark = if (parameter.isVararg) "vararg " else ""
+        val defaultMark = if (parameter.hasDefaultValue) " = ..." else ""
+        "$varargMark$name$namedMark: $type$defaultMark"
+    }
+} catch (unavailable: CaSymbolUnavailableException) {
+    // 属性层对「符号不可用」已给出安全默认值，走到这里通常是类型渲染本身失败。
+    // 名字仍从 PSI 取（`name` 属性已降级），拿不到就退化为占位符；
+    // 若连名字都失败，异常继续上浮，由候选级丢弃该构造器候选。
+    unavailable.logCompletionDegradation("value parameter")
+    val name = (parameter as? CaNamedSymbol)?.name?.asString() ?: "_"
+    "$name: ?"
+}
+
+/**
+ * 按原因分级记录一次候选降级。
+ *
+ * 可预期的缺失走 debug：它代表“这个库类型还没进索引”，不是缺陷；
+ * 来源或 PSI 生命周期问题走 warn：这类问题需要被看见。
+ */
+internal fun CaSymbolUnavailableException.logCompletionDegradation(what: String) {
+    val text = "补全候选降级：$what 不可用（${reason.name}）：$message"
+    if (reason.isExpectedAbsence) {
+        LOG.debug(text)
+    } else {
+        LOG.warn(text)
+    }
+}
+
+/**
+ * 补全快照渲染的日志对象。
+ */
+private val LOG: Logger = Logger.getInstance("org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirSnapshotFactory")
+
+/**
+ * callable 的候选身份键。
+ *
+ * 与 [callableSnapshot] 写入 `deduplicationKey` 的值**必须同源**：
+ * 区段用它判断「某个成员是否已由 extend 通道提供」，若两处算法不同，
+ * 会把同一个成员同时按 MEMBER 和 EXTEND_MEMBER 各补一次。
+ *
+ * 键的构成是「展示名 + 渲染签名」而不是「展示名 + 展示尾文本」：
+ * 尾文本带 `!`、`vararg`、`= ...` 等**调用形态**标记，那些是展示约定不是符号身份；
+ * 用它当身份会让同一个声明因展示格式变化而被当成两个候选。
+ * 参数类型与返回类型仍然进键，因此同名不同参数的重载天然不等价。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaSession.callableIdentityKey(symbol: CaCallableSymbol): String {
+    val name = symbol.callableId?.toString() ?: symbol.displayName()
+    val returnType = with(this) { symbol.asSignature() }.returnType
+    val parameters = when (symbol) {
+        is CaEnumConstructorSymbol -> symbol.payloadTypes.map { it.toString() }
+        is CaValueParameterOwnerSymbol -> symbol.valueParameters.map { it.parameterIdentityPart() }
+        else -> emptyList()
+    }
+    return "$name(${parameters.joinToString(", ")}): $returnType"
+}
+
+/**
+ * 取形参参与身份比较的部分：类型与 vararg 形态，不含命名标记与默认值标记。
+ */
+private fun CaValueParameterSymbol.parameterIdentityPart(): String {
+    val varargMark = if (isVararg) "vararg " else ""
+    return "$varargMark${returnType}"
+}
+
+/**
+ * 按候选身份去重。
+ *
+ * 只合并**确实同一**的候选：同名但签名不同者身份键不同，必须各自保留。
+ */
+internal fun List<CompletionSnapshot>.distinctByIdentity(): List<CompletionSnapshot> {
+    val seen = mutableSetOf<String>()
+    return filter { seen.add(it.identity.deduplicationKey) }
+}
+
+/**
+ * 取得函数族符号的形参列表，供命名实参候选（9.4）复用。
+ *
+ * 非函数族返回空列表：枚举构造器的 payload 是位置实参，没有命名实参形态。
+ */
+internal fun CaCallableSymbol.namedParameterList(): List<CaValueParameterSymbol> =
+    (this as? CaValueParameterOwnerSymbol)?.valueParameters.orEmpty().filter { it.isNamed }

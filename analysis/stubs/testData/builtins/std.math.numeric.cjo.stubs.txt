@@ -6,21 +6,29 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert, isAllUnder=true, aliasName=null)], packageFqName=std.math.numeric]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null)], packageFqName=std.math.numeric]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.random, isAllUnder=true, aliasName=null)], packageFqName=std.math.numeric]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.math.numeric]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.math.numeric]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.convert, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.math.numeric]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.math, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.random, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.math.numeric]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.random, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.math.numeric]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
   CangJieStub$STRUCT[classId=std/math/numeric/BigInt, fqName=std.math.numeric.BigInt, name=BigInt, superNames=[Comparable, Hashable, ToString]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -60,12 +68,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sign]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -73,12 +76,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=bitLen]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -86,7 +84,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -94,7 +92,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -102,6 +100,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Random]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -247,7 +246,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -255,6 +254,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Random]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=BigInt]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
@@ -278,12 +278,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -303,13 +304,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func trailingZeros(x: BigInt): Int64` instead.]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -325,7 +326,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -341,7 +342,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -357,7 +358,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -366,7 +367,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -389,7 +390,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -412,7 +413,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -435,7 +436,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -458,7 +459,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -481,7 +482,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -526,7 +527,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func divAndMod(that: BigInt): (BigInt, BigInt)` instead.]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -560,7 +561,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func divAndMod(that: BigInt): (BigInt, BigInt)` instead.]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -594,7 +595,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func divAndMod(that: BigInt): (BigInt, BigInt)` instead.]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -628,7 +629,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -651,7 +652,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -664,7 +665,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -680,7 +681,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -692,7 +693,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -711,6 +712,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -722,7 +724,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -745,7 +747,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -768,7 +770,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -791,7 +793,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -804,7 +806,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -820,7 +822,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -836,7 +838,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -852,7 +854,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -868,7 +870,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -884,7 +886,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -900,7 +902,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -916,7 +918,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -932,7 +934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -953,13 +955,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -970,7 +972,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -985,9 +987,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -997,13 +999,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1013,13 +1016,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1029,13 +1033,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1045,13 +1050,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1061,31 +1067,32 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1095,13 +1102,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1111,13 +1119,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1127,13 +1136,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1143,13 +1153,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1159,16 +1170,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=int]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=intArr]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1182,12 +1194,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=negSign]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$ENUM[classId=std/math/numeric/OverflowStrategy, fqName=std.math.numeric.OverflowStrategy, isNonExhaustive=false, name=OverflowStrategy, superNames=[Equatable, ToString]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1228,7 +1240,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$MODIFIER_LIST[]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1244,7 +1256,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1255,7 +1267,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1278,7 +1290,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1301,7 +1313,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1334,7 +1346,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1378,7 +1390,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
               CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func countOnes(i: BigInt): Int64` instead.]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1394,7 +1406,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1410,7 +1422,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -1424,7 +1436,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Number, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Number, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1442,7 +1454,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Number]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Integer, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Integer, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1462,11 +1474,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Parsable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Parsable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Parsable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1486,7 +1498,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1507,7 +1519,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1535,7 +1547,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:RadixConvertible, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:RadixConvertible, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1555,7 +1567,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1565,7 +1577,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1579,7 +1591,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1589,7 +1601,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1612,9 +1624,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1624,7 +1636,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Formattable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Formattable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Formattable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1644,7 +1656,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1663,7 +1675,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$STRUCT[classId=std/math/numeric/Decimal, fqName=std.math.numeric.Decimal, name=Decimal, superNames=[Comparable, Hashable, ToString]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1703,17 +1715,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_scale]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_precision]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1725,17 +1737,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_sign]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=scale]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$PROPERTY_BODY
@@ -1743,12 +1750,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=precision]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -1756,12 +1758,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=value]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1776,12 +1773,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sign]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -1934,7 +1926,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
               CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1957,7 +1949,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1980,7 +1972,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2003,7 +1995,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2026,7 +2018,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2041,7 +2033,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2049,6 +2041,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=RoundingMode]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2071,7 +2064,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
                 CangJieStub$STRING_TEMPLATE
                   CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func divAndMod(d: Decimal): (BigInt, Decimal)` instead.]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2105,7 +2098,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2139,7 +2132,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2152,7 +2145,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2168,12 +2161,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2181,6 +2174,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=RoundingMode]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2192,7 +2186,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2208,7 +2202,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2224,7 +2218,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2240,7 +2234,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2256,7 +2250,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2272,7 +2266,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2288,7 +2282,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2309,7 +2303,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2325,7 +2319,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2333,7 +2327,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2341,6 +2335,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=RoundingMode]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2352,12 +2347,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2365,6 +2360,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=RoundingMode]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2376,13 +2372,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2393,12 +2389,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int32]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2406,6 +2402,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=RoundingMode]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2417,7 +2414,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2430,7 +2427,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2443,15 +2440,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2461,13 +2458,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2477,13 +2475,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2493,13 +2492,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2509,13 +2509,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2525,13 +2526,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2541,13 +2543,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2557,13 +2560,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2573,13 +2577,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2589,13 +2594,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2605,11 +2611,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OverflowStrategy]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2622,25 +2629,25 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2651,7 +2658,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2662,7 +2669,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -2685,7 +2692,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -2697,7 +2704,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2705,6 +2712,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RoundingMode]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -2716,7 +2724,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -2737,7 +2745,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
-  CangJieStub$EXTEND[classId=std/math/numeric/Decimal, extendId=std.math.numeric:Decimal<:Number, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:Decimal<:Number, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2755,7 +2763,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Number]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/math/numeric/Decimal, extendId=std.math.numeric:Decimal<:Parsable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Parsable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:Decimal<:Parsable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2775,7 +2783,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2796,7 +2804,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2824,7 +2832,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
-  CangJieStub$EXTEND[classId=std/math/numeric/Decimal, extendId=std.math.numeric:Decimal<:Formattable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Formattable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:Decimal<:Formattable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2844,7 +2852,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE

@@ -1,0 +1,4 @@
+FILE: lambdaParameters.cj
+    internal? func useLambdas(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

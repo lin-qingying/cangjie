@@ -72,7 +72,6 @@ inline fun buildForInExpressionCopy(original: CfirForInExpression, init: CfirFor
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.mappedExpression = original.mappedExpression
     copyBuilder.overflowStrategy = original.overflowStrategy
-    copyBuilder.pattern = original.pattern
     copyBuilder.iterable = original.iterable
     copyBuilder.patternGuard = original.patternGuard
     copyBuilder.body = original.body

@@ -1,5 +1,13 @@
 # CJMP 实施交接记录（2026-11-17）
 
+## Draft PR #17 与主分支集成（2026-11-28）
+
+PR 分支起点为 `92928bd070fb00c06e956237e6c394efa7b9a0ee`，合入的主分支为 `200142275d824efcb4d24f5f835e0376b0a357ad`，共同基线为 `6b6573fd994b1f813796b3ff809ac26b745a216f`。初始 332 个冲突路径，含 317 个双方修改、6 个双方新增和 9 个删除与修改。85 个初始冲突路径为生成文件。全部初始冲突已处理，进入编译与行为验证。[Draft PR #17](https://github.com/lin-qingying/cangjie/pull/17)
+
+本次 Linux 验证使用仓库规定的 Gradle 9.4.0、Temurin 21，以及 Java 17 工具链。按主分支 CI 流程准备 Ubuntu 22.04、仓颉 SDK 1.1.0 和 LLVM 14。R41 与 R42 的数字为历史结果，合并提交的结果在对应测试日志中单独记录。
+
+原 70 项及 P0–P10 保持开启。沿下文的实施入口继续，重点是 P8/S1–S7 的 PSI 与 LightTree SOURCE → CJO → 正式消费端、限定定义快照、真实 Core 定义输入及作用域内 SDK 选择。保留 R41 Core 和 R42 alias session 的复验入口及原测试断言。
+
 > R41最新完整终态：[证据记录](../build/r41-continuation-evidence-20261128.md)、[真实结果](../build/cjmp-invisible-peer-20261125/r41-final-source-publication-20261128-a-results.json)。fbc812ff完整529/528/1，Source18/providers52/原FullId1通过，全部新Work6/原context publication7和原图五失败通过；54原XML/流归档已解压与磁盘长度/SHA核验，输入/SDK无漂移。唯一原Core定义输入失败继续实施真实当前定义产品/scoped SDK选择，禁止fake Object/Any、包名current投影或body=0。原70/P0–P10及完整SOURCE/其它验收余额保持OPEN。
 
 > R41最新实际接续见 [证据记录](../build/r41-continuation-evidence-20261128.md)：R1/R2 b166/166、原owner首次capture负控和Owned未选注解拒绝通过；原XML/流全部核验、限定v2 gate接受。完整final SOURCE publication/唯一Work.freeze生产已应用，编译ba6a8c6f退出0；新Work/graph回归与完整gate待核。R40 a原514/508/6全部保留，Core1与图五项不能按编译关闭；原70/P0–P10完整OPEN。

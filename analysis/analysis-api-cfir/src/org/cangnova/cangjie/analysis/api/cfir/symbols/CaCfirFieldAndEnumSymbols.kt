@@ -7,14 +7,18 @@ import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirCallableSymbolPointer
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirExtendMemberCallableSymbolPointer
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirMemberFieldSymbolPointer
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -106,7 +110,7 @@ internal class CaCfirFieldSymbol private constructor(
      * 字段显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull }
 
     /**
      * 字段类型。
@@ -132,7 +136,10 @@ internal class CaCfirFieldSymbol private constructor(
      * 字段可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion { status?.isVisibilityExplicit == true }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * 字段 modality。
@@ -144,7 +151,10 @@ internal class CaCfirFieldSymbol private constructor(
      * 字段 modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = withValidityAssertion { status?.isModalityExplicit == true }
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicModalityExplicitness() }
 
     /**
      * 按 FIELD 身份恢复字段，不能通过参数的普通 PSI symbol 查询误恢复为 value parameter。
@@ -265,7 +275,7 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor 显式 receiver 类型。
      */
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbolOrNull }
 
     /**
      * enum constructor 返回类型。
@@ -289,7 +299,10 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor 可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion { status?.isVisibilityExplicit == true }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * enum constructor modality。
@@ -301,13 +314,21 @@ internal class CaCfirEnumConstructorSymbol private constructor(
      * enum constructor modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = withValidityAssertion { status?.isModalityExplicit == true }
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicModalityExplicitness() }
 
     /**
      * enum constructor 当前没有稳定 pointer。
      */
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        error("Enum constructor symbol cannot create a stable pointer")
+        val key = checkNotNull(cfirSymbol.publicSymbolCacheKeyOrNull(analysisSession) as? CaCfirCallableSymbolCacheKey) {
+            "Enum constructor must have a stable callable identity"
+        }
+        org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirCallableSymbolPointer(
+            key, CaCallableSymbol::class.java,
+        )
     }
 
     /**

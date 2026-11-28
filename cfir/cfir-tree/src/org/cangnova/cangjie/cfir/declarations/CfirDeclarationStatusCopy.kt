@@ -8,8 +8,10 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
  */
 fun cloneDeclarationStatus(status: CfirDeclarationStatus): CfirDeclarationStatusImpl =
     CfirDeclarationStatusImpl(status.visibility, status.modality).also { copied ->
-        copied.isVisibilityExplicit = status.isVisibilityExplicit
-        copied.isModalityExplicit = status.isModalityExplicit
+        copied.visibilityExplicitness = status.visibilityExplicitness
+        copied.modalityExplicitness = status.modalityExplicitness
+        copied.bodyPresence = status.bodyPresence
+        copied.isDeclarationFile = status.isDeclarationFile
         copied.isAbstractExplicit = status.isAbstractExplicit
         copied.isOverride = status.isOverride
         copied.isOperator = status.isOperator
@@ -20,6 +22,7 @@ fun cloneDeclarationStatus(status: CfirDeclarationStatus): CfirDeclarationStatus
         copied.isForeign = status.isForeign
         copied.isC = status.isC
         copied.isCommon = status.isCommon
+        copied.isFromCommonPart = status.isFromCommonPart
         copied.isSpecific = status.isSpecific
         copied.isCommonWithDefault = status.isCommonWithDefault
         copied.isRedef = status.isRedef

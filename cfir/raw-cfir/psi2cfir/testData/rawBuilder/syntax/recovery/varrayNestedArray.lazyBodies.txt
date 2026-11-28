@@ -1,0 +1,4 @@
+FILE: varrayNestedArray.cj
+    internal? func nestedArray(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

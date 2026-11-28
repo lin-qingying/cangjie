@@ -28,6 +28,8 @@ dependencies {
     implementation(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:decompiled:decompiler-to-psi"))
     implementation(project(":analysis:analysis-internal-utils"))
+    // 无平台侧符号索引实现复用 :analysis:stubs 的会话内快照（任务 6.10 前置）。
+    implementation(project(":analysis:stubs"))
     implementation(project(":common"))
     implementation(project(":psi"))
 

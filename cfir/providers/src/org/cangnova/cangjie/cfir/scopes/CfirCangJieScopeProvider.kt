@@ -1578,6 +1578,20 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         scopeSession: ScopeSession,
     ): CfirTypeScope {
         val classSymbol = klass.symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
+        return getDeclarationSiteMemberScope(classSymbol, useSiteSession, scopeSession)
+    }
+
+    /**
+     * 返回 class、interface、struct 或 enum 声明站点的成员 scope；typealias 使用专用构造器 scope。
+     */
+    fun getDeclarationSiteMemberScope(
+        classSymbol: CfirClassLikeSymbol<*>,
+        useSiteSession: CfirSession,
+        scopeSession: ScopeSession,
+    ): CfirTypeScope {
+        check(classSymbol !is CfirTypeAliasSymbol) {
+            "Type aliases do not support a nominal declaration-site member scope; constructor lookup uses its dedicated scope."
+        }
         return getUseSiteMemberScope(
             useSiteSession = useSiteSession,
             classSymbol = classSymbol,
@@ -1601,8 +1615,8 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         scopeSession: ScopeSession,
     ): CfirPackageScope {
         val key: ScopeSessionKey<PackageMemberScopeKey, CfirPackageMemberScope> = scopeSessionKey()
-        return scopeSession.getOrBuild(PackageMemberScopeKey(packageFqName, useSiteSession), key) {
-            CfirPackageMemberScope(packageFqName, useSiteSession)
+        return scopeSession.getOrBuild(PackageMemberScopeKey(packageFqName, symbolProvider, useSiteSession), key) {
+            CfirPackageMemberScope(packageFqName, useSiteSession, symbolProvider)
         }
     }
 
@@ -1610,6 +1624,7 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
      * 包成员 scope 缓存 key。
      *
      * @property packageFqName 被查询的包名。
+     * @property symbolProvider 查询发生时使用的符号提供器。
      * @property useSiteSession 查询发生的 session。
      */
     private data class PackageMemberScopeKey(
@@ -1617,6 +1632,10 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
          * 被查询的包名。
          */
         val packageFqName: FqName,
+        /**
+         * 查询发生时使用的符号提供器；必须进入 key，否则同一 session 下首次构建的 scope 会错用另一个提供器。
+         */
+        val symbolProvider: CfirSymbolProvider,
         /**
          * 查询发生的 use-site session。
          */

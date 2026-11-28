@@ -99,6 +99,5 @@ inline fun buildPatternVariableCopy(original: CfirPatternVariable, init: CfirPat
     copyBuilder.isTypeImplicit = original.isTypeImplicit
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
-    copyBuilder.pattern = original.pattern
     return copyBuilder.apply(init).build()
 }

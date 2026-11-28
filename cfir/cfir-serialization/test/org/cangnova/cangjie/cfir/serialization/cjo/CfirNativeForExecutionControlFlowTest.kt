@@ -928,7 +928,7 @@ class CfirNativeForExecutionControlFlowTest {
             this.name = Name.identifier(name)
             symbol = CfirPatternBindingSymbol(CallableId(this.name))
             returnTypeRef = typeRef(type)
-            this.initializer = initializer
+            this.ownedInitializer = initializer
             isVar = mutable
         }
 

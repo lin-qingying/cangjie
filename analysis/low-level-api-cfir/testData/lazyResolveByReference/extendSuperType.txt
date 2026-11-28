@@ -1,0 +1,52 @@
+IMPORTS:
+TARGET:
+[ResolvedTo(IMPORTS)] internal? interface Marker {
+}
+
+SUPER_TYPES:
+TARGET:
+[ResolvedTo(SUPER_TYPES)] internal? interface Marker {
+}
+
+TYPES:
+TARGET:
+[ResolvedTo(TYPES)] internal? interface Marker {
+}
+
+STATUS:
+TARGET:
+[ResolvedTo(STATUS)] internal? interface Marker {
+}
+
+EXTENSIONS:
+TARGET:
+[ResolvedTo(EXTENSIONS)] internal? interface Marker {
+}
+
+IMPLICIT_TYPES:
+TARGET:
+[ResolvedTo(IMPLICIT_TYPES)] internal? interface Marker {
+}
+
+CJMP_MATCHING:
+TARGET:
+[ResolvedTo(IMPLICIT_TYPES)] internal? interface Marker {
+}
+
+BODY_RESOLVE:
+TARGET:
+[ResolvedTo(BODY_RESOLVE)] internal? interface Marker {
+}
+
+FILE RAW TO BODY:
+[ResolvedTo(BODY_RESOLVE)] FILE: main.cj
+    package sample.lowlevel.lazy.ref
+    [ResolvedTo(BODY_RESOLVE)] internal? interface Marker {
+    }
+    [ResolvedTo(BODY_RESOLVE)] extend R|Host| <: R|Marker| {
+        [ResolvedTo(BODY_RESOLVE)] internal? func describe(): R|struct String| {
+            RETURN {
+                STRING("host")
+            }
+        }
+    }

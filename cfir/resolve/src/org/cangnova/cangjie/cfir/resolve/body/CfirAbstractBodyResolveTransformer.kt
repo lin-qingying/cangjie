@@ -243,6 +243,9 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     /** 是否只解析隐式类型所需的 body。 */
     override var implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformer(phase) {
+    /** 当前 dispatcher 实际拥有的跨声明计算缓存；树重算必须与该缓存共享同一事务边界。 */
+    abstract val implicitBodyResolveComputationSession: ImplicitBodyResolveComputationSession?
+
     /**
      * 对齐 Kotlin `FirAbstractBodyResolveTransformerDispatcher.typeResolverTransformer`。
      *
@@ -503,6 +506,12 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
         return declarationsTransformer.transformVariable(variable, data)
     }
+
+    /** 资源直接拥有 initializer，沿正式变量解析入口完成类型推断与 CFG 求值。 */
+    override fun transformResourceVariable(
+        resourceVariable: CfirResourceVariable,
+        data: ResolutionMode,
+    ): CfirResourceVariable = declarationsTransformer.transformVariable(resourceVariable, data) as CfirResourceVariable
 
     /** 将模式变量 body resolve 分发给声明 transformer。 */
     override fun transformPatternVariable(

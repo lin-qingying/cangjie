@@ -1,9 +1,13 @@
 package org.cangnova.cangjie.chir.cfir2chir
 
+import org.cangnova.cangjie.cfir.CfirIterationOwner
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.patterns.simpleVariableBindingOrNull
 import org.cangnova.cangjie.chir.core.attribute.ChirAttribute
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
+import org.cangnova.cangjie.chir.core.controlflow.ChirCatchDispatchEntry
 import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirTerminator
@@ -26,13 +30,19 @@ import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
 import org.cangnova.cangjie.chir.core.expression.ChirTupleExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
+import org.cangnova.cangjie.chir.core.type.ChirClassType
+import org.cangnova.cangjie.chir.core.type.ChirEnumType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
+import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
+import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirStructType
 import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRelations
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirBlockValue
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.chir.core.value.ChirFunctionValue
@@ -58,6 +68,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
@@ -67,6 +78,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
@@ -119,6 +131,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
@@ -183,7 +196,16 @@ internal class Cfir2ChirFunctionBodyConverter(
     /**
      * 当前活跃循环到 continue/break 目标 block 的映射。
      */
-    private val loopTargets = IdentityHashMap<CfirLoopExpression, LoopBlocks>()
+    private val loopTargets = IdentityHashMap<CfirIterationOwner, LoopBlocks>()
+
+    /**
+     * 活跃的 catch handler 上下文栈，内层 throw 降级时读取栈顶。
+     *
+     * 每层是当前 try 的完整 catch 分派列表；`lowerThrowExpression` 依此为
+     * `ChirThrowTerminator` 附加 unwind 目标、绑定与类型分派表。
+     * 单 catch 时分派表只有一条（catch-all 快捷形态由 unwind 目标+绑定承载）。
+     */
+    private val activeCatchHandlers = ArrayDeque<List<ActiveCatchDispatch>>()
 
     /**
      * 执行完整函数体 lowering，并生成 CHIR 函数声明。
@@ -278,20 +300,35 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower 函数体中的局部声明，并保留局部函数等声明值。
+     * Lower 函数体中的局部声明。
+     *
+     * 局部函数声明完成 header 登记与函数体转换，并把转换产物交给
+     * 辅助函数收集器（附加到 module 声明，函数值引用才有真实目标）；
+     * 声明语句本身对后端无副作用，不再发射占位操作。
+     * 其它局部声明（class 等）保留占位操作与源级属性。
      */
     private fun lowerLocalDeclaration(declaration: CfirDeclaration): ChirValue? {
-        val operands = when (declaration) {
+        when (declaration) {
             is CfirFunction -> {
                 registerFunctionHeaderIfNeeded(declaration)
-                listOf(storage.getFunctionHeader(declaration.symbol).asValue())
+                if (!storage.hasFunction(declaration.symbol)) {
+                    val declarationConverted = Cfir2ChirFunctionBodyConverter(
+                        components = components,
+                        packageName = packageName,
+                        function = declaration,
+                        header = storage.getFunctionHeader(declaration.symbol),
+                    ).convert()
+                    storage.registerFunction(declaration.symbol, declarationConverted)
+                    components.auxiliaryFunctions.register(declarationConverted)
+                }
+                return null
             }
-            else -> emptyList()
+            else -> Unit
         }
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_LOCAL_DECLARATION,
             source = declaration,
-            operands = operands,
+            operands = emptyList(),
             resultType = null,
             attributes = attributes(
                 "cfir.declaration.kind" to (declaration::class.simpleName ?: "anonymous"),
@@ -413,16 +450,57 @@ internal class Cfir2ChirFunctionBodyConverter(
             val value = if (bindings.size == 1) {
                 initializerValue
             } else {
-                emitOtherValue(
-                    operation = Cfir2ChirOperation.CFIR_PATTERN_EXTRACT,
-                    source = binding,
-                    operands = listOf(initializerValue),
-                    resultType = bindingType,
-                    attributes = patternAttributes(pattern) + attributes("cfir.binding.index" to index.toString()),
-                ) ?: throw Cfir2ChirConversionException("pattern binding extract produced no value", binding)
+                patternExtractValue(pattern, initializerValue, bindingType, index, binding)
             }
             lowerLocalBindingVariable(binding, value, binding)
         }
+    }
+
+    /**
+     * 为 pattern binding 提取容器中的第 [index] 个值。
+     *
+     * 容器是 `ChirTupleType` 且对应位置类型与 binding 匹配时，降级为
+     * `chir.tuple_extract` intrinsic（下标常量 + 期望元素类型）；
+     * 其余形态保留为 `cfir.pattern_extract` 占位并记录 binding index。
+     */
+    private fun patternExtractValue(
+        pattern: CfirPattern,
+        containerValue: ChirValue,
+        bindingType: ChirTypeRef,
+        index: Int,
+        source: CfirElement,
+    ): ChirValue {
+        val tupleType = (containerValue.type as? ChirResolvedTypeRef)?.type as? ChirTupleType
+        if (tupleType != null && index < tupleType.elementTypes.size &&
+            tupleType.elementTypes[index] == bindingType
+        ) {
+            val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+            val expressionId = builder.nextId("tuple_extract_$index")
+            builder.emit(
+                ChirOtherExpression(
+                    semanticId = expressionId,
+                    operation = ChirOtherOperation.TUPLE_EXTRACT.canonicalName,
+                    operands = listOf(
+                        containerValue,
+                        ChirConstantValue(
+                            semanticId = builder.nextId("tuple_index"),
+                            type = intType,
+                            literal = index.toString(),
+                        ),
+                    ),
+                    resultType = bindingType,
+                ),
+            )
+            return bindingType.valueOrNull(expressionId)
+                ?: throw Cfir2ChirConversionException("pattern binding extract produced no value", source)
+        }
+        return emitOtherValue(
+            operation = Cfir2ChirOperation.CFIR_PATTERN_EXTRACT,
+            source = source,
+            operands = listOf(containerValue),
+            resultType = bindingType,
+            attributes = patternAttributes(pattern) + attributes("cfir.binding.index" to index.toString()),
+        ) ?: throw Cfir2ChirConversionException("pattern binding extract produced no value", source)
     }
 
     /**
@@ -442,12 +520,17 @@ internal class Cfir2ChirFunctionBodyConverter(
             mutable = variable.isVar,
         )
         val allocaId = builder.nextId("alloca")
+        val previousLocal = storage.getLocalVariableOrNull(variable.symbol)
         val localVariable = ChirLocalVariableHeader(
-            declaration = declaration,
+            declaration = previousLocal?.declaration ?: declaration,
             ownerFunctionId = header.semanticId,
             addressSemanticId = allocaId,
         )
-        storage.registerLocalVariable(variable.symbol, localVariable)
+        if (previousLocal == null) {
+            storage.registerLocalVariable(variable.symbol, localVariable)
+        } else {
+            storage.replaceLocalVariableAddress(variable.symbol, previousLocal, localVariable)
+        }
         val addressValue = localVariable.asAddressValue()
         builder.emit(
             ChirMemoryExpression(
@@ -610,33 +693,131 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower 字符串插值表达式，按插值片段收集操作数。
+     * Lower 字符串插值表达式。
+     *
+     * 降级为平台中立的字符串构建 intrinsic 序列：
+     * `chir.string_build`（创建构建器）→ 按插值顺序对每个片段
+     * `chir.string_append` → `chir.string_result`（取结果字符串）。
+     * 构建器载体类型为 `chir.StringBuilder` 命名类型，由后端映射为
+     * 平台实现（JVM StringBuilder / LLVM 运行时调用）。
      */
-    private fun lowerStringInterpolation(expression: CfirStringInterpolation): ChirValue? =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_STRING_INTERPOLATION,
-            source = expression,
-            operands = expression.parts.mapValueOperands("string interpolation part"),
-            resultType = expression.requireResultType(),
+    private fun lowerStringInterpolation(expression: CfirStringInterpolation): ChirValue? {
+        val resultType = expression.requireResultType()
+        val builderType = ChirResolvedTypeRef(ChirNamedType("chir.StringBuilder"))
+        val buildId = builder.nextElementId("string_build", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = buildId,
+                operation = ChirOtherOperation.STRING_BUILD.canonicalName,
+                operands = emptyList(),
+                resultType = builderType,
+            ),
         )
+        val builderValue = ChirLocalValue(
+            semanticId = buildId,
+            type = builderType,
+            name = buildId.value,
+        )
+        expression.parts.forEach { part ->
+            val partValue = lowerExpression(part)
+                ?: throw Cfir2ChirConversionException("string interpolation part does not produce a value", part)
+            builder.emit(
+                ChirOtherExpression(
+                    semanticId = builder.nextElementId("string_append", expression),
+                    operation = ChirOtherOperation.STRING_APPEND.canonicalName,
+                    operands = listOf(builderValue, partValue),
+                    resultType = null,
+                ),
+            )
+        }
+        val resultId = builder.nextElementId("string_result", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = resultId,
+                operation = ChirOtherOperation.STRING_RESULT.canonicalName,
+                operands = listOf(builderValue),
+                resultType = resultType,
+            ),
+        )
+        return resultType.valueOrNull(resultId)
+    }
 
     /**
-     * Lower 已解析的名称访问，区分成员访问、本地变量、参数和函数引用。
+     * Lower 已解析的名称访问，区分成员字段访问、本地变量、参数和函数引用。
+     *
+     * 成员字段访问（携带 receiver 且解析到字段 symbol）降级为 `jvm.getfield`：
+     * owner 由 receiver 静态类型推导，字段名/类型来自字段 header，
+     * 与 JVM 后端 `emitJvmGetField` 的 ABI 契约对齐。
+     * 其余成员访问（如成员函数引用、未知字段）保留为 `cfir.member_access` 占位。
      */
     private fun lowerNamedAccessExpression(expression: CfirNamedAccessExpression): ChirValue {
-        val receiverOperands = expression.receiverOperands()
-        if (receiverOperands.isNotEmpty()) {
+        val reference = expression.calleeReference as? CfirResolvedNamedReference
+            ?: throw Cfir2ChirConversionException("named access must be resolved before CHIR lowering", expression)
+
+        if (expression.dispatchReceiver != null || expression.explicitReceiver != null) {
+            memberFieldAccessOrNull(expression, reference)?.let { return it }
             return emitOtherValue(
                 operation = Cfir2ChirOperation.CFIR_MEMBER_ACCESS,
                 source = expression,
-                operands = receiverOperands,
+                operands = expression.receiverOperands(),
                 resultType = expression.requireResultType(),
                 attributes = referenceAttributes(expression.calleeReference),
             ) ?: throw Cfir2ChirConversionException("member access produced no value", expression)
         }
-        val reference = expression.calleeReference as? CfirResolvedNamedReference
-            ?: throw Cfir2ChirConversionException("named access must be resolved before CHIR lowering", expression)
         return valueForResolvedReference(reference, expression)
+    }
+
+    /**
+     * 尝试把成员字段访问降级为 `jvm.getfield` intrinsic。
+     *
+     * 仅当解析目标是已登记的字段 header、且 receiver 表达式产出 CHIR 值时降级。
+     * `jvm.owner` 从 receiver 静态类型的点分名转换（`sample.Box` → `sample/Box`），
+     * `jvm.name`/`jvm.descriptor` 来自字段声明；不满足条件时返回 null 保留占位。
+     */
+    private fun memberFieldAccessOrNull(
+        expression: CfirNamedAccessExpression,
+        reference: CfirResolvedNamedReference,
+    ): ChirValue? {
+        val variableHeader = storage.getVariableOrNull(reference.resolvedSymbol) ?: return null
+        val receiver = lowerExpression(expression.dispatchReceiver ?: expression.explicitReceiver ?: return null)
+            ?: return null
+        val resultType = expression.requireResultType()
+        if (resultType != variableHeader.declaration.type) return null
+        val ownerInternalName = jvmOwnerInternalNameOrNull(receiver.type) ?: return null
+
+        val expressionId = builder.nextElementId("getfield", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.getfield",
+                operands = listOf(receiver),
+                resultType = resultType,
+                attributes = setOf(
+                    ChirStringAttribute("jvm.owner", ownerInternalName),
+                    ChirStringAttribute("jvm.name", variableHeader.declaration.name),
+                ),
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
+     * 把 class-like receiver 静态类型转换为 JVM owner internal name。
+     *
+     * 只接受点分名称的 [ChirClassType]/[ChirStructType]/[ChirNamedType]/[ChirEnumType]；
+     * 其它类型（元组、函数、泛型参数等）没有可推导的 classfile owner，返回 null。
+     */
+    private fun jvmOwnerInternalNameOrNull(typeRef: ChirTypeRef): String? {
+        val type = (typeRef as? ChirResolvedTypeRef)?.type ?: return null
+        val dotName = when (type) {
+            is ChirClassType -> type.name
+            is ChirStructType -> type.name
+            is ChirEnumType -> type.name
+            is ChirNamedType -> type.renderName
+            else -> return null
+        }
+        if (!dotName.contains('.')) return null
+        return dotName.replace('.', '/')
     }
 
     /**
@@ -653,15 +834,30 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower super 接收者表达式。
+     *
+     * super 语境的 receiver 就是当前实例：成员函数体内 header 携带 receiverType 时，
+     * 降级为名为 `this` 的局部值引用（与 this 降级共用 JVM slot 0 绑定），
+     * 类型采用 super 表达式的解析类型（父类型视图）——后端实例调用
+     * （如 invokespecial）以 this 为 receiver，类型不参与 owner 推导。
+     * 静态上下文（header 无 receiverType）保留为 CFIR 专有操作。
      */
-    private fun lowerSuperReceiverExpression(expression: CfirSuperReceiverExpression): ChirValue =
-        emitOtherValue(
+    private fun lowerSuperReceiverExpression(expression: CfirSuperReceiverExpression): ChirValue {
+        if (header.receiverType != null) {
+            return ChirLocalValue(
+                semanticId = builder.nextElementId("super", expression),
+                type = expression.requireResultType(),
+                name = "this",
+            )
+        }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_SUPER_RECEIVER,
             source = expression,
             operands = expression.receiverOperands(),
             resultType = expression.requireResultType(),
-            attributes = referenceAttributes(expression.calleeReference),
+            attributes = referenceAttributes(expression.calleeReference) +
+                    attributes("cfir.this.fallbackReason" to "no-receiver"),
         ) ?: throw Cfir2ChirConversionException("super receiver expression produced no value", expression)
+    }
 
     /**
      * Lower this 接收者表达式。
@@ -692,7 +888,13 @@ internal class Cfir2ChirFunctionBodyConverter(
         ) ?: throw Cfir2ChirConversionException("inaccessible receiver expression produced no value", expression)
 
     /**
-     * Lower 函数调用；普通直接调用生成 `ChirCallExpression`，带接收者或特殊 origin 的调用保留为 CFIR 操作。
+     * Lower 函数调用。
+     *
+     * - 无接收者的普通直接调用生成 `ChirCallExpression`；
+     * - 被调函数是本包已登记 header 的成员函数（header 携带 `receiverType`）时，
+     *   把 dispatch receiver 值作为第一个实参生成 `ChirCallExpression`，
+     *   后端按 `ChirFunctionType.receiverType` 走实例调用路径（JVM `invokevirtual` 族）；
+     * - 其余带接收者或特殊 origin 的调用保留为 CFIR 专有操作。
      */
     private fun lowerFunctionCall(functionCall: CfirFunctionCall): ChirValue? {
         (functionCall.calleeReference as? CfirResolvedBuiltinOperatorReference)?.let {
@@ -842,6 +1044,11 @@ internal class Cfir2ChirFunctionBodyConverter(
                 resultType = resultType,
                 attributes = referenceAttributes(functionCall.calleeReference) + attributes(
                     "cfir.call.origin" to functionCall.origin.name,
+                    "cfir.call.fallbackReason" to buildString {
+                        if (callee == null) append("unresolved-callee")
+                        if (functionCall.dispatchReceiver != null) append("|dispatch-receiver")
+                        if (functionCall.explicitReceiver != null) append("|explicit-receiver")
+                    },
                     "cfir.call.trailingLambda" to functionCall.hasTrailingLambda.toString(),
                     "cfir.call.varraySize" to (functionCall.varraySizeLiteral ?: ""),
                 ),
@@ -921,6 +1128,131 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
+     * 尝试把 primitive 上的双元运算符调用降级为 [ChirBinaryExpression]。
+     *
+     * CFIR 把 `a + b` 解析为 `a.*operator_plus*(b)` 运算符调用
+     * （origin=Operator，left 在 explicitReceiver，right 是唯一实参）；
+     * primitive carrier 上没有用户可见的运算符重载，该调用唯一正确的
+     * JVM 语义就是指令级二元运算。这里按运算符约定名映射为 CHIR 二元
+     * 操作符并要求左右操作数类型一致；结果类型为 bool 的比较走 CHIR
+     * 比较操作符，其余沿用操作数类型。
+     * 非 primitive 操作数或未映射的运算符返回 null，由调用方保留占位
+     * （用户自定义运算符重载走正常函数调用路径）。
+     */
+    private fun primitiveOperatorBinaryOrNull(
+        functionCall: CfirFunctionCall,
+        arguments: List<ChirValue>,
+        resultType: ChirTypeRef,
+    ): ChirValue? {
+        if (functionCall.origin != CfirFunctionCallOrigin.Operator) return null
+        if (functionCall.dispatchReceiver != null) return null
+        // 内建 primitive 运算符的 calleeReference 不解析到 symbol（BuiltinPrimitiveOperators
+        // 在类型系统层直接完成），名字保留在 CfirNamedReference 上。
+        val operatorName = (functionCall.calleeReference as? CfirNamedReference)?.name?.asString() ?: return null
+        val chirOperator = when (operatorName) {
+            "*operator_plus" -> "+"
+            "*operator_minus" -> "-"
+            "*operator_times" -> "*"
+            "*operator_div" -> "/"
+            "*operator_rem" -> "%"
+            "*operator_and" -> "and"
+            "*operator_or" -> "or"
+            "*operator_xor" -> "xor"
+            "*operator_left_shift" -> "shl"
+            "*operator_right_shift" -> "ashr"
+            "*operator_equals" -> "=="
+            "*operator_not_equals" -> "!="
+            "*operator_compare_lt" -> "<"
+            "*operator_compare_lteq" -> "<="
+            "*operator_compare_gt" -> ">"
+            "*operator_compare_gteq" -> ">="
+            else -> return null
+        }
+        // 运算符调用的左操作数在 explicitReceiver，右操作数是唯一实参。
+        if (arguments.size != 1) return null
+        val receiverExpression = functionCall.explicitReceiver ?: return null
+        val left = lowerExpression(receiverExpression) ?: return null
+        val right = arguments.single()
+        // 双操作数 carrier 必须一致且为数值 primitive；结果类型要么与操作数一致
+        //（算术/位运算），要么为 bool（比较）。
+        if (left.type != right.type) return null
+        val operandPrimitive = (left.type as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType ?: return null
+        if (operandPrimitive !in numericOperatorPrimitives) return null
+        if (left.type != resultType && resultType != ChirResolvedTypeRef(ChirPrimitiveType.BOOL)) return null
+
+        val expressionId = builder.nextElementId("operator", functionCall)
+        builder.emit(
+            ChirBinaryExpression(
+                semanticId = expressionId,
+                operator = chirOperator,
+                left = left,
+                right = right,
+                resultType = resultType,
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
+     * 支持 primitive 运算符 intrinsic 降级的 CHIR 数值类型集合。
+     */
+    private val numericOperatorPrimitives = setOf(
+        ChirPrimitiveType.INT8,
+        ChirPrimitiveType.INT16,
+        ChirPrimitiveType.INT32,
+        ChirPrimitiveType.INT64,
+        ChirPrimitiveType.INT_NATIVE,
+        ChirPrimitiveType.UINT8,
+        ChirPrimitiveType.UINT16,
+        ChirPrimitiveType.UINT32,
+        ChirPrimitiveType.UINT64,
+        ChirPrimitiveType.UINT_NATIVE,
+        ChirPrimitiveType.FLOAT32,
+        ChirPrimitiveType.FLOAT64,
+        ChirPrimitiveType.RUNE,
+    )
+
+    /**
+     * 尝试把成员函数调用降级为带 receiver 实参的 `ChirCallExpression`。
+     *
+     * 仅当全部条件满足时降级：
+     * - 调用是普通 origin（`Regular`），且只携带 dispatch receiver（成员隐式 this）；
+     * - callee 已解析为 `ChirFunctionValue`，其类型是携带 `receiverType` 的 `ChirFunctionType`；
+     * - receiver 表达式产出 CHIR 值且类型与 header 的 receiverType 完全一致。
+     *
+     * 任一条件不满足时返回 null，由调用方保留为 `cfir.call_with_receiver` 占位操作。
+     * 该路径消费 JVM 后端 `emitLocalReceiverFunctionCall` 的既有契约：
+     * receiver 为第一实参，其余实参按函数类型参数发射。
+     */
+    private fun calleeMemberReceiverCallOrNull(
+        functionCall: CfirFunctionCall,
+        callee: ChirValue?,
+        arguments: List<ChirValue>,
+        resultType: ChirTypeRef,
+    ): ChirValue? {
+        if (callee !is ChirFunctionValue) return null
+        if (functionCall.origin.name != "Regular") return null
+        val dispatchReceiver = functionCall.dispatchReceiver ?: return null
+        if (functionCall.explicitReceiver != null) return null
+
+        val functionType = (callee.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType ?: return null
+        val receiverType = functionType.receiverType ?: return null
+        val expressionId = builder.nextElementId("call", functionCall)
+        val receiverValue = lowerExpression(dispatchReceiver) ?: return null
+        if (receiverValue.type != receiverType) return null
+
+        builder.emit(
+            ChirCallExpression(
+                semanticId = expressionId,
+                callee = callee,
+                arguments = listOf(receiverValue) + arguments,
+                resultType = resultType,
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
      * Lower 局部、全局或导入变量读取。
      */
     private fun lowerLocalVariableAccess(
@@ -955,7 +1287,8 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower 赋值表达式，优先降为内存 store，成员赋值保留为 CFIR 专有操作。
+     * Lower 赋值表达式：优先降为内存 store；成员字段赋值降为 `jvm.putfield`；
+     * 其余成员赋值保留为 CFIR 专有操作。
      */
     private fun lowerAssignmentExpression(expression: CfirAssignment) {
         val value = expression.rValue.lowerAsValue("assignment right hand side")
@@ -970,6 +1303,10 @@ internal class Cfir2ChirFunctionBodyConverter(
             return
         }
 
+        if (memberFieldStoreOrNull(expression, value)) return
+
+        if (arrayStoreOrNull(expression.lValue, value, expression)) return
+
         val target = lowerAssignmentTargetValue(expression.lValue)
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_MEMBER_ASSIGN,
@@ -978,6 +1315,62 @@ internal class Cfir2ChirFunctionBodyConverter(
             resultType = null,
             attributes = attributes("cfir.assignment.target" to expression.lValue::class.qualifiedName.orEmpty()),
         )
+    }
+
+    /**
+     * 尝试把成员字段赋值降级为 `jvm.putfield` intrinsic。
+     *
+     * 仅当赋值目标是携带 receiver 的已解析字段访问、字段 header 已登记、
+     * receiver 静态类型可推导 owner 时降级；value 与字段声明类型必须一致。
+     */
+    private fun memberFieldStoreOrNull(expression: CfirAssignment, value: ChirValue): Boolean {
+        val namedAccess = expression.lValue as? CfirNamedAccessExpression ?: return false
+        val reference = namedAccess.calleeReference as? CfirResolvedNamedReference ?: return false
+        val variableHeader = storage.getVariableOrNull(reference.resolvedSymbol) ?: return false
+        if (value.type != variableHeader.declaration.type) return false
+        val receiverExpression = namedAccess.dispatchReceiver ?: namedAccess.explicitReceiver ?: return false
+        val receiver = lowerExpression(receiverExpression) ?: return false
+        val ownerInternalName = jvmOwnerInternalNameOrNull(receiver.type) ?: return false
+
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = builder.nextElementId("putfield", expression),
+                operation = "jvm.putfield",
+                operands = listOf(receiver, value),
+                resultType = null,
+                attributes = setOf(
+                    ChirStringAttribute("jvm.owner", ownerInternalName),
+                    ChirStringAttribute("jvm.name", variableHeader.declaration.name),
+                ),
+            ),
+        )
+        return true
+    }
+
+    /**
+     * 尝试把数组下标赋值（`array[index] = value`）降级为 `jvm.arrayStore` intrinsic。
+     *
+     * 仅当赋值目标是单下标 `CfirSubscriptExpression`、receiver 产出数组类型值、
+     * value 与数组元素类型一致、下标为整数类原始类型时降级。
+     */
+    private fun arrayStoreOrNull(lValue: CfirExpression, value: ChirValue, source: CfirElement): Boolean {
+        val subscript = lValue as? CfirSubscriptExpression ?: return false
+        if (subscript.indices.size != 1) return false
+        val receiver = lowerExpression(subscript.receiver) ?: return false
+        val elementType = arrayElementTypeOrNull(receiver.type) ?: return false
+        if (value.type != elementType) return false
+        val index = lowerExpression(subscript.indices.single()) ?: return false
+        if (!isIntegerLikeIndex(index.type)) return false
+
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = builder.nextElementId("array_store", subscript),
+                operation = "jvm.arrayStore",
+                operands = listOf(receiver, index, value),
+                resultType = null,
+            ),
+        )
+        return true
     }
 
     /**
@@ -1153,13 +1546,25 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
         builder.enterBlock(bodyBlockId, "for_body")
+        val pattern = expression.pattern
+        val patternType = pattern.semanticTypeRef
+            ?: throw Cfir2ChirConversionException("for-in pattern has no resolved element type", pattern)
         val elementValue = emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_FOR_IN_NEXT,
-            source = expression.variable,
+            source = pattern,
             operands = listOf(iterator),
-            resultType = typeMapper.mapTypeRef(expression.variable.returnTypeRef),
-        ) ?: throw Cfir2ChirConversionException("for-in next produced no value", expression.variable)
-        lowerPatternVariableWithValue(expression.variable, elementValue)
+            resultType = typeMapper.mapTypeRef(patternType),
+        ) ?: throw Cfir2ChirConversionException("for-in next produced no value", pattern)
+        lowerPatternBindings(pattern, elementValue, expression, emitNoBindingOperation = false)
+        expression.patternGuard?.let { guard ->
+            val condition = lowerExpression(guard)
+                ?: throw Cfir2ChirConversionException("for-in guard produced no value", guard)
+            val guardedBodyId = builder.nextId("for_guarded_body")
+            builder.terminate(
+                ChirConditionalBranchTerminator(builder.nextId("for_guard"), condition, guardedBodyId, conditionBlockId),
+            )
+            builder.enterBlock(guardedBodyId, "for_guarded_body")
+        }
         lowerBlock(expression.body)
         if (builder.hasOpenCurrentBlock) {
             builder.terminate(ChirBranchTerminator(builder.nextId("for_continue"), conditionBlockId))
@@ -1168,13 +1573,6 @@ internal class Cfir2ChirFunctionBodyConverter(
         builder.enterBlock(afterBlockId, "for_after")
         loopTargets.remove(expression)
         return null
-    }
-
-    /**
-     * 使用已求值的初始化值 lower pattern binding 变量。
-     */
-    private fun lowerPatternVariableWithValue(variable: CfirPatternVariable, initializerValue: ChirValue) {
-        lowerPatternBindings(variable.pattern, initializerValue, variable, emitNoBindingOperation = false)
     }
 
     /**
@@ -1281,7 +1679,12 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower try 表达式，保留 catch/handle/finally 结构并为非 Unit 结果生成 phi 值。
+     * Lower try 表达式。
+     *
+     * 单 catch 场景：try 块 lowering 期间把 (catch 块 ID, 绑定名) 压入
+     * 活跃 handler 栈，try 内的 throw 据此携带 unwind 目标与异常绑定；
+     * catch 块入口把异常对象绑定到 pattern 的 binding variable local，
+     * catch 体通过既有局部变量机制读取。catch 类型分派是后续演进项。
      */
     private fun lowerTryExpression(expression: CfirTryExpression): ChirValue? {
         val resourceValues = expression.resources.mapNotNull { resource ->
@@ -1291,14 +1694,33 @@ internal class Cfir2ChirFunctionBodyConverter(
         val resultType = expression.resultTypeOrNull()
         val tryBlockId = builder.nextId("try")
         val continuationBlockId = builder.nextId("try_cont")
+
+        // 每个 catch 预建目标块；类型/绑定信息进入分派表，
+        // try 内的 throw 据此携带完整 catch 分派。
+        val catchDispatchEntries = expression.catches.map { catch ->
+            ActiveCatchDispatch(
+                catchBlockId = builder.nextId("catch"),
+                exceptionBindingName = catchExceptionBindingNameOrNull(catch),
+                exceptionTypeName = catchTypeNameOrNull(catch),
+            )
+        }
         builder.terminate(ChirBranchTerminator(builder.nextId("try_enter"), tryBlockId))
 
         builder.enterBlock(tryBlockId, "try")
+        if (catchDispatchEntries.isNotEmpty()) {
+            activeCatchHandlers.addLast(catchDispatchEntries)
+        }
         val tryValue = lowerBlock(expression.tryBlock)
+        if (catchDispatchEntries.isNotEmpty()) {
+            activeCatchHandlers.removeLast()
+        }
         val tryPred = builder.currentBlockId
         val tryFallsThrough = builder.hasOpenCurrentBlock
         if (tryFallsThrough) {
-            builder.terminate(ChirBranchTerminator(builder.nextId("try_exit"), continuationBlockId))
+            lowerFinallyBeforeContinuation(expression)
+            if (builder.hasOpenCurrentBlock) {
+                builder.terminate(ChirBranchTerminator(builder.nextId("try_exit"), continuationBlockId))
+            }
         }
 
         val incoming = mutableListOf<IncomingValue>()
@@ -1306,12 +1728,14 @@ internal class Cfir2ChirFunctionBodyConverter(
             incoming += IncomingValue(tryValue, tryPred, expression.tryBlock)
         }
         expression.catches.forEachIndexed { index, catch ->
-            val catchBlockId = builder.nextId("catch")
-            builder.enterBlock(catchBlockId, "catch_$index")
+            builder.enterBlock(catchDispatchEntries[index].catchBlockId, "catch_$index")
             val value = lowerCatchExpression(catch)
             val pred = builder.currentBlockId
             if (builder.hasOpenCurrentBlock) {
-                builder.terminate(ChirBranchTerminator(builder.nextId("catch_exit"), continuationBlockId))
+                lowerFinallyBeforeContinuation(expression)
+                if (builder.hasOpenCurrentBlock) {
+                    builder.terminate(ChirBranchTerminator(builder.nextId("catch_exit"), continuationBlockId))
+                }
                 incoming += IncomingValue(value, pred, catch.body)
             }
         }
@@ -1321,14 +1745,6 @@ internal class Cfir2ChirFunctionBodyConverter(
             lowerHandleClause(handler)
             if (builder.hasOpenCurrentBlock) {
                 builder.terminate(ChirBranchTerminator(builder.nextId("handle_exit"), continuationBlockId))
-            }
-        }
-        expression.finallyBlock?.let { finallyBlock ->
-            val finallyBlockId = builder.nextId("finally")
-            builder.enterBlock(finallyBlockId, "finally")
-            lowerBlock(finallyBlock)
-            if (builder.hasOpenCurrentBlock) {
-                builder.terminate(ChirBranchTerminator(builder.nextId("finally_exit"), continuationBlockId))
             }
         }
 
@@ -1366,44 +1782,178 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower throw 表达式并终结当前 block。
+     *
+     * 活跃 catch 语境（try 块内）下，throw 携带 unwind 分派：
+     * 单 catch 时用 unwind 目标 + 绑定的快捷形态（兼容既有消费方）；
+     * 多 catch 时携带完整类型分派表，后端按类型生成多条异常表条目。
      */
     private fun lowerThrowExpression(expression: CfirThrowExpression) {
         val exception = lowerExpression(expression.exception)
             ?: throw Cfir2ChirConversionException("throw expression exception does not produce a value", expression.exception)
-        builder.terminate(ChirThrowTerminator(builder.nextId("throw"), exception))
+        val dispatches = activeCatchHandlers.lastOrNull()
+        val terminator = if (dispatches == null) {
+            ChirThrowTerminator(
+                semanticId = builder.nextId("throw"),
+                exceptionValue = exception,
+            )
+        } else if (dispatches.size == 1) {
+            val single = dispatches.single()
+            ChirThrowTerminator(
+                semanticId = builder.nextId("throw"),
+                exceptionValue = exception,
+                unwindTargetBlockId = single.catchBlockId,
+                unwindExceptionBinding = single.exceptionBindingName,
+            )
+        } else {
+            ChirThrowTerminator(
+                semanticId = builder.nextId("throw"),
+                exceptionValue = exception,
+                unwindTargetBlockId = dispatches.firstOrNull()?.catchBlockId,
+                catchDispatches = dispatches.map { entry ->
+                    ChirCatchDispatchEntry(
+                        catchBlockId = entry.catchBlockId,
+                        exceptionBinding = entry.exceptionBindingName,
+                        exceptionTypeName = entry.exceptionTypeName,
+                    )
+                },
+            )
+        }
+        builder.terminate(terminator)
     }
 
     /**
-     * Lower CFIR 二元操作为保留源级 kind 的 CHIR other 操作。
+     * Lower CFIR 二元操作。
+     *
+     * `&&` 与 `||` 具有短路语义：按 Cangjie 语言规范，右操作数只有在左操作数
+     * 无法确定结果时才求值。这里降级为"求值左操作数 → 条件分支 → 必要时求值右操作数 → phi 合并"
+     * 的显式控制流，结果类型固定为 bool。
+     * 短路边的结果是显式布尔常量（`&&` 短路为 false，`||` 短路为 true），不重用左操作数值。
+     * 其余 kind（??、|>、~> 等）暂无等价 CHIR 语义，保留为源级 `cfir.binary_op` 操作。
      */
-    private fun lowerBinaryOpExpression(expression: CfirBinaryOp): ChirValue? =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_BINARY_OP,
-            source = expression,
-            operands = listOf(
-                lowerExpression(expression.left)
-                    ?: throw Cfir2ChirConversionException("binary op left operand does not produce a value", expression.left),
-                lowerExpression(expression.right)
-                    ?: throw Cfir2ChirConversionException("binary op right operand does not produce a value", expression.right),
-            ),
-            resultType = expression.requireResultType(),
-            attributes = attributes("cfir.binary.kind" to expression.kind.name),
+    private fun lowerBinaryOpExpression(expression: CfirBinaryOp): ChirValue? {
+        if (expression.kind != CfirBinaryOpKind.AND && expression.kind != CfirBinaryOpKind.OR) {
+            return emitOtherValue(
+                operation = Cfir2ChirOperation.CFIR_BINARY_OP,
+                source = expression,
+                operands = listOf(
+                    lowerExpression(expression.left)
+                        ?: throw Cfir2ChirConversionException("binary op left operand does not produce a value", expression.left),
+                    lowerExpression(expression.right)
+                        ?: throw Cfir2ChirConversionException("binary op right operand does not produce a value", expression.right),
+                ),
+                resultType = expression.requireResultType(),
+                attributes = attributes("cfir.binary.kind" to expression.kind.name),
+            )
+        }
+
+        val resultType = expression.requireResultType()
+        val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
+        if (resultType != boolType) {
+            throw Cfir2ChirConversionException(
+                "short-circuit binary op '${expression.kind.symbol}' must produce bool, actual ${resultType.renderName}",
+                expression,
+            )
+        }
+
+        val shortCircuitLiteral = when (expression.kind) {
+            CfirBinaryOpKind.AND -> "false"
+            CfirBinaryOpKind.OR -> "true"
+            else -> throw Cfir2ChirConversionException(
+                "unsupported short-circuit binary kind '${expression.kind}'",
+                expression,
+            )
+        }
+
+        val left = lowerExpression(expression.left)
+            ?: throw Cfir2ChirConversionException("short-circuit left operand does not produce a value", expression.left)
+        if (left.type != boolType) {
+            throw Cfir2ChirConversionException(
+                "short-circuit left operand must be bool, actual ${left.type.renderName}",
+                expression.left,
+            )
+        }
+
+        val lhsBlockId = builder.currentBlockId
+        val rhsBlockId = builder.nextId("logical_rhs")
+        val mergeBlockId = builder.nextId("logical_cont")
+        val terminator = when (expression.kind) {
+            CfirBinaryOpKind.AND -> ChirConditionalBranchTerminator(
+                semanticId = builder.nextId("logical_and"),
+                condition = left,
+                trueTargetBlockId = rhsBlockId,
+                falseTargetBlockId = mergeBlockId,
+            )
+            CfirBinaryOpKind.OR -> ChirConditionalBranchTerminator(
+                semanticId = builder.nextId("logical_or"),
+                condition = left,
+                trueTargetBlockId = mergeBlockId,
+                falseTargetBlockId = rhsBlockId,
+            )
+            else -> throw Cfir2ChirConversionException(
+                "unsupported short-circuit binary kind '${expression.kind}'",
+                expression,
+            )
+        }
+        builder.terminate(terminator)
+
+        builder.enterBlock(rhsBlockId, "logical_rhs")
+        val right = lowerExpression(expression.right)
+            ?: throw Cfir2ChirConversionException("short-circuit right operand does not produce a value", expression.right)
+        if (right.type != boolType) {
+            throw Cfir2ChirConversionException(
+                "short-circuit right operand must be bool, actual ${right.type.renderName}",
+                expression.right,
+            )
+        }
+        val rhsBlockAfterLowering = builder.currentBlockId
+        val rhsFallsThrough = builder.hasOpenCurrentBlock
+        if (rhsFallsThrough) {
+            builder.terminate(ChirBranchTerminator(builder.nextId("logical_rhs_exit"), mergeBlockId))
+        }
+
+        builder.enterBlock(mergeBlockId, "logical_cont")
+        // 短路边携带显式布尔常量：`&&` 的 false 边、`||` 的 true 边都来自 lhs 前驱块。
+        val shortCircuitValue = ChirConstantValue(
+            semanticId = builder.nextElementId("logical_short_circuit", expression),
+            type = boolType,
+            literal = shortCircuitLiteral,
+            attributes = setOf(ChirStringAttribute("pred", lhsBlockId.value)),
         )
+        val incoming = if (rhsFallsThrough) {
+            listOf(
+                shortCircuitValue,
+                right.withPredecessor(rhsBlockAfterLowering),
+            )
+        } else {
+            listOf(shortCircuitValue)
+        }
+        return emitOtherValue(
+            operation = ChirOtherOperation.PHI,
+            source = expression,
+            operands = incoming,
+            resultType = boolType,
+        )
+    }
 
     /**
      * Lower 类型转换表达式并记录目标类型。
+     *
+     * 引用类型窄化（如 `x as SubType`）降级为 `jvm.checkcast`；
+     * 其余转换保留为 CFIR 专有操作并记录目标类型。
      */
-    private fun lowerTypeConversion(expression: CfirTypeConversion): ChirValue? =
-        emitOtherValue(
+    private fun lowerTypeConversion(expression: CfirTypeConversion): ChirValue? {
+        val argument = lowerExpression(expression.argument)
+            ?: throw Cfir2ChirConversionException("type conversion argument does not produce a value", expression.argument)
+        val resultType = expression.requireResultType()
+        referenceNarrowingOrNull(expression, argument, resultType)?.let { return it }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_TYPE_CONVERSION,
             source = expression,
-            operands = listOf(
-                lowerExpression(expression.argument)
-                    ?: throw Cfir2ChirConversionException("type conversion argument does not produce a value", expression.argument),
-            ),
-            resultType = expression.requireResultType(),
+            operands = listOf(argument),
+            resultType = resultType,
             attributes = attributes("cfir.targetType" to expression.targetTypeRef.renderName()),
         )
+    }
 
     /**
      * Lower 类型操作表达式并记录操作种类和目标类型。
@@ -1439,19 +1989,81 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower 数组字面量为 CFIR 专有 array literal 操作。
+     * Lower 数组字面量。
+     *
+     * 当结果类型解析为 [ChirVArrayType] 且每个元素类型与之匹配时，降级为
+     * “`jvm.newarray` 分配 + 逐元素 `jvm.arrayStore`”序列：
+     * size 与下标使用 Int32 常量，元素按 CFIR 顺序写入。
+     * 其余形态（元素类型不一致）保留为 `cfir.array_literal` 占位。
      */
-    private fun lowerArrayLiteral(expression: CfirArrayLiteral): ChirValue? =
-        emitOtherValue(
+    private fun lowerArrayLiteral(expression: CfirArrayLiteral): ChirValue? {
+        val resultType = expression.requireResultType()
+        val arrayType = (resultType as? ChirResolvedTypeRef)?.type as? ChirVArrayType
+        if (arrayType != null) {
+            val elements = expression.elements.mapValueOperands("array element")
+            if (elements.all { it.type == arrayType.elementType }) {
+                return emitArrayLiteralSequence(expression, arrayType, elements)
+            }
+        }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_ARRAY_LITERAL,
             source = expression,
             operands = expression.elements.mapValueOperands("array element"),
-            resultType = expression.requireResultType(),
+            resultType = resultType,
         )
+    }
 
     /**
-     * Lower tuple 字面量为 CHIR 一等有序聚合表达式。
+     * 为数组字面量发射 `jvm.newarray` + 逐元素 `jvm.arrayStore` 序列。
      */
+    private fun emitArrayLiteralSequence(
+        expression: CfirArrayLiteral,
+        arrayType: ChirVArrayType,
+        elements: List<ChirValue>,
+    ): ChirValue {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val allocateId = builder.nextElementId("newarray", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = allocateId,
+                operation = "jvm.newarray",
+                operands = listOf(
+                    ChirConstantValue(
+                        semanticId = builder.nextElementId("array_size", expression),
+                        type = intType,
+                        literal = elements.size.toString(),
+                    ),
+                ),
+                resultType = ChirResolvedTypeRef(arrayType),
+            ),
+        )
+        val arrayValue = ChirLocalValue(
+            semanticId = allocateId,
+            type = ChirResolvedTypeRef(arrayType),
+            name = allocateId.value,
+        )
+        elements.forEachIndexed { index, element ->
+            builder.emit(
+                ChirOtherExpression(
+                    semanticId = builder.nextElementId("array_store", expression),
+                    operation = "jvm.arrayStore",
+                    operands = listOf(
+                        arrayValue,
+                        ChirConstantValue(
+                            semanticId = builder.nextElementId("array_index", expression),
+                            type = intType,
+                            literal = index.toString(),
+                        ),
+                        element,
+                    ),
+                    resultType = null,
+                ),
+            )
+        }
+        return arrayValue
+    }
+
+    /** 将元组字面量转换为有序聚合。 */
     private fun lowerTupleLiteral(expression: CfirTupleLiteral): ChirValue? {
         val resultType = expression.requireResultType()
         val expressionId = builder.nextElementId("tuple", expression)
@@ -1486,10 +2098,17 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower 下标访问表达式，保留 receiver 和 index 操作数。
+     * Lower 下标访问表达式。
+     *
+     * receiver 解析为数组类型且恰好携带一个下标时，降级为 `jvm.arrayLoad`：
+     * operands 为 [数组值, 下标]，结果类型为数组元素类型。
+     * 其余形态（多维、非数组 receiver）保留为 `cfir.subscript` 占位。
      */
-    private fun lowerSubscriptExpression(expression: CfirSubscriptExpression): ChirValue? =
-        emitOtherValue(
+    private fun lowerSubscriptExpression(expression: CfirSubscriptExpression): ChirValue? {
+        val arrayLoad = arrayLoadOrNull(expression)
+        if (arrayLoad != null) return arrayLoad
+
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_SUBSCRIPT,
             source = expression,
             operands = listOf(
@@ -1498,6 +2117,53 @@ internal class Cfir2ChirFunctionBodyConverter(
             ) + expression.indices.mapValueOperands("subscript index"),
             resultType = expression.requireResultType(),
         )
+    }
+
+    /**
+     * 尝试把单下标数组访问降级为 `jvm.arrayLoad` intrinsic。
+     *
+     * 仅当 receiver 表达式产出数组类型值、下标恰好一个、且结果类型
+     * 与数组元素类型一致时降级；下标类型须为整数类原始类型。
+     */
+    private fun arrayLoadOrNull(expression: CfirSubscriptExpression): ChirValue? {
+        if (expression.indices.size != 1) return null
+        val resultType = expression.resultTypeOrNull() ?: return null
+        val receiver = lowerExpression(expression.receiver) ?: return null
+        val elementType = arrayElementTypeOrNull(receiver.type) ?: return null
+        if (resultType != elementType) return null
+        val index = lowerExpression(expression.indices.single()) ?: return null
+        if (!isIntegerLikeIndex(index.type)) return null
+
+        val expressionId = builder.nextElementId("array_load", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.arrayLoad",
+                operands = listOf(receiver, index),
+                resultType = resultType,
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
+     * 读取数组类型引用的元素类型；非数组类型返回 null。
+     */
+    private fun arrayElementTypeOrNull(typeRef: ChirTypeRef): ChirTypeRef? {
+        return when (val type = (typeRef as? ChirResolvedTypeRef)?.type) {
+            is ChirVArrayType -> type.elementType
+            is ChirRawArrayType -> type.elementType
+            else -> null
+        }
+    }
+
+    /**
+     * 判断类型引用是否为可作为数组下标的整数类原始类型。
+     */
+    private fun isIntegerLikeIndex(typeRef: ChirTypeRef): Boolean {
+        val primitive = (typeRef as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType ?: return false
+        return primitive in integerLikeIndexTypes
+    }
 
     /**
      * Lower 匿名函数表达式，确保匿名函数声明只转换一次。
@@ -1513,6 +2179,7 @@ internal class Cfir2ChirFunctionBodyConverter(
                 header = anonymousHeader,
             ).convert()
             storage.registerFunction(expression.anonymousFunction.symbol, declaration)
+            components.auxiliaryFunctions.register(declaration)
         }
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_ANONYMOUS_FUNCTION,
@@ -1554,16 +2221,17 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower 具名实参表达式，保留参数名以便后端诊断和调用侧还原。
+     * Lower 具名实参表达式。
+     *
+     * 具名实参是纯透传包装：参数名在 CFIR resolve 层已完成形参绑定，
+     * 后端按实参位置发射，名字对后端无意义。这里直接返回内层表达式的
+     * CHIR 值，不发射占位操作。
+     * 前置契约：BODY_RESOLVE 后实参列表已按形参顺序排列
+     * （具名实参乱序由 resolve 重排；未重排前按位置消费是后端唯一可执行语义，
+     * 错位属于 CFIR 缺口，见 docs/cfir-gaps-for-cfir2chir.md）。
      */
     private fun lowerNamedArgumentExpression(expression: CfirNamedArgumentExpression): ChirValue? =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_NAMED_ARGUMENT,
-            source = expression,
-            operands = listOfNotNull(lowerExpression(expression.expression)),
-            resultType = expression.resultTypeOrNull(),
-            attributes = attributes("cfir.argumentName" to expression.argumentName.asString()),
-        )
+        lowerExpression(expression.expression)
 
     /**
      * Lower `if (available(x))` 条件可用表达式为保留三分支结构的 CFIR 操作。
@@ -1626,15 +2294,21 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower smart cast 表达式，并记录目标类型、稳定性与上下界信息。
+     *
+     * 引用类型窄化（原值与目标都是可推导 JVM internal name 的引用载体）降级为
+     * `jvm.checkcast`：smart cast 已由前端校验过类型关系，运行期只需窄化引用。
+     * 其余形态保留为 CFIR 专有操作，附带完整 smartcast 元数据。
      */
     private fun lowerSmartCastExpression(expression: CfirSmartCastExpression): ChirValue {
         val originalValue = lowerExpression(expression.originalExpression)
             ?: throw Cfir2ChirConversionException("smart cast original expression does not produce a CHIR value", expression.originalExpression)
+        val resultType = typeMapper.mapTypeRef(expression.smartcastType)
+        referenceNarrowingOrNull(expression, originalValue, resultType)?.let { return it }
         return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_SMART_CAST,
             source = expression,
             operands = listOf(originalValue),
-            resultType = typeMapper.mapTypeRef(expression.smartcastType),
+            resultType = resultType,
             attributes = attributes(
                 "cfir.smartcast.targetType" to expression.smartcastType.renderName(),
                 "cfir.smartcast.stability" to expression.smartcastStability.name,
@@ -1642,6 +2316,34 @@ internal class Cfir2ChirFunctionBodyConverter(
                 "cfir.smartcast.lowerTypes" to expression.lowerTypesFromSmartCast.joinToString("|") { it.renderName() },
             ),
         ) ?: throw Cfir2ChirConversionException("smart cast expression produced no value", expression)
+    }
+
+    /**
+     * 尝试把引用窄化降级为 `jvm.checkcast` intrinsic。
+     *
+     * 仅当原值与目标类型都是点分名称的引用载体（class-like/named）时降级：
+     * `jvm.type` 携带目标 internal name，后端发射 checkcast 指令。
+     * 原值与目标 JVM 载体一致（同为引用），不涉及数值转换。
+     */
+    private fun referenceNarrowingOrNull(
+        source: CfirExpression,
+        originalValue: ChirValue,
+        resultType: ChirTypeRef,
+    ): ChirValue? {
+        val targetInternalName = jvmOwnerInternalNameOrNull(resultType) ?: return null
+        if (jvmOwnerInternalNameOrNull(originalValue.type) == null) return null
+
+        val expressionId = builder.nextElementId("checkcast", source)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.checkcast",
+                operands = listOf(originalValue),
+                resultType = resultType,
+                attributes = setOf(ChirStringAttribute("jvm.type", targetInternalName)),
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
     }
 
     /**
@@ -1707,15 +2409,87 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower catch 子句，记录 pattern 类型并 lower catch body。
+     *
+     * pattern 携带 binding variable 时，为绑定注册异常类型的局部 slot
+     * （后端 handler 进入时按绑定名把栈顶异常对象存入该 slot），
+     * catch 体通过既有局部变量机制读取绑定。
      */
-    private fun lowerCatchExpression(expression: CfirCatch): ChirValue? =
+    private fun lowerCatchExpression(expression: CfirCatch): ChirValue? {
+        bindCatchExceptionVariable(expression)
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_CATCH,
             source = expression,
             operands = emptyList(),
             resultType = null,
             attributes = attributes("cfir.catch.pattern" to (expression.pattern::class.simpleName ?: "anonymous")),
-        ).let { lowerBlock(expression.body) }
+        )
+        return lowerBlock(expression.body)
+    }
+
+    /**
+     * 在跳转 continuation 之前内联 lower finally 块。
+     *
+     * finally 语义要求所有出口路径都执行清理：这里把 finally 体
+     * 内联到 try/catch 各 fallthrough 出口（对齐 javac 的出口复制方案）。
+     * 出口以 return/throw 终结时内联不发生——return 穿透需要
+     * return 重写机制（见缺口文档"finally 独立语义"剩余边界）。
+     */
+    private fun lowerFinallyBeforeContinuation(expression: CfirTryExpression) {
+        val finallyBlock = expression.finallyBlock ?: return
+        lowerBlock(finallyBlock)
+    }
+
+    /**
+     * 为 catch pattern 的 binding variable 注册异常对象局部 slot。
+     *
+     * 绑定 local 的类型取 binding variable 的声明类型（解析后的异常类型）；
+     * JVM 后端 handler 进入时以绑定名做 ASTORE 命中该 slot。
+     */
+    private fun bindCatchExceptionVariable(catch: CfirCatch) {
+        val binding = (catch.pattern as? CfirCatchPattern)?.nestedPattern?.simpleVariableBindingOrNull() ?: return
+        val bindingType = typeMapper.mapTypeRef(binding.returnTypeRef)
+        val declaration = DefaultChirVariableDeclaration(
+            semanticId = Cfir2ChirIds.declarationId(binding.symbol),
+            name = binding.name.asString(),
+            type = bindingType,
+            mutable = binding.isVar,
+        )
+        storage.registerLocalVariable(
+            binding.symbol,
+            ChirLocalVariableHeader(
+                declaration = declaration,
+                ownerFunctionId = header.semanticId,
+                addressSemanticId = declaration.semanticId,
+            ),
+        )
+    }
+
+    /**
+     * 读取 catch pattern 绑定变量的名称，作为异常绑定名。
+     *
+     * wildcard catch（`catch (_)`)或无绑定名时返回 null——
+     * unwind 边不携带绑定，后端丢弃异常对象。
+     */
+    private fun catchExceptionBindingNameOrNull(catch: CfirCatch): String? =
+        (catch.pattern as? CfirCatchPattern)?.nestedPattern?.simpleVariableBindingOrNull()?.name?.asString()
+
+    /**
+     * 读取 catch 的异常类型点分名，用于多 catch 类型分派。
+     *
+     * 类型来自 catch pattern 的 resolvedTypeRef 映射后的 CHIR 类型
+     * （class-like 点分名）；无解析类型（catch-all 语义）返回 null。
+     */
+    private fun catchTypeNameOrNull(catch: CfirCatch): String? {
+        val resolvedTypeRef = catch.pattern.semanticTypeRef ?: return null
+        val chirType = (typeMapper.mapTypeRef(resolvedTypeRef) as? ChirResolvedTypeRef)?.type ?: return null
+        return when (chirType) {
+            is ChirClassType -> chirType.name
+            is ChirStructType -> chirType.name
+            is ChirEnumType -> chirType.name
+            is ChirNamedType -> chirType.renderName
+            else -> null
+        }
+    }
 
     /**
      * Lower effect handle 子句，记录 command pattern 并 lower handler body。
@@ -1746,11 +2520,18 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * 将已解析 CFIR reference 映射为对应的 CHIR value。
+     *
+     * 枚举 case 引用（`CfirEnumConstructorSymbol`）降级为 `jvm.getstatic`：
+     * JVM 后端为 enum case 生成静态常量字段（`<clinit>` 实例化），
+     * owner 由表达式的枚举解析类型推导，字段名为 case 名。
      */
     private fun valueForResolvedReference(
         reference: CfirResolvedNamedReference,
         expression: CfirExpression,
     ): ChirValue {
+        if (reference.resolvedSymbol is CfirEnumConstructorSymbol) {
+            return enumCaseAccess(reference, expression)
+        }
         return when (val symbol = reference.resolvedSymbol) {
             is CfirValueParameterSymbol -> storage.getParameter(symbol).asValue()
             is CfirVariableSymbol<*> -> lowerLocalVariableAccess(symbol, expression)
@@ -1763,6 +2544,41 @@ internal class Cfir2ChirFunctionBodyConverter(
                 expression,
             )
         }
+    }
+
+    /**
+     * 把枚举 case 引用降级为 `jvm.getstatic` intrinsic。
+     *
+     * 表达式的解析类型必须是可推导 owner 的枚举类型；case 名来自 reference。
+     * 不满足条件时回退函数值路径（保持既有行为）。
+     */
+    private fun enumCaseAccess(
+        reference: CfirResolvedNamedReference,
+        expression: CfirExpression,
+    ): ChirValue {
+        val resultType = expression.requireResultType()
+        val ownerInternalName = jvmOwnerInternalNameOrNull(resultType)
+            ?: return storage.getFunctionHeaderOrNull(reference.resolvedSymbol)?.asValue()
+                ?: importedFunctionValue(
+                    reference.resolvedSymbol as CfirCallableSymbol<*>,
+                    resultType,
+                    emptyList(),
+                )
+        val expressionId = builder.nextElementId("enum_case", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.getstatic",
+                operands = emptyList(),
+                resultType = resultType,
+                attributes = setOf(
+                    ChirStringAttribute("jvm.owner", ownerInternalName),
+                    ChirStringAttribute("jvm.name", reference.name.asString()),
+                ),
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+            ?: throw Cfir2ChirConversionException("enum case reference produced no value", expression)
     }
 
     /**
@@ -2013,6 +2829,7 @@ internal class Cfir2ChirFunctionBodyConverter(
     private fun CfirVariable.nameForChir(): String =
         when (this) {
             is CfirFieldVariable -> name.asString()
+            is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable -> name.asString()
             is CfirPatternBindingVariable -> name.asString()
             is CfirPatternVariable -> throw Cfir2ChirConversionException(
                 "pattern variable container requires pattern binding lowering before CHIR local allocation",
@@ -2218,6 +3035,45 @@ internal class Cfir2ChirFunctionBodyConverter(
          */
         val breakBlockId: ChirSemanticId,
     )
+
+    /**
+     * 活跃 catch 分派的单条记录。
+     */
+    private data class ActiveCatchDispatch(
+        /**
+         * 异常恢复跳转目标 block ID。
+         */
+        val catchBlockId: ChirSemanticId,
+        /**
+         * handler 内绑定异常对象的局部名；null 表示丢弃异常对象。
+         */
+        val exceptionBindingName: String?,
+        /**
+         * 分派的异常类型点分名；null 表示 catch-all 兜底。
+         */
+        val exceptionTypeName: String?,
+    )
+
+    /**
+     * 当前函数 lowering 的私有常量。
+     */
+    private companion object {
+        /**
+         * 可作为数组下标输入的整数类 CHIR 原始类型。
+         */
+        val integerLikeIndexTypes = setOf(
+            ChirPrimitiveType.INT8,
+            ChirPrimitiveType.INT16,
+            ChirPrimitiveType.INT32,
+            ChirPrimitiveType.INT64,
+            ChirPrimitiveType.INT_NATIVE,
+            ChirPrimitiveType.UINT8,
+            ChirPrimitiveType.UINT16,
+            ChirPrimitiveType.UINT32,
+            ChirPrimitiveType.UINT64,
+            ChirPrimitiveType.UINT_NATIVE,
+        )
+    }
 
     /**
      * 需要参与 phi 合并的分支 fallthrough 值。

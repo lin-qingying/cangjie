@@ -17,8 +17,9 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
-import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.CjNamedPattern
+import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
@@ -33,7 +34,7 @@ class CangJieFileBasedDeclarationProvider private constructor(
     /**
      * 作为声明查询来源的仓颉文件。
      */
-    val cangjieFile: CjFile,
+    private val initialCangJieFile: CjFile,
     /** 为当前 file PSI 返回稳定 package 身份的函数。 */
     private val packageFqNameProvider: (CjFile) -> FqName,
 ) : CangJieDeclarationProvider {
@@ -46,25 +47,31 @@ class CangJieFileBasedDeclarationProvider private constructor(
     /**
      * 用于从 VirtualFile 恢复最新 PSI 的 PSI manager。
      */
-    private val psiManager: PsiManager = PsiManager.getInstance(cangjieFile.project)
+    private val psiManager: PsiManager = PsiManager.getInstance(initialCangJieFile.project)
+
+    /** 在 provider 创建的读访问中保存文件身份；后续查询不再读取旧 PSI 的属性。 */
+    private val physicalFile = if (initialCangJieFile.isPhysical || initialCangJieFile.isCompiled) {
+        checkNotNull(initialCangJieFile.virtualFile) { "Physical/compiled declaration-provider PSI must have a virtual file" }
+    } else {
+        null
+    }
+
+    /** 单文件 provider 的源码入口始终属于当前 FileViewProvider generation。 */
+    val cangjieFile: CjFile get() = currentCangJieFile
 
     /**
-     * decompiled `.cjo` 的 PSI provider 在 IDE 生命周期中可能被重建。
+     * 源码与 compiled PSI provider 都可能在 IDE 生命周期中被重建。
      *
-     * declaration provider 不能长期持有第一次收集到的 compiled PSI，
+     * declaration provider 不能长期持有第一次收集到的物理 PSI，
      * 否则后续再命中同一 VirtualFile 时就会落到 “different providers” 的陈旧 PSI。
      */
     private val currentCangJieFile: CjFile
         get() {
-            if (!cangjieFile.isCompiled) {
-                return cangjieFile
-            }
-
-            val virtualFile = checkNotNull(cangjieFile.virtualFile) {
-                "Compiled CangJie file should always have a virtual file: $cangjieFile"
+            val virtualFile = physicalFile ?: return initialCangJieFile.also {
+                check(it.isValid) { "The non-physical declaration-provider source PSI is no longer valid" }
             }
             return checkNotNull(psiManager.findFile(virtualFile) as? CjFile) {
-                "Cannot restore compiled CangJie PSI for ${virtualFile.path}"
+                "Cannot restore current CangJie PSI for ${virtualFile.path}"
             }
         }
 
@@ -183,6 +190,15 @@ class CangJieFileBasedDeclarationProvider private constructor(
         return getTopLevelCallables(callableId)
     }
 
+    override fun getTopLevelPatternBindings(callableId: CallableId): Collection<CjNamedPattern> {
+        if (filePackageFqName != callableId.packageName || callableId.classId != null) return emptyList()
+        return topLevelDeclarations.filterIsInstance<CjPatternVariable>()
+            .flatMap { it.pattern.getAllPatternDeclarations() }
+            .filterIsInstance<CjNamedPattern>()
+            .filter { it.nameAsName == callableId.callableName }
+            .toList()
+    }
+
     /**
      * 获取指定 callable id 对应的顶层函数。
      */
@@ -206,12 +222,31 @@ class CangJieFileBasedDeclarationProvider private constructor(
             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelFunctions(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelMacros(callableId).mapTo(this) { it.containingCjFile }
-            // 一个 pattern 声明可以拥有多个 callable 名称，不能仅索引外壳的名称。
-            if (topLevelDeclarations.filterIsInstance<CjPatternVariable>().any { declaration ->
-                    declaration.pattern.getAllPatternDeclarations().any { it.nameAsName == callableId.callableName }
-                }
-            ) add(currentCangJieFile)
+            /*
+             * 仓颉顶层 `const` / `let` 在 PSI 中是 CjPatternVariable，不是 property/function。
+             * 它们同样进入包级 callable 索引，因此文件级查找也必须返回其 carrier 文件，
+             * 否则跨文件引用包级常量/变量时会在文件索引阶段就被误判为不存在。
+             */
+            addAll(getTopLevelPatternVariableFiles(callableId))
         }
+    }
+
+    /**
+     * 获取指定 callable id 对应的顶层模式变量声明所在的文件。
+     *
+     * [CjPatternVariable] 自身没有单一名称，名称位于 pattern 的绑定声明中；因此不能复用
+     * 按 `nameAsName` 过滤的通用 callable 查找。
+     */
+    private fun getTopLevelPatternVariableFiles(callableId: CallableId): Collection<CjFile> {
+        if (filePackageFqName != callableId.packageName) return emptyList()
+        return topLevelDeclarations
+            .filterIsInstance<CjPatternVariable>()
+            .filter { variable ->
+                variable.pattern.getAllPatternDeclarations().any { pattern -> pattern.nameAsName == callableId.callableName }
+            }
+            .map { it.containingCjFile }
+            .distinct()
+            .toList()
     }
 
     /**
@@ -230,13 +265,24 @@ class CangJieFileBasedDeclarationProvider private constructor(
 
     /**
      * 获取指定包中的顶层 callable 名称。
+     *
+     * 顶层 `const` / `let` 的 `CjPatternVariable` 没有单一 `nameAsName`；名称来自 pattern
+     * 内的绑定声明。名称索引必须暴露这些绑定名，否则 `mayHaveTopLevelCallable` 会在
+     * 符号查找前把包级常量/变量过滤掉。
      */
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
-        if (filePackageFqName != packageFqName) return emptySet()
+        if (filePackageFqName != packageFqName) {
+            return emptySet()
+        }
+
         return buildSet {
-            addAll(getTopLevelDeclarationNames<CjCallableDeclaration>(packageFqName))
-            for (declaration in topLevelDeclarations.filterIsInstance<CjPatternVariable>()) {
-                declaration.pattern.getAllPatternDeclarations().mapNotNullTo(this) { it.nameAsName }
+            for (declaration in topLevelDeclarations) {
+                when (declaration) {
+                    is CjPatternVariable ->
+                        declaration.pattern.getAllPatternDeclarations().mapNotNullTo(this) { it.nameAsName }
+
+                    is CjCallableDeclaration -> addIfNotNull(declaration.nameAsName)
+                }
             }
         }
     }

@@ -65,6 +65,8 @@ abstract class CfirFieldVariable : CfirVariable(), CfirTypeParametersOwner {
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun replaceStatus(newStatus: CfirDeclarationStatus)
 
     abstract override fun replaceInitializer(newInitializer: CfirExpression?)

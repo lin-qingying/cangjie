@@ -1,0 +1,19 @@
+FILE: redefInstanceMember.cj
+    internal? open class RedefBase {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public prop p: R|Int64|
+    }
+    internal? class RedefDerived <: R|RedefBase| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public prop p: R|Int64|
+    }

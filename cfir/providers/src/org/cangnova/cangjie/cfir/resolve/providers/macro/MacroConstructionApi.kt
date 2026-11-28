@@ -14,12 +14,15 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.messages.CjParsingDiagnosticPublication
-import org.cangnova.cangjie.parsing.CjParserSettings
-import org.cangnova.cangjie.cfir.declarations.publishParsingDiagnostics
+import java.util.Collections
+import java.util.IdentityHashMap
 import org.cangnova.cangjie.cfir.declarations.parsingDiagnosticPublication
 import org.cangnova.cangjie.cfir.declarations.parsingSourceContext
+import org.cangnova.cangjie.cfir.declarations.publishParsingDiagnostics
+import org.cangnova.cangjie.messages.CjParsingDiagnosticPublication
+import org.cangnova.cangjie.parsing.CjParserSettings
 import org.cangnova.cangjie.parsing.CjParserSourceContext
+import org.cangnova.cangjie.source.isInSameSourceTree
 
 /**
  * Raw CFIR 构建产物中、尚未注册到 source provider 的单个文件包装。
@@ -38,6 +41,8 @@ class PreMacroCfirFile(
     /** 与文件树同代的完整 parser 报告；宏和条件编译过滤不能丢弃或重新分配顺序。 */
     val parsingDiagnosticPublication: CjParsingDiagnosticPublication = CjParsingDiagnosticPublication.EMPTY,
     val parserSettings: CjParserSettings = CjParserSettings(),
+    /** 该 CFIR 文件对应的宿主文件身份；编译器输入可以不提供，IDE 输入使用原始 PSI 文件。 */
+    val sourceFileIdentity: Any? = null,
 ) {
     init {
         cfirFile.publishParsingDiagnostics(parsingDiagnosticPublication, parserSettings)
@@ -64,6 +69,8 @@ class PreMacroRawBuildResult internal constructor(
     val session: CfirSession,
     /** 尚未注册进 source provider 的 pre-macro 文件集合。 */
     val files: List<PreMacroCfirFile>,
+    /** 标识同一批 pre-macro 输入，避免把其它构造请求的输出发布进当前模块。 */
+    val constructionIdentity: Any = Any(),
 ) {
     /** 是否没有任何 pre-macro 文件。 */
     val isEmpty: Boolean get() = files.isEmpty()
@@ -80,16 +87,16 @@ class PreMacroRawBuildResult internal constructor(
      * 被裁剪结果。条件编译、增量过滤等 raw owner 使用该入口发布新的 pre 状态。
      */
     public fun mapFiles(transform: (PreMacroCfirFile) -> PreMacroCfirFile): PreMacroRawBuildResult =
-        PreMacroRawBuildResult(session, files.map(transform))
+        PreMacroRawBuildResult(session, files.map(transform), constructionIdentity)
 }
 
 /** 替换单文件 raw CFIR，同时保留该文件尚未消费的 macro surfaces。 */
 public fun PreMacroCfirFile.withCfirFile(cfirFile: CfirFile): PreMacroCfirFile =
-    PreMacroCfirFile(cfirFile, surfaces, annotationMetadata, parsingDiagnosticPublication, parserSettings)
+    PreMacroCfirFile(cfirFile, surfaces, annotationMetadata, parsingDiagnosticPublication, parserSettings, sourceFileIdentity)
 
 /** 在 raw 裁剪 owner 中同步移除已删除声明对应的 macro surfaces。 */
 public fun PreMacroCfirFile.withSurfaces(predicate: (MacroSurface) -> Boolean): PreMacroCfirFile =
-    PreMacroCfirFile(cfirFile, surfaces.filter(predicate), annotationMetadata, parsingDiagnosticPublication, parserSettings)
+    PreMacroCfirFile(cfirFile, surfaces.filter(predicate), annotationMetadata, parsingDiagnosticPublication, parserSettings, sourceFileIdentity)
 
 /** construction 的最终文件保持输入顺序；封闭元数据不是另一次 raw 构建。 */
 private fun PreMacroRawBuildResult.sealAnnotationMetadata(finalFiles: List<CfirFile>): List<CfirAnnotationMetadataSnapshot> {
@@ -145,6 +152,10 @@ class RecordableRawCfirFiles internal constructor(
     val files: List<CfirFile>,
     /** 按最终文件封闭的 metadata，provider 发布文件前一并交付索引。 */
     val annotationMetadata: List<CfirAnnotationMetadataSnapshot>,
+    /** 与 [files] 顺序对应的原始 source identity。 */
+    val sourceFileIdentities: List<Any?>,
+    /** 供宿主确认发布结果来自预期 pre-macro 输入批次。 */
+    val constructionIdentity: Any,
 ) {
     /** 可注册文件数量。 */
     val size: Int get() = files.size
@@ -309,6 +320,14 @@ data class MacroConstructionDiagnostic(
     }
 }
 
+/** 宏来源映射在 Analysis 捕获边界使用的不可变快照。 */
+data class MacroGeneratedSourceOriginsSnapshot(
+    /** 精确生成 source 到全部 surface id 的映射，保留歧义项。 */
+    val originsBySource: Map<AbstractCjSourceElement, Set<Long>>,
+    /** 能解析到非空调用 source 的 surface id 集合。 */
+    val resolvedOriginIds: Set<Long>,
+)
+
 /**
  * Macro 展开过程信息载体：session/analysis 级长生命周期对象，
  * 记录 surface tree、call forest、construction 诊断、原始位点映射等。
@@ -318,9 +337,9 @@ data class MacroConstructionDiagnostic(
  *   ordinary checker 上报的诊断可通过 `originSurfaceId` 字段映射回原 macro site；
  * - `placeholderOriginById` 维护 degraded mode 下生成的 typed error
  *   placeholder 与原 surface 的关系，便于 LSP / IDE 渲染。
- * - `generatedSourceOriginById` 维护 successful splice 后生成 CFIR 的 source
- *   与原始 macro surface 的关系；ordinary checker 诊断提交前通过该表
- *   重定位到原 macro 调用位点。
+ * - `generatedSources` 保留 successful splice 后所有生成 CFIR 的 source，供 IDE 建立
+ *   生成 PSI 文件的 module context；`generatedSourceOriginById` 只暴露唯一来源关系，
+ *   ordinary checker 诊断提交前通过 provenance resolver 重定位到原 macro 调用位点。
  *
  * `MacroExpansionRegistry` 作为 [org.cangnova.cangjie.cfir.session.CfirSessionComponent]
  * 候选，可通过 [org.cangnova.cangjie.cfir.session.CfirSession.register] 挂到 session 上；
@@ -335,7 +354,7 @@ data class MacroParsingDiagnosticRecord(
     val originDiagnosticPublication: CjParsingDiagnosticPublication,
     val originSourceContext: CjParserSourceContext,
     val diagnosticPublication: CjParsingDiagnosticPublication,
-    val sourceMap: MacroFragmentSourceMap?,
+    val sourceMap: MacroParserDiagnosticSourceMap?,
     /** 在真实 parser 调用前分配；seal/失败状态和映射后的显示位置不决定调用顺序。 */
     val invocationSequence: Long,
     val syntaxFailure: Boolean = false,
@@ -349,12 +368,18 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
         val sourceContext: CjParserSourceContext,
     )
     private data class CompletedParsingReport(val record: MacroParsingDiagnosticRecord, val constructionCommitted: Boolean)
-    private data class GeneratedSourceOrigin(
+    private data class ParserDiagnosticOrigin(
         val surfaceId: Long,
-        val fragmentSourceMap: MacroFragmentSourceMap?,
-        val fallbackToSurface: Boolean = true,
+        val sourceMap: MacroParserDiagnosticSourceMap,
+        val fallbackToSurface: Boolean,
     )
 
+    private val parserDiagnosticOrigins = IdentityHashMap<AbstractCjSourceElement, MutableMap<Long, ParserDiagnosticOrigin>>()
+    private val diagnosticSourceProjectors = IdentityHashMap<Any, (CjSourceElement) -> CjSourceElement>()
+
+    /** 按实际 reparse 树身份投影子 token，生成 token 继续保留自身的宏来源。 */
+    fun projectDiagnosticSource(source: CjSourceElement): CjSourceElement =
+        diagnosticSourceProjectors[source.macroSourceTreeIdentity()]?.invoke(source) ?: source
     /** construction 期间累积的宏诊断列表。 */
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
     /** 独立的 parser 错误通道，禁止 ordinary CFIR collector 将其映射为语义工厂。 */
@@ -381,8 +406,30 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _declaredMacroPackages: MutableSet<FqName> = linkedSetOf()
     /** degraded placeholder id 到原始 surface id 的映射。 */
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
-    /** 展开产物 source 到原始 surface 与可选逐 token source map 的映射。 */
-    private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, GeneratedSourceOrigin> = mutableMapOf()
+    /** 展开产物 source 到原始 surface id 的映射。 */
+    private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, Long> = IdentityHashMap()
+    /** 所有生成 source 的身份集合；provenance 冲突不能让 IDE 丢失文件身份。 */
+    private val _generatedSources: MutableSet<AbstractCjSourceElement> =
+        Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>())
+    /** 宏实际输出 source 的身份集合，供非物理 PSI 发布；与语义生成分类分开。 */
+    private val _macroExpansionSources: MutableSet<AbstractCjSourceElement> =
+        Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>())
+    /** final source 到 raw factory 实际 reparse source 的关系，保留不同 fragment 的对象身份。 */
+    private val _reparsedSourcesByCreated = IdentityHashMap<AbstractCjSourceElement, MutableList<CjSourceElement>>()
+
+    fun reparsedSourcesFor(source: AbstractCjSourceElement): List<CjSourceElement> =
+        _reparsedSourcesByCreated[source].orEmpty().toList()
+    /** 由宏保留的原输入 source；不进入 generated source/调用点诊断映射。 */
+    private val _preservedSources: MutableSet<AbstractCjSourceElement> =
+        Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>())
+    /** 精确 source key 对应的全部 surface 来源；多来源 key 必须保持歧义而不能覆盖。 */
+    private val _generatedSourceOriginsBySource: MutableMap<AbstractCjSourceElement, MutableSet<Long>> = IdentityHashMap()
+    /** stable splice 实际应用的 raw declaration/parameter carrier 到其输出声明的精确身份关系。 */
+    private val _appliedDeclarationReplacements: MutableList<MacroAppliedDeclarationReplacement> = mutableListOf()
+    /** stable splice 实际应用的 raw expression carrier 到其输出表达式的精确身份关系。 */
+    private val _appliedExpressionReplacements: MutableList<MacroAppliedExpressionReplacement> = mutableListOf()
+    /** surface id 到 IDE / debug 展示文本的可选映射。 */
+    private val _generatedDisplayText: MutableMap<Long, String> = mutableMapOf()
     /** file identity 到宏展开 cache key 的映射。 */
     private val _cacheKeys: MutableMap<String, MacroExpansionCacheKey> = linkedMapOf()
 
@@ -479,6 +526,9 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     val originSurfaceById: Map<Long, MacroSurface>
         get() = _originSurfaceById.toMap()
 
+    /** 按稳定 surface 身份查询单个宏来源，避免热路径复制完整来源表。 */
+    fun originSurface(surfaceId: Long): MacroSurface? = _originSurfaceById[surfaceId]
+
     /**
      * `placeholderId -> originSurfaceId` 反查。
      *
@@ -497,7 +547,93 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      * 调用 source。
      */
     val generatedSourceOriginById: Map<AbstractCjSourceElement, Long>
-        get() = _generatedSourceOriginById.mapValues { (_, origin) -> origin.surfaceId }
+        get() = Collections.unmodifiableMap(IdentityHashMap(_generatedSourceOriginById))
+
+    /** successful splice 产生的完整 source 集合，不因 provenance 冲突而丢失文件身份。 */
+    val generatedSources: Set<AbstractCjSourceElement>
+        get() = Collections.unmodifiableSet(
+            Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>()).also { snapshot ->
+                snapshot.addAll(_generatedSources)
+            },
+        )
+
+    /**
+     * 直接查询 source 是否由宏展开生成，避免为单次语义解析复制完整 source 快照。
+     *
+     * PSI/Analysis 导航会对多个符号重复执行此判定；这里保持注册表内部身份集合查询为 O(1)。
+     */
+    fun isGeneratedSource(source: AbstractCjSourceElement): Boolean = source in _generatedSources
+
+    /** 按 source 对象身份确认它是保留的真实输入。 */
+    fun isPreservedSource(source: AbstractCjSourceElement): Boolean = source in _preservedSources
+
+    /** retained graph 仅通过已登记对象身份传递来源，不重算 AST/PSI。 */
+    fun registeredSourceOrigin(source: AbstractCjSourceElement): MacroCfirSourceOrigin? = when {
+        source in _preservedSources -> MacroCfirSourceOrigin.PreservedInput
+        source in _generatedSources -> MacroCfirSourceOrigin.Generated(checkNotNull(_generatedSourceOriginsBySource[source]).toSet())
+        else -> null
+    }
+
+    val macroExpansionSources: Set<AbstractCjSourceElement>
+        get() = Collections.unmodifiableSet(
+            Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>()).also { it.addAll(_macroExpansionSources) },
+        )
+
+    val preservedSources: Set<AbstractCjSourceElement>
+        get() = Collections.unmodifiableSet(
+            Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>()).also { it.addAll(_preservedSources) },
+        )
+
+    /**
+     * 生成 source 到全部 surface 来源的不可变快照。
+     *
+     * Analysis 层据此在 PSI 读访问中建立按源树分桶的范围索引，避免对每个最终声明
+     * 反复线性扫描整张 registry，同时不把 PSI 身份引入 CFIR 数据结构。
+     */
+    val generatedSourceOriginsBySource: Map<AbstractCjSourceElement, Set<Long>>
+        get() = Collections.unmodifiableMap(
+            IdentityHashMap<AbstractCjSourceElement, Set<Long>>(_generatedSourceOriginsBySource.size).also { snapshot ->
+                _generatedSourceOriginsBySource.forEach { (source, origins) ->
+                    snapshot[source] = Collections.unmodifiableSet(LinkedHashSet(origins))
+                }
+            },
+        )
+
+    /**
+     * 以调用方提供的取消检查器捕获宏来源映射。
+     *
+     * IDE 在 PSI 读访问之外复制大 registry；取消检查器避免快照复制成为不可中断的分析任务。
+     */
+    fun snapshotGeneratedSourceOrigins(checkCanceled: () -> Unit): MacroGeneratedSourceOriginsSnapshot {
+        val originsBySource = IdentityHashMap<AbstractCjSourceElement, Set<Long>>(_generatedSourceOriginsBySource.size)
+        _generatedSourceOriginsBySource.forEach { (source, origins) ->
+            checkCanceled()
+            originsBySource[source] = Collections.unmodifiableSet(LinkedHashSet(origins))
+        }
+        val resolvedOriginIds = linkedSetOf<Long>()
+        _originSurfaceById.forEach { (surfaceId, surface) ->
+            checkCanceled()
+            if (surface.sourceRange?.source != null) resolvedOriginIds += surfaceId
+        }
+        return MacroGeneratedSourceOriginsSnapshot(
+            originsBySource = Collections.unmodifiableMap(originsBySource),
+            resolvedOriginIds = Collections.unmodifiableSet(resolvedOriginIds),
+        )
+    }
+
+    /** stable splice 实际应用的声明替换关系快照，输出列表保留官方 1→N / 1→0 语义。 */
+    val appliedDeclarationReplacements: List<MacroAppliedDeclarationReplacement>
+        get() = _appliedDeclarationReplacements.map { replacement ->
+            replacement.copy(replacements = replacement.replacements.toList())
+        }
+
+    /** stable splice 实际应用的表达式替换关系快照。 */
+    val appliedExpressionReplacements: List<MacroAppliedExpressionReplacement>
+        get() = _appliedExpressionReplacements.toList()
+
+    /** 可选：surface 展开后用于 IDE 展示的文本（不参与 semantic）。 */
+    val generatedDisplayText: Map<Long, String>
+        get() = _generatedDisplayText.toMap()
 
     /** 追加一条 macro construction 诊断。 */
     fun addDiagnostic(diagnostic: MacroConstructionDiagnostic) {
@@ -647,43 +783,95 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** 注册展开产物 source 到原始 surface 的对应关系；source 为空时忽略。 */
     fun registerGeneratedSource(source: AbstractCjSourceElement?, originSurfaceId: Long) {
         if (source != null) {
-            _generatedSourceOriginById[source] = GeneratedSourceOrigin(originSurfaceId, fragmentSourceMap = null)
+            check(source !in _preservedSources) { "Preserved input cannot be reclassified as macro-generated source." }
+            _macroExpansionSources += source
+            _generatedSources += source
+            val origins = _generatedSourceOriginsBySource.getOrPut(source) { linkedSetOf() }
+            origins += originSurfaceId
+            if (origins.size == 1) {
+                _generatedSourceOriginById[source] = originSurfaceId
+            } else {
+                _generatedSourceOriginById.remove(source)
+            }
         }
     }
 
     /**
-     * 递归注册展开产物 CFIR 子树中所有 source 与原始 surface 的对应关系。
+     * 登记 stable splicer 在声明或参数 carrier 槽位实际写入的声明。
      *
-     * 普通 checker 只看到 final CFIR；此映射使诊断 reporter 能把 generated source
-     * 上的错误重定位回原始 macro 调用位点。自定义注解重解析保留 root 的宿主 source，
-     * 并要求未能映射的子节点维持原坐标，不能扩大成整个 macro surface。
-     *
-     * @param fragmentSourceMap 重解析 fragment 坐标到原始 token 来源的映射。
-     * @param registerRootSource 是否将 root 的 source 视为片段生成坐标。
-     * @param fallbackToSurfaceOnUnmappedSource 未命中 source map 时是否回退到 macro surface。
+     * 该关系以 CFIR 对象身份为准，供 Analysis/IDE 关联物理 PSI 与最终语义树；
+     * embedded surface 和 annotation-only 替换不会调用此方法。
+     */
+    fun registerAppliedDeclarationReplacement(replacement: MacroAppliedDeclarationReplacement) {
+        check(replacement.surfaceId in _originSurfaceById) {
+            "A declaration replacement must refer to a registered macro surface."
+        }
+        check(_appliedDeclarationReplacements.none { it.carrier === replacement.carrier }) {
+            "A raw declaration carrier cannot be replaced by more than one macro surface."
+        }
+        _appliedDeclarationReplacements += replacement.copy(replacements = replacement.replacements.toList())
+    }
+
+    /** 登记 stable splicer 在表达式 carrier 槽位实际写入的替换表达式。 */
+    fun registerAppliedExpressionReplacement(replacement: MacroAppliedExpressionReplacement) {
+        check(replacement.surfaceId in _originSurfaceById) {
+            "An expression replacement must refer to a registered macro surface."
+        }
+        check(_appliedExpressionReplacements.none { it.carrier === replacement.carrier }) {
+            "A raw expression carrier cannot be replaced by more than one macro surface."
+        }
+        _appliedExpressionReplacements += replacement
+    }
+
+    /**
+     * 递归登记构造输出的来源。原输入 source 保留自身 PSI/诊断区间；
+     * 新生成 source 才进入调用点映射。父宏保留子 CFIR 时不能覆盖已登记的 producer。
      */
     fun registerGeneratedCfirElement(
         element: CfirElement,
         originSurfaceId: Long,
-        fragmentSourceMap: MacroFragmentSourceMap? = null,
+        sourceMapping: MacroFragmentSourceMapping = MacroFragmentSourceMapping(),
+        fragmentSourceMap: MacroParserDiagnosticSourceMap? = null,
         registerRootSource: Boolean = true,
         fallbackToSurfaceOnUnmappedSource: Boolean = true,
     ) {
+        diagnosticSourceProjectors.putAll(sourceMapping.diagnosticProjectors())
         val root = element
-        val boundSourceMap = fragmentSourceMap?.bindToFragmentTree(root.source)
         root.accept(
             object : CfirDefaultVisitor<Unit, Unit>() {
-                /**
-                 * 访问展开产物中的每个 CFIR 节点，记录其 source 到原始 macro surface 的映射。
-                */
                 override fun visitElement(element: CfirElement, data: Unit) {
-                    val source = element.source
-                    if (source != null && (element !== root || registerRootSource)) {
-                        _generatedSourceOriginById[source] = GeneratedSourceOrigin(
-                            originSurfaceId,
-                            boundSourceMap,
-                            fallbackToSurfaceOnUnmappedSource,
-                        )
+                    element.source?.let { source ->
+                        val incoming = sourceMapping.originForSource(source)
+                        val recorded = registeredSourceOrigin(source)
+                        check(
+                            !(incoming == MacroCfirSourceOrigin.PreservedInput && recorded is MacroCfirSourceOrigin.Generated) &&
+                                !(incoming is MacroCfirSourceOrigin.Generated && recorded == MacroCfirSourceOrigin.PreservedInput)
+                        ) { "A source cannot have conflicting preserved/generated origins." }
+                        // 冲突裁决先于所有集合写入；未知来源不因 source 非空而变成 Generated。
+                        _macroExpansionSources += source
+                        val reparsed = _reparsedSourcesByCreated.getOrPut(source, ::mutableListOf)
+                        sourceMapping.reparsedSourcesFor(source).forEach { raw ->
+                            if (reparsed.none { it === raw }) reparsed += raw
+                        }
+                        val origin = incoming ?: recorded
+                        when (origin) {
+                            MacroCfirSourceOrigin.PreservedInput -> _preservedSources += source
+                            is MacroCfirSourceOrigin.Generated ->
+                                origin.surfaceIds.forEach { registerGeneratedSource(source, it) }
+                            null -> Unit
+                        }
+                        // 解析报告可保留缩小后的诊断位点。它不是 generated PSI 归属，
+                        // 不能覆盖被保留的输入或另一个真实 macro producer 的来源。
+                        if (fragmentSourceMap != null && (element !== root || registerRootSource) &&
+                            origin != MacroCfirSourceOrigin.PreservedInput &&
+                            (origin !is MacroCfirSourceOrigin.Generated || origin.surfaceIds.singleOrNull() == originSurfaceId)
+                        ) {
+                            parserDiagnosticOrigins.getOrPut(source, ::linkedMapOf)[originSurfaceId] = ParserDiagnosticOrigin(
+                                originSurfaceId,
+                                fragmentSourceMap.bindToFragmentTree(source),
+                                fallbackToSurfaceOnUnmappedSource,
+                            )
+                        }
                     }
                     element.acceptChildren(this, data)
                 }
@@ -729,18 +917,65 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** 普通 checker 在 generated source 上报错时，反查原 macro 调用 source。 */
     fun originSourceForGeneratedSource(source: AbstractCjSourceElement): CjSourceElement? {
         val sourceAnchor = (source as? CjOffsetsOnlySourceElement)?.sourceAnchor ?: source
-        val origin = _generatedSourceOriginById[source]
-            ?: _generatedSourceOriginById[sourceAnchor]
-            ?: run {
-            val matchingOrigins = _generatedSourceOriginById.values.filter { origin ->
-                origin.fragmentSourceMap?.owns(sourceAnchor) == true
-            }
-            if (matchingOrigins.map { it.surfaceId }.distinct().size != 1) return null
-            matchingOrigins.firstOrNull() ?: return null
+        if (source in _preservedSources || sourceAnchor in _preservedSources) return null
+        val exactOrigins = _generatedSourceOriginsBySource[source] ?: _generatedSourceOriginsBySource[sourceAnchor]
+        if (exactOrigins != null && exactOrigins.size != 1) return null
+        val recordedId = exactOrigins?.singleOrNull() ?: originSurfaceIdForGeneratedSource(sourceAnchor)
+        val exactDiagnostics = parserDiagnosticOrigins[source] ?: parserDiagnosticOrigins[sourceAnchor]
+        val candidates = exactDiagnostics?.values?.asSequence() ?: parserDiagnosticOrigins.values.asSequence()
+            .flatMap { it.values.asSequence() }
+            .filter { it.sourceMap.owns(sourceAnchor) }
+        val matching = candidates.filter { recordedId == null || it.surfaceId == recordedId }.toList()
+        val diagnosticIds = matching.mapTo(linkedSetOf()) { it.surfaceId }
+        if (diagnosticIds.size > 1) return null
+        if (matching.isNotEmpty()) {
+            val mapped = matching.mapNotNull {
+                it.sourceMap.mapRange(source.startOffset, source.endOffset)
+            }.distinct()
+            if (mapped.size > 1) return null
+            mapped.singleOrNull()?.let { return it }
+            if (matching.none { it.fallbackToSurface }) return null
+            return _originSurfaceById[diagnosticIds.single()]?.sourceRange?.source
         }
-        val surface = _originSurfaceById[origin.surfaceId] ?: return null
-        return origin.fragmentSourceMap?.mapRange(source.startOffset, source.endOffset)
-            ?: if (origin.fallbackToSurface) surface.sourceRange?.source else null
+        return recordedId?.let(_originSurfaceById::get)?.sourceRange?.source
+    }
+
+    /**
+     * 解析 generated source 的 surface 身份。
+     *
+     * PSI / LightTree source 先按同一棵树中的最窄包含范围匹配。Offsets-only source 没有树身份，
+     * 因此只能在所有已登记生成树中检查包含范围；只有最窄候选唯一指向一个 surface 时才映射，
+     * 多个宏调用共享该区间时保留歧义，不把诊断误指向任意调用点。
+     */
+    private fun originSurfaceIdForGeneratedSource(source: AbstractCjSourceElement): Long? {
+        val exactOrigins = _generatedSourceOriginsBySource[source]
+        if (exactOrigins != null) return exactOrigins.singleOrNull()
+
+        val sourceElement = source as? CjSourceElement
+        if (sourceElement == null && source !is CjOffsetsOnlySourceElement) return null
+        val candidates = _generatedSourceOriginsBySource.entries.asSequence()
+            .mapNotNull { (registeredSource, origins) ->
+                val registeredElement = registeredSource as? CjSourceElement
+                    ?: registeredSource as? CjOffsetsOnlySourceElement
+                    ?: return@mapNotNull null
+                if (sourceElement != null) {
+                    val registeredTreeElement = registeredElement as? CjSourceElement ?: return@mapNotNull null
+                    if (!sourceElement.isInSameSourceTree(registeredTreeElement)) return@mapNotNull null
+                }
+                if (source.startOffset < registeredElement.startOffset ||
+                    source.endOffset > registeredElement.endOffset
+                ) {
+                    return@mapNotNull null
+                }
+                (registeredElement.endOffset - registeredElement.startOffset) to origins
+            }
+            .toList()
+        val mostSpecificWidth = candidates.minOfOrNull { it.first } ?: return null
+        val matchingOrigins = candidates.asSequence()
+            .filter { it.first == mostSpecificWidth }
+            .flatMap { it.second.asSequence() }
+            .toSet()
+        return matchingOrigins.singleOrNull()
     }
 
     /** Macro expansion registry 的共享常量。 */
@@ -850,6 +1085,20 @@ sealed class MacroConstructionResult {
     abstract val registry: MacroExpansionRegistry
 
     /**
+     * 拥有完整、按原始源码文件顺序关联的 CFIR 批次。
+     *
+     * CLI strict 模式仍会区分 [Success] 与 [Degraded]；IDE 与 analysis 则可消费两者共有的批次，
+     * 使单个可诊断的宏错误不会丢弃同一 construction 中其它成功宏的结果。
+     */
+    sealed interface Recordable {
+        /** 经 construction 处理、可进入 source provider 的完整文件批次。 */
+        val recordableFiles: RecordableRawCfirFiles
+
+        /** 与文件批次同一 construction 产生的宏诊断和来源 registry。 */
+        val registry: MacroExpansionRegistry
+    }
+
+    /**
      * construction 完全成功，文件可直接注册进 source provider。
      *
      * @property recordableFiles 可注册的 expanded raw CFIR 文件。
@@ -857,10 +1106,10 @@ sealed class MacroConstructionResult {
      */
     data class Success(
         /** 可注册的 expanded raw CFIR 文件。 */
-        val recordableFiles: RecordableRawCfirFiles,
+        override val recordableFiles: RecordableRawCfirFiles,
         /** construction 过程信息与诊断 registry。 */
         override val registry: MacroExpansionRegistry,
-    ) : MacroConstructionResult()
+    ) : MacroConstructionResult(), Recordable
 
     /**
      * construction 降级成功，文件含 typed error placeholder，可供 IDE / analysis 继续工作。
@@ -870,10 +1119,10 @@ sealed class MacroConstructionResult {
      */
     data class Degraded(
         /** 含 degraded placeholder 的可注册文件。 */
-        val recordableFiles: RecordableRawCfirFiles,
+        override val recordableFiles: RecordableRawCfirFiles,
         /** construction 过程信息与诊断 registry。 */
         override val registry: MacroExpansionRegistry,
-    ) : MacroConstructionResult()
+    ) : MacroConstructionResult(), Recordable
 
     /**
      * construction 失败且没有可注册文件。
@@ -927,6 +1176,10 @@ interface MacroConstructionService {
      * context     = bindMacroImports(pre, symbolIndex, ...)
      * result      = service.expand(pre, context, mode)
      * ```
+     *
+     * 本方法是最终入口：它负责 construction 计时（含结果归类），再委派给 [doExpand]。
+     * 这样任何调用方都不可能绕过耗时统计——计时不再依赖"记得包一层"。
+     * 实现类只覆写 [doExpand]。
      */
     fun expand(
         pre: PreMacroRawBuildResult,
@@ -934,6 +1187,26 @@ interface MacroConstructionService {
         classification: MacroDemandClassification,
         mode: Mode,
         preConstructionDiagnostics: List<MacroConstructionDiagnostic> = emptyList(),
+    ): MacroConstructionResult =
+        pre.session.macroConstructionTimingObserverOrNull.measureMacroExpansion(
+            mode = mode,
+            fileCount = pre.size,
+            surfaceCount = pre.allSurfaces.size,
+        ) {
+            doExpand(pre, context, classification, mode, preConstructionDiagnostics)
+        }
+
+    /**
+     * [expand] 的实现钩子。
+     *
+     * 只有实现类覆写本方法；调用方必须经 [expand]，否则阶段耗时与结果归类不会上报。
+     */
+    fun doExpand(
+        pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
+        classification: MacroDemandClassification,
+        mode: Mode,
+        preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult
 
     /** Macro construction 的运行模式，决定失败是否可以降级为 placeholder。 */
@@ -950,10 +1223,10 @@ interface MacroConstructionService {
         /**
          * Macro construction 算法版本（baseline §11 cache key 第 10 维）。
          *
-         * 主流程顺序、forest 推进策略、splice 语义、degraded placeholder 形态
-         * 任一变更都必须递增；上游 cache 据此整体失效。
+         * 主流程顺序、forest 推进策略、宏 token 源码重建、payload/delimiter 语义、
+         * splice 语义、degraded placeholder 形态任一变更都必须递增；上游 cache 据此整体失效。
          */
-        const val ALGORITHM_VERSION: Int = 5
+        const val ALGORITHM_VERSION: Int = 6
 
         /**
          * 无宏 identity 实现：把 raw 文件原样打包为可注册输入，
@@ -979,7 +1252,16 @@ interface MacroConstructionService {
         ): MacroConstructionResult.Success {
             val metadata = pre.sealAnnotationMetadata(files)
             registry.completeParsingReports(constructionCommitted = true)
-            return MacroConstructionResult.Success(RecordableRawCfirFiles(pre.session, files, metadata), registry)
+            return MacroConstructionResult.Success(
+                RecordableRawCfirFiles(
+                    session = pre.session,
+                    files = files.toList(),
+                    annotationMetadata = metadata,
+                    sourceFileIdentities = pre.files.map(PreMacroCfirFile::sourceFileIdentity),
+                    constructionIdentity = pre.constructionIdentity,
+                ),
+                registry,
+            )
         }
 
         /**
@@ -997,7 +1279,16 @@ interface MacroConstructionService {
         ): MacroConstructionResult.Degraded {
             val metadata = pre.sealAnnotationMetadata(files)
             registry.completeParsingReports(constructionCommitted = true)
-            return MacroConstructionResult.Degraded(RecordableRawCfirFiles(pre.session, files, metadata), registry)
+            return MacroConstructionResult.Degraded(
+                RecordableRawCfirFiles(
+                    session = pre.session,
+                    files = files.toList(),
+                    annotationMetadata = metadata,
+                    sourceFileIdentities = pre.files.map(PreMacroCfirFile::sourceFileIdentity),
+                    constructionIdentity = pre.constructionIdentity,
+                ),
+                registry,
+            )
         }
 
         /** 失败只终止 CFIR 元数据事务，全部实际解析报告仍交付编译单元的统一 LEX/PARSE 发布门。 */
@@ -1056,6 +1347,7 @@ fun MacroConstructionService.expandWithDefaultContext(
         sharedBuiltinDefinitions = sharedBuiltinDefinitions,
         macroArtifactDefinitions = macroArtifactDefinitions,
     )
+    // 展开耗时由 expand 模板方法统一计时，这里不再重复包装。
     return expand(pre, context, classification, mode)
 }
 
@@ -1065,7 +1357,7 @@ private object IdentityMacroConstructionService : MacroConstructionService {
      * 将 pre-macro 文件原样包装为可注册文件；若已有 construction 诊断，则按 [mode]
      * 决定返回 failed 还是 degraded。
      */
-    override fun expand(
+    override fun doExpand(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
         classification: MacroDemandClassification,

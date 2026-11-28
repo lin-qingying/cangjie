@@ -1,0 +1,43 @@
+FILE: multipleAssignForms.cj
+    internal? func multipleAssignForms(): R|Unit| {
+        local? var a: <implicit> = ...
+            initializer:
+                INT(1)
+        local? var b: <implicit> = ...
+            initializer:
+                INT(2)
+        ASSIGNMENT {
+            lValue:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+            rValue:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(a)
+                }
+        }
+        local? var t: R|(R|Int64|, R|Int64|)| = ...
+            initializer:
+                TUPLE_LITERAL {
+                    INT(1)
+                    INT(2)
+                }
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(t)
+            rValue:
+                TUPLE_LITERAL {
+                    INT(3)
+                    INT(4)
+                }
+        }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(t)
+                }
+    }

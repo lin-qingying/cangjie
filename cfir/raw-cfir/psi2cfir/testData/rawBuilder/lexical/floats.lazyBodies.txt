@@ -1,0 +1,4 @@
+FILE: floats.cj
+    internal? func floatLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,5 @@
+FILE: synchronizedForms.cj
+    import std.sync.*
+    internal? func synchronizedForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

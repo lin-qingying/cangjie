@@ -37,6 +37,12 @@ public class ContextCollectorSourceTestGenerated extends AbstractContextCollecto
   }
 
   @Test
+  @TestMetadata("localPatternVariableInitializerRebuild.cj")
+  public void testLocalPatternVariableInitializerRebuild() {
+    run("localPatternVariableInitializerRebuild.cj");
+  }
+
+  @Test
   @TestMetadata("propertyAccessor.cj")
   public void testPropertyAccessor() {
     run("propertyAccessor.cj");

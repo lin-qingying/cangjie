@@ -1,0 +1,4 @@
+FILE: cffiParameterTypes.cj
+    internal? func use(f: R|CFunc<R|(R|Int64|) -> R|Int32||>|, p: R|CPointer<R|UInt8|>|, s: R|CString|, v: R|VArray<R|Int64|, 4>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -13,6 +13,15 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
 import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLCheckerComponentStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDeserializationStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticPassStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLMacroConstructionStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLParserStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLRawBuildStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLResolvePhaseStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSessionStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLStatisticsDomain
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSymbolProviderStatistics
 
@@ -43,9 +52,73 @@ class LLStatisticsService(internal val project: Project) : Disposable {
     internal val symbolProviders: LLSymbolProviderStatistics = LLSymbolProviderStatistics(this)
 
     /**
+     * 语义解析阶段耗时统计域；各 session 注册的阶段耗时观察者即指向该域。
+     */
+    internal val resolvePhases: LLResolvePhaseStatistics = LLResolvePhaseStatistics(this)
+
+    /**
+     * raw CFIR 构建耗时统计域；各 session 注册的 raw build 观察者即指向该域。
+     */
+    val rawBuild: LLRawBuildStatistics = LLRawBuildStatistics(this)
+
+    /**
+     * macro construction 耗时统计域；各 session 注册的宏构造观察者即指向该域。
+     */
+    val macroConstruction: LLMacroConstructionStatistics = LLMacroConstructionStatistics(this)
+
+    /**
+     * IDE 请求级诊断收集耗时统计域。
+     *
+     * 这三个域（诊断、session 创建、stub 反序列化）不由 session 观察者驱动，而是被调用方
+     * 直接持有：它们的位置都在 low-level 模块内，与本服务同模块，无需绕 session component。
+     */
+    val diagnostics: LLDiagnosticsStatistics = LLDiagnosticsStatistics(this)
+
+    /**
+     * 诊断遍历分阶段耗时统计域；session 注册的遍历观察者指向该域。
+     */
+    val diagnosticPasses: LLDiagnosticPassStatistics = LLDiagnosticPassStatistics(this)
+
+    /**
+     * 逐诊断组件耗时统计域；session 注册的逐组件观察者指向该域。
+     *
+     * 回答"慢在声明检查、表达式检查还是 CFA"，粒度比 [diagnosticPasses] 更细：
+     * 后者计量一次遍历整体，本域计量这次遍历里各组件分别多久。
+     */
+    val checkerComponents: LLCheckerComponentStatistics = LLCheckerComponentStatistics(this)
+
+    /**
+     * session 创建与 scope session 统计域。
+     */
+    val sessions: LLSessionStatistics = LLSessionStatistics(this)
+
+    /**
+     * stub 反序列化统计域。
+     */
+    val deserialization: LLDeserializationStatistics = LLDeserializationStatistics(this)
+
+    /**
+     * PSI 解析耗时统计域；以 projectService 形式注册，供 `psi` 侧的解析入口上报。
+     */
+    val parser: LLParserStatistics = LLParserStatistics(this)
+
+    /**
      * 当前服务管理的所有统计域。
      */
-    internal val domains: List<LLStatisticsDomain> = listOf(analysisSessions, symbolProviders)
+    internal val domains: List<LLStatisticsDomain> =
+        listOf(
+            analysisSessions,
+            symbolProviders,
+            resolvePhases,
+            rawBuild,
+            macroConstruction,
+            diagnostics,
+            diagnosticPasses,
+            checkerComponents,
+            sessions,
+            deserialization,
+            parser,
+        )
 
     @OptIn(CaPlatformInterface::class)
     /**

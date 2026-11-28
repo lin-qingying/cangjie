@@ -1,0 +1,5 @@
+FILE: defaultParamOnUnnamed.cj
+    internal? func defaultParamOnUnnamed(a: R|Int64|, b: R|Int64| = INT(2)
+    ): R|Unit| {
+        <element: CfirLazyBlock>
+    }

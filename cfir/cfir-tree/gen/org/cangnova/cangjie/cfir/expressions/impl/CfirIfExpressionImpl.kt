@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -27,6 +28,7 @@ class CfirIfExpressionImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var mappedExpression: CfirExpression?,
     override var overflowStrategy: CangjieOverflowStrategy?,
+    override var calleeReference: CfirReference,
     override var condition: CfirExpression,
     override var thenBranch: CfirBlock,
     override var elseBranch: CfirExpression?,
@@ -34,6 +36,7 @@ class CfirIfExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
+        calleeReference.accept(visitor, data)
         condition.accept(visitor, data)
         thenBranch.accept(visitor, data)
         elseBranch?.accept(visitor, data)
@@ -41,6 +44,7 @@ class CfirIfExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
         transformAnnotations(transformer, data)
+        transformCalleeReference(transformer, data)
         transformCondition(transformer, data)
         transformThenBranch(transformer, data)
         transformElseBranch(transformer, data)
@@ -49,6 +53,11 @@ class CfirIfExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
         annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirIfExpressionImpl {
+        calleeReference = calleeReference.transform(transformer, data)
         return this
     }
 
@@ -86,5 +95,9 @@ class CfirIfExpressionImpl @CfirImplementationDetail constructor(
 
     override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?) {
         overflowStrategy = newOverflowStrategy
+    }
+
+    override fun replaceCalleeReference(newCalleeReference: CfirReference) {
+        calleeReference = newCalleeReference
     }
 }

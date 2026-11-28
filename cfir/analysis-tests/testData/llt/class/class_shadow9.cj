@@ -6,7 +6,7 @@ open class Base {
 }
 
 class Data <: Base {
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic let val: Int32 = 1
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>public let val: Int32 = 1<!>
     public let f: Int32 = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_NON_STATIC_MEMBER!>super<!>.val
 }
 

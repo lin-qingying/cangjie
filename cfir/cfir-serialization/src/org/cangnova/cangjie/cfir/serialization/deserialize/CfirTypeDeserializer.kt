@@ -52,8 +52,10 @@ private fun errorType(reason: String, delegatedType: ConeCangJieType? = null): C
 @OptIn(CfirImplementationDetail::class)
 class CfirTypeDeserializer(
     /** 当前 `.cjo` 包的反序列化上下文与共享缓存。 */
-    private val context: CfirDeserializationContext,
+    context: CfirDeserializationContext,
 ) {
+    private val context = context.canonical()
+
     /** 非 Generic 结构类型不允许拥有递归构造边；Generic 的回边由真实 symbol 壳承接。 */
     private val typesUnderDeserialization = HashSet<Int>()
 

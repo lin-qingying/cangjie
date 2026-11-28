@@ -65,6 +65,5 @@ inline fun buildLetPatternExpressionCopy(original: CfirLetPatternExpression, ini
     copyBuilder.mappedExpression = original.mappedExpression
     copyBuilder.overflowStrategy = original.overflowStrategy
     copyBuilder.initializer = original.initializer
-    copyBuilder.pattern = original.pattern
     return copyBuilder.apply(init).build()
 }

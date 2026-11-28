@@ -348,6 +348,13 @@ open class AbstractCfirStatusResolveTransformer(
             if (target is CfirMemberDeclaration) {
                 target.publishResolvedStatusIfNeeded()
                 target.publishInteropInfo(session)
+                // 弃用信息与 `@Deprecated` 注解实参绑定：实参在 BODY_RESOLVE 映射，
+                // `AnnotationDeprecationsProvider` 每次读取时重算，因此这里只需发布注解来源的 provider。
+                when (target) {
+                    is CfirCallableDeclaration -> target.replaceDeprecationsProvider(buildDeprecationsProvider(target.annotations))
+                    is CfirClassLikeDeclaration -> target.replaceDeprecationsProvider(buildDeprecationsProvider(target.annotations))
+                    else -> Unit
+                }
             }
             target.resolveDeprecationsProviderIfNeeded()
             target.replaceResolvePhase(CfirResolvePhase.STATUS)
@@ -707,10 +714,17 @@ open class AbstractCfirStatusResolveTransformer(
         patternVariable: CfirPatternVariable,
         data: Nothing?,
     ): CfirPatternVariable {
-        return withResolvedStatusPhase(patternVariable) {
+        val resolvedPatternVariable = withResolvedStatusPhase(patternVariable) {
             transformVariableStatusWithoutPhaseGuard(patternVariable)
             patternVariable.pattern.bindingVariables().forEach { it.replaceResolvePhase(CfirResolvePhase.STATUS) }
         }
+        // @Deprecated 修饰的是整个 pattern variable 声明；每个绑定名都作为独立 callable symbol
+        // 发布，因此需要让所有绑定声明消费同一组注解和按注解构建的弃用信息。
+        for (bindingVariable in resolvedPatternVariable.pattern.bindingVariables()) {
+            bindingVariable.replaceAnnotations(resolvedPatternVariable.annotations)
+            bindingVariable.replaceDeprecationsProvider(resolvedPatternVariable.deprecationsProvider)
+        }
+        return resolvedPatternVariable
     }
 
     /** value parameter 的通用遍历入口；参数状态由 callable 专用路径集中发布。 */
@@ -791,6 +805,10 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
         buildResolvedDeclarationStatus {
             source = currentStatus.source
             visibility = currentStatus.visibility
+            visibilityExplicitness = currentStatus.visibilityExplicitness
+            modalityExplicitness = currentStatus.modalityExplicitness
+            bodyPresence = currentStatus.bodyPresence
+            isDeclarationFile = currentStatus.isDeclarationFile
             isVisibilityExplicit = currentStatus.isVisibilityExplicit
             isModalityExplicit = currentStatus.isModalityExplicit
             isAbstractExplicit = currentStatus.isAbstractExplicit
@@ -803,6 +821,7 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
             isForeign = currentStatus.isForeign
             isC = currentStatus.isC
             isCommon = currentStatus.isCommon
+            isFromCommonPart = currentStatus.isFromCommonPart
             isSpecific = currentStatus.isSpecific
             isCommonWithDefault = currentStatus.isCommonWithDefault
             isRedef = currentStatus.isRedef

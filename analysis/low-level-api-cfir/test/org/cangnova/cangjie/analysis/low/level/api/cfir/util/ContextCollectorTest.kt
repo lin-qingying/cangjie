@@ -2,11 +2,17 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.CfirLazyBodiesCalculator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjFile
@@ -16,6 +22,7 @@ import org.cangnova.cangjie.psi.CjVarOrEnumPattern
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -56,6 +63,26 @@ class ContextCollectorTest : AbstractAnalysisApiExecutionTest(
         assertFalse(copiedFile.isPhysical)
 
         assertDistinctPatternBindings(copiedFile, copiedReferences)
+    }
+
+    /** 验证局部模式变量 initializer 的惰性重建能从完整文件 CFIR 中找回目标声明。 */
+    @Test
+    @OptIn(LLCfirInternals::class)
+    fun localPatternVariableInitializerRebuild(mainFile: CjFile) {
+        val cfirFile = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
+
+        CfirLazyBodiesCalculator.calculateAllLazyExpressionsInFile(cfirFile)
+
+        val function = cfirFile.declarations.filterIsInstance<CfirNamedFunction>().single()
+        val patternVariable = function.body!!.statements.filterIsInstance<CfirPatternVariable>().single()
+        val bindingVariable = (patternVariable.pattern as CfirBindingPattern).bindingVariable!!
+        assertTrue(patternVariable.initializer != null, "The lazy initializer must be rebuilt from source PSI.")
+        assertFalse(patternVariable.initializer is CfirLazyExpression, "The initializer must no longer be a lazy placeholder.")
+        assertSame(
+            patternVariable.initializer,
+            bindingVariable.initializer,
+            "Lazy initializer reconstruction must refresh the non-owning binding initializer reference.",
+        )
     }
 }
 

@@ -1,0 +1,9 @@
+FILE: indexAndSliceForms.cj
+    internal? class Item {
+        init()
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+    }
+    internal? func indexAndSliceForms(matrix: R|Array<R|Array<R|Int64|>|>|, items: R|Array<R|Item|>|, s: R|String|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

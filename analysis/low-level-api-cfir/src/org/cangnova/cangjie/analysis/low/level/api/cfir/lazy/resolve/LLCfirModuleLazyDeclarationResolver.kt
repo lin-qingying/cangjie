@@ -10,13 +10,20 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.LLCfirLazyR
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PartialBodyAnalysisSuspendedException
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLFlightRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkPhase
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getContainingFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkAnalysisReadiness
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.cfir.session.importBindingStore
+import org.cangnova.cangjie.cfir.session.resolvePhaseTimingObserverOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirImportResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseWork
+import org.cangnova.cangjie.cfir.resolve.transformers.measurePhase
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -40,15 +47,55 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
      */
     fun lazyResolve(target: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
         // helper 是参数 metadata 的拥有声明；通过原 owner 的锁和正常重建入口解析。
-        (target as? org.cangnova.cangjie.cfir.declarations.CfirNamedFunction)?.defaultParameterHelperInfo?.let { info ->
+        (target as? CfirNamedFunction)?.defaultParameterHelperInfo?.let { info ->
             lazyResolve(info.owner, toPhase)
             check(target.resolvePhase >= toPhase) { "Owner resolution did not complete its default helper lifecycle" }
+            return
+        }
+
+        // Kotlin designation 的参数/访问器 owner 规则必须早于 readiness 短路。
+        // 不提升请求阶段；TYPES 只解析签名，IMPLICIT_TYPES 仍遵守真实声明的推断协议。
+        val owner = LLCfirResolveDesignationCollector.getResolveOwner(target) ?: return
+        if (owner !== target) {
+            // 与 Kotlin 相同，阶段校验归实际 designation 的 resolver runner。
+            // 正文私有副本可能没有 LL designation；其签名仍由 callable 的 resolved type-ref 校验。
+            lazyResolve(owner, toPhase)
             return
         }
         if (
             checkAnalysisReadiness(target, containingDeclarations = null, toPhase) &&
             target.hasImportBindingsForContainingFile()
         ) {
+            return
+        }
+
+        val expressionHost: CfirElement? = when {
+            target is CfirPatternBindingVariable && target.isLocal ->
+                checkNotNull(target.patternTreeOwner as? CfirElement) { "Local pattern binding has no host" }
+            target is org.cangnova.cangjie.cfir.declarations.CfirResourceVariable -> target
+            else -> null
+        }
+        if (expressionHost != null && toPhase >= CfirResolvePhase.IMPLICIT_TYPES) {
+            // 外部 leaf 查询才提升宿主；正文内部的返回类型计算继续当前推断，不重入正文。
+            val host = expressionHost
+            val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+            if (snapshot != null) {
+                // 快照的宏树与 raw 缓存是不同解析单元，必须在当前语义文件中推进原 target。
+                val semanticFile = checkNotNull(snapshot.containerFile(target as CfirDeclaration))
+                lazyResolveRecursively(semanticFile, CfirResolvePhase.BODY_RESOLVE)
+            } else {
+                val sourceFile = checkNotNull(host.psi?.containingFile as? org.cangnova.cangjie.psi.CjFile)
+                val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(sourceFile)
+                val container = if (sourceFile is org.cangnova.cangjie.psi.CjCodeFragment) {
+                    cfirFile.declarations.filterIsInstance<CfirCodeFragment>().single()
+                } else {
+                    val containerPsi = checkNotNull(host.psi?.getNonLocalContainingOrThisDeclaration())
+                    checkNotNull(org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder.findDeclaration(cfirFile, containerPsi))
+                }
+                lazyResolve(container, CfirResolvePhase.BODY_RESOLVE)
+            }
+            org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefIsResolved(target as org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration)
+            target.checkPhase(toPhase)
             return
         }
 
@@ -168,7 +215,12 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
             val transformer = CfirImportResolveTransformer(session, session.diagnosticReporter)
             if (cfirFile.resolvePhase < CfirResolvePhase.IMPORTS) {
                 lockProvider.withWriteLock(cfirFile, CfirResolvePhase.IMPORTS) {
-                    cfirFile.transformSingle(transformer, null)
+                    // 按需解析没有阶段循环，IMPORTS 在这里单独推进并计时；
+                    // 被推进的是文件本身，而 CfirFile 也是 CfirDeclaration，故记 1 个声明。
+                    val work = CfirResolvePhaseWork(files = 0, declarations = 1)
+                    session.resolvePhaseTimingObserverOrNull.measurePhase(CfirResolvePhase.IMPORTS, work) {
+                        cfirFile.transformSingle(transformer, null)
+                    }
                 }
             }
             // withWriteLock 对已达到 IMPORTS 的文件会跳过 action；owner session 仍需补录自己的 binding。
@@ -195,17 +247,23 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         if (checkAnalysisReadiness(target.target, target.path, toPhase, currentPhase)) return
 
         val helper = LLCfirResolutionActivityTracker.getInstance()
+        val timingObserver = moduleComponents.session.resolvePhaseTimingObserverOrNull
+        // 按需解析推进的是单个 designation，负载以其中被解析的声明数衡量。
+        val work = CfirResolvePhaseWork(files = 0, declarations = target.declarationCount())
         try {
             helper.beforeLazyResolve()
 
             while (currentPhase < toPhase) {
-                currentPhase = currentPhase.next
+                val phase = currentPhase.next
+                currentPhase = phase
                 checkCanceled()
 
-                LLCfirLazyResolverRunner.runLazyResolverByPhase(
-                    phase = currentPhase,
-                    target = target,
-                )
+                timingObserver.measurePhase(phase, work) {
+                    LLCfirLazyResolverRunner.runLazyResolverByPhase(
+                        phase = phase,
+                        target = target,
+                    )
+                }
             }
         } finally {
             helper.afterLazyResolve()

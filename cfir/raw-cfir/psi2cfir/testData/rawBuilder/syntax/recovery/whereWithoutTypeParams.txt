@@ -1,0 +1,11 @@
+FILE: whereWithoutTypeParams.cj
+    internal? func concreteWhere(a: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func <T>colonBound(a: R|T|): R|T| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }

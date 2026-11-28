@@ -120,6 +120,11 @@ abstract class AbstractImplementation<Implementation, Element, Field>(
     var constructorParameterOrderOverride: List<String>? = null
 
     /**
+     * 实现类构造完成后的初始化语句，由树模型 DSL 显式声明。
+     */
+    val initializationStatements: MutableList<String> = mutableListOf()
+
+    /**
      * 判断字段是否由实现类体内默认值或自定义 setter 处理，而不是必须作为构造参数传入。
      */
     private fun withDefault(field: Field) =

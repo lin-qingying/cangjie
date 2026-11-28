@@ -2,6 +2,10 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import PackageFormat.DeclKind
 import PackageFormat.ExprInfo
 import PackageFormat.ExprKind
@@ -19,7 +23,6 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -328,7 +331,7 @@ class CjoSourcePublicPayloadTest {
                 val header = assertRootFunctionHeader(fixture, function)
                 val parameter = function.valueParameters.single()
                 val target: CfirVariable = if (kind == FunctionValueTarget.PARAMETER) parameter
-                    else assertIs<CfirFieldVariable>(fixture.declaration(2))
+                    else fixture.variableBinding(2)
                 assertEquals(spelling, target.symbol.name.asString())
                 assertSame(target, target.symbol.cfir)
                 val declaredValueType = target.returnTypeRef.coneType
@@ -383,11 +386,15 @@ class CjoSourcePublicPayloadTest {
                 assertSame(function, fixture.function("metadataRootF"))
                 assertSame(declaredValueType, target.returnTypeRef.coneType,
                     "ORDINARY 资格不得改写原参数/变量的完成值类型或 alias abbreviation")
-                if (target is CfirFieldVariable) {
-                    assertSame(target, fixture.declaration(2))
+                if (kind != FunctionValueTarget.PARAMETER) {
+                    val binding = assertIs<CfirPatternBindingVariable>(target)
+                    val root = assertIs<CfirPatternVariable>(fixture.declaration(2))
+                    assertSame(root, binding.patternTreeOwner)
                     // 变量具有真实 initializer 保存槽，不用 initializer=0 冒充函数值来源。
                     val implementation = fixture.function("implementation")
-                    val initializer = assertIs<CfirNamedAccessExpression>(assertNotNull(fixture.source.sourceInitializerOf(target)))
+                    val initializer = assertIs<CfirNamedAccessExpression>(assertNotNull(fixture.source.sourceInitializerOf(binding)))
+                    assertSame(initializer, root.initializer)
+                    assertSame(initializer, binding.initializer)
                     assertSame(implementation.symbol, assertIs<CfirResolvedNamedReference>(initializer.calleeReference).resolvedSymbol)
                     val implementationBody = assertNotNull(fixture.source.sourceBodyOf(implementation))
                     val implementationReturn = assertIs<CfirReturnExpression>(implementationBody.statements.single())
@@ -426,7 +433,7 @@ class CjoSourcePublicPayloadTest {
                     val rhsRef = identity.expandedTypeRef
                     val rhs = assertIs<ConeTypeParameterType>(rhsRef.coneType)
                     assertSame(own.symbol, rhs.lookupTag.typeParameterSymbol)
-                    val target = assertIs<CfirFieldVariable>(fixture.declaration(2))
+                    val target = fixture.variableBinding(2)
                     val valueTypeRef = target.returnTypeRef
                     val valueType = valueTypeRef.coneType
                     val returnTypeRef = function.returnTypeRef
@@ -562,7 +569,7 @@ class CjoSourcePublicPayloadTest {
                 val function = fixture.function("metadataRootF")
                 val header = assertRootFunctionHeader(fixture, function)
                 val parameter = function.valueParameters.single()
-                val target = assertIs<CfirFieldVariable>(fixture.declaration(2))
+                val target = fixture.variableBinding(2)
                 val valueTypeRef = target.returnTypeRef
                 val valueType = assertIs<ConeClassLikeType>(valueTypeRef.coneType)
                 assertAliasApplication(valueType, identity)
@@ -1126,6 +1133,14 @@ class CjoSourcePublicPayloadTest {
 
         fun declaration(index: Int): CfirDeclaration = assertNotNull(provider.deserializeCjoDeclaration(
             assertNotNull(manager.loadPackageSnapshot(packageName)).sourcePath, packageName, index))
+
+        fun variableBinding(index: Int): CfirPatternBindingVariable {
+            val root = assertIs<CfirPatternVariable>(declaration(index))
+            val binding = root.pattern.bindingVariables().single()
+            assertSame(root, binding.patternTreeOwner)
+            assertSame(binding, provider.packageVariableBinding(packageName, binding.name.asString()))
+            return binding
+        }
     }
 
     /** 与 CjoTypeGraphDeserializationTest 相同的真实 session/provider/Manager/Writer 装配。 */
@@ -1143,7 +1158,10 @@ class CjoSourcePublicPayloadTest {
         val manager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = listOf(root.toFile()), envProvider = { null }),
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.session.register(CfirSymbolProvider::class, provider)
         val wire = assertNotNull(manager.loadPackage(input.fullPackageName))
         assertWireStructure(input, wire)

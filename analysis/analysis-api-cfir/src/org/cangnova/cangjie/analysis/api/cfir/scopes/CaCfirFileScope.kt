@@ -9,9 +9,11 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
@@ -35,6 +37,16 @@ internal class CaCfirFileScope(
      */
     private val builder: CaSymbolByCfirBuilder
 ) : CaScope {
+    /**
+     * 当前文件已有的顶层声明。
+     *
+     * 这里保持直连（fail-fast）：文件符号由本 session 的 `CjFile` 构建，取不到就是框架契约被破坏，
+     * 不能降级成「这个文件没有声明」——空声明序列会被上层当成确定结论（名字集合为空），
+     * 而「暂时未知」与「确定没有」在 Analysis API 上层必须可区分。
+     */
+    private val cfirDeclarations: List<CfirDeclaration>
+        get() = owner.cfirSymbol.cfir.declarations
+
     /**
      * 当前作用域公开对象的生命周期令牌。
      */
@@ -61,7 +73,7 @@ internal class CaCfirFileScope(
      */
     private val backingCallableNames: Set<Name> by cached {
         val result = mutableSetOf<Name>()
-        owner.cfirSymbol.cfir.declarations
+        cfirDeclarations
             .mapNotNullTo(result) { firDeclaration ->
                 when (firDeclaration) {
                     is CfirNamedFunction -> firDeclaration.name
@@ -78,7 +90,7 @@ internal class CaCfirFileScope(
      */
     private val _classifierNames: Set<Name> by cached {
         val result = mutableSetOf<Name>()
-        owner.cfirSymbol.cfir.declarations
+        cfirDeclarations
             .mapNotNullTo(result) { firDeclaration ->
                 (firDeclaration as? CfirClassLikeDeclaration)?.name
             }
@@ -91,7 +103,7 @@ internal class CaCfirFileScope(
      */
     override fun callables(nameFilter: (Name) -> Boolean): Sequence<CaCallableSymbol> = withValidityAssertion {
         sequence {
-            owner.cfirSymbol.cfir.declarations.forEach { firDeclaration ->
+            cfirDeclarations.forEach { firDeclaration ->
                 val callableDeclaration = when (firDeclaration) {
                     is CfirNamedFunction -> firDeclaration.takeIf { nameFilter(firDeclaration.name) }
                     is CfirProperty -> firDeclaration.takeIf { nameFilter(firDeclaration.name) }
@@ -110,7 +122,7 @@ internal class CaCfirFileScope(
      */
     override fun classifiers(nameFilter: (Name) -> Boolean): Sequence<CaClassifierSymbol> = withValidityAssertion {
         sequence {
-            owner.cfirSymbol.cfir.declarations.forEach { firDeclaration ->
+            cfirDeclarations.forEach { firDeclaration ->
                 val classLikeDeclaration = when (firDeclaration) {
                     is CfirTypeAlias -> firDeclaration.takeIf { nameFilter(it.name) }
                     is CfirClassLikeDeclaration -> firDeclaration.takeIf { nameFilter(it.name) }
@@ -131,6 +143,11 @@ internal class CaCfirFileScope(
         val namesSet = names.toSet()
         return classifiers { it in namesSet }
     }
+
+    /**
+     * 文件作用域没有类型参数：类型参数只存在于泛型声明的声明体内。
+     */
+    override fun typeParameters(nameFilter: (Name) -> Boolean): Sequence<CaTypeParameterSymbol> = emptySequence()
 
     /**
      * 文件作用域不直接提供构造器集合。

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.functionBodyDiagnosticData
@@ -65,7 +66,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker(MppCheckerKind.
         val delegationCalls = body?.collectDelegationCalls().orEmpty()
         val firstStatementDelegation = body?.statements?.firstOrNull().asDelegationCallOrNull()
         val hasExplicitSuperDelegation = delegationCalls.any { delegation ->
-            delegation.kind == ConstructorDelegationCallKind.SUPER
+            delegation.kind == ConstructorDelegationCallKind.SUPER && !delegation.isInsideDeferredFunction
         }
 
         delegationCalls
@@ -74,7 +75,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker(MppCheckerKind.
                 if (delegation.kind == ConstructorDelegationCallKind.THIS && declaration.isPrimary) {
                     reporter.reportOn(
                         source = delegation.call.delegationDiagnosticSource()
-                            ?: declaration.source?.firstCharacterDiagnosticSource(),
+                            ?: declaration.source,
                         factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
                     )
                     return@forEach
@@ -82,7 +83,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker(MppCheckerKind.
 
                 reporter.reportOn(
                     source = delegation.call.delegationDiagnosticSource()
-                        ?: declaration.source?.firstCharacterDiagnosticSource(),
+                        ?: declaration.source,
                     factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER,
                     a = delegation.kind.keyword,
                 )
@@ -100,7 +101,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker(MppCheckerKind.
                 if (declaration.isPrimary) {
                     reporter.reportOn(
                         source = firstStatementDelegation.call.delegationDiagnosticSource()
-                            ?: declaration.source?.firstCharacterDiagnosticSource(),
+                            ?: declaration.source,
                         factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
                     )
                     return
@@ -167,7 +168,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker(MppCheckerKind.
         if (this === firstPrimary) return
 
         reporter.reportOn(
-            source = source?.firstCharacterDiagnosticSource(),
+            source = source ,
             factory = CfirErrors.MULTIPLE_PRIMARY_CONSTRUCTORS,
         )
     }
@@ -187,13 +188,8 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker(MppCheckerKind.
         owner: CfirClassLikeDeclaration,
         declaration: CfirConstructor,
     ) {
-        if (owner !is CfirClass) return
-
-        val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return
-        val implicitSuperConstructors = superDeclaration.declarations
-            .filterIsInstance<CfirConstructor>()
-            .filter { constructor -> constructor.requiredParameterCount() == 0 }
-        if (implicitSuperConstructors.any { constructor -> constructor.isVisibleForImplicitSuperCall() }) return
+        val implicitSuperConstructors = declaration.implicitSuperConstructorsOrNull(owner) ?: return
+        if (implicitSuperConstructors.isNotEmpty()) return
 
         // 无论父类没有无参构造器，还是只有当前上下文不可访问的无参构造器，
         // 隐式 super() 都属于“父类没有可用的非参数构造器”语义。只有显式
@@ -298,6 +294,9 @@ private data class ConstructorDelegationCall(
      * 承载 `this(...)` 或 `super(...)` 的函数调用节点。
      */
     val call: CfirFunctionCall,
+
+    /** `true` 时该调用只会在嵌套函数体执行，不会替代构造器自己的隐式 `super()`。 */
+    val isInsideDeferredFunction: Boolean,
 )
 
 /**
@@ -328,10 +327,12 @@ private fun CfirFunctionCall.delegationDiagnosticSource() = calleeReference.sour
  *
  * 包装表达式会被展开；只有可识别为 `this` 或 `super` 构造器委托的函数调用才会返回。
  */
-private fun CfirElement?.asDelegationCallOrNull(): ConstructorDelegationCall? {
+private fun CfirElement?.asDelegationCallOrNull(
+    isInsideDeferredFunction: Boolean = false,
+): ConstructorDelegationCall? {
     val call = constructorDelegationCallOrNull() ?: return null
     val kind = call.constructorDelegationKindOrNull() ?: return null
-    return ConstructorDelegationCall(kind, call)
+    return ConstructorDelegationCall(kind, call, isInsideDeferredFunction)
 }
 
 /**
@@ -384,13 +385,50 @@ private fun CfirFunctionCallOrigin.toDelegationKindOrNull(): ConstructorDelegati
  */
 private fun org.cangnova.cangjie.cfir.expressions.CfirBlock.collectDelegationCalls(): List<ConstructorDelegationCall> {
     val result = mutableListOf<ConstructorDelegationCall>()
+    var insideDeferredFunction = false
     acceptChildren(object : CfirVisitorVoid() {
         override fun visitElement(element: CfirElement) {
-            element.asDelegationCallOrNull()?.let(result::add)
-            element.acceptChildren(this, null)
+            val previousDeferredState = insideDeferredFunction
+            if (element is CfirFunction) insideDeferredFunction = true
+            try {
+                element.asDelegationCallOrNull(insideDeferredFunction)?.let(result::add)
+                element.acceptChildren(this, null)
+            } finally {
+                insideDeferredFunction = previousDeferredState
+            }
         }
     }, null)
     return result
+}
+
+/**
+ * 返回该构造器可隐式委托到的直接父类无必填参数构造器。
+ *
+ * 显式父类委托会取代合成 `super()`；首条 `this(...)` 则把父类委托责任交给目标构造器。
+ * 嵌套函数体里的委托调用不属于构造器的直接执行路径，不能改变这项判定。
+ */
+context(context: CheckerContext)
+internal fun CfirConstructor.implicitSuperConstructorsOrNull(
+    owner: CfirClassLikeDeclaration,
+): List<CfirConstructor>? {
+    if (owner !is CfirClass) return null
+
+    val firstStatementDelegation = body?.statements?.firstOrNull().asDelegationCallOrNull()
+    if (firstStatementDelegation?.kind == ConstructorDelegationCallKind.THIS) return null
+
+    val delegationCalls = body?.collectDelegationCalls().orEmpty()
+    if (delegationCalls.any { call ->
+            call.kind == ConstructorDelegationCallKind.SUPER && !call.isInsideDeferredFunction
+        }
+    ) {
+        return null
+    }
+
+    val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return null
+    return superDeclaration.declarations
+        .filterIsInstance<CfirConstructor>()
+        .filter { constructor -> constructor.requiredParameterCount() == 0 }
+        .filter { constructor -> constructor.isVisibleForImplicitSuperCall() }
 }
 
 /**

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.symbols
 
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -17,6 +18,7 @@ import org.cangnova.cangjie.psi.CjFinalizer
 import org.cangnova.cangjie.psi.CjFunctionLiteral
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNamedPattern
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
@@ -117,6 +119,14 @@ interface CaSymbolProvider : CaLifetimeOwner {
      */
     val CjBindingPattern.symbol: CaPatternBindingSymbol
 
+    /** 仅发布语义解析后仍为 active binder 的具名模式；wildcard 和 constructor 返回 null。 */
+    val CjNamedPattern.bindingSymbol: CaPatternBindingSymbol?
+
+    /** 专用宿主的可空绑定入口，wildcard 或已删除的声明没有变量符号。 */
+    val org.cangnova.cangjie.psi.CjCatchParameter.bindingSymbol: CaLocalVariableSymbol?
+    val org.cangnova.cangjie.psi.CjCommandTypePattern.bindingSymbol: CaLocalVariableSymbol?
+    val org.cangnova.cangjie.psi.CjTryResource.bindingSymbol: CaLocalVariableSymbol?
+
     /**
      * 从形参 PSI 恢复对应的变量符号。
      *
@@ -168,6 +178,34 @@ interface CaSymbolProvider : CaLifetimeOwner {
      * 查询针对某个目标 `ClassId` 的全部 `extend`。
      */
     fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
+
+    /**
+     * 查询对给定接收者类型可匹配的全部 `extend`。
+     *
+     * 覆盖完整接收者形状:基本类型按内建目标查询、`CPointer` / `CString` 按
+     * 非 ClassId 内建目标键查询、typealias 按展开后的语义目标查询。对齐编译器
+     * `CfirExtendProvider` 的完整查询面——`ClassId` 键天然表达不了基本类型与
+     * 内建目标,只有本入口能让 IDE 消费方不必自行把接收者类型降级成 `ClassId`。
+     */
+    fun getExtendSymbols(receiverType: CaType): List<CaExtendSymbol>
+
+    /**
+     * 按名称前缀发现声明。
+     *
+     * 与 [getTopLevelClassLikeSymbols] / [getTopLevelCallableSymbols] 的区别是入口：
+     * 那两个方法要求调用方**已经知道**包名与短名，本方法面向「用户正在敲名字」的
+     * 补全场景，因此走宿主的名称索引而不是逐包试精确名。
+     *
+     * 结果保留全部声明身份：同名重载、同名不同 payload 个数的枚举构造器必须各自保留，
+     * 按显示名去重会让用户选不到目标声明。
+     *
+     * **索引不可用时返回空集合**，不得降级为遍历工作区声明——那样每次键入都会
+     * 付出与项目规模成正比的代价，且会把无关模块的声明一并交给用户。
+     */
+    fun getDeclarationsByNamePrefix(
+        namePrefix: String,
+        isRepeatedInvocation: Boolean = false,
+    ): List<CaDeclarationSymbol>
 }
 
 /**
@@ -205,5 +243,10 @@ val CjElement.symbol: CaDeclarationSymbol
             else -> error("Unsupported PSI element for symbol resolution: ${this::class.simpleName}")
         }
     }
+
+/** 上下文形式的可空模式绑定入口，供文档、导航和 pointer 消费真实语义声明。 */
+context(session: CaSession)
+val CjNamedPattern.bindingSymbol: CaPatternBindingSymbol?
+    get() = with(session) { bindingSymbol }
 
 

@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_undeclared_identifier",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "undeclared identifier 'foreignValue'",
+                "Location": {
+                    "File": "foreign-direct-negative\\Use.cj",
+                    "Line": 7,
+                    "Column": 11
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "foreign-direct-negative\\Use.cj",
+                            "Line": 7,
+                            "Column": 11
+                        },
+                        "End": {
+                            "File": "foreign-direct-negative\\Use.cj",
+                            "Line": 7,
+                            "Column": 23
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

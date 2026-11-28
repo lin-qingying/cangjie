@@ -18,7 +18,7 @@ internal class CaStubPlatformState(
      * 负责从当前项目重新构建 stub 快照的组合 builder。
      */
     private val snapshotBuilder = CaStubSnapshotBuilder(
-        fileCollector = CaStubFileCollector(project),
+        fileSource = CaStubFileSource { CaStubFileCollector(project).collectFiles() },
         summaryBuilder = CaStubSummaryBuilder(),
     )
 

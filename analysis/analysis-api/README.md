@@ -7,7 +7,7 @@
 
 | 包 | 职责 |
 |---|---|
-| `analysis.api` | API 入口（`KaSession` 等核心抽象） |
+| `analysis.api` | API 入口（`CaSession` 等核心抽象） |
 | `analysis.api.components` | 按 component 拆分的能力（resolve / type / call / scope / completion / annotations / diagnostics / etc.） |
 | `analysis.api.compile` | 编译流程相关入口 |
 | `analysis.api.completion` | 补全能力 |
@@ -18,7 +18,7 @@
 ## 设计原则
 
 - **接口优先**：调用方依赖本模块接口，不接触具体实现
-- **生命周期**：所有 API 调用必须在合法 `KaSession` 生命周期内
+- **生命周期**：所有 API 调用必须在合法 `CaSession` 生命周期内
 - **K2 对齐**：包结构、类名尽量与 `external/kotlin/analysis/analysis-api/src/**` 对应
 
 ## 实现后端

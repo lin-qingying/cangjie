@@ -1,32 +1,48 @@
 package org.cangnova.cangjie.analysis.api.cfir.references
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.components.resolver.resolveAnnotationCall
 import org.cangnova.cangjie.analysis.api.impl.base.references.CaBaseSimpleNameReference
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.idea.references.mainReference
+import org.cangnova.cangjie.idea.references.CjReferenceRole
+import org.cangnova.cangjie.psi.CangJieResolveResult
 import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
+import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjExtend
+import org.cangnova.cangjie.psi.CjThisExpression
+import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.CjVariable
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjLabelReferenceExpression
+import org.cangnova.cangjie.psi.CjMacroExpression
+import org.cangnova.cangjie.psi.CjNameReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.CjValueArgumentName
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.psiUtil.getAssignmentByLHS
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.psiUtil.getQualifiedExpressionForSelectorOrThis
+import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
 
 /**
  * 基于 CFIR Analysis API 的简单名引用实现。
  */
-@OptIn(CaImplementationDetail::class)
 internal class CaCfirSimpleNameReference(
     expression: CjSimpleNameExpression,
     /**
@@ -39,15 +55,18 @@ internal class CaCfirSimpleNameReference(
      */
     override val resolver get() = CaCfirReferenceResolver
 
+    override val referenceRole: CjReferenceRole
+        get() = if (isRead) CjReferenceRole.READ else CjReferenceRole.WRITE
+
     /**
      * 当前简单名是否位于注解构造调用位置。
      */
     private val isAnnotationCall: Boolean
         get() {
-            val ktUserType = expression.parent as? CjUserType ?: return false
-            val ktTypeReference = ktUserType.parent as? CjTypeReference ?: return false
-            val ktConstructorCalleeExpression = ktTypeReference.parent as? CjConstructorCalleeExpression ?: return false
-            return ktConstructorCalleeExpression.parent is CjAnnotation
+            val cjUserType = expression.parent as? CjUserType ?: return false
+            val cjTypeReference = cjUserType.parent as? CjTypeReference ?: return false
+            val cjConstructorCalleeExpression = cjTypeReference.parent as? CjConstructorCalleeExpression ?: return false
+            return cjConstructorCalleeExpression.parent is CjAnnotation
         }
 
     /**
@@ -56,7 +75,18 @@ internal class CaCfirSimpleNameReference(
     private fun CaSession.fixUpAnnotationCallResolveToCtor(resultsToFix: Collection<CaSymbol>): Collection<CaSymbol> {
         if (resultsToFix.isEmpty() || !isAnnotationCall) return resultsToFix
 
-        return resultsToFix
+        val cfirSession = this as? CaCfirSession ?: return resultsToFix
+        val annotation = expression.parentOfType<CjAnnotation>() ?: return resultsToFix
+        val annotationCall = cfirSession.resolveAnnotationCall(annotation) ?: return resultsToFix
+        val constructor = (annotationCall.calleeReference as? CfirResolvedNamedReference)
+            ?.resolvedSymbol as? CfirConstructorSymbol
+            ?: return resultsToFix
+        val constructorSymbol = cfirSession.cfirSymbolBuilder.functionBuilder.buildConstructorSymbol(constructor)
+        val annotationClassId = annotationCall.annotationClassId ?: return resultsToFix
+
+        return resultsToFix.map { symbol ->
+            if (symbol is CaClassLikeSymbol && symbol.classId == annotationClassId) constructorSymbol else symbol
+        }
     }
 
     /**
@@ -78,17 +108,15 @@ internal class CaCfirSimpleNameReference(
     /**
      * 解析当前简单名引用对应的 PSI 目标。
      */
-    override fun getResolvedToPsi(analysisSession: CaSession): Collection<PsiElement> = with(analysisSession) {
+    override fun getResolveResults(analysisSession: CaSession): Collection<CangJieResolveResult> = with(analysisSession) {
         if (expression is CjLabelReferenceExpression) {
             val fir = expression.getOrBuildCfir((analysisSession as CaCfirSession).resolutionFacade)
             if (fir is CfirLoopJump) {
-                return listOfNotNull(fir.target.labeledElement.psi)
+                return listOfNotNull(fir.target.labeledElement.psi?.let { CangJieResolveResult(it) })
             }
         }
         val referenceTargetSymbols = resolveToSymbols()
-        val psiOfReferenceTarget = super.getResolvedToPsi(analysisSession, referenceTargetSymbols)
-        if (psiOfReferenceTarget.isNotEmpty()) return psiOfReferenceTarget
-        referenceTargetSymbols.mapNotNull { symbol -> symbol.psi }
+        return super.getResolveResults(analysisSession, referenceTargetSymbols, expression.libraryReceiverHint())
     }
 
     /**
@@ -129,17 +157,26 @@ internal class CaCfirSimpleNameReference(
          */
         override val referenceProvider: CangJiePsiReferenceProviderContributor.ReferenceProvider<CjSimpleNameExpression>
             get() = CangJiePsiReferenceProviderContributor.ReferenceProvider { nameReferenceExpression: CjSimpleNameExpression ->
-                when (nameReferenceExpression.readWriteAccess(useResolveForReadWrite = true)) {
-                    ReferenceAccess.READ -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = true))
-                    ReferenceAccess.WRITE -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = false))
-                    ReferenceAccess.READ_WRITE -> listOf(
-                        CaCfirSimpleNameReference(nameReferenceExpression, isRead = true),
-                        CaCfirSimpleNameReference(nameReferenceExpression, isRead = false),
-                    )
+                if (nameReferenceExpression.isMacroCallee()) {
+                    emptyList()
+                } else {
+                    when (nameReferenceExpression.readWriteAccess(useResolveForReadWrite = true)) {
+                        ReferenceAccess.READ -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = true))
+                        ReferenceAccess.WRITE -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = false))
+                        ReferenceAccess.READ_WRITE -> listOf(
+                            CaCfirSimpleNameReference(nameReferenceExpression, isRead = true),
+                            CaCfirSimpleNameReference(nameReferenceExpression, isRead = false),
+                        )
+                    }
                 }
             }
     }
 }
+
+/** 宏 callee 使用宏命名空间，不应同时被解析为普通 CFIR 简单名。 */
+private fun CjSimpleNameExpression.isMacroCallee(): Boolean =
+    this is CjNameReferenceExpression &&
+        (parent as? CjMacroExpression)?.referenceExpression === this
 
 /**
  * 简单名引用的读写访问分类。
@@ -197,5 +234,28 @@ private fun CjExpression.unwrapQualifiedOrWrappedExpression(): CjExpression {
             is org.cangnova.cangjie.psi.CjParenthesizedExpression -> parent
             else -> return current
         }
+    }
+}
+
+/**
+ * 调用点可提供的接收者类型文本，用于把库 `extend` 的同名成员收敛到唯一声明。
+ *
+ * 库 `extend` 成员在符号层没有 classId / dispatch receiver（primitive 接收者不属于
+ * `ConeSimpleCangJieType`），因此 `this.toString()` 这类调用只能借助 PSI 上下文定位：
+ * 所在 extend 的接收者，或显式接收者声明上的类型文本。
+ */
+private fun CjSimpleNameExpression.libraryReceiverHint(): String? {
+    val call = parent as? CjCallExpression ?: return null
+    val receiver = (call.parent as? CjDotQualifiedExpression)?.receiverExpression
+    if (receiver == null || receiver is CjThisExpression) {
+        return getStrictParentOfType<CjExtend>()?.receiverTypeReceiver?.text
+    }
+    val receiverName = receiver as? CjSimpleNameExpression ?: return null
+    val declaration = receiverName.mainReference.resolve()
+    return when (declaration) {
+        is CjParameter -> declaration.typeReference?.text
+        is CjProperty -> declaration.typeReference?.text
+        is CjVariable<*> -> declaration.typeReference?.text
+        else -> null
     }
 }

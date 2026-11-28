@@ -1,0 +1,9 @@
+FILE: tryCatchForms.cj
+    internal? class MyError <: R|Exception| {
+        init(msg: R|String|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func tryCatchForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

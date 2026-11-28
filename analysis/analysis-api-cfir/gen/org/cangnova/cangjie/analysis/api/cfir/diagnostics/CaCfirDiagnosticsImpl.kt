@@ -65,7 +65,7 @@ internal class ConflictingOverloadsImpl(
     override val conflictingSymbols: List<String>,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.ConflictingOverloads
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConflictingOverloads
 
 internal class RedeclarationImpl(
     override val conflictingSymbols: List<String>,
@@ -454,6 +454,12 @@ internal class NamedParameterNotFoundImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NamedParameterNotFound
+
+internal class UnknownNamedArgumentImpl(
+    override val argumentName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnknownNamedArgument
 
 internal class ArgumentPassedTwiceImpl(
     cfirDiagnostic: CjPsiDiagnostic,

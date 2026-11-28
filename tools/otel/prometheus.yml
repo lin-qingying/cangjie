@@ -1,0 +1,16 @@
+# Prometheus 抓取配置：只抓 collector 的 prometheus exporter。
+#
+# collector 把 OTLP 指标翻译成 Prometheus 文本格式，暴露在 :9464/metrics
+# （见 otel-collector-config.yaml 的 prometheus exporter），本配置按 5 秒间隔抓取，
+# 与 collector 的 batch 超时（5s）一致。
+#
+# 启动：docker compose -f tools/otel/docker-compose.yml up -d（prometheus 服务自带本配置）
+# 前端：http://localhost:9090
+
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: cangjie-analysis
+    static_configs:
+      - targets: ["collector:9464"]

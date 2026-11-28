@@ -30,11 +30,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.state.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.CfirResolution
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.getOrThrow
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.map
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.analysis.utils.errors.requireIsInstance
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
@@ -131,6 +135,28 @@ class LLResolutionFacade internal constructor(
      * @see org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.CfirElementBuilder.getOrBuildCfirFor
      */
     internal fun getOrBuildCfirFor(element: CjElement): CfirElement? {
+        val patternDeclaration: CjElement? = when (element) {
+            is CjNamedPattern, is CjPatternVariable, is CjFieldVariable, is CjEnumConstructor -> element
+            else -> when (val parent = element.parent) {
+                is CjBindingPattern -> parent.takeIf { it.expression === element }
+                is CjTypePattern -> parent.takeIf { it.reference === element }
+                is CjVarOrEnumPattern -> parent.takeIf { it.reference === element }
+                else -> null
+            }
+        }
+        if (patternDeclaration != null && patternDeclaration.containingCjFile.isCompiled) {
+            val owningModule = CangJieProjectStructureProvider.getModule(project, patternDeclaration, useSiteModule = null)
+            if (getModuleResolutionStrategy(owningModule) == LLModuleResolutionStrategy.STATIC) {
+                val searcher = org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirDeclarationForCompiledElementSearcher(getSessionFor(owningModule))
+                val result = when (patternDeclaration) {
+                    is CjNamedPattern -> searcher.findNonLocalPatternBinding(patternDeclaration)
+                    is CjPatternVariable -> searcher.findNonLocalDeclaration(patternDeclaration)
+                    is CjFieldVariable, is CjEnumConstructor -> searcher.findNonLocalDeclaration(patternDeclaration as CjDeclaration)
+                    else -> error("Unexpected compiled pattern target")
+                }
+                return (result as? CfirResolution.Resolved)?.value
+            }
+        }
         val moduleComponents = getModuleComponentsForElement(element)
         return moduleComponents.elementsBuilder.getOrBuildCfirFor(element)
     }
@@ -140,7 +166,7 @@ class LLResolutionFacade internal constructor(
      */
     internal fun getOrBuildCfirFile(cjFile: CjFile): CfirFile {
         val moduleComponents = getModuleComponentsForElement(cjFile)
-        return moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
+        return moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(cjFile)
     }
 
     /**
@@ -148,6 +174,12 @@ class LLResolutionFacade internal constructor(
      */
     private fun getModuleComponentsForElement(element: CjElement): LLCfirModuleResolveComponents {
         val module = getModule(element)
+        if (module is CaDanglingFileModule) {
+            val contextSession = sessionProvider.getResolvableSession(module.contextModule)
+            if (contextSession.macroSemanticSnapshot?.ownsReparsedPsi(element) == true) {
+                return contextSession.moduleComponents
+            }
+        }
         return sessionProvider.getResolvableSession(module).moduleComponents
     }
 
@@ -167,13 +199,31 @@ class LLResolutionFacade internal constructor(
 
     /**
      * 将仓颉声明 PSI 解析为对应 CFIR symbol，并按请求推进到指定 resolve phase。
+     *
+     * 该重载面向“符号必须存在”的调用点。缺失时抛出携带 [org.cangnova.cangjie.analysis.low.level.api.cfir.symbols.UnresolvedReason]
+     * 的异常，调用方应优先改用 [resolveToCfirSymbolOrUnresolved] 以按原因降级。
      */
     internal fun resolveToCfirSymbol(cjDeclaration: CjDeclaration, phase: CfirResolvePhase): CfirBasedSymbol<*> {
+        return resolveToCfirSymbolOrUnresolved(cjDeclaration, phase).getOrThrow()
+    }
+
+    /**
+     * 将仓颉声明 PSI 解析为对应 CFIR symbol；无法恢复时返回结构化缺失原因。
+     *
+     * 符号恢复是部分函数：库声明可能尚未进入索引、反编译 PSI 可能失效、局部声明没有全局身份。
+     * 这些情况以 [CfirResolution.Unresolved] 返回，而不是异常。
+     */
+    internal fun resolveToCfirSymbolOrUnresolved(
+        cjDeclaration: CjDeclaration,
+        phase: CfirResolvePhase,
+    ): CfirResolution<CfirBasedSymbol<*>> {
         val containingCjFile = cjDeclaration.containingCjFile
         val module = getModule(containingCjFile)
 
         return when (getModuleResolutionStrategy(module)) {
-            LLModuleResolutionStrategy.LAZY -> findSourceCfirSymbol(cjDeclaration).also { it.cfir.lazyResolveToPhase(phase) }
+            LLModuleResolutionStrategy.LAZY ->
+                CfirResolution.Resolved(findSourceCfirSymbol(cjDeclaration).also { it.cfir.lazyResolveToPhase(phase) })
+
             LLModuleResolutionStrategy.STATIC -> findCompiledCfirSymbol(cjDeclaration, module)
         }
     }
@@ -196,8 +246,12 @@ class LLResolutionFacade internal constructor(
             "Declaration should be resolvable module, instead it had ${targetModule::class}"
         }
 
-        val moduleComponents = sessionProvider.getResolvableSession(targetModule).moduleComponents
-        moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(sourceDeclaration.containingCjFile)
+        val moduleComponents = getModuleComponentsForElement(sourceDeclaration)
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        if (snapshot?.ownsReparsedPsi(sourceDeclaration) == true) {
+            return findSourceCfirDeclarationViaResolve(sourceDeclaration).symbol
+        }
+        moduleComponents.cfirFileBuilder.getOrBuildFileForResolution(sourceDeclaration.containingCjFile)
         val targetDeclaration = checkNotNull(moduleComponents.cache.compilationElement(sourceDeclaration) as? CjDeclaration) {
             "The source declaration must correspond to one declaration in the current target parser product."
         }
@@ -255,8 +309,10 @@ class LLResolutionFacade internal constructor(
 
     /**
      * 在 compiled/static 模块中通过反编译声明搜索器恢复 CFIR symbol。
+     *
+     * 缺失不是异常：搜索器返回结构化原因，由 Analysis API 边界决定降级方式。
      */
-    private fun findCompiledCfirSymbol(cjDeclaration: CjDeclaration, module: CaModule): CfirBasedSymbol<*> {
+    private fun findCompiledCfirSymbol(cjDeclaration: CjDeclaration, module: CaModule): CfirResolution<CfirBasedSymbol<*>> {
         requireWithAttachment(
             cjDeclaration.containingCjFile.isCompiled,
             { "`findCfirCompiledSymbol` only works on compiled declarations, but the given declaration is not compiled." },
@@ -264,10 +320,12 @@ class LLResolutionFacade internal constructor(
             withPsiEntry("declaration", cjDeclaration, module)
         }
 
-        val session = getSessionFor(module)
+        // compiled 声明属于其所在文件（library/builtins）的模块，与 use-site 无关；
+        // 用 use-site module 查会落到完成/表达式所在的 source/temp module，找不到库 class-like 符号。
+        val owningModule = CangJieProjectStructureProvider.getModule(project, cjDeclaration, useSiteModule = null)
+        val session = getSessionFor(owningModule)
         val searcher = CfirDeclarationForCompiledElementSearcher(session)
-        val cfirDeclaration = searcher.findNonLocalDeclaration(cjDeclaration)
-        return cfirDeclaration.symbol
+        return searcher.findNonLocalDeclaration(cjDeclaration).map { it.symbol }
     }
 
 }

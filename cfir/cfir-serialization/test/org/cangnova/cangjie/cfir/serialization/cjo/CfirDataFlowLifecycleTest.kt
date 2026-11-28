@@ -520,7 +520,7 @@ class CfirDataFlowLifecycleTest : SessionHolder {
         origin = CfirDeclarationOrigin.Source; attributes = CfirDeclarationAttributes.EMPTY
         isLocal = true; status = CfirDeclarationStatusImpl(Visibilities.Local)
         this.name = Name.identifier(name); symbol = CfirPatternBindingSymbol(CallableId(this.name))
-        returnTypeRef = typeRef(type); this.initializer = initializer; isVar = mutable; isTypeImplicit = implicit
+        returnTypeRef = typeRef(type); this.ownedInitializer = initializer; isVar = mutable; isTypeImplicit = implicit
     }
 
     private fun parameter(name: String, type: ConeCangJieType, owner: CfirNamedFunctionSymbol,

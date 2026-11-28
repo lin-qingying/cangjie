@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.CaNonPublicApi
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.components.CaCDocProvider
+import org.cangnova.cangjie.analysis.api.completion.CaCompletionExtensionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaCompletionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaDataFlowProvider
 import org.cangnova.cangjie.analysis.api.components.CaDefaultImportsProvider
@@ -12,12 +13,14 @@ import org.cangnova.cangjie.analysis.api.components.CaDiagnosticProvider
 import org.cangnova.cangjie.analysis.api.components.CaEvaluator
 import org.cangnova.cangjie.analysis.api.components.CaExpressionInformationProvider
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
+import org.cangnova.cangjie.analysis.api.components.CaMacroExpansionMappingProvider
 import org.cangnova.cangjie.analysis.api.components.CaImportOptimizer
 import org.cangnova.cangjie.analysis.api.components.CaOriginalPsiProvider
 import org.cangnova.cangjie.analysis.api.components.CaReferenceShortener
 import org.cangnova.cangjie.analysis.api.components.CaRenderer
 import org.cangnova.cangjie.analysis.api.components.CaResolver
 import org.cangnova.cangjie.analysis.api.components.CaScopeProvider
+import org.cangnova.cangjie.analysis.api.components.CaTypeScopeProvider
 
 import org.cangnova.cangjie.analysis.api.components.CaSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
@@ -50,9 +53,12 @@ abstract class CaBaseSession(
 
     diagnosticProvider: CaDiagnosticProvider,
     scopeProvider: CaScopeProvider,
+    typeScopeProvider: CaTypeScopeProvider,
     defaultImportProvider: CaDefaultImportsProvider,
     completionCandidateChecker: CaCompletionCandidateChecker,
+    completionExtensionCandidateChecker: CaCompletionExtensionCandidateChecker,
     expressionTypeProvider: CaExpressionTypeProvider,
+    macroExpansionMappingProvider: CaMacroExpansionMappingProvider,
     expressionInformationProvider: CaExpressionInformationProvider,
     evaluator: CaEvaluator,
     analysisScopeProvider: CaBaseAnalysisScopeProviderEx,
@@ -81,10 +87,13 @@ abstract class CaBaseSession(
 
     CaDiagnosticProvider by diagnosticProvider,
     CaScopeProvider by scopeProvider,
+    CaTypeScopeProvider by typeScopeProvider,
     CaBaseAnalysisScopeProviderEx by analysisScopeProvider,
     CaDefaultImportsProvider by defaultImportProvider,
     CaCompletionCandidateChecker by completionCandidateChecker,
+    CaCompletionExtensionCandidateChecker by completionExtensionCandidateChecker,
     CaExpressionTypeProvider by expressionTypeProvider,
+    CaMacroExpansionMappingProvider by macroExpansionMappingProvider,
     CaExpressionInformationProvider by expressionInformationProvider,
     CaEvaluator by evaluator,
     CaDataFlowProvider by dataFlowProvider,

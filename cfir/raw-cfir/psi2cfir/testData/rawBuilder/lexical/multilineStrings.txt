@@ -1,0 +1,38 @@
+FILE: multilineStrings.cj
+    internal? func multilineStringLiterals(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                STRING("
+        ")
+        local? let b: <implicit> = ...
+            initializer:
+                STRING("
+        ")
+        local? let c: <implicit> = ...
+            initializer:
+                STRING("
+        first line
+        second line
+    ")
+        local? let d: <implicit> = ...
+            initializer:
+                STRING("
+        Hello,
+        Cangjie Lang")
+        local? let e: <implicit> = ...
+            initializer:
+                STRING("
+        缩进与空行都会保留：
+
+        第二段
+    ")
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                }
+    }

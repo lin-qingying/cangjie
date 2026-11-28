@@ -1,0 +1,4 @@
+FILE: powerOperatorChain.cj
+    internal? func powerOperatorChain(a: R|Int64|, b: R|UInt64|, c: R|UInt64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

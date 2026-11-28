@@ -49,4 +49,4 @@ val CaCallResolutionAttempt.calls: List<CaCall>
  * 对齐 Kotlin Analysis API 的 `KaSymbolResolutionAttempt`:
  * 与 [CaCallResolutionAttempt] 类似,只作为符号级解析过程的稳定锚点。
  */
-sealed interface CaSymbolResolutionAttempt : CaLifetimeOwner
+

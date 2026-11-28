@@ -55,7 +55,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val enumName: Name
     }
 
-    interface ConflictingOverloads : CaCfirDiagnostic<CjNamedDeclaration> {
+    interface ConflictingOverloads : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = ConflictingOverloads::class
         val conflictingSymbols: List<String>
     }
@@ -383,6 +383,11 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface NamedParameterNotFound : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = NamedParameterNotFound::class
         val parameterName: Name
+    }
+
+    interface UnknownNamedArgument : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = UnknownNamedArgument::class
+        val argumentName: Name
     }
 
     interface ArgumentPassedTwice : CaCfirDiagnostic<PsiElement> {

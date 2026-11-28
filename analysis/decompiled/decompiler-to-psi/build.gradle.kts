@@ -16,11 +16,14 @@ dependencies {
     implementation(project(":cfir:cfir-common"))
     implementation(project(":cfir:cfir-tree"))
     implementation(project(":cfir:cfir-serialization"))
+    testImplementation(project(":cfir:resolve"))
     implementation(project(":flatbuffers-gen"))
     implementation(libs.flatbuffers.java)
 
     testImplementation(intellijCore())
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-standalone")))
+    testImplementation(testFixtures(project(":cfir:analysis-tests")))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

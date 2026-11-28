@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEvent
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEventListener
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
  * [LLCfirSessionInvalidationService] listens to [modification events][org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEvent]
@@ -65,6 +66,11 @@ class LLCfirSessionInvalidationService(private val project: Project) {
      */
     fun invalidateAll(includeLibraryModules: Boolean, diagnosticInformation: String? = null) {
         invalidator.invalidateAll(includeLibraryModules, diagnosticInformation)
+    }
+
+    /** 仅在宏发布写屏障中逐出实际依赖方的旧 IMPORTS/body/符号缓存；不逐出 producing session。 */
+    internal fun invalidateDependentsAfterMacroPublication(module: CaModule) {
+        invalidator.invalidateDependentsAfterMacroPublication(module)
     }
 
     companion object {

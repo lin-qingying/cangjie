@@ -59,7 +59,7 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker(MppCheckerKind.Commo
         if (firstDeclarationInCycle.valueTypeClassId() != declaration.valueTypeClassId()) return
 
         reporter.reportOn(
-            source = declaration.source?.firstCharacterDiagnosticSource(),
+            source = declaration.classLikeWholeDeclarationDiagnosticSource(),
             factory = CfirErrors.VALUE_TYPE_RECURSIVE,
         )
     }

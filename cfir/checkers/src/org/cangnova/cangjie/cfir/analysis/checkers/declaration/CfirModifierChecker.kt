@@ -37,6 +37,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.CjmpLanguageFeature
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.supportsCjmpFeature
 
 /**
@@ -54,7 +55,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) 
         val source = declaration.source ?: return
         if (declaration is CfirConstructor && declaration.isPrimary && !source.isConstructorSource()) return
 
-        val modifiers = source.realSourceModifiers() ?: return
+        val modifiers = source.realSourceModifiers()?.map { modifier ->
+            modifier.copy(source = context.session.macroExpansionRegistry?.projectDiagnosticSource(modifier.source) ?: modifier.source)
+        } ?: return
         val semanticModifiers = modifiers.filterNot { modifier ->
             modifier.token == CjTokens.COMMON_KEYWORD || modifier.token == CjTokens.SPECIFIC_KEYWORD ||
                     (modifier.token == CjTokens.PLATFORM_KEYWORD &&
@@ -194,8 +197,10 @@ object CfirModifierChecker : CfirBasicDeclarationChecker(MppCheckerKind.Common) 
             )
             if (callable.hasInheritedNonStaticSignatureIgnoringStatic()) {
                 reporter.reportOn(
-                    callable.source,
-                    CfirErrors.NOTHING_TO_OVERRIDE,
+                    redefModifier.source,
+                    CfirErrors.REDUNDANT_MODIFIER_FOR_TARGET,
+                    redefModifier.token,
+                    "inherited instance member",
                 )
             }
         }

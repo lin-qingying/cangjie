@@ -360,6 +360,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformFieldVariable(fieldVariable, data)
     }
 
+    open fun transformResourceVariable(resourceVariable: CfirResourceVariable, data: D): CfirStatement {
+        return transformElement(resourceVariable, data)
+    }
+
+    final override fun visitResourceVariable(resourceVariable: CfirResourceVariable, data: D): CfirStatement {
+        return transformResourceVariable(resourceVariable, data)
+    }
+
     open fun transformPatternVariable(patternVariable: CfirPatternVariable, data: D): CfirStatement {
         return transformElement(patternVariable, data)
     }

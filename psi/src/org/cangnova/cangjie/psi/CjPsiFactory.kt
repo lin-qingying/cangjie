@@ -588,6 +588,18 @@ class CjPsiFactory private constructor(
     }
 
     /**
+     * 创建类型代码片段（片段文本是一段类型引用）。
+     *
+     * 三种片段各有自己的 `CjNodeTypes` 内容节点，因此不能复用块/表达式片段的构造：
+     * 类型片段的 `getContentElement` 取的是 `CjTypeReference`，而块片段取语句列表。
+     * 补这个入口是因为此前**类与文件类型都在、只缺工厂**——调用方只能自己 new，
+     * 于是「类型片段」这条路在测试里根本走不到（3.7 的验收要求表达式与类型各一组）。
+     */
+    fun createTypeCodeFragment(@NonNls text: String, context: PsiElement?): CjTypeCodeFragment {
+        return CjTypeCodeFragment(project, "fragment.cj", text, context)
+    }
+
+    /**
      * 提供 `createSemicolon` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun createSemicolon(): PsiElement {
@@ -783,6 +795,7 @@ class CjPsiFactory private constructor(
         @NonNls fileName: String,
         @NonNls text: String,
         fileType: com.intellij.openapi.fileTypes.FileType = CangJieFileType.INSTANCE,
+        annotationModuleProvenance: ((Int) -> String?)? = null,
     ): CjFile {
         // 先读取外部 context，再创建新文件，避免新文件解析时回入自己的 package PSI。
         val parserModuleName = if (inheritLanguageModuleFromContext && context != null) {
@@ -802,6 +815,7 @@ class CjPsiFactory private constructor(
         file.parserSourceKind = explicitSourceKind
         file.cjmpParsingContext = explicitCjmpContext ?: (context?.containingFile as? CjFile)?.cjmpParsingContext
             ?: CjmpParsingContext.SyntaxOnly
+        file.putUserData(org.cangnova.cangjie.parsing.ANNOTATION_MODULE_PROVENANCE, annotationModuleProvenance)
         // 平台 markGenerated 会先展开 AST；解析输入必须在它之前发布。
         if (markGenerated) PsiFileFactoryImpl.markGenerated(file)
         return file
@@ -810,12 +824,12 @@ class CjPsiFactory private constructor(
     /**
      * 使用 annotation-only 入口创建 PSI 文件，供自定义注解和宏属性重解析；保留输入文本的偏移。
      */
-    fun createAnnotationOnlyFile(@NonNls text: String): CjFile {
+    fun createAnnotationOnlyFile(@NonNls text: String, annotationModuleProvenance: ((Int) -> String?)? = null): CjFile {
         // 这里是 parser mode 契约，不是文件名提示：宏调用 FileType 必须配套
         // 注册宏调用语言的 ParserDefinition，才能创建 CjMacroCallFile，并由
         // source kind 选择 annotation-only grammar、保留自定义注解的 [] 参数。
         ensureMacroCallParserDefinition()
-        val file = doCreateFile("dummy.cj.macrocall", text, CangJieMacroCallFileType)
+        val file = doCreateFile("dummy.cj.macrocall", text, CangJieMacroCallFileType, annotationModuleProvenance)
 
         val elementContext = this@CjPsiFactory.context
         if (elementContext != null) {

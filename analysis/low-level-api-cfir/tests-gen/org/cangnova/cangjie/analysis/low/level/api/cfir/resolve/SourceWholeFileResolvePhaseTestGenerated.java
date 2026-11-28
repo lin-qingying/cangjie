@@ -25,6 +25,12 @@ public class SourceWholeFileResolvePhaseTestGenerated extends AbstractSourceWhol
   }
 
   @Test
+  @TestMetadata("extendMember.cj")
+  public void testExtendMember() {
+    run("extendMember.cj");
+  }
+
+  @Test
   @TestMetadata("interfaceStatus.cj")
   public void testInterfaceStatus() {
     run("interfaceStatus.cj");

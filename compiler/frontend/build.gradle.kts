@@ -10,6 +10,8 @@ dependencies {
     implementation(project(":cfir:entrypoint"))
     implementation(project(":macro:macro-common"))
     implementation(project(":macro:macro-process"))
+    implementation(project(":chir:cfir2chir"))
+    implementation(project(":compiler:jvm-codegen"))
 
     compileOnly(intellijCore())
     testImplementation(intellijCore())

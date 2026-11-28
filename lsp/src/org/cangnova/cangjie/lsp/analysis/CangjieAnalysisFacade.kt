@@ -126,6 +126,20 @@ interface CangjieAnalysisFacade : AutoCloseable {
     ): Either<List<CompletionItem>, CompletionList>
 
     /**
+     * 补齐候选的文档（LSP `completionItem/resolve`）。
+     *
+     * 文档**延迟到这一刻**才算：候选快照按契约不持有符号或会话，而查文档必须重进分析；
+     * 若在生成候选时顺手算好，每个候选都要背一份渲染结果，而绝大多数候选永远不会被查看。
+     *
+     * 默认返回原样：实现不支持、会话已过期、恢复不出声明时都**只是不填文档**——
+     * 候选本身仍然可用，`resolve` 失败不该让候选消失。
+     */
+    fun resolveCompletionItem(
+        context: CangjieAnalysisRequestContext,
+        item: CompletionItem,
+    ): CompletionItem = item
+
+    /**
      * 计算指定文档位置的悬停信息。
      */
     fun hover(
@@ -224,6 +238,19 @@ interface CangjieAnalysisFacade : AutoCloseable {
     ): List<Either<Command, CodeAction>>
 
     /**
+     * 补齐 code action 的编辑（LSP `codeAction/resolve`）。
+     *
+     * 编辑**延迟到这一刻**才算：列表阶段不修改任何 PSI，用户真正选中动作后才进入
+     * headless 写路径。默认返回原样：实现不支持、诊断已消失、应用后无差异时
+     * **只是不填编辑**——动作本身仍然可用，resolve 失败不该让动作消失。
+     */
+    fun resolveCodeAction(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CodeAction,
+    ): CodeAction = params
+
+    /**
      * 计算文档格式化产生的文本编辑。
      */
     fun formatting(
@@ -294,6 +321,20 @@ interface CangjieAnalysisFacade : AutoCloseable {
         document: LspTextDocument,
         params: InlayHintParams,
     ): List<InlayHint>
+
+    /**
+     * 补齐 inlay hint 的悬浮提示/跳转（LSP `inlayHint/resolve`）。
+     *
+     * 默认返回原样：P0 阶段 hint 在列表请求时已经渲染成最终文本，`resolve` 只是协议
+     * 上被广告出去的那条链路——未实装时必须原样返回，**不能**走 `unsupported()`：
+     * 抛异常会让客户端把一条本来可用的提示当成错误。
+     *
+     * P3 才会把 label/tooltip 延迟到这一刻计算（经会话存储按 hint.data 回查）。
+     */
+    fun resolveInlayHint(
+        context: CangjieAnalysisRequestContext,
+        hint: InlayHint,
+    ): InlayHint = hint
 
     /**
      * 释放分析 facade 持有的资源。

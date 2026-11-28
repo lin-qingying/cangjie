@@ -24,14 +24,36 @@
 
 package org.cangnova.cangjie.psi
 
-import org.cangnova.cangjie.lexer.CjTokens
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
+import com.intellij.psi.tree.IElementType
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * 表示 `CjRangeExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjRangeExpression(node: ASTNode) : CjBinaryExpression(node), CjReferenceExpression {
+class CjRangeExpression(node: ASTNode) : CjRangeExpressionBase(node), CjOperationExpression, CjReferenceExpression {
+    /** 为现有 PSI 调用方保留端点别名；新代码应使用 [startExpression] 和 [stopExpression]。 */
+    @Deprecated("Use startExpression for a range endpoint")
+    val left: CjExpression?
+        get() = startExpression
+
+    /** 为现有 PSI 调用方保留端点别名；新代码应使用 [startExpression] 和 [stopExpression]。 */
+    @Deprecated("Use stopExpression for a range endpoint")
+    val right: CjExpression?
+        get() = stopExpression
+
+    override val operationReference: CjOperationReferenceExpression
+        get() = findChildByType(CjStubElementTypes.OPERATION_REFERENCE)
+            ?: error("No operation reference for range expression")
+
+    val operationToken: IElementType
+        get() = rangeOperatorToken
+
+    override val rangeOperatorNode: ASTNode
+        get() = operationReference.node
+
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -42,8 +64,8 @@ class CjRangeExpression(node: ASTNode) : CjBinaryExpression(node), CjReferenceEx
     /**
      * 提供 `getInnerExpressions` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
-    fun getInnerExpressions(): List<CjExpression> {
-        return listOfNotNull(left, right, step)
+    override fun getInnerExpressions(): List<CjExpression> {
+        return listOfNotNull(startExpression, stopExpression, step)
     }
 
     /**
@@ -64,4 +86,5 @@ class CjRangeExpression(node: ASTNode) : CjBinaryExpression(node), CjReferenceEx
 
             return null
         }
+
 }

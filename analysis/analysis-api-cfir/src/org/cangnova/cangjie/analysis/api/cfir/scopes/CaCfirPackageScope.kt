@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
@@ -81,6 +82,11 @@ internal class CaCfirPackageScope(
     override fun classifiers(names: Collection<Name>): Sequence<CaClassifierSymbol> = withValidityAssertion {
         firScope.getClassifierSymbols(names, analysisSession.cfirSymbolBuilder)
     }
+
+    /**
+     * 包作用域没有类型参数：类型参数只存在于泛型声明的声明体内。
+     */
+    override fun typeParameters(nameFilter: (Name) -> Boolean): Sequence<CaTypeParameterSymbol> = emptySequence()
 
     /**
      * 包作用域不直接提供构造器集合。

@@ -281,6 +281,9 @@ open class CfirReferenceRenderer {
         is CfirSuperReference -> "super"
         is CfirErrorReference -> "ERROR_REF(${reference.reason})"
         is CfirControlFlowGraphReference -> "<cfg-ref>"
+        // select 尚未建立候选时的正式无状态引用，不包含可渲染的声明目标。
+        CfirStubReference -> "<stub-ref>"
+
     }
 }
 
@@ -552,10 +555,7 @@ class CfirRenderer(
             print("FILE: ")
             println(file.name)
             printer.pushIndent()
-            annotationRenderer?.render(file, trailingSpace = false)
-            if (file.annotations.isNotEmpty()) {
-                printer.newLine()
-            }
+            annotationRenderer?.render(file, terminatesLine = true)
             file.featuresDirective?.accept(this)
             file.packageDirective.accept(this)
             file.imports.forEach { it.accept(this) }
@@ -573,12 +573,13 @@ class CfirRenderer(
             }
         }
 
-        /** 渲染文件前导 `features` metadata。 */
+        /**
+         * 渲染文件前导 `features` metadata。
+         *
+         * 注解独占一行，换行由注解渲染器发出；这里不能再补 `newLine()`。
+         */
         override fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective) {
-            annotationRenderer?.render(featuresDirective, trailingSpace = false)
-            if (featuresDirective.annotations.isNotEmpty()) {
-                printer.newLine()
-            }
+            annotationRenderer?.render(featuresDirective, terminatesLine = true)
             println("features {")
             printer.pushIndent()
             featuresDirective.featureIds.forEachIndexed { index, featureId ->
@@ -1291,9 +1292,8 @@ class CfirRenderer(
          * 渲染匿名函数表达式。
          */
         override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) {
-            val lambda = anonymousFunctionExpression
             print("LAMBDA(")
-            lambda.anonymousFunction.valueParameters.forEachIndexed { index, param ->
+            anonymousFunctionExpression.anonymousFunction.valueParameters.forEachIndexed { index, param ->
                 if (index > 0) print(", ")
                 print(param.name.asString())
                 print(": ")
@@ -1301,7 +1301,7 @@ class CfirRenderer(
             }
             println(") {")
             printer.pushIndent()
-            lambda.anonymousFunction.body?.accept(this)
+            anonymousFunctionExpression.anonymousFunction.body?.accept(this)
             printer.popIndent()
             println("}")
         }

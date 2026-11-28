@@ -36,12 +36,12 @@ fun interface CaPropertyAccessorsRenderer {
                     "\n".separated(
                         {
                             toRender.filterIsInstance<CaPropertyGetterSymbol>().firstOrNull()?.let { getter ->
-                                declarationRenderer.getterRenderer.renderSymbol(analysisSession, getter, declarationRenderer, printer)
+                                declarationRenderer.renderDeclaration(analysisSession, getter, printer)
                             }
                         },
                         {
                             toRender.filterIsInstance<CaPropertySetterSymbol>().firstOrNull()?.let { setter ->
-                                declarationRenderer.setterRenderer.renderSymbol(analysisSession, setter, declarationRenderer, printer)
+                                declarationRenderer.renderDeclaration(analysisSession, setter, printer)
                             }
                         },
                     )
@@ -62,12 +62,12 @@ fun interface CaPropertyAccessorsRenderer {
                     "\n".separated(
                         {
                             toRender.filterIsInstance<CaPropertyGetterSymbol>().firstOrNull()?.let { getter ->
-                                declarationRenderer.getterRenderer.renderSymbol(analysisSession, getter, declarationRenderer, printer)
+                                declarationRenderer.renderDeclaration(analysisSession, getter, printer)
                             }
                         },
                         {
                             toRender.filterIsInstance<CaPropertySetterSymbol>().firstOrNull()?.let { setter ->
-                                declarationRenderer.setterRenderer.renderSymbol(analysisSession, setter, declarationRenderer, printer)
+                                declarationRenderer.renderDeclaration(analysisSession, setter, printer)
                             }
                         },
                     )

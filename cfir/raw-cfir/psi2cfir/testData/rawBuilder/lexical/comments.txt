@@ -1,0 +1,32 @@
+FILE: comments.cj
+    internal? func comments(): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                INT(1)
+        local? let b: <implicit> = ...
+            initializer:
+                INT(2)
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                STRING("字符串里的 // 与 /* 都只是字符")
+        local? let e: <implicit> = ...
+            initializer:
+                STRING("另一个 /* 字符串")
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                }
+        RETURN {
+            NAMED_ACCESS(c)
+        }
+    }

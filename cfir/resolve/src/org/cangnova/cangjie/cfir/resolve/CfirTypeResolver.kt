@@ -40,28 +40,36 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.body.CfirImportedPackageQualifier
+import org.cangnova.cangjie.cfir.resolve.body.hasExplicitSimpleImportBinding
 import org.cangnova.cangjie.cfir.resolve.body.resolveImportedPackageQualifier
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
+import org.cangnova.cangjie.cfir.resolve.providers.macro.isOfficialStdlibMacroPackage
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.source.psi
 
 /**
  * CFIR 类型解析器抽象。
@@ -103,7 +111,7 @@ data class CfirTypeResolutionResult(
      */
     val type: ConeCangJieType,
     /**
-     * 类型解析产生的诊断；成功解析时为空。
+     * 类型解析产生的诊断。特定诊断可以与成功解析出的真实类型同时存在。
      */
     val diagnostic: ConeDiagnostic?,
 )
@@ -112,6 +120,19 @@ data class CfirTypeResolutionResult(
  * `This` 类型出现在非法位置时的默认说明。
  */
 private const val THIS_TYPE_NOT_ALLOWED_REASON = "This type is only allowed as an instance member function return type"
+
+/**
+ * 判断 callable 是否属于宏命名空间。
+ *
+ * 外部 `.cjo` 可能把宏注解暴露成普通函数，因此不能只依赖 [CfirMacroDeclarationSymbol]：
+ * 官方标准宏包与当前 session 已声明的宏包同样携带宏身份。
+ */
+internal fun CfirCallableSymbol<*>.isMacroLikeName(session: CfirSession): Boolean {
+    if (this is CfirMacroDeclarationSymbol) return true
+    val packageFqName = callableId.packageName
+    if (isOfficialStdlibMacroPackage(packageFqName)) return true
+    return session.macroExpansionRegistry?.isDeclaredMacroPackage(packageFqName) == true
+}
 
 /**
  * 默认 CFIR 类型解析器实现。
@@ -145,7 +166,10 @@ class CfirTypeResolverImpl(
         expandTypeAliases: Boolean,
     ): CfirTypeResolutionResult {
         return when (typeRef) {
-            is CfirErrorTypeRef -> result(ConeErrorType(typeRef.diagnostic))
+            is CfirErrorTypeRef -> CfirTypeResolutionResult(
+                type = typeRef.coneType,
+                diagnostic = typeRef.diagnostic,
+            )
 
             is CfirResolvedTypeRef -> result(typeRef.coneType)
             is CfirImplicitTypeRef -> result(ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage")))
@@ -259,6 +283,10 @@ class CfirTypeResolverImpl(
             }
         }
 
+        enumConstructorUsedAsTypeDiagnostic(typeRef, configuration)?.let { diagnostic ->
+            return result(ConeErrorType(diagnostic))
+        }
+
         val resolvedQualifier = resolveQualifiedClassLike(typeRef, configuration)
         val finalQualifier = typeRef.qualifier.last()
         val resolvedArguments = resolveTypeArguments(
@@ -311,7 +339,34 @@ class CfirTypeResolverImpl(
         )
         // 分类器已经成功解析时必须保留外层名义类型。错误类型实参由其自身 type ref 负责报告，
         // 不能提升为顶层 ConeErrorType，否则会丢失成员作用域与 owner substitution 所需的 classId。
-        return result(resolvedType)
+        return CfirTypeResolutionResult(
+            type = resolvedType,
+            diagnostic = resolvedQualifier.diagnostic,
+        )
+    }
+
+    /**
+     * enum constructor 名称可以出现在限定值访问中，但不是 classifier。
+     * 类型解析先按相同的作用域与 namespace 规则解析 owner，再由该 enum 声明判断最终成员名，
+     * 使 `Enum.Constructor` 在类型位置稳定地产生 NOT_A_TYPE，而不会误报未声明类型。
+     */
+    private fun enumConstructorUsedAsTypeDiagnostic(
+        typeRef: CfirUserTypeRef,
+        configuration: TypeResolutionConfiguration,
+    ): ConeNotATypeError? {
+        if (typeRef.qualifier.size < 2) return null
+
+        val ownerTypeRef = buildUserTypeRef {
+            source = typeRef.source
+            annotations += typeRef.annotations
+            qualifier += typeRef.qualifier.dropLast(1)
+        }
+        val owner = resolveQualifiedClassLike(ownerTypeRef, configuration).declaration as? CfirEnum ?: return null
+        val constructorName = typeRef.qualifier.last().name
+        return owner.declarations
+            .filterIsInstance<CfirEnumConstructor>()
+            .firstOrNull { it.name == constructorName }
+            ?.let { ConeNotATypeError(constructorName) }
     }
 
     /**
@@ -458,7 +513,11 @@ class CfirTypeResolverImpl(
                 return QualifiedClassLikeResolution(
                     classId = null,
                     declaration = null,
-                    diagnostic = ConeNotATypeError(lastQualifier.name),
+                    diagnostic = notATypeDiagnostic(
+                        typeRef = typeRef,
+                        name = lastQualifier.name,
+                        isMacroOnly = !simpleNameLookup.hasNonMacroBinding,
+                    ),
                 )
             }
             val scopeCandidates = (
@@ -480,10 +539,14 @@ class CfirTypeResolverImpl(
             return if (declaration != null) {
                 QualifiedClassLikeResolution(classId, declaration, null)
             } else {
-                val diagnostic = if (simpleNameResolvesToCallable(lastQualifier.name, configuration)) {
-                    ConeNotATypeError(lastQualifier.name)
-                } else {
-                    ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+                val callables = visibleCallablesForTypeName(lastQualifier.name, configuration)
+                val diagnostic = when {
+                    callables.isEmpty() -> ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+                    else -> notATypeDiagnostic(
+                        typeRef = typeRef,
+                        name = lastQualifier.name,
+                        isMacroOnly = callables.all { callable -> callable.isMacroLikeName(session) },
+                    )
                 }
                 QualifiedClassLikeResolution(classId, null, diagnostic)
             }
@@ -511,15 +574,33 @@ class CfirTypeResolverImpl(
             is CfirImportedPackageQualifier.UniquePackage -> {
                 val packageSegments = importedPackageQualifier.target.fqName.pathSegments() +
                         qualifierNames.drop(1).dropLast(1)
-                return resolveQualifiedClassLikeInPackage(
-                    packageFqName = packageSegments.toFqName(),
+                return resolveQualifiedClassLikeInNamespace(
+                    namespaceContext = CfirImportNamespaceContext(
+                        packageFqName = packageSegments.toFqName(),
+                        organizationName = importedPackageQualifier.target.organizationName,
+                    ),
                     lastQualifier = lastQualifier,
                     typeRef = typeRef,
                     configuration = configuration,
+                    reportUnresolvedFirstSegment = false,
                 )
             }
 
             null -> Unit
+        }
+
+        val useSiteFile = configuration.useSiteFile
+        if (useSiteFile != null && !useSiteFile.hasExplicitSimpleImportBinding(firstName, session)) {
+            return resolveQualifiedClassLikeInNamespace(
+                namespaceContext = CfirImportNamespaceContext(
+                    packageFqName = qualifierNames.dropLast(1).toFqName(),
+                    organizationName = null,
+                ),
+                lastQualifier = lastQualifier,
+                typeRef = typeRef,
+                configuration = configuration,
+                reportUnresolvedFirstSegment = true,
+            )
         }
 
         return QualifiedClassLikeResolution(
@@ -530,48 +611,83 @@ class CfirTypeResolverImpl(
     }
 
     /**
-     * 在已经确定的真实包中解析 class-like。
+     * 在 provider 给出的 package namespace 中解析限定 classifier。
      *
-     * 调用方负责先消解源码首段是否为 imported-package binding；进入这里后，候选聚合、
-     * 重声明歧义和“已声明但不是类型”诊断都只基于最终包身份执行。
+     * 源码裸 FQN 与显式包导入都通过同一 namespace 协议查询；裸 FQN 不附加组织约束，
+     * 显式导入则保留绑定目标的组织身份。候选只来自该 namespace，再由统一 collector
+     * 负责可访问性，避免按 ClassId 重新聚合出 namespace 之外的声明。
+     *
+     * [reportUnresolvedFirstSegment] 为 true 时，即使 namespace 能定位到 classifier，也要为
+     * 「首段没有绑定到任何名字」这件事报告**官方口径**的诊断。
      */
-    private fun resolveQualifiedClassLikeInPackage(
-        packageFqName: FqName,
+    private fun resolveQualifiedClassLikeInNamespace(
+        namespaceContext: CfirImportNamespaceContext,
         lastQualifier: CfirQualifierPart,
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
+        reportUnresolvedFirstSegment: Boolean,
     ): QualifiedClassLikeResolution {
-        val fullPackageFqName = packageFqName
-        val fullClassId = ClassId(fullPackageFqName, lastQualifier.name)
-        val candidates = classLikeCandidates(
-            fullClassId,
+        val namespace = session.symbolProvider.getImportNamespace(namespaceContext)
+        if (!namespace.hasPackage(includeSubpackages = false)) {
+            return QualifiedClassLikeResolution(
+                classId = null,
+                declaration = null,
+                diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier),
+            )
+        }
+
+        val candidates = CfirTypeCandidateCollector(
+            session = session,
+            context = configuration.accessContext(CfirAccessKind.TYPE),
+        ).collectPackageNamespaceCandidates(
+            symbols = namespace.classifiers(lastQualifier.name),
             lookupOrigin = CfirLookupOrigin.QUALIFIED_PACKAGE,
-            configuration = configuration,
         )
-        classifierRedeclarationAmbiguity(typeRef, candidates)?.let { diagnostic ->
-            return QualifiedClassLikeResolution(fullClassId, null, diagnostic)
+        val classLikeCandidates = candidates.mapNotNull { it.symbol as? CfirClassLikeSymbol<*> }
+        classifierRedeclarationAmbiguity(typeRef, classLikeCandidates)?.let { diagnostic ->
+            return QualifiedClassLikeResolution(
+                classId = classLikeCandidates.firstOrNull()?.classId,
+                declaration = null,
+                diagnostic = diagnostic,
+            )
         }
-        candidates.singleOrNull()?.cfir?.let { declaration ->
-            return QualifiedClassLikeResolution(fullClassId, declaration, null)
+        candidates.singleOrNull()?.let { candidate ->
+            val symbol = candidate.symbol as CfirClassLikeSymbol<*>
+            return QualifiedClassLikeResolution(
+                classId = symbol.classId,
+                declaration = symbol.cfir,
+                /*
+                 * 官方 `cjc 1.0.5` 对「把未导入的包前缀写进类型位置」报
+                 * `sema_undeclared_type_name`（首个未绑定段），而不是
+                 * `sema_cannot_ref_to_pkg_name`；后者官方只在**表达式位置**独立引用包名时发出
+                 * （`external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:344-352`）。
+                 * 因此这里仍按 IDE 恢复需要保留 namespace 解析结果，但诊断身份与官方对齐。
+                 */
+                diagnostic = if (reportUnresolvedFirstSegment) {
+                    ConeUnresolvedTypeQualifierError(typeRef.qualifier.take(1))
+                } else {
+                    null
+                },
+            )
         }
-        if (packageExists(fullPackageFqName)) {
-            val topLevelCallables = session.symbolProvider.getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name)
-            if (topLevelCallables.isNotEmpty()) {
-                // 官方语义：宏名是合法的宏调用/注解目标（`@Pkg.MacroName`），不算 NOT_A_TYPE；
-                // 交给 macro demand classification 按名字裁决。
-                if (topLevelCallables.all { it is CfirMacroDeclarationSymbol }) {
-                    return QualifiedClassLikeResolution(fullClassId, null, null)
-                }
+
+        val callables = namespace.callables(lastQualifier.name)
+            .filterNot { it is CfirEnumConstructorSymbol }
+        if (callables.isNotEmpty()) {
+            // 宏注解继续交由宏名解析路径处理；普通 callable 在类型位置报告 not-a-type。
+            val annotationMacroName = typeRef.isAnnotationTypeReference() &&
+                callables.all { callable -> callable.isMacroLikeName(session) }
+            if (annotationMacroName) {
                 return QualifiedClassLikeResolution(
-                    fullClassId,
-                    null,
-                    ConeNotATypeError(lastQualifier.name),
+                    classId = null,
+                    declaration = null,
+                    diagnostic = null,
                 )
             }
             return QualifiedClassLikeResolution(
-                fullClassId,
-                null,
-                ConeUnresolvedTypeQualifierError(typeRef.qualifier),
+                classId = null,
+                declaration = null,
+                diagnostic = ConeNotATypeError(lastQualifier.name),
             )
         }
 
@@ -581,6 +697,7 @@ class CfirTypeResolverImpl(
             diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier),
         )
     }
+
 
     /**
      * 将同一 ClassId 下的 classifier 重声明转换为类型使用位置的候选级歧义。
@@ -710,18 +827,49 @@ class CfirTypeResolverImpl(
     }
 
     /**
-     * 判断简单类型名称是否已经解析到当前可见的顶层 callable。
-     *
-     * 类型解析仍以 classifier namespace 为主；只有 classifier 全部解析失败后才调用该入口，
-     * 因而 callable 只负责把“未声明”细化为“已声明但不是类型”，不会抢占同名类型声明。
+     * 判断类型引用是否位于注解名位置。
      */
-    private fun simpleNameResolvesToCallable(
+    private fun CfirUserTypeRef.isAnnotationTypeReference(): Boolean {
+        val parent = source?.psi?.parent
+        return parent is org.cangnova.cangjie.psi.CjAnnotation ||
+            parent is org.cangnova.cangjie.psi.CjMacroExpression
+    }
+
+    /**
+     * 类型位置上的名称已解析到 callable 时的诊断。
+     *
+     * 官方把注解名（`@Name`）当作宏调用目标：只有宏名（宏声明或宏包中的 callable）在注解
+     * 位置不报类型诊断；普通函数注解仍应暴露为“已声明但不是类型”，不能静默变成空诊断。
+     * 非注解类型位置（例如 `let x: MacroName`）仍按官方 `PreCheck` 报 `NOT_A_TYPE`。
+     */
+    private fun notATypeDiagnostic(
+        typeRef: CfirUserTypeRef,
+        name: Name,
+        isMacroOnly: Boolean,
+    ): ConeDiagnostic {
+        val diagnostic = ConeNotATypeError(name)
+        return if (isMacroOnly && typeRef.isAnnotationTypeReference()) {
+            ConeUnreportedDuplicateDiagnostic(diagnostic)
+        } else {
+            diagnostic
+        }
+    }
+
+    /**
+     * 返回类型位置简单名在第一个可见 scope 中解析到的全部 callable。
+     *
+     * 只有 classifier namespace 全部解析失败后才调用该入口；返回 callable 列表是为了让
+     * 调用方区分“宏名注解”和“普通函数注解”，而不是把所有 callable 当成同一类。
+     */
+    private fun visibleCallablesForTypeName(
         shortName: Name,
         configuration: TypeResolutionConfiguration,
-    ): Boolean {
+    ): List<CfirCallableSymbol<*>> {
         for (scope in configuration.scopes) {
-            var found = false
+            val callables = mutableListOf<CfirCallableSymbol<*>>()
             scope.processCallablesByName(shortName) { symbol ->
+                // enum 构造器不是类型，也不是宏注解目标；其类型位置诊断由专用路径处理。
+                if (symbol is CfirEnumConstructorSymbol) return@processCallablesByName
                 if (
                     session.accessibilityChecker.checkCallable(
                         symbol,
@@ -730,12 +878,12 @@ class CfirTypeResolverImpl(
                         ),
                     ) is CfirAccessibilityResult.Accessible
                 ) {
-                    found = true
+                    callables += symbol
                 }
             }
-            if (found) return true
+            if (callables.isNotEmpty()) return callables
         }
-        return false
+        return emptyList()
     }
 
     /**
@@ -751,7 +899,7 @@ class CfirTypeResolverImpl(
          */
         val declaration: CfirClassLikeDeclaration?,
         /**
-         * 解析失败时携带的诊断。
+         * 解析失败诊断，或与成功解析类型并存的限定名诊断。
          */
         val diagnostic: ConeDiagnostic?,
     )

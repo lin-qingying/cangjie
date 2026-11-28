@@ -24,13 +24,17 @@
 
 package org.cangnova.cangjie.cfir.calls
 
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.buildImplicitThisReference
@@ -84,6 +88,7 @@ sealed interface ReceiverValue {
  *
  * @property receiverExpression 原始表达式 receiver。
  */
+@OptIn(CfirImplementationDetail::class)
 class ExpressionReceiverValue(
     /**
      * 调用点显式写出的 receiver 表达式，后续类型与 qualifier scope 都从该表达式读取。
@@ -119,6 +124,7 @@ class ExpressionReceiverValue(
  * @property session receiver 所属 use-site session。
  * @property scopeSession 成员 scope 缓存会话。
  */
+@OptIn(CfirImplementationDetail::class)
 sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
     /**
      * 隐式 receiver 绑定的 this owner symbol，用于构造 implicit-this 引用和成员归属。
@@ -386,8 +392,16 @@ private fun CfirSession.cjmpMemberScopeView(): CfirCjmpMemberScopeView =
 
 /**
  * 将 receiver 类型转换为可查找成员的类型 scope。
+ *
+ * 该函数是**接收者查找与 Analysis 类型作用域共用的唯一接缝**（任务 4.2）：它统一处理类型变量上界、
+ * 交叉类型、ideal literal、primitive extend 与普通 class-like 类型，并始终以**完整 Cone 类型**
+ * （而非 class-like 声明）为 owner 构造成员 scope——同一泛型声明的不同实例拥有不同成员签名，
+ * 按 ClassId 复用会把 `Box<Int64>` 的成员当成 `Box<String>` 的。
+ * 需要"实际类型实参、上界、intersection、builtin extend、继承替换"任一项的调用方都应走这里，
+ * 不要各自复制一份 scope 构造。
  */
-private fun typeToScope(
+@CfirImplementationDetail
+fun typeToScope(
     session: CfirSession,
     scopeSession: ScopeSession,
     type: ConeCangJieType,
@@ -426,6 +440,23 @@ private fun collectTypeScopes(
     visitedTypes: MutableSet<ConeCangJieType>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
 ) {
+    // typealias 不是独立的成员来源：成员集合与类型替换都按**展开后的真实类型**计算。
+    // 不展开时会退到别名自身的 classId，别名类型的接收者要么找不到成员、要么拿到未替换的签名
+    // （Analysis 侧 `typealias IntBoxAlias = Box<Int64>` 的类型作用域就取不到成员）。
+    val expandedAliasType = (type as? ConeTypeAliasType)?.expandedType
+    if (expandedAliasType != null) {
+        collectTypeScopes(
+            session = session,
+            scopeSession = scopeSession,
+            type = expandedAliasType,
+            scopeKind = scopeKind,
+            destination = destination,
+            visitedTypes = visitedTypes,
+            visitedTypeParameters = visitedTypeParameters,
+        )
+        return
+    }
+
     when (type) {
         is ConeTypeVariableType -> {
             val originalTypeParameter = type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag ?: return
@@ -507,11 +538,26 @@ private fun collectTypeScopes(
             // 以完整 Cone 类型作为访问键，同时仍可阻断真正相同类型形成的递归父类型环。
             if (!visitedTypes.add(type)) return
             val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
+            val declaration = symbol.cfir
+            /*
+             * 内建声明（CPointer / CString / VArray / CFunc）在符号层是合成 class-like，
+             * 但其语义类型是专用 Cone 形状（`constructType` 的既有纪律：五种内建声明
+             * 不能全部按普通 class type 处理）。Analysis 公开层把 `ConePointerType`
+             * 投影成合成 ClassId 的 class-like 类型，这里必须经 `constructType` 还原
+             * 真实形状再进成员 scope——否则 extend scope 的目标键会按
+             * `ClassLike(CPOINTER)` 建索引，而 extend 索引用的是非 ClassId 的
+             * `CfirExtendTargetKey.CPointer`，`extend<T> CPointer<T>` 的成员整体丢失。
+             */
+            val semanticOwnerType = if (declaration is CfirBuiltInDeclaration) {
+                declaration.symbol.constructType(type.typeArguments.map { it.type })
+            } else {
+                type
+            }
             fun prepareRaw() = session.cangjieScopeProvider.getUseSiteMemberScope(
                 useSiteSession = session,
                 classSymbol = symbol,
                 scopeSession = scopeSession,
-                ownerType = type,
+                ownerType = semanticOwnerType,
                 scopeKind = scopeKind,
                 memberScopeView = session.cjmpMemberScopeView(),
                 memberRequiredPhase = if (session.isCjmpSpecificCompilationEnabled()) {
@@ -520,7 +566,7 @@ private fun collectTypeScopes(
                     CfirResolvePhase.STATUS
                 },
             )
-            destination += session.cangjieScopeProvider.getClassSubstitutionScope(session, scopeSession, ::prepareRaw, type).value
+            destination += session.cangjieScopeProvider.getClassSubstitutionScope(session, scopeSession, ::prepareRaw, semanticOwnerType).value
         }
     }
 }
@@ -744,6 +790,8 @@ private fun CfirExpression.builtinTypeQualifierOrNull(session: CfirSession): Con
  */
 private fun CfirTypeAliasSymbol.expandedClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {
     if (!isBound) return null
+    // 惰性解析模式下别名可能尚未到 TYPES 阶段，展开类型此时还读不到；先推进再读。
+    lazyResolveToPhase(CfirResolvePhase.TYPES)
     val expandedType = (cfir as? CfirTypeAlias)?.expandedTypeRef?.coneTypeOrNull ?: return null
     val classId = expandedType.expandedClassIdOrPrimitiveClassId ?: return null
     return session.symbolProvider.getClassLikeSymbolByClassId(classId)

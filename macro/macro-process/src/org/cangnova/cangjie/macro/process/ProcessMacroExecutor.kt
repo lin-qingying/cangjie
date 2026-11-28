@@ -66,11 +66,11 @@ abstract class ProcessMacroExecutor : MacroExecutor {
     override fun loadLibraries(libPaths: List<String>): MacroLibraryLoadResult = lock.withLock {
         val requested = libPaths.filter(String::isNotBlank).distinct()
         if (requested.isEmpty()) return@withLock MacroLibraryLoadResult.Success(emptyList())
-        val unloaded = requested.filterNot { it in loadedLibPaths }
-        if (unloaded.isEmpty()) return@withLock MacroLibraryLoadResult.Success(requested)
-
+        var unloaded = requested
         try {
             ensureStarted()
+            unloaded = requested.filterNot { it in loadedLibPaths }
+            if (unloaded.isEmpty()) return@withLock MacroLibraryLoadResult.Success(requested)
 
             val t = connection?.transport ?: return@withLock MacroLibraryLoadResult.Failure(
                 listOf(unloaded.protocolFailure("宏执行器传输层未就绪")),
@@ -124,7 +124,15 @@ abstract class ProcessMacroExecutor : MacroExecutor {
                         kind = MacroExpansionFailureKind.PROTOCOL_ERROR,
                     )
                 } else {
-                    MacroMsgCodec.parseMacroResult(response)
+                    MacroMsgCodec.parseMacroResult(response).also { result ->
+                        if (result is MacroExpansionResult.Failure) {
+                            logger.log(
+                                Level.WARNING,
+                                "宏调用失败: macro=${callInfo.idName}, parentNames=${callInfo.parentNames}: " +
+                                    result.message,
+                            )
+                        }
+                    }
                 }
             }
         } catch (e: IOException) {
@@ -158,7 +166,11 @@ abstract class ProcessMacroExecutor : MacroExecutor {
         val closingConnection = lock.withLock {
             val current = connection
             if (current != null) {
-                runCatching { current.transport.send(MacroMsgCodec.buildExitTask()) }
+                current.beginClose()
+                val sent = runCatching { current.transport.send(MacroMsgCodec.buildExitTask()) }
+                    .onFailure { logger.log(Level.WARNING, "发送 ExitTask 失败", it) }
+                    .isSuccess
+                current.finishCloseRequest(sent)
                 current.transport.close()
                 connection = null
             }
@@ -185,6 +197,9 @@ abstract class ProcessMacroExecutor : MacroExecutor {
      */
     private fun ensureStarted() {
         if (connection?.isAlive() == true) return
+        connection?.close()
+        connection = null
+        loadedLibPaths = emptySet()
         connection = startConnection()
     }
 
@@ -273,6 +288,10 @@ abstract class ProcessMacroExecutor : MacroExecutor {
          * 判断后端进程或测试连接是否仍然存活的回调。
          */
         private val isAlive: () -> Boolean,
+        /** 在协议退出消息之前登记后端关闭意图。 */
+        private val beginClose: () -> Unit,
+        /** 记录本连接的实际退出帧发送结果。 */
+        private val finishCloseRequest: (Boolean) -> Unit,
         /**
          * 关闭后端进程或测试连接的回调。
          */
@@ -282,10 +301,14 @@ abstract class ProcessMacroExecutor : MacroExecutor {
          * 返回后端连接当前是否仍然可用。
          */
         fun isAlive(): Boolean = isAlive.invoke()
+        fun beginClose() = beginClose.invoke()
+        fun finishCloseRequest(exitTaskSent: Boolean) = finishCloseRequest.invoke(exitTaskSent)
         /**
          * 关闭后端连接。
          */
-        fun close() = close.invoke()
+        fun close() {
+            try { transport.close() } finally { close.invoke() }
+        }
     }
 }
 

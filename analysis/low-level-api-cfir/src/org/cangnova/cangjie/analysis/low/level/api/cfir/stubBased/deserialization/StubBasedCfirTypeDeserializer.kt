@@ -25,6 +25,9 @@ import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.stubs.impl.CangJieStubClassifierKind
+import org.cangnova.cangjie.psi.stubs.impl.CangJieUserTypeStubImpl
+import org.cangnova.cangjie.psi.CjTypeElement
 import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
 import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
@@ -54,7 +57,12 @@ internal class StubBasedCfirTypeDeserializer(
      */
     private val containingSymbol: CfirBasedSymbol<*>?,
     owner: CjTypeParameterListOwner?,
-    initialOrigin: CfirDeclarationOrigin
+    initialOrigin: CfirDeclarationOrigin,
+    /**
+     * 额外可见的类型参数 symbol（例如 extend 的隐式类型参数 `T`，它来自 `.cjo` 元数据，
+     * 不在 stub/PSI 中显式声明）。
+     */
+    private val additionalTypeParameters: Map<String, CfirTypeParameterSymbol> = emptyMap(),
 ) {
     /**
      * 用于从 option 类型内部文本重建类型引用的 PSI factory。
@@ -113,7 +121,7 @@ internal class StubBasedCfirTypeDeserializer(
                 }.build()
             }
         } else {
-            typeParametersByName = emptyMap()
+            typeParametersByName = additionalTypeParameters
         }
     }
 
@@ -194,7 +202,14 @@ internal class StubBasedCfirTypeDeserializer(
         val innerTypeReference = psiFactory?.createTypeIfPossible(innerTypeElement.text)
             ?: return ConeErrorType(ConeSimpleDiagnostic("Malformed option type", DiagnosticKind.DeserializationError))
         val componentType = type(innerTypeReference, attributes)
-        return ConeClassLikeType(
+        /*
+         * `Option` 在 std.core 是 enum（官方 `Option<T>` 也按 enum 处理），不能建成 class-like：
+         * 值语义/穷尽性/匹配等判定都按 `ConeEnumType` 分支走。
+         *
+         * 注意：`.cjo` 反编译链路不产生 `OPTION_TYPE` stub（反编译器把 `Option<T>` 渲染成
+         * USER_TYPE，由 kind 机制给出 ENUM），这条分支只服务带 Option 语法糖的 stub PSI。
+         */
+        return ConeEnumType(
             StdlibClassIds.Option.toLookupTag(),
             typeArguments = listOf(componentType),
             attributes = attributes,
@@ -217,6 +232,18 @@ internal class StubBasedCfirTypeDeserializer(
      * 尝试把 PSI 类型引用反序列化为简单刚性类型。
      */
     private fun simpleType(typeReference: CjTypeReference, attributes: ConeAttributes): ConeRigidType? {
+        /*
+         * 基础类型在语法层是独立的 [CjBasicType] 节点，既不是 [CjUserType] 也没有
+         * classId，需要按名称直接映射到对应 primitive。它必须先于 [typeSymbol] 处理：
+         * `typeSymbol` 只认 function type 与 user type，会让 `Unit` 这类节点返回 null，
+         * 进而被 `simpleTypeOrError` 兜底成 `?!id:0` 错误类型。cjo 路径由
+         * `CfirTypeDeserializer` 的 `TypeKind.Unit -> ConePrimitiveType.UNIT` 覆盖，
+         * stub 路径此前缺失这一映射，导致 `println()` 这类返回 `Unit` 的库函数
+         * 因全部重载返回类型失效而误报 NO_MATCH_FUNCTION_DECLARATION_FOR_CALL。
+         */
+        val basicType = (typeReference.typeElement as? CjBasicType)?.let { basicTypeOf(it.name) }
+        if (basicType != null) return basicType
+
         val constructor = typeSymbol(typeReference) ?: return null
         if (constructor is ConeTypeParameterLookupTag) {
             return ConeTypeParameterTypeImpl(constructor, attributes)
@@ -251,8 +278,53 @@ internal class StubBasedCfirTypeDeserializer(
             }
         }
 
-        return ConeClassLikeType(constructor, arguments, attributes)
+        if (constructor.classId == StdlibClassIds.CPointer) {
+            val pointeeType = arguments.singleOrNull()?.type
+                ?: return ConeErrorType(
+                    ConeSimpleDiagnostic("Malformed CPointer type", DiagnosticKind.DeserializationError),
+                )
+            return ConePointerType(pointeeType, attributes)
+        }
+
+        /*
+         * 别名与声明种类都来自 USER_TYPE stub 的反编译元数据（由 `TypeCjoStubBuilder` 写入，
+         * 位置对齐 Kotlin `KotlinUserTypeStub.abbreviatedType` 与 `StubBasedClassDeserialization`
+         * 的 kind 判定）。反序列化期**不做名字解析、也不展开 RHS**：展开由 use-site 的
+         * `directExpansionType` 完成，因此跨包、嵌套、泛型别名都成立，也避免回调 provider。
+         */
+        val userTypeStub = (typeElement as? CjUserType)?.let { userTypeStub(it) }
+        userTypeStub?.typeAliasClassId?.let { typeAliasClassId ->
+            return ConeTypeAliasType(
+                classId = typeAliasClassId,
+                expandedType = null,
+                typeArguments = arguments,
+                attributes = attributes,
+            )
+        }
+        /*
+         * `This` 类型（cjo `CompositeTyInfo.isThisTy`）必须与 `.cjo` 读侧一致：
+         * `CfirTypeDeserializer.convertClassType` 会把它映射为 `ConeClassLikeType.isThisType`，
+         * 反编译器也把它写进 USER_TYPE stub，这里只读回。
+         */
+        val isThisType = userTypeStub?.isThisType == true
+        return when (userTypeStub?.classifierKind) {
+            CangJieStubClassifierKind.STRUCT -> ConeStructType(constructor, arguments, attributes)
+            CangJieStubClassifierKind.ENUM -> ConeEnumType(constructor, arguments, attributes)
+            CangJieStubClassifierKind.INTERFACE ->
+                ConeClassLikeType(constructor, arguments, attributes, isInterface = true, isThisType = isThisType)
+
+            else -> ConeClassLikeType(constructor, arguments, attributes, isThisType = isThisType)
+        }
     }
+
+    /**
+     * 取该 user type 的反编译 stub（含别名 ClassId / 声明种类元数据）。
+     *
+     * 用本模块既有的 [compiledStub]（`classId()` 也走它）：反编译类型反序列化**只能吃
+     * stub-backed PSI**，AST-backed PSI 在 `typeSymbol()`/`classId()` 阶段就会失败，
+     * 这里与其保持同一契约，不做静默降级。
+     */
+    private fun userTypeStub(userType: CjUserType): CangJieUserTypeStubImpl = userType.compiledStub
 
     /**
      * 将 PSI 类型引用反序列化为简单类型，失败时返回错误类型。
@@ -277,6 +349,34 @@ internal class StubBasedCfirTypeDeserializer(
         }
         return type.classId().toLookupTag()
     }
+}
+
+/**
+ * 基础类型名到对应 primitive 的映射。
+ *
+ * 名称集合与语法层 `CjTokens.BASICTYPES` 保持一致：parser 只对该集合内的 token 产生
+ * [CjBasicType]（见 `CangJieParsing.parseBasicType`），因此这里返回 `null` 就意味着
+ * 该基础类型名尚未接入类型系统，应由调用方按未知类型兜底而不是猜一个类型。
+ */
+private fun basicTypeOf(name: String): ConePrimitiveType? = when (name) {
+    "Unit" -> ConePrimitiveType.UNIT
+    "Bool" -> ConePrimitiveType.BOOLEAN
+    "Int8" -> ConePrimitiveType.INT8
+    "Int16" -> ConePrimitiveType.INT16
+    "Int32" -> ConePrimitiveType.INT32
+    "Int64" -> ConePrimitiveType.INT64
+    "IntNative" -> ConePrimitiveType.INT_NATIVE
+    "UInt8" -> ConePrimitiveType.UINT8
+    "UInt16" -> ConePrimitiveType.UINT16
+    "UInt32" -> ConePrimitiveType.UINT32
+    "UInt64" -> ConePrimitiveType.UINT64
+    "UIntNative" -> ConePrimitiveType.UINT_NATIVE
+    "Float16" -> ConePrimitiveType.FLOAT16
+    "Float32" -> ConePrimitiveType.FLOAT32
+    "Float64" -> ConePrimitiveType.FLOAT64
+    "Rune" -> ConePrimitiveType.RUNE
+    "Nothing" -> ConePrimitiveType.NOTHING
+    else -> null
 }
 
 /**
@@ -309,3 +409,5 @@ internal fun CjUserType.classId(): ClassId {
         FqName.fromSegments(classFragments),
     )
 }
+
+

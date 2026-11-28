@@ -374,6 +374,11 @@ class CjoSourceContentSelectionTest {
 
         private fun status(const: Boolean = false): CfirResolvedDeclarationStatus = buildResolvedDeclarationStatus {
             visibility = Visibilities.Public
+            visibilityExplicitness = CfirModifierExplicitness.EXPLICIT
+            modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+            bodyPresence = CfirBodyPresence.UNKNOWN
+            isDeclarationFile = false
+            isFromCommonPart = false
             isVisibilityExplicit = true
             isModalityExplicit = false
             isAbstractExplicit = false

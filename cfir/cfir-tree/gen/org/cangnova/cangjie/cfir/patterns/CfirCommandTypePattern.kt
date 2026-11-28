@@ -17,13 +17,17 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.commandTypePattern]
  */
-abstract class CfirCommandTypePattern : CfirPattern() {
+abstract class CfirCommandTypePattern : CfirPattern(), CfirPatternTypeReferences {
     abstract override val source: CjSourceElement?
     abstract override val semanticTypeRef: CfirTypeRef?
     abstract override val constantValues: List<CfirConstantValue>
     abstract override val contextExpression: CfirExpression?
+    /**
+     * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
+     */
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract val nestedPattern: CfirPattern
-    abstract val typeRefs: List<CfirTypeRef>
+    abstract override val typeRefs: List<CfirTypeRef>
 
     /** 访问本节点拥有的完整来源子图；独立于 ordinary visitor 的语法子树。 */
     @CfirImplementationDetail
@@ -49,9 +53,11 @@ abstract class CfirCommandTypePattern : CfirPattern() {
 
     abstract override fun replaceContextExpression(newContextExpression: CfirExpression?)
 
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
+
     abstract fun replaceNestedPattern(newNestedPattern: CfirPattern)
 
-    abstract fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>)
+    abstract override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>)
 
     abstract override fun <D> transformSemanticTypeRef(transformer: CfirTransformer<D>, data: D): CfirCommandTypePattern
 

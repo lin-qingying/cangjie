@@ -5,6 +5,8 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirBodyPresence
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
@@ -575,6 +577,11 @@ class CfirExportSourcePayloadTest {
 
         private fun resolvedStatus(): CfirResolvedDeclarationStatus = buildResolvedDeclarationStatus {
             visibility = Visibilities.Public
+            visibilityExplicitness = CfirModifierExplicitness.EXPLICIT
+            modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+            bodyPresence = CfirBodyPresence.UNKNOWN
+            isDeclarationFile = false
+            isFromCommonPart = false
             isVisibilityExplicit = true
             isModalityExplicit = false
             isAbstractExplicit = false

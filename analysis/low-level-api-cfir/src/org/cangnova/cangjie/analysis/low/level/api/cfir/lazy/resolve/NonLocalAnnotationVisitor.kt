@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirErrorPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -158,6 +159,12 @@ internal abstract class NonLocalAnnotationVisitor<T> : CfirVisitor<Unit, T>() {
     override fun visitFunction(function: CfirFunction, data: T) {
         visitCallableDeclaration(function, data)
         function.valueParameters.forEach { it.accept(this, data) }
+    }
+
+    /** enum 构造项拥有独立的 payload 参数，签名注解与普通函数参数采用同一遍历规则。 */
+    override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor, data: T) {
+        visitCallableDeclaration(enumConstructor, data)
+        enumConstructor.valueParameters.forEach { it.accept(this, data) }
     }
 
     /**

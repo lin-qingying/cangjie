@@ -4,12 +4,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=runtime]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.runtime]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.fs, isAllUnder=true, aliasName=null)], packageFqName=std.runtime]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.runtime]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.fs, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.runtime]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.fs, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
@@ -17,7 +21,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
               CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
@@ -30,7 +39,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -39,25 +53,45 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -77,11 +111,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
               CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use 'public func gc(heavy!: Bool = false): Unit' instead.]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
@@ -97,7 +132,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
               CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use 'public func setGCThreshold(value: UInt64): Unit' instead.]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -106,16 +141,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -124,43 +160,63 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -169,7 +225,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$CLASS[classId=std/runtime/MemoryInfoException, fqName=std.runtime.MemoryInfoException, name=MemoryInfoException, superNames=[Exception]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -194,7 +250,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -216,16 +272,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
               CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=All static Properties are converted to public functions.]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$CLASS_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=maxHeapSize]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -233,12 +284,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=allocatedHeapSize]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -246,12 +292,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=heapPhysicalMemory]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -263,25 +304,25 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -295,13 +336,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -310,13 +361,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$MODIFIER_LIST[internal foreign]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$CLASS[classId=std/runtime/ProfilingInfoException, fqName=std.runtime.ProfilingInfoException, name=ProfilingInfoException, superNames=[Exception]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -341,7 +392,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -363,16 +414,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
               CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=All static Properties are converted to public functions.]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$CLASS_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=processorCount]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -384,19 +430,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -410,19 +456,34 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+      CangJieStub$ANNOTATION[builtInKind=INTRINSIC, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Intrinsic]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Intrinsic]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
@@ -439,16 +500,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
               CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
             CangJieStub$STRING_TEMPLATE
               CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=All static Properties are converted to public functions.]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$CLASS_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=threadCount]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -456,12 +512,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=blockingThreadCount]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -469,12 +520,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=nativeThreadCount]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
@@ -486,19 +532,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.runtime, facadeFqName=std.r
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]

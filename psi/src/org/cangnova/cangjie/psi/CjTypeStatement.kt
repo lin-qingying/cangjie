@@ -29,6 +29,7 @@ import org.cangnova.cangjie.parsing.CjmpNominalSyntaxFacts
 import org.cangnova.cangjie.parsing.cjmpNominalSyntaxFactsOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.psiUtil.ClassIdCalculator
+import org.cangnova.cangjie.psi.stubs.CangJieClassifierStub
 import org.cangnova.cangjie.psi.stubs.CangJieTypeStatementStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
@@ -38,6 +39,20 @@ import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
+
+/**
+ * 返回 PSI 树中最近的所属类型。
+ *
+ * 宏调用包装和生成声明会在原始节点与类型之间增加 PSI 层级，因此不能假定类型固定在两级父节点处。
+ */
+internal fun PsiElement.containingCjTypeStatement(): CjTypeStatement {
+    var ancestor = parent
+    while (ancestor != null) {
+        if (ancestor is CjTypeStatement) return ancestor
+        ancestor = ancestor.parent
+    }
+    error("${javaClass.simpleName} must be nested in a CjTypeStatement")
+}
 
 
 /**
@@ -156,6 +171,11 @@ abstract class CjTypeStatement :
 
     /**
      * 暴露 `primaryConstructor`，实现仓颉 PSI节点对上层接口的属性契约。
+     *
+     * 对齐 Kotlin `KtClassOrObject.getPrimaryConstructor()`：只走 stub-first 访问，
+     * 不再用 `PsiTreeUtil` 对 stub-based 元素做 AST 兜底。
+     * 库/反编译 PSI 一旦被强制建 AST，会触发 `FileTrees.reconcilePsi` 的
+     * “Stub count != stubbed node length” 断言，并把整文件解析拖进前台请求。
      */
     override val primaryConstructor: CjPrimaryConstructor?
         get() = body?.primaryConstructors?.firstOrNull()
@@ -229,7 +249,8 @@ abstract class CjTypeStatement :
      * 实现 `getClassId` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun getClassId(): ClassId? {
-        stub?.let { return it.getClassId() }
+        // extend 不是 class-like，其 stub 不实现 `CangJieClassifierStub`，身份统一走 `CjExtend.getExtendId()`。
+        (stub as? CangJieClassifierStub)?.let { return it.getClassId() }
         return ClassIdCalculator.calculateClassId(this)
     }
 

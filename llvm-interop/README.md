@@ -11,7 +11,7 @@
 llvm-interop/
 ├── llvm-interop-api/
 └── llvm-interop-jni/
-    ├── src/main/native/      # JNI C++ 代码（Gradle nativeCompile 构建）
+    ├── native/               # JNI C++ 代码（Gradle nativeCompile 构建）
     ├── src/.../jni/          # Kotlin JNI 声明与加载器
     └── tests/...             # 单测和集成测试
 ```
@@ -36,13 +36,14 @@ llvm-interop/
 
 ## 运行 JNI 集成测试
 
-集成测试默认关闭。启用方式：
+通过 Gradle 运行 `test` 时集成测试自动启用：构建脚本使 Test 任务依赖 `aggregateNativeArtifacts`（先编译原生库），并设置系统属性 `cangjie.llvm.jni.integration=true` 与 `cangjie.native.home=<build 目录>`。
 
-1. 先完成 `nativeCompile`
-2. 设置：
-   - `CANGJIE_LLVM_JNI_INTEGRATION=true`
-   - `CANGJIE_LLVM_JNI_LIBRARY_PATH=<native library absolute path>`
-3. 执行：
+在 Gradle 之外直接运行测试（如 IDE 内）时，需先完成 `nativeCompile`，再设置：
+
+- `CANGJIE_LLVM_JNI_INTEGRATION=true`
+- `CANGJIE_LLVM_JNI_LIBRARY_PATH=<native library absolute path>`（或 `CANGJIE_NATIVE_HOME`）
+
+执行：
 
 ```bash
 ./gradlew :llvm-interop:llvm-interop-jni:test --tests "org.cangnova.cangjie.llvm.jni.LlvmNativeIntegrationTest"

@@ -1110,7 +1110,7 @@ class CfirDataFlowPositionLifecycleTest : SessionHolder {
             origin = CfirDeclarationOrigin.Source; attributes = CfirDeclarationAttributes.EMPTY
             isLocal = true; status = CfirDeclarationStatusImpl(Visibilities.Local)
             this.name = Name.identifier(name); symbol = CfirPatternBindingSymbol(CallableId(this.name))
-            returnTypeRef = typeRef(type); this.initializer = initializer; isVar = mutable; isTypeImplicit = false
+            returnTypeRef = typeRef(type); this.ownedInitializer = initializer; isVar = mutable; isTypeImplicit = false
         }
 
     private fun access(variable: CfirVariable): CfirNamedAccessExpression = buildNamedAccessExpression {

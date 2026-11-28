@@ -270,8 +270,7 @@ class CfirProviderImpl(
      * 返回 pattern binding 所属的外层 pattern variable。
      */
     override fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? {
-        val ownerSymbol = state.patternBindingOwnerMap[symbol] ?: return null
-        return ownerSymbol.takeIf { it.isBound }?.cfir
+        return symbol.cfir.patternTreeOwner as? CfirPatternVariable
     }
 
     /**
@@ -325,6 +324,10 @@ class CfirProviderImpl(
                 names().callableTargets[name]?.let(::loadTargetFunctionSymbols).orEmpty()
             override fun properties(name: Name): List<CfirPropertySymbol> =
                 names().callableTargets[name]?.let(::loadTargetPropertySymbols).orEmpty()
+
+            override fun classifierNames(): Set<Name> = names().classifierNames
+
+            override fun callableNames(): Set<Name> = names().callableNames
         }
 
         /**
@@ -838,7 +841,6 @@ class CfirProviderImpl(
                     val bindingSymbol = bindingVariable.symbol as? CfirPatternBindingSymbol ?: continue
                     state.callableContainerFileMap[bindingSymbol] = containingFile
                     state.callableOwnerMap[bindingSymbol] = containingClass
-                    state.patternBindingOwnerMap[bindingSymbol] = symbol
                     val callableId = CallableId(packageFqName, bindingVariable.name)
                     state.callableMap.getOrPut(callableId, ::mutableListOf).add(bindingSymbol)
                     state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(bindingVariable.name)
@@ -1072,7 +1074,6 @@ class CfirProviderImpl(
         /**
          * pattern binding symbol 到外层 pattern variable symbol 的索引。
          */
-        val patternBindingOwnerMap: MutableMap<CfirPatternBindingSymbol, CfirPatternVariableSymbol> = hashMapOf()
 
         /**
          * CallableId 到顶层 callable symbol 列表的索引。

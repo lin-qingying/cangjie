@@ -67,13 +67,15 @@ class MacroCallNode internal constructor(
         _childEdges += edge
     }
 
-    /** Baseline 第 7 节"parentNames"：从 root 到自身路径上各级 macro 名（去重）。 */
+    /** Baseline 第 7 节"parentNames"：按源码拼写从 root 到自身记录各级父宏名。 */
     val parentNames: List<String>
         get() {
             val acc = mutableListOf<String>()
             var current: MacroCallNode? = this.parent
             while (current != null) {
-                current.surface.qualifiedName?.asString()?.let(acc::add)
+                current.surface.qualifiedName?.let { name ->
+                    acc += if (current.surface.isQualifiedName) name.asString() else name.shortName().asString()
+                }
                 current = current.parent
             }
             return acc.reversed()
@@ -287,6 +289,9 @@ object MacroCallForestBuilder {
  * @property parentNames 从 root 到当前节点父级的 macro 名路径。
  * @property attrTokensHash attr token 文本与 child 展开结果合并后的哈希。
  * @property inputTokensHash input token 文本与 child 展开结果合并后的哈希。
+ * @property hasAttr 调用是否显式包含属性方括号。
+ * @property hasParenthesis 调用是否显式包含输入括号。
+ * @property kind 调用是否为强制宏形式。
  */
 data class MacroExpansionFingerprint(
     /** 当前节点 macro 调用的限定名。 */
@@ -297,6 +302,12 @@ data class MacroExpansionFingerprint(
     val attrTokensHash: Int,
     /** input token 文本与 child 展开结果合并后的哈希。 */
     val inputTokensHash: Int,
+    /** 调用是否显式包含属性方括号。 */
+    val hasAttr: Boolean,
+    /** 调用是否显式包含输入括号。 */
+    val hasParenthesis: Boolean,
+    /** 调用是否为强制宏形式。 */
+    val kind: MacroSurface.Kind,
 ) {
     companion object {
         /**
@@ -315,6 +326,9 @@ data class MacroExpansionFingerprint(
                 parentNames = node.parentNames,
                 attrTokensHash = surface.attrTokens.textHashWithChildResults(childResults),
                 inputTokensHash = surface.inputTokens.textHashWithChildResults(childResults),
+                hasAttr = surface.hasAttr,
+                hasParenthesis = surface.hasParenthesis,
+                kind = surface.kind,
             )
         }
 

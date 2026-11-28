@@ -25,11 +25,29 @@
 package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.search.LocalSearchScope
+import com.intellij.psi.search.SearchScope
 
 /**
  * 表示 `CjTryResource`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjTryResource(node: ASTNode) : CjElementImpl(node) {
+class CjTryResource(node: ASTNode) : CjElementImpl(node), PsiNameIdentifierOwner {
+    override fun getName(): String? = parameter?.name
+    override fun getNameIdentifier(): PsiElement? = parameter?.nameIdentifier
+    override fun setName(name: String): PsiElement {
+        checkNotNull(parameter).setName(name)
+        return this
+    }
+
+    /** 资源对其他资源的 initializer 和 try 正文可见；自身 initializer 及 catch/handle/finally 不可见。 */
+    override fun getUseScope(): SearchScope {
+        val list = parent as? CjTryResourceList
+        val tryExpression = list?.parent as? CjTryExpression
+        val initializers = list?.resources.orEmpty().filter { it !== this }.mapNotNull { it.expression }
+        return LocalSearchScope((initializers + listOfNotNull(tryExpression?.tryBlock)).toTypedArray())
+    }
 
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

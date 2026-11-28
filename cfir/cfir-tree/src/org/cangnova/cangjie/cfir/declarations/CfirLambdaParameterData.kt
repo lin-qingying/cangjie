@@ -11,7 +11,9 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin
  * 该信息属于 raw CFIR 的语法事实，不能在补全后通过当前类型反推；
  * lambda 参数推断失败时，checker 需要按源码中第一个省略参数定位诊断。
  */
-private object LambdaParameterTypeOmittedKey : CfirDeclarationDataKey()
+private object LambdaParameterTypeOmittedKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.boolean
+}
 
 /**
  * lambda 形参是否省略了源码类型标注的原始语法事实。
@@ -36,7 +38,9 @@ fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean =
  * 但 checker 仍需要官方 `ChkLamParamTys` 使用的目标函数形状来报告参数个数、
  * 显式参数类型和返回体类型错误。
  */
-private object LambdaParameterShapeExpectedFunctionTypeKey : CfirDeclarationDataKey()
+private object LambdaParameterShapeExpectedFunctionTypeKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<org.cangnova.cangjie.cfir.types.ConeFunctionType>("failed lambda argument candidate shape")
+}
 
 /**
  * lambda 头部诊断使用的目标函数形状。
@@ -53,7 +57,9 @@ var CfirAnonymousFunction.lambdaParameterShapeExpectedFunctionType: ConeFunction
  * 该状态由调用完成写回阶段从结构化 ArgumentMappingOutcome 向整个实参子树传播。
  * checker 只消费这一语义状态，不从具体诊断名称或错误文本反推调用是否已经终止。
  */
-private object LambdaInsideFailedArgumentMappingKey : CfirDeclarationDataKey()
+private object LambdaInsideFailedArgumentMappingKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<Boolean>("failed lambda argument mapping")
+}
 
 /**
  * 当前 lambda 是否位于参数映射已失败的调用实参子树中。
@@ -63,6 +69,26 @@ private object LambdaInsideFailedArgumentMappingKey : CfirDeclarationDataKey()
  */
 var CfirAnonymousFunction.isInsideFailedArgumentMapping: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaInsideFailedArgumentMappingKey)
+
+/**
+ * lambda 定义点（官方 `SynLamExpr` / `SolveLamExprParamTys`）的形参推断结果。
+ *
+ * 官方在 lambda 自身合成结束时决定省略类型形参是否能解出，之后出现的约束不改结论；
+ * CFIR 的解析会被后续语句（例如 `g(i)` 反解 placeholder）改写形参类型，因此必须把
+ * 定义点结论固化成事实，不能让 checker 从最终类型反推。
+ *
+ * 取值语义：`true` / `false` 表示定义点已完成过一次推断判定（只写一次，后续重分析不回退）；
+ * `null` 表示该 lambda 未走过合成外层调用路径（如调用实参 lambda），checker 回退到实时判定。
+ */
+private object LambdaParameterInferenceFailedAtDefinitionKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<Boolean>("completed lambda inference result")
+}
+
+/**
+ * 源码省略类型的形参在 lambda 定义点是否推断失败。
+ */
+var CfirAnonymousFunction.lambdaParameterInferenceFailedAtDefinition: Boolean? by
+    CfirDeclarationDataRegistry.data(LambdaParameterInferenceFailedAtDefinitionKey)
 
 /** IfAvailable 分支方向，用于在 checker 阶段恢复结构化可用性上下文。 */
 enum class CfirIfAvailableBranchKind {
@@ -83,7 +109,9 @@ data class CfirIfAvailableBranchContext(
 )
 
 /** [CfirAnonymousFunction.ifAvailableBranchContext] 扩展属性使用的声明数据键。 */
-private object IfAvailableBranchContextKey : CfirDeclarationDataKey()
+private object IfAvailableBranchContextKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.ifAvailable
+}
 
 /**
  * IfAvailable lambda 携带的 source-independent 条件事实。

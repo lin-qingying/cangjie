@@ -19,11 +19,13 @@ import org.cangnova.cangjie.cfir.analysis.checkers.type.ComposedTypeCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollector
+import org.cangnova.cangjie.cfir.analysis.collectors.CfirCheckerComponentKind
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.CfirChirArithmeticDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ControlFlowAnalysisDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
+import org.cangnova.cangjie.cfir.analysis.collectors.components.MacroConstructionDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ReportCommitterDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.extensions.CfirAdditionalCheckersExtension
 import org.cangnova.cangjie.cfir.analysis.extensions.additionalCheckers
@@ -95,6 +97,23 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             add(DeclarationCheckersDiagnosticComponent(session, reporter, declarationCheckers))
             add(ExpressionCheckersDiagnosticComponent(session, reporter, expressionCheckers))
             add(TypeCheckersDiagnosticComponent(session, reporter, typeCheckers))
+            if (filter.runDefaultCheckers) {
+                add(MacroConstructionDiagnosticCollectorComponent(session, reporter))
+            }
+        }.toTypedArray()
+
+        // 与 regularComponents 严格同序，且必须跟着上面那条条件分支同步增减：
+        // 错位不会立刻失败，只会让耗时归到错误的组件上。
+        val checkerComponentKinds = buildList {
+            if (!filter.runExtraCheckers && !filter.runExperimentalCheckers) {
+                add(CfirCheckerComponentKind.ERROR_NODE)
+            }
+            add(CfirCheckerComponentKind.DECLARATION)
+            add(CfirCheckerComponentKind.EXPRESSION)
+            add(CfirCheckerComponentKind.TYPE)
+            if (filter.runDefaultCheckers) {
+                add(CfirCheckerComponentKind.MACRO_CONSTRUCTION)
+            }
         }.toTypedArray()
 
         val postSemaComponents = if (filter.runDefaultCheckers && mppCheckerKind != MppCheckerKind.Platform) {
@@ -110,6 +129,7 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             regularComponents = regularComponents,
             postSemaComponents = postSemaComponents,
             reportCommitter = ReportCommitterDiagnosticComponent(session, reporter),
+            checkerComponentKinds = checkerComponentKinds,
         )
     }
 

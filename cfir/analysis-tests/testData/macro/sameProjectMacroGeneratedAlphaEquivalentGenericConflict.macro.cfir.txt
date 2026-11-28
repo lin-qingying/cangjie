@@ -1,0 +1,23 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package generated_alpha_equivalent_generic_conflict
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    import generated_alpha_equivalent_generic_conflict.GenerateAlphaEquivalent
+    public func <T>alphaTarget(value: R|T|): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    public func <U>alphaTarget(value: R|U|): R|Int64| {
+        RETURN {
+            INT(2)
+        }
+    }
+    <element: CfirMainFunction>

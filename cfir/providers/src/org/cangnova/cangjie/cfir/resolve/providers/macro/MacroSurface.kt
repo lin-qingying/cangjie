@@ -15,7 +15,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  *
  * Baseline 第 7 节列出 surface 必须承载的字段集合：
  * - [surfaceId] / [qualifiedName] / [kind] / [hasParenthesis]
- * - [attrTokens] / [inputTokens]
+ * - [hasAttr] / [attrTokens] / [inputTokens]
  * - [sourceRange] / [scopeContext]
  * - [modifiers] / [carriedAnnotations]
  * - [capturedRawSyntax]
@@ -30,6 +30,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property qualifiedName macro 调用限定名；解析失败或语法缺失时为 null。
  * @property kind macro 调用形式。
  * @property hasParenthesis 调用点是否显式带有参数括号。
+ * @property hasAttr 调用点是否显式带有属性方括号；空 `[]` 与未写属性不同。
  * @property attrTokens attr payload token 流。
  * @property inputTokens input payload token 流。
  * @property sourceRange surface 在宿主源码中的完整范围。
@@ -58,6 +59,9 @@ sealed class MacroSurface {
 
     /** 调用点是否显式带有参数括号。 */
     abstract val hasParenthesis: Boolean
+
+    /** 调用点是否显式带有属性方括号；不能从空属性 token 流推导。 */
+    abstract val hasAttr: Boolean
 
     /** attr payload token 流。 */
     abstract val attrTokens: List<MacroSurfaceToken>
@@ -146,6 +150,10 @@ data class MacroSurfaceToken(
      * 宏生成 token 的偏移属于重建文本，即使数值落在原始调用范围内也不能当作源码位置。
      */
     val isSourceToken: Boolean = false,
+    /** 相对于 token.text 的分段来源；原输入树和区间不能由 startOffset/endOffset 替代。 */
+    val sourceSpans: List<MacroTokenSourceSpan> = emptyList(),
+    /** 由真实 lexer 确认的空白/注释，不参与规范 AST 锚点的来源证明。 */
+    val isTrivia: Boolean = false,
 ) {
     init {
         require(!isSourceToken || (startOffset >= 0 && endOffset - startOffset == text.length)) {
@@ -278,6 +286,8 @@ data class MacroSurfaceDecl(
     override val hasParenthesis: Boolean,
     /** declaration macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 声明宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** declaration macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** declaration surface 在宿主源码中的范围。 */
@@ -311,6 +321,8 @@ data class MacroSurfaceExpr(
     override val hasParenthesis: Boolean,
     /** expression macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 表达式宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** expression macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** expression surface 在宿主源码中的范围。 */
@@ -344,6 +356,8 @@ data class MacroSurfaceParam(
     override val hasParenthesis: Boolean,
     /** parameter macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 参数宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** parameter macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** parameter surface 在宿主源码中的范围。 */
@@ -377,6 +391,8 @@ data class MacroSurfaceNode(
     override val hasParenthesis: Boolean,
     /** 通用 macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 通用宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** 通用 macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** 通用 surface 在宿主源码中的范围。 */
@@ -394,3 +410,48 @@ data class MacroSurfaceNode(
     /** 通用 surface 对应最终 CFIR splice 的稳定替换句柄。 */
     override val replaceHandle: CfirReplaceHandle,
 ) : MacroSurface()
+
+/**
+ * Builtin non-macro surface：`@IfAvailable` 等"看起来是宏但实际不送 executor"
+ * 的语义级标记（baseline 第 8 节）。
+ *
+ * 必须在 stable splice **之前** desugar 为最终 CFIR；
+ * 不允许残留在 successful final CFIR 中。
+ */
+sealed class BuiltinNonMacroSurface : MacroSurface()
+
+/** `@IfAvailable(...)` 形态的 builtin non-macro。 */
+data class IfAvailableSurface(
+    /** builtin non-macro surface 的 construction 期唯一 id。 */
+    override val surfaceId: Long,
+    /** builtin non-macro 的限定名；语法或解析缺失时为 `null`。 */
+    override val qualifiedName: FqName?,
+    override val isQualifiedName: Boolean,
+    /** builtin non-macro 的调用形式。 */
+    override val kind: MacroSurface.Kind,
+    override val parsingFacts: MacroParsingFacts? = null,
+    /** builtin non-macro 调用点是否显式携带参数括号。 */
+    override val hasParenthesis: Boolean,
+    /** builtin non-macro 的 attr payload token 流。 */
+    override val attrTokens: List<MacroSurfaceToken>,
+    /** builtin 调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
+    /** builtin non-macro 的 input payload token 流。 */
+    override val inputTokens: List<MacroSurfaceToken>,
+    /** builtin non-macro surface 在宿主源码中的范围。 */
+    override val sourceRange: MacroSurfaceSourceRange?,
+    /** builtin non-macro surface 所在的包、类和函数上下文。 */
+    override val scopeContext: MacroSurfaceScopeContext,
+    /** builtin non-macro surface 携带的 modifier 文本。 */
+    override val modifiers: List<String>,
+    /** builtin non-macro surface 携带或覆盖的 annotation 文本。 */
+    override val carriedAnnotations: List<String>,
+    /** builtin non-macro raw builder 捕获的原始语法文本。 */
+    override val capturedRawSyntax: String?,
+    /** builtin non-macro surface 所在的语法容器上下文。 */
+    override val containerContext: MacroSurfaceContainerContext,
+    /** builtin non-macro surface 对应最终 CFIR splice 的稳定替换句柄。 */
+    override val replaceHandle: CfirReplaceHandle,
+    /** 条件分支主体 token，用于 desugar 前的简单评估。 */
+    val branchTokens: List<MacroSurfaceToken>,
+) : BuiltinNonMacroSurface()

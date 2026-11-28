@@ -11,8 +11,9 @@ import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -25,7 +26,8 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var mappedExpression: CfirExpression?,
     override var overflowStrategy: CangjieOverflowStrategy?,
-    override val resources: MutableList<CfirFieldVariable>,
+    override var calleeReference: CfirReference,
+    override val resources: MutableList<CfirResourceVariable>,
     override var tryBlock: CfirBlock,
     override val handlers: MutableList<CfirHandleClause>,
     override val catches: MutableList<CfirCatch>,
@@ -34,6 +36,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
+        calleeReference.accept(visitor, data)
         resources.forEach { it.accept(visitor, data) }
         tryBlock.accept(visitor, data)
         handlers.forEach { it.accept(visitor, data) }
@@ -43,6 +46,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
         transformAnnotations(transformer, data)
+        transformCalleeReference(transformer, data)
         transformResources(transformer, data)
         transformTryBlock(transformer, data)
         transformHandlers(transformer, data)
@@ -53,6 +57,11 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
         annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
+        calleeReference = calleeReference.transform(transformer, data)
         return this
     }
 
@@ -102,7 +111,11 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
         overflowStrategy = newOverflowStrategy
     }
 
-    override fun replaceResources(newResources: List<CfirFieldVariable>) {
+    override fun replaceCalleeReference(newCalleeReference: CfirReference) {
+        calleeReference = newCalleeReference
+    }
+
+    override fun replaceResources(newResources: List<CfirResourceVariable>) {
         if (resources === newResources) return
         resources.clear()
         resources.addAll(newResources)

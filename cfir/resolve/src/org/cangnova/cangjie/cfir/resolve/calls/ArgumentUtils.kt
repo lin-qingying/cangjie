@@ -139,9 +139,10 @@ internal fun normalizeTypeForCompatibilityCheck(type: ConeCangJieType): ConeCang
  *
  * 仓颉 enum constructor 的 owner 泛型、普通泛型调用的显式实参都会先进入候选约束系统；
  * 参数检查和完成写回必须看到同一个已替换的 expected type，lambda / 字面量才能按目标类型定型。
+ * 完成写回消费已冻结候选的真实只读快照，不能重新进入 builder 的可变存储上下文。
  */
 internal fun Candidate.substituteExplicitTypeArgumentConstraints(expectedType: ConeCangJieType): ConeCangJieType =
-    system.currentStorage().explicitTypeArgumentsSubstitutor(callInfo.session.typeContext).substituteOrSelf(expectedType)
+    system.captureStorage().explicitTypeArgumentsSubstitutor(callInfo.session.typeContext).substituteOrSelf(expectedType)
 
 /**
  * 计算表达式在当前参数位置上的期望类型。

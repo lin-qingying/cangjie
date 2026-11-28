@@ -19,18 +19,20 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -55,6 +57,12 @@ internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolve
     override fun phaseSpecificCheckIsResolved(target: CfirElementWithResolveState) {
         if (target !is CfirCallableDeclaration) return
         checkReturnTypeRefIsResolved(target)
+        if (target is CfirEnumConstructor) {
+            target.valueParameters.forEach(::checkReturnTypeRefIsResolved)
+        }
+        if (target is CfirPatternVariable) {
+            target.pattern.bindingVariables().forEach(::checkReturnTypeRefIsResolved)
+        }
     }
 }
 
@@ -203,6 +211,19 @@ internal class LLCfirImplicitBodyTargetResolver(
                 // 枚举构造器返回类型由所属 enum 在 TYPES 阶段写入，且没有函数体可供隐式返回类型推断。
             }
 
+            is CfirPatternBindingVariable -> {
+                // resolveDependencies 已在 leaf 锁之前解析 owner 并完成逐叶投影。
+                checkReturnTypeRefIsResolved(target)
+            }
+
+            is CfirPatternVariable -> {
+                if (target.returnTypeRef is CfirImplicitTypeRef ||
+                    target.pattern.bindingVariables().any { it.returnTypeRef is CfirImplicitTypeRef }
+                ) {
+                    resolve(target, BodyStateKeepers.VARIABLE)
+                }
+            }
+
             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> {
                 transformer.context.returnTypeCalculator.callableCopyTypeCalculator.computeReturnType(target)
             }
@@ -246,6 +267,10 @@ internal class LLCfirImplicitBodyTargetResolver(
      */
     override fun rawResolve(target: CfirElementWithResolveState) {
         super.rawResolve(target)
+        if (target is CfirPatternVariable) {
+            // 在 jumping lock 发布 phase 前校验整棵模式，不能将 Deferred 标成解析完成。
+            target.pattern.bindingVariables().forEach(::checkReturnTypeRefIsResolved)
+        }
         LLCfirDeclarationModificationService.bodyResolved(target, resolverPhase)
     }
 }

@@ -13,8 +13,10 @@ import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.supportsCjmpDeclarationModel
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.declarations.declarationSiteId
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -68,8 +70,13 @@ internal class CfirTypeCandidateCollector(
          *
          * 官方 `PreCheck::GetTyFromASTType` 在筛掉非类型声明后 candidates 为空，
          * 而原始声明集合非空，此时报 `not_a_type`。
+         *
+         * [hasNonMacroBinding] 区分“只被宏名遮蔽”和“被普通值/函数遮蔽”：注解位置上的
+         * 宏名不应报类型诊断，而普通 callable 仍必须报。
          */
-        data object ShadowedByNonTypeDeclaration : SimpleTypeNameLookup
+        data class ShadowedByNonTypeDeclaration(
+            val hasNonMacroBinding: Boolean,
+        ) : SimpleTypeNameLookup
 
         /** 所有作用域都没有该名字；官方报 `undeclared_type_name`。 */
         data object NotDeclared : SimpleTypeNameLookup
@@ -94,28 +101,39 @@ internal class CfirTypeCandidateCollector(
         for (scope in scopes) {
             val candidates = candidatesFromScope(scope, name)
             if (candidates.isNotEmpty()) return SimpleTypeNameLookup.Classifiers(candidates)
-            if (bindsOwnNonTypeDeclaration(scope, name, exemptDeclarationTypeRef)) {
-                return SimpleTypeNameLookup.ShadowedByNonTypeDeclaration
-            }
+            ownNonTypeShadowing(scope, name, exemptDeclarationTypeRef)?.let { return it }
         }
         return SimpleTypeNameLookup.NotDeclared
     }
 
     /**
      * 判断 [scope] 自身是否把 [name] 绑定到会遮蔽类型名的非类型声明。
+     *
+     * 返回 `null` 表示没有绑定；否则携带“是否存在普通（非宏）绑定”。宏名在注解位置
+     * 仍由调用方决定不报类型诊断，但在普通类型位置仍应遮蔽。
      */
-    private fun bindsOwnNonTypeDeclaration(
+    private fun ownNonTypeShadowing(
         scope: CfirScope,
         name: Name,
         exemptDeclarationTypeRef: CfirTypeRef?,
-    ): Boolean {
-        var bound = false
+    ): SimpleTypeNameLookup.ShadowedByNonTypeDeclaration? {
+        var hasAnyBinding = false
+        var hasNonMacroBinding = false
         scope.processOwnNonTypeBindingsByName(name) { symbol ->
-            if (!bound && !symbol.isExemptFromShadowing(exemptDeclarationTypeRef)) {
-                bound = true
+            // enum 构造器不是注解/类型目标，不参与简单类型名的“非类型遮蔽”判定。
+            if (symbol is CfirEnumConstructorSymbol) return@processOwnNonTypeBindingsByName
+            if (!symbol.isExemptFromShadowing(exemptDeclarationTypeRef)) {
+                hasAnyBinding = true
+                if (!symbol.isMacroLikeName(session)) {
+                    hasNonMacroBinding = true
+                }
             }
         }
-        return bound
+        return if (hasAnyBinding) {
+            SimpleTypeNameLookup.ShadowedByNonTypeDeclaration(hasNonMacroBinding)
+        } else {
+            null
+        }
     }
 
     /**
@@ -171,9 +189,28 @@ internal class CfirTypeCandidateCollector(
                     symbol = symbol,
                     substitutor = null,
                     lookupOrigin = lookupOrigin,
-                )
+                ),
             )
         }
+    }.distinctBy(TypeCandidate::symbol).filter { candidate ->
+        isAccessible(candidate.symbol, candidate.lookupOrigin)
+    })
+
+    /**
+     * 收集已经由 package namespace 选出的 class-like 候选并执行统一可访问性检查。
+     *
+     * 与 [collectClassIdCandidates] 不同，这里不得按 ClassId 再次查询 declaration availability：
+     * namespace provider 已决定当前组织及 public reexport 可见的完整候选集合。
+     */
+    fun collectPackageNamespaceCandidates(
+        symbols: Iterable<CfirClassLikeSymbol<*>>,
+        lookupOrigin: CfirLookupOrigin,
+    ): List<TypeCandidate> = selectTypeNameCandidates(symbols.map { symbol ->
+        TypeCandidate(
+            symbol = symbol,
+            substitutor = null,
+            lookupOrigin = lookupOrigin,
+        )
     }.distinctBy(TypeCandidate::symbol).filter { candidate ->
         isAccessible(candidate.symbol, candidate.lookupOrigin)
     })

@@ -1,0 +1,2 @@
+FILE: missingBodyInFunc.cj
+    internal? func missingBody(): R|Int64|

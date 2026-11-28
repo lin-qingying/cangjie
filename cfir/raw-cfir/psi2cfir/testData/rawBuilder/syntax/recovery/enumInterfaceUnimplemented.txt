@@ -1,0 +1,5 @@
+FILE: enumInterfaceUnimplemented.cj
+    internal? enum H <: R|ToString| {
+        A
+        init()
+    }

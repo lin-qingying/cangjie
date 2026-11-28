@@ -1,0 +1,18 @@
+FILE: throwExpression.cj
+    internal? class MyError <: R|Exception| {
+        init()
+    }
+    internal? func mayThrow(flag: R|Bool|): R|Int64| {
+        IF {
+            condition:
+                NAMED_ACCESS(flag)
+            then:
+                THROW {
+                    FUNCTION_CALL(MyError) {
+                    }
+                }
+        }
+        RETURN {
+            INT(0)
+        }
+    }

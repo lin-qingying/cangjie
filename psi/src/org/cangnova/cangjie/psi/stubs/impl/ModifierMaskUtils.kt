@@ -61,11 +61,18 @@ object ModifierMaskUtils {
      */
     private val ADDITIONAL_KEYWORDS = arrayOf(
         CjTokens.FOREIGN_KEYWORD,
+        // 追加新位，保持普通修饰符及 FOREIGN 的既有编码位置。
         CjTokens.CONST_KEYWORD,
         CjTokens.UNSAFE_KEYWORD,
         CjTokens.INOUT_KEYWORD,
         CjTokens.PLATFORM_KEYWORD,
     )
+
+    /** stub 编码与反编译文本共用的完整修饰符顺序，包括函数/构造器的 const。 */
+    val modifierKeywords: List<CjKeywordToken> = buildList {
+        addAll(MODIFIER_KEYWORDS_ARRAY)
+        addAll(ADDITIONAL_KEYWORDS)
+    }
 
     /**
      * 初始化检查：确保修饰符数量不超过 64 个
@@ -165,6 +172,7 @@ object ModifierMaskUtils {
 
         val additionalIndex = ADDITIONAL_KEYWORDS.indexOf(modifierToken)
         if (additionalIndex < 0) {
+            // 未登记为声明修饰符的关键字没有对应的编码位。
             return false
         }
 
@@ -187,29 +195,7 @@ object ModifierMaskUtils {
      * @return 修饰符的字符串表示
      */
     @JvmStatic
-    fun maskToString(mask: Long): String {
-        val sb = StringBuilder()
-        sb.append("[")
-        var first = true
-        for (modifierKeyword in MODIFIER_KEYWORDS_ARRAY) {
-            if (maskHasModifier(mask, modifierKeyword)) {
-                if (!first) {
-                    sb.append(" ")
-                }
-                sb.append(modifierKeyword.value)
-                first = false
-            }
-        }
-        for (keywordToken in ADDITIONAL_KEYWORDS) {
-            if (maskHasModifier(mask, keywordToken)) {
-                if (!first) {
-                    sb.append(" ")
-                }
-                sb.append(keywordToken.value)
-                first = false
-            }
-        }
-        sb.append("]")
-        return sb.toString()
-    }
+    fun maskToString(mask: Long): String = modifierKeywords
+        .filter { maskHasModifier(mask, it) }
+        .joinToString(separator = " ", prefix = "[", postfix = "]") { it.value }
 }

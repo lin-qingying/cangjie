@@ -25,6 +25,15 @@ sealed class CallKind(
     val resolutionSequenceWithAdditionalStages: Array<out ResolutionStage> =
         arrayOf(*resolutionSequence, *additionalStages)
 
+    /** 控制流分支 select；只运行实参/类型变量阶段，不参与源码名字与 receiver 查找。 */
+    data object SyntheticSelect : CallKind(
+        CfirMapArguments,
+        CfirMapTypeArguments,
+        CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckArguments,
+        CfirEagerResolveOfCallableReferences,
+    )
+
     /** 普通函数调用。 */
     data object Function : CallKind(
         CfirCheckVisibility,

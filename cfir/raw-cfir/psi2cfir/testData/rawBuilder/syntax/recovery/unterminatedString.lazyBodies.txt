@@ -1,0 +1,4 @@
+FILE: unterminatedString.cj
+    internal? func unterminatedString(): R|String| {
+        <element: CfirLazyBlock>
+    }

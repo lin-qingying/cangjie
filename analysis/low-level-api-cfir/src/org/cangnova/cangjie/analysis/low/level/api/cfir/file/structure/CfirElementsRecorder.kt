@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
 import org.cangnova.cangjie.cfir.patterns.simpleVariableBindingOrNull
@@ -127,27 +128,45 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
      * 记录 binding pattern 到语义绑定变量，并继续访问类型、变量和嵌套 pattern。
      */
     override fun visitBindingPattern(bindingPattern: CfirBindingPattern, data: MutableMap<CjElement, CfirElement>) {
-        recordPatternBindingVariable(bindingPattern, bindingPattern.bindingVariable, data)
         bindingPattern.typeRef?.accept(this, data)
         bindingPattern.bindingVariable?.accept(this, data)
         bindingPattern.nestedPattern?.accept(this, data)
+        recordPatternBindingVariable(bindingPattern, bindingPattern.bindingVariable, data)
     }
 
     /**
      * 记录 var/enum pattern 到语义绑定变量。
      */
     override fun visitVarOrEnumPattern(varOrEnumPattern: CfirVarOrEnumPattern, data: MutableMap<CjElement, CfirElement>) {
-        recordPatternBindingVariable(varOrEnumPattern, varOrEnumPattern.bindingVariable, data)
         varOrEnumPattern.bindingVariable?.accept(this, data)
+        recordPatternBindingVariable(varOrEnumPattern, varOrEnumPattern.bindingVariable, data)
+    }
+
+    /** enum root 保留模式语义，名字 child 映射实际 constructor reference，不发布变量声明。 */
+    override fun visitEnumPattern(enumPattern: CfirEnumPattern, data: MutableMap<CjElement, CfirElement>) {
+        visitElement(enumPattern, data)
+        val psi = enumPattern.anchorPsi
+        val reference = when (psi) {
+            is CjEnumPattern -> when (val expression = psi.expression) {
+                is CjDotQualifiedExpression -> expression.selectorExpression as? CjSimpleNameExpression
+                is CjSimpleNameExpression -> expression
+                else -> null
+            }
+            is CjVarOrEnumPattern -> psi.reference
+            else -> null
+        }
+        reference?.let { cache(it, enumPattern.constructorReference, data) }
     }
 
     /**
      * Type 的绑定属于真实 inner；外层语法映射与 inner 的名字/类型遍历分别保留。
      */
     override fun visitTypePattern(typePattern: CfirTypePattern, data: MutableMap<CjElement, CfirElement>) {
-        recordPatternBindingVariable(typePattern, typePattern.nestedPattern.simpleVariableBindingOrNull(), data)
         typePattern.typeRef.accept(this, data)
         typePattern.nestedPattern.accept(this, data)
+        // 派生 returnTypeRef 可能复用同一模式 source；完成 children 后再登记规范 binder，
+        // 防止该类型节点覆盖模式/名字的声明身份。type child 仍保留自己的独立映射。
+        recordPatternBindingVariable(typePattern, typePattern.nestedPattern.simpleVariableBindingOrNull(), data)
     }
 
     //@formatter:off
@@ -202,11 +221,33 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
     }
 
     /**
-     * 仓颉 pattern 的源码节点对应语义绑定声明，而不是 pattern 容器本身。
-     *
-     * 对齐官方编译器 `VarPattern.varDecl`：pattern 负责语法结构，
-     * 进入作用域并暴露给 Analysis API 的是内部绑定变量声明。
+     * 直接查询 leaf 时仍登记其规范模式及名字 child，与访问 pattern owner 的记录规则一致。
+     * 官方 VarPattern.varDecl 的身份是内部绑定变量，模式容器不替代该声明。
      */
+    override fun visitPatternBindingVariable(
+        patternBindingVariable: CfirPatternBindingVariable,
+        data: MutableMap<CjElement, CfirElement>,
+    ) {
+        visitElement(patternBindingVariable, data)
+        val psi = patternBindingVariable.source?.psi as? org.cangnova.cangjie.psi.CjNamedPattern ?: return
+        recordNamedPatternBinding(psi, patternBindingVariable, data)
+    }
+
+    private fun recordNamedPatternBinding(
+        psi: CjElement,
+        variable: CfirPatternBindingVariable,
+        cache: MutableMap<CjElement, CfirElement>,
+    ) {
+        cache[psi] = variable
+        val nameExpression = when (psi) {
+            is CjBindingPattern -> psi.expression
+            is CjTypePattern -> psi.reference
+            is CjVarOrEnumPattern -> psi.reference
+            else -> null
+        }
+        nameExpression?.let { cache(it, variable, cache) }
+    }
+
     private fun recordPatternBindingVariable(
         pattern: CfirElement,
         bindingVariable: CfirPatternBindingVariable?,
@@ -214,7 +255,24 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
     ) {
         val psi = pattern.anchorPsi as? CjElement ?: return
         val variable = bindingVariable ?: return
-        cache(psi, variable, cache)
+        // 完成 children 后登记 active binder，派生 type-ref 不覆盖模式名字的变量身份。
+        recordNamedPatternBinding(psi, variable, cache)
+    }
+
+    override fun visitCatchPattern(catchPattern: org.cangnova.cangjie.cfir.patterns.CfirCatchPattern, data: MutableMap<CjElement, CfirElement>) {
+        catchPattern.acceptChildren(this, data)
+        recordPatternBindingVariable(catchPattern, catchPattern.bindingVariable, data)
+    }
+
+    override fun visitCommandTypePattern(commandTypePattern: org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern, data: MutableMap<CjElement, CfirElement>) {
+        commandTypePattern.acceptChildren(this, data)
+        recordPatternBindingVariable(commandTypePattern, commandTypePattern.bindingVariable, data)
+    }
+
+    override fun visitResourceVariable(resourceVariable: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable, data: MutableMap<CjElement, CfirElement>) {
+        visitElement(resourceVariable, data)
+        val psi = resourceVariable.anchorPsi as? CjTryResource ?: return
+        psi.parameter?.let { cache(it, resourceVariable, data) }
     }
 
     /**

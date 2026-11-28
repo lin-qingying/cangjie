@@ -329,21 +329,50 @@ class CfirStatusResolver(
 
         declaration.publishInteropInfo(session)
 
+        if (declaration.origin == CfirDeclarationOrigin.Library) {
+            return buildResolvedDeclarationStatus {
+                source = status.source
+                visibility = status.visibility
+                visibilityExplicitness = status.visibilityExplicitness
+                modalityExplicitness = status.modalityExplicitness
+                bodyPresence = status.bodyPresence
+                isDeclarationFile = status.isDeclarationFile
+                isVisibilityExplicit = status.isVisibilityExplicit
+                isModalityExplicit = status.isModalityExplicit
+                isAbstractExplicit = status.isAbstractExplicit
+                isOverride = status.isOverride
+                isOperator = status.isOperator
+                isStatic = status.isStatic
+                isConst = status.isConst
+                isMut = status.isMut
+                isUnsafe = status.isUnsafe
+                isForeign = status.isForeign
+                isC = status.isC
+                isCommon = status.isCommon
+                isFromCommonPart = status.isFromCommonPart
+                isSpecific = status.isSpecific
+                isCommonWithDefault = status.isCommonWithDefault
+                isRedef = status.isRedef
+                isDefault = status.isDefault
+                isAbstract = status.isAbstract
+                isOpen = status.isOpen
+                isSealed = status.isSealed
+                modality = checkNotNull(status.modality) { "Library declaration must have an effective modality" }
+            }
+        }
+
         val visibility = if (status.isVisibilityExplicit) {
             status.visibility
         } else {
             resolveVisibility(declaration, status, containingProperty, overriddenStatuses, isLocal)
         }
 
-        val effectiveFlags = effectiveStatusFlags(status)
+        val effectiveFlags = effectiveStatusFlags(status, containingClass)
 
-        val modality = if (effectiveFlags.isModalityExplicit) {
-            effectiveFlags.modality ?: resolveModality(
-                declaration,
-                containingProperty,
-                containingClass,
-                effectiveFlags.isOverride,
-            )
+        val modality = if (effectiveFlags.isAbstract) {
+            Modality.ABSTRACT
+        } else if (effectiveFlags.modality != null) {
+            effectiveFlags.modality
         } else {
             resolveModality(
                 declaration,
@@ -359,8 +388,12 @@ class CfirStatusResolver(
         return buildResolvedDeclarationStatus {
             source = status.source
             this.visibility = visibility
+            visibilityExplicitness = status.visibilityExplicitness
+            modalityExplicitness = effectiveFlags.modalityExplicitness
+            bodyPresence = status.bodyPresence
+            isDeclarationFile = status.isDeclarationFile
             isVisibilityExplicit = status.isVisibilityExplicit
-            isModalityExplicit = effectiveFlags.isModalityExplicit
+            isModalityExplicit = effectiveFlags.modalityExplicitness == CfirModifierExplicitness.EXPLICIT
             isAbstractExplicit = status.isAbstractExplicit
             isOverride = effectiveFlags.isOverride
             isOperator = effectiveFlags.isOperator
@@ -371,6 +404,7 @@ class CfirStatusResolver(
             isForeign = status.isForeign
             isC = declaration.interopInfo?.isC == true
             isCommon = status.isCommon
+            isFromCommonPart = status.isFromCommonPart
             isSpecific = status.isSpecific
             isCommonWithDefault = status.isCommonWithDefault
             isRedef = status.isRedef
@@ -424,12 +458,17 @@ class CfirStatusResolver(
                     declaration is CfirPropertyAccessor && containingPropertyModality != null -> containingPropertyModality
                     containingClass is CfirInterface -> {
                         when {
+                            declaration.status.isStatic -> Modality.FINAL
                             declaration.status.visibility == Visibilities.Private -> Modality.FINAL
-                            !declaration.hasOwnBodyOrAccessorBody() -> Modality.ABSTRACT
+                            declaration.status.isAbstract -> Modality.ABSTRACT
                             else -> Modality.OPEN
                         }
                     }
 
+                    isOverride && declaration is CfirFunction && declaration.status.bodyPresence == CfirBodyPresence.PRESENT ->
+                        Modality.FINAL
+                    isOverride && declaration.status.isDeclarationFile &&
+                            declaration.status.bodyPresence == CfirBodyPresence.ABSENT -> Modality.FINAL
                     isOverride -> Modality.OPEN
                     else -> Modality.FINAL
                 }
@@ -448,6 +487,7 @@ class CfirStatusResolver(
      */
     private fun effectiveStatusFlags(
         status: CfirDeclarationStatus,
+        containingClass: CfirClassLikeDeclaration?,
     ): EffectiveStatusFlags {
         val incompatibleStaticOverride = status.isStatic && status.isOverride
         val incompatibleStaticOpen = status.isStatic && status.isOpen
@@ -460,18 +500,19 @@ class CfirStatusResolver(
                 !incompatibleStaticOperator
         val effectiveOverride = status.isOverride && !incompatibleStaticOverride
         // 原始 status 供冲突诊断使用；后续声明检查只能消费去除冲突项后的有效状态。
-        val effectiveOpen = status.isOpen &&
+        val explicitOpenIsEffective = status.isOpen &&
                 !incompatibleStaticOpen &&
                 !incompatibleConstOpen &&
                 !incompatibleRedefOpen
+        // 官方 CheckInterfaceAttribute 为所有接口实例成员设置 OPEN，包括抽象成员。
+        val effectiveOpen = explicitOpenIsEffective || containingClass is CfirInterface && !status.isStatic
         val effectiveOperator = status.isOperator && !incompatibleStaticOperator
-        // 官方允许 static 与 abstract 共存；是否缺体由属性检查器消费 ABSTRACT，
-        // 不能用 STATUS 清位模拟完整编译在 parser 错误后的阶段截断。
         val effectiveAbstract = status.isAbstract
-        val effectiveModalityExplicit = status.isModalityExplicit &&
-                !(status.isOpen && !effectiveOpen)
+        // 显式性记录实际源码事实；非法 modifier 被移除语义后也不能改称源码省略了它。
+        val effectiveModalityExplicitness = status.modalityExplicitness
         val effectiveModality = status.modality?.takeIf {
-            effectiveModalityExplicit
+            effectiveModalityExplicitness == CfirModifierExplicitness.EXPLICIT &&
+                    !(status.isOpen && !explicitOpenIsEffective || status.isAbstract && !effectiveAbstract)
         }
 
         return EffectiveStatusFlags(
@@ -480,7 +521,7 @@ class CfirStatusResolver(
             isOperator = effectiveOperator,
             isAbstract = effectiveAbstract,
             isOpen = effectiveOpen,
-            isModalityExplicit = effectiveModalityExplicit,
+            modalityExplicitness = effectiveModalityExplicitness,
             modality = effectiveModality,
         )
     }
@@ -492,20 +533,8 @@ class CfirStatusResolver(
         val isOperator: Boolean,
         val isAbstract: Boolean,
         val isOpen: Boolean,
-        val isModalityExplicit: Boolean,
+        val modalityExplicitness: CfirModifierExplicitness,
         val modality: Modality?,
     )
 }
 
-/**
- * 判断 callable 是否拥有自身实现体或属性访问器实现体。
- *
- * interface 成员默认模态需要区分抽象成员与带默认实现的成员。
- */
-private fun CfirDeclaration.hasOwnBodyOrAccessorBody(): Boolean {
-    return when (this) {
-        is CfirFunction -> body != null
-        is CfirProperty -> getter?.body != null || setter?.body != null
-        else -> true
-    }
-}

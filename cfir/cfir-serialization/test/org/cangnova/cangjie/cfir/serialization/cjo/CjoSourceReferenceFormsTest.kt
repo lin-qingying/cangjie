@@ -2,6 +2,10 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import PackageFormat.DeclKind
 import PackageFormat.ExprKind
 import PackageFormat.Package
@@ -236,7 +240,9 @@ class CjoSourceReferenceFormsTest {
         val graph = fixture.graph(function)
         val reference = assertIs<CfirSourceExpressionPayload.Reference>(
             graph.expressions.values.single { it.payload is CfirSourceExpressionPayload.Reference }.payload)
-        val hidden = assertIs<CfirFieldVariable>(assertIs<CfirSourceReferenceTarget.Declaration>(reference.target).declaration)
+        val hidden = assertIs<CfirPatternBindingVariable>(assertIs<CfirSourceReferenceTarget.Declaration>(reference.target).declaration)
+        val hiddenRoot = assertIs<CfirPatternVariable>(hidden.patternTreeOwner)
+        assertSame(hidden, hiddenRoot.pattern.bindingVariables().single())
         val origin = assertNotNull(hidden.cjoDeclarationOrigin)
         assertEquals(root.resolve("r38.borrowed.cjo").toAbsolutePath().normalize().toString(), origin.packagePath)
         assertEquals(0, origin.declarationIndex)
@@ -278,7 +284,10 @@ class CjoSourceReferenceFormsTest {
         val manager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = listOf(root.toFile()), envProvider = { null }),
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT))
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.session.register(CfirSymbolProvider::class, provider)
         module.session.register(CfirExtendProvider::class, CfirExtendProviderComposer.fromSymbolProviders(listOf(provider)))
         val loaded = assertNotNull(manager.loadPackageSnapshot(PACKAGE))

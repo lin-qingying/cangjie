@@ -1,0 +1,6 @@
+FILE: largeComments.cj
+    internal? func largeComments(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }

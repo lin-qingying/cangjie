@@ -79,7 +79,7 @@ internal fun CjExpression.asPublicAnnotationValue(
         }
 
         is CjCollectionLiteralExpression -> {
-            return CaBaseAnnotationValues.tupleValue(
+            return CaBaseAnnotationValues.arrayValue(
                 values = innerExpressions.map { element -> element.asPublicAnnotationValue(session, token) },
                 sourcePsi = this,
                 token = token,
@@ -144,7 +144,8 @@ private fun CjCallExpression.resolveCallLikeAnnotationValue(
                     position = index,
                 )
             }
-            when (owner?.classKind) {
+            // 类别不可判定时按「普通 class 实例」处理：注解值转换不应因一次符号缺失而失败。
+            when (owner?.classKindOrNull) {
                 CaClassKind.STRUCT -> CaBaseAnnotationValues.structInstanceValue(
                     classId = owner.classId,
                     arguments = namedArguments,
@@ -186,7 +187,7 @@ private fun CaCompileTimeValue.asPublicAnnotationValue(
             token = token,
         )
 
-        is CaCollectionCompileTimeValue -> CaBaseAnnotationValues.tupleValue(
+        is CaCollectionCompileTimeValue -> CaBaseAnnotationValues.arrayValue(
             values = elements.map { element -> element.asPublicAnnotationValue(sourcePsi, session, token) },
             sourcePsi = sourcePsi,
             token = token,

@@ -51,4 +51,10 @@ public class CfirIdeNormalAnalysisLibraryBinaryModuleDeclarationReturnTypeTestGe
   public void testDeclarationReturnType() {
     run("declarationReturnType.cj");
   }
+
+  @Test
+  @TestMetadata("inferredReturnType.cj")
+  public void testInferredReturnType() {
+    run("inferredReturnType.cj");
+  }
 }

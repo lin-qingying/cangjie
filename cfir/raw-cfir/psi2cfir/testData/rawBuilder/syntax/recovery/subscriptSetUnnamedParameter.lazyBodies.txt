@@ -1,0 +1,12 @@
+FILE: subscriptSetUnnamedParameter.cj
+    internal? class UnnamedValue {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_get(i: R|Int64|, v: R|Int64|): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func subscriptSetUnnamedParameter(m: R|UnnamedValue|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,61 @@
+diff --git a/compiler/config/src/org/cangnova/cangjie/config/CompilerConfiguration.kt b/compiler/config/src/org/cangnova/cangjie/config/CompilerConfiguration.kt
+index ce3c4d27b..4a2af2226 100644
+--- a/compiler/config/src/org/cangnova/cangjie/config/CompilerConfiguration.kt
++++ b/compiler/config/src/org/cangnova/cangjie/config/CompilerConfiguration.kt
+@@ -138,10 +138,22 @@ class CompilerConfiguration {
+         list.addAll(index, values)
+     }
+ 
+-    /** 复制配置。 */
++    /**
++     * 复制配置并复制集合容器，避免副本的集合写入污染源配置。
++     */
+     fun copy(): CompilerConfiguration {
+         @OptIn(Internals::class)
+-        return CompilerConfiguration().also { it.map.putAll(map) }
++        return CompilerConfiguration().also { copy ->
++            for ((key, value) in map) {
++                copy.map[key] = when (value) {
++                    is Map<*, *> -> LinkedHashMap(value)
++                    is Set<*> -> value.toMutableSet()
++                    is List<*> -> value.toMutableList()
++                    is Collection<*> -> value.toMutableList()
++                    else -> value
++                }
++            }
++        }
+     }
+ 
+     /** 读取底层值。 */
+diff --git a/compiler/config/test/org/cangnova/cangjie/CompilerConfigurationTest.kt b/compiler/config/test/org/cangnova/cangjie/CompilerConfigurationTest.kt
+index 5098aa848..413a544d5 100644
+--- a/compiler/config/test/org/cangnova/cangjie/CompilerConfigurationTest.kt
++++ b/compiler/config/test/org/cangnova/cangjie/CompilerConfigurationTest.kt
+@@ -1,6 +1,7 @@
+ package org.cangnova.cangjie
+ 
+ import org.cangnova.cangjie.config.CompilerConfiguration
++import org.cangnova.cangjie.config.CompilerConfigurationKey
+ import org.cangnova.cangjie.config.cjoOutputDirectory
+ import org.cangnova.cangjie.config.cjoOutputFile
+ import org.junit.jupiter.api.Assertions.assertEquals
+@@ -10,6 +11,19 @@ import org.junit.jupiter.api.Test
+ /** 验证可复用编译配置不会泄漏上一轮 `.cj.d` 输出路径。 */
+ @OptIn(CompilerConfiguration.Internals::class)
+ class CompilerConfigurationTest {
++    @Test
++    fun copiedConfigurationOwnsItsMutableCollectionContainers() {
++        val rootsKey = CompilerConfigurationKey.create<List<String>>("TEST_ROOTS")
++        val configuration = CompilerConfiguration()
++        configuration.add(rootsKey, "caller-root")
++
++        val copy = configuration.copy()
++        copy.add(rootsKey, "invocation-root")
++
++        assertEquals(listOf("caller-root"), configuration.getList(rootsKey))
++        assertEquals(listOf("caller-root", "invocation-root"), copy.getList(rootsKey))
++    }
++
+     @Test
+     fun nullableCjoOutputPropertiesRemovePreviousInvocationState() {
+         val configuration = CompilerConfiguration()

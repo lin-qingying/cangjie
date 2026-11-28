@@ -29,7 +29,6 @@ import org.cangnova.cangjie.cfir.resolve.substitution.createTypeSubstitutorByTyp
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
-import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
 import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutor
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
@@ -73,7 +72,7 @@ class CfirClassSubstitutionScope(
      */
     private val substitutionOwnerType: ConeCangJieType? = null,
 ) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirFunctionInstantiationScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
-    CfirMemberLookupCompletenessScope, CfirCjmpMemberSubstitutorProvider {
+    CfirPotentialDirectExtendCallableScope, CfirMemberLookupCompletenessScope, CfirCjmpMemberSubstitutorProvider {
     /** substitution 只改变成员签名，lookup completeness 来源保持不变。 */
     override val memberLookupBlockers: List<CfirMemberLookupBlocker>
         get() = (useSiteMemberScope as? CfirMemberLookupCompletenessScope)
@@ -265,6 +264,20 @@ class CfirClassSubstitutionScope(
     }
 
     /**
+     * 按名称处理替换后的变量。
+     *
+     * 类型替换作用域是 `CaType.scope` 的实际返回类型；只覆写 `processCallablesByName`
+     * 与 `processPropertiesByName` 会让按变量族查询的调用方（Analysis 的
+     * `getCallableSymbols` 走本入口）在成员补全里完全拿不到字段与成员变量。
+     */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        useSiteMemberScope.processVariablesByName(name) { original ->
+            // `CfirVariableSymbol` 在字段形态下是 `CfirFieldVariableSymbol`，替换后类型不变。
+            processor(substituteCallableSymbol(original) as CfirVariableSymbol<*>)
+        }
+    }
+
+    /**
      * classifier 不需要 substitution override，直接透传。
      */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
@@ -331,6 +344,15 @@ class CfirClassSubstitutionScope(
                 )
             )
         }
+    }
+
+    /** 原始直接 extend 候选仍由底层 use-site scope 按 target index 供给。 */
+    override fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        (useSiteMemberScope as? CfirPotentialDirectExtendCallableScope)
+            ?.processPotentialDirectExtendCallablesByName(name, processor)
     }
 
     /**
@@ -509,7 +531,7 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirFakeOverrideGenerator.createSymbolForSubstitutionOverride(symbol)
         val data = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
@@ -530,7 +552,7 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirFakeOverrideGenerator.createSymbolForSubstitutionOverride(symbol)
         val data = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
@@ -550,7 +572,7 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirFieldVariableSymbol(symbol.callableId)
         val data = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
@@ -570,7 +592,7 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirConstructorSymbol(symbol.callableId)
         val data = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
@@ -590,17 +612,17 @@ class CfirClassSubstitutionScope(
         val ownerSubstitutor = computeCallableSubstitutor(symbol)
         if (ownerSubstitutor === ConeSubstitutor.Empty || ownerSubstitutor == null) return symbol
 
-        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val declaration = symbol.cfir
         val copiedSymbol = CfirEnumConstructorSymbol(symbol.callableId)
-        val data = declaration.createSubstitutedTypeParameters(copiedSymbol, ownerSubstitutor)
-        val returnTypeData = declaration.substitutedReturnTypeData(symbol, data.substitutor)
-        check(returnTypeData.deferredReturnType == null) { "An enum constructor requires its declared enum return type" }
+        // enum constructor 的类型参数引用归实际 enum 声明。复制签名时只应用 owner 替换。
+        val returnTypeData = declaration.substitutedReturnTypeData(symbol, ownerSubstitutor)
         CfirFakeOverrideGenerator.createCopyForCfirEnumConstructor(
             copiedSymbol, declaration, session, substitutionOverrideOrigin(symbol),
-            substituteDispatchReceiverType(declaration.dispatchReceiverType, data.substitutor),
+            substituteDispatchReceiverType(declaration.dispatchReceiverType, ownerSubstitutor),
             returnTypeData.typeRef.coneTypeOrNull,
-            substitutedParameterTypes(declaration.valueParameters, data.substitutor), data.typeParameters,
+            substitutedParameterTypes(declaration.valueParameters, ownerSubstitutor), declaration.typeParameters,
+            returnTypeData.deferredReturnType,
         )
         return copiedSymbol
     }

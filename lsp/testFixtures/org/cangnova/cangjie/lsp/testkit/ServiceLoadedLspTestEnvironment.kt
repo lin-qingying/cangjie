@@ -5,6 +5,7 @@ import com.intellij.mock.MockProject
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
+import org.cangnova.cangjie.lsp.analysis.LspMacroExpansionOptions
 
 /**
  * 为 LSP 集成测试创建环境，并按插件 XML 的真实加载路径注册服务。
@@ -19,8 +20,9 @@ object ServiceLoadedLspTestEnvironment {
     fun create(
         mode: CangJieCoreEnvironmentMode = CangJieCoreEnvironmentMode.UnitTest,
         pluginXmlPaths: List<String> = emptyList(),
+        macroExpansion: LspMacroExpansionOptions? = null,
     ): CangjieLspEnvironment {
-        val environment = CangjieLspEnvironment.create(mode)
+        val environment = CangjieLspEnvironment.create(mode, macroExpansion)
         val application = environment.coreEnvironment.applicationEnvironment.application as? MockApplication
             ?: error("LSP test environment requires MockApplication")
         val project = environment.project as? MockProject

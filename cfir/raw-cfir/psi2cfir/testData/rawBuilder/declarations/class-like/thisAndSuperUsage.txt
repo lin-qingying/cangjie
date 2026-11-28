@@ -1,0 +1,42 @@
+FILE: thisAndSuperUsage.cj
+    internal? open class Base {
+        init()
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        public open func get(): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+    }
+    internal? class Child <: R|Base| {
+        init()
+        internal? var w: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? func read(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(w) {
+                                    receiver:
+                                        <element: CfirThisReceiverExpression>
+                                }
+                            arguments:
+                                FUNCTION_CALL(get) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                }
+                        }
+                    arguments:
+                        NAMED_ACCESS(v) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                }
+            }
+        }
+    }

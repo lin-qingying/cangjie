@@ -1,12 +1,6 @@
 package org.cangnova.cangjie.cfir.patterns
 
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
-import org.cangnova.cangjie.cfir.patterns.impl.CfirBindingPatternImpl
-import org.cangnova.cangjie.cfir.patterns.impl.CfirTypePatternImpl
-import org.cangnova.cangjie.cfir.patterns.impl.CfirVarOrEnumPatternImpl
-import org.cangnova.cangjie.cfir.patterns.impl.CfirTuplePatternImpl
-import org.cangnova.cangjie.cfir.patterns.impl.CfirEnumPatternImpl
-import org.cangnova.cangjie.cfir.patterns.impl.CfirOrPatternImpl
 import org.cangnova.cangjie.cfir.patterns.impl.CfirConstPatternImpl
 import org.cangnova.cangjie.cfir.patterns.impl.CfirExpressionPatternImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -48,69 +42,57 @@ interface CfirPatternMutableState {
 
         private fun captureSpecific(pattern: CfirPattern): CfirPatternMutableState? = when (pattern) {
             is CfirBindingPattern -> {
-                val impl = pattern as? CfirBindingPatternImpl
-                    ?: error("CfirBindingPattern must be backed by generated implementation")
                 CfirBindingPatternMutableState(
-                    pattern = impl,
-                    typeRef = impl.typeRef,
-                    bindingVariable = impl.bindingVariable,
-                    nestedPattern = impl.nestedPattern,
+                    pattern = pattern,
+                    typeRef = pattern.typeRef,
+                    bindingVariable = pattern.bindingVariable,
+                    nestedPattern = pattern.nestedPattern,
                 )
             }
 
             is CfirTypePattern -> {
-                val impl = pattern as? CfirTypePatternImpl
-                    ?: error("CfirTypePattern must be backed by generated implementation")
                 CfirTypePatternMutableState(
-                    pattern = impl,
-                    typeRef = impl.typeRef,
-                    nestedPattern = impl.nestedPattern,
-                    matchingKind = impl.matchingKind,
-                    matchBeforeRuntime = impl.matchBeforeRuntime,
-                    needRuntimeTypeCheck = impl.needRuntimeTypeCheck,
+                    pattern = pattern,
+                    typeRef = pattern.typeRef,
+                    nestedPattern = pattern.nestedPattern,
+                    matchingKind = pattern.matchingKind,
+                    matchBeforeRuntime = pattern.matchBeforeRuntime,
+                    needRuntimeTypeCheck = pattern.needRuntimeTypeCheck,
                 )
             }
 
             is CfirVarOrEnumPattern -> {
-                val impl = pattern as? CfirVarOrEnumPatternImpl
-                    ?: error("CfirVarOrEnumPattern must be backed by generated implementation")
                 CfirVarOrEnumPatternMutableState(
-                    pattern = impl,
-                    bindingVariable = impl.bindingVariable,
+                    pattern = pattern,
+                    bindingVariable = pattern.bindingVariable,
                 )
             }
 
             is CfirTuplePattern -> {
-                val impl = pattern as CfirTuplePatternImpl
-                val elements = impl.elements.toList()
+                val elements = pattern.elements.toList()
                 object : CfirPatternMutableState {
                     override fun restore() {
-                        impl.elements.clear()
-                        impl.elements.addAll(elements)
+                        pattern.replaceElements(elements)
                     }
                 }
             }
 
             is CfirEnumPattern -> {
-                val impl = pattern as CfirEnumPatternImpl
-                val constructor = impl.constructor
-                val arguments = impl.arguments.toList()
+                val constructor = pattern.constructor
+                val arguments = pattern.arguments.toList()
                 object : CfirPatternMutableState {
                     override fun restore() {
-                        impl.replaceConstructor(constructor)
-                        impl.arguments.clear()
-                        impl.arguments.addAll(arguments)
+                        pattern.replaceConstructor(constructor)
+                        pattern.replaceArguments(arguments)
                     }
                 }
             }
 
             is CfirOrPattern -> {
-                val impl = pattern as CfirOrPatternImpl
-                val alternatives = impl.alternatives.toList()
+                val alternatives = pattern.alternatives.toList()
                 object : CfirPatternMutableState {
                     override fun restore() {
-                        impl.alternatives.clear()
-                        impl.alternatives.addAll(alternatives)
+                        pattern.replaceAlternatives(alternatives)
                     }
                 }
             }
@@ -171,7 +153,7 @@ private class CfirBindingPatternMutableState(
     /**
      * 被恢复的 binding pattern 实现节点。
      */
-    private val pattern: CfirBindingPatternImpl,
+    private val pattern: CfirBindingPattern,
     /**
      * 捕获时的类型引用。
      */
@@ -189,9 +171,9 @@ private class CfirBindingPatternMutableState(
      * 恢复 binding pattern 的类型引用、绑定变量和嵌套 pattern。
      */
     override fun restore() {
-        pattern.typeRef = typeRef
-        pattern.bindingVariable = bindingVariable
-        pattern.nestedPattern = nestedPattern
+        pattern.replaceTypeRef(typeRef)
+        pattern.replaceBindingVariable(bindingVariable)
+        pattern.replaceNestedPattern(nestedPattern)
     }
 }
 
@@ -202,13 +184,13 @@ private class CfirTypePatternMutableState(
     /**
      * 被恢复的 type pattern 实现节点。
      */
-    private val pattern: CfirTypePatternImpl,
+    private val pattern: CfirTypePattern,
     /**
      * 捕获时的类型引用。
      */
     private val typeRef: CfirTypeRef,
     /**
-     * 捕获时的绑定变量。
+     * 捕获时的拥有模式。
      */
     private val nestedPattern: CfirPattern,
     /** 捕获时的类型模式判定形式。 */
@@ -220,7 +202,7 @@ private class CfirTypePatternMutableState(
      * 恢复 type pattern 的类型引用、绑定变量和判定形式。
      */
     override fun restore() {
-        pattern.typeRef = typeRef
+        pattern.replaceTypeRef(typeRef)
         pattern.replaceNestedPattern(nestedPattern)
         pattern.replaceMatchingKind(matchingKind)
         pattern.replaceMatchBeforeRuntime(matchBeforeRuntime)
@@ -235,7 +217,7 @@ private class CfirVarOrEnumPatternMutableState(
     /**
      * 被恢复的 var-or-enum pattern 实现节点。
      */
-    private val pattern: CfirVarOrEnumPatternImpl,
+    private val pattern: CfirVarOrEnumPattern,
     /**
      * 捕获时的绑定变量。
      */
@@ -245,6 +227,6 @@ private class CfirVarOrEnumPatternMutableState(
      * 恢复 var-or-enum pattern 的绑定变量。
      */
     override fun restore() {
-        pattern.bindingVariable = bindingVariable
+        pattern.replaceBindingVariable(bindingVariable)
     }
 }

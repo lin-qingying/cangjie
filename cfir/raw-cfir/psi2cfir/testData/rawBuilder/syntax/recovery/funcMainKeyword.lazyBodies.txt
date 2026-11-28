@@ -1,0 +1,3 @@
+FILE: funcMainKeyword.cj
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>

@@ -1,0 +1,4 @@
+FILE: bareArrowType.cj
+    internal? typealias A = R|Int64|
+    internal? typealias B = R|Option<R|Int64|>|
+    internal? typealias C = R|Array<R|Int64|>|

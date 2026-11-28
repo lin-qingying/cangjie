@@ -1,0 +1,101 @@
+{
+  "role": "CangjieSemanticsAuthority",
+  "date": "2026-10-27",
+  "official_repository": "D:/code/intellij/cangjie/external/cangjie_compiler",
+  "official_ref": "v1.1.3",
+  "official_commit": "14276740ffec1262b81b6b5236b1d840af270b37",
+  "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+  "compiler_version": "Cangjie Compiler: 1.1.3 (cjnative)",
+  "target": "x86_64-w64-mingw32",
+  "working_directory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20261027/g4-source-dependency",
+  "provider_compile": {
+    "actual_exit_code": 0,
+    "source_directory": "provider",
+    "output_directory": "artifacts/provider",
+    "stdout": ""
+  },
+  "observed": [
+    {
+      "case": "ordinary-private",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "diagnostics_file": null,
+      "source_directory": "ordinary-private"
+    },
+    {
+      "case": "ordinary-public",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "diagnostics_file": null,
+      "source_directory": "ordinary-public"
+    },
+    {
+      "case": "private-member",
+      "expected_exit_code": 1,
+      "actual_exit_code": 1,
+      "errors": 1,
+      "warnings": 0,
+      "diagnostics_file": "diagnostics/private-member.json",
+      "source_directory": "private-member"
+    },
+    {
+      "case": "bounded-positive",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "diagnostics_file": null,
+      "source_directory": "bounded-positive"
+    },
+    {
+      "case": "bounded-no-upperbound-import",
+      "expected_exit_code": 1,
+      "actual_exit_code": 1,
+      "errors": 1,
+      "warnings": 0,
+      "diagnostics_file": "diagnostics/bounded-no-upperbound-import.json",
+      "source_directory": "bounded-no-upperbound-import"
+    },
+    {
+      "case": "bounded-unsatisfied",
+      "expected_exit_code": 1,
+      "actual_exit_code": 1,
+      "errors": 1,
+      "warnings": 1,
+      "diagnostics_file": "diagnostics/bounded-unsatisfied.json",
+      "source_directory": "bounded-unsatisfied"
+    },
+    {
+      "case": "foreign-direct-negative",
+      "expected_exit_code": 1,
+      "actual_exit_code": 1,
+      "errors": 1,
+      "warnings": 0,
+      "diagnostics_file": "diagnostics/foreign-direct-negative.json",
+      "source_directory": "foreign-direct-negative"
+    },
+    {
+      "case": "common",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "diagnostics_file": null,
+      "source_directory": "common"
+    },
+    {
+      "case": "specific",
+      "expected_exit_code": 0,
+      "actual_exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "diagnostics_file": null,
+      "source_directory": "specific"
+    }
+  ],
+  "scope": "Official Cangjie source evidence and cjc probes only. These observations establish language semantics; they do not execute or validate this repository's LL production implementation."
+}

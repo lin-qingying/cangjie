@@ -1,0 +1,16 @@
+Tower Data Context:
+    Element 0
+        Scope: CfirLocalScope
+    Element 1
+        Scope: CfirLocalScope
+
+FILE: localPatternVariableInitializerRebuild.cj
+    package sample.lowlevel.contextcollector
+    internal? func localPatternVariableInitializer(): R|Int64| {
+        local? let value: R|Int64| = ...
+            initializer:
+                INT(40)
+        RETURN {
+            NAMED_ACCESS(value -> CfirPatternBindingSymbol(value))
+        }
+    }

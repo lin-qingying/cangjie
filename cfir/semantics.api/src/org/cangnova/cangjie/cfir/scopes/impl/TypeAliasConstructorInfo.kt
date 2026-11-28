@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
+import org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
@@ -10,7 +11,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 /**
  * typealias 构造器合成信息属性 key。
  */
-private object TypeAliasConstructorInfoKey : CfirDeclarationDataKey()
+private object TypeAliasConstructorInfoKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = CfirRawDeclarationDataPolicies.forbidden<TypeAliasConstructorInfo<*>>("typealias scope substitutor")
+}
 
 /**
  * typealias 构造器合成信息。

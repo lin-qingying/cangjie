@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_not_member_of",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'privateValue' is not a member of class 'Receiver'",
+                "Location": {
+                    "File": "private-member\\Use.cj",
+                    "Line": 6,
+                    "Column": 16
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "private-member\\Use.cj",
+                            "Line": 6,
+                            "Column": 16
+                        },
+                        "End": {
+                            "File": "private-member\\Use.cj",
+                            "Line": 6,
+                            "Column": 28
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

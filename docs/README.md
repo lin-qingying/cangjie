@@ -10,6 +10,7 @@ This index contains maintained documentation for the Kotlin/JVM Cangjie frontend
 - [Testing conventions](../TESTING_CONVENTIONS.md)
 - [Module catalog](module-catalog.md)
 - [Compiler stages](cjfir-compiler-stages.md)
+- [Compiler implementation status](compiler-implementation-status.md)
 - [Architecture diagram](project-architecture-diagram.md)
 
 ## Architecture and implementation

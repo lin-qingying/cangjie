@@ -1,0 +1,32 @@
+FILE: withExpression.cj
+    internal? class R {
+        init() {
+        }
+        public func use(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    internal? func withExpression(r: R|R|): R|Int64| {
+        FUNCTION_CALL(with) {
+            NAMED_ACCESS(r)
+            LAMBDA(x: <implicit>) {
+                FUNCTION_CALL(use) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                }
+            }
+        }
+        RETURN {
+            FUNCTION_CALL(with) {
+                NAMED_ACCESS(r)
+                LAMBDA(x: <implicit>) {
+                    FUNCTION_CALL(use) {
+                        receiver:
+                            NAMED_ACCESS(x)
+                    }
+                }
+            }
+        }
+    }

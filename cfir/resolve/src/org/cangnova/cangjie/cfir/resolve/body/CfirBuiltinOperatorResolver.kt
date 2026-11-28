@@ -26,12 +26,15 @@ object CfirBuiltinOperatorResolver {
         val resultKind = checkNotNull(BuiltinPrimitiveOperators.primitiveOperandKind(resultType)) {
             "A successful primitive operator must have a primitive result"
         }
-        call.replaceCalleeReference(buildResolvedBuiltinOperatorReference {
-            source = reference.source
-            name = signature.name
-            this.signature = signature.copy(returnKind = resultKind)
-        })
-        call.replaceConeTypeOrNull(resultType)
+        val completedSignature = signature.copy(returnKind = resultKind)
+        if (reference !is CfirResolvedBuiltinOperatorReference || reference.signature != completedSignature) {
+            call.replaceCalleeReference(buildResolvedBuiltinOperatorReference {
+                source = reference.source
+                name = signature.name
+                this.signature = completedSignature
+            })
+        }
+        if (call.coneTypeOrNull != resultType) call.replaceConeTypeOrNull(resultType)
         return call
     }
 

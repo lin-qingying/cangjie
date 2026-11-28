@@ -1,0 +1,4 @@
+FILE: forWithLetPattern.cj
+    internal? func forWithLetPattern(o: R|Option<R|Int64|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

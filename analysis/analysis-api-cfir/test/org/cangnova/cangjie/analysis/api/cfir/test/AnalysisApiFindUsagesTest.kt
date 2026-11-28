@@ -10,16 +10,23 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.Processor
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
+import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.idea.search.CangJieReferencesSearchExecutor
+import org.cangnova.cangjie.idea.search.CjGeneratedReference
+import org.cangnova.cangjie.idea.search.CjGeneratedReferenceSearchProvider
+import org.cangnova.cangjie.psi.CangJieResolveResult
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportAlias
+import org.cangnova.cangjie.psi.CjMacroExpression
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -57,6 +64,33 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
             references.all { it.element.containingFile == mainFile },
             "Top-level 函数回归夹具中的 usages 应全部落在主文件内",
         )
+    }
+
+    /**
+     * 验证生成引用按真实目标参与 Find Usages，展示位置映射回宏调用 PSI。
+     */
+    @Test
+    fun generatedReferenceMapsToMacroCall(mainFile: CjFile) {
+        val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
+            .single { it.name == "greet" }
+        val macroCall = PsiTreeUtil.findChildrenOfType(mainFile, CjMacroExpression::class.java).single()
+        val physicalReference = collectReferences(mainFile).single { it.isReferenceTo(declaration) }
+
+        CjGeneratedReferenceSearchProvider.registerExtension(
+            mainFile.project,
+            object : CjGeneratedReferenceSearchProvider {
+                override fun processGeneratedReferences(
+                    project: com.intellij.openapi.project.Project,
+                    scope: com.intellij.psi.search.SearchScope,
+                    consumer: Processor<in CjGeneratedReference>,
+                ): Boolean = consumer.process(CjGeneratedReference(physicalReference, macroCall, CangJieResolveResult(declaration)))
+            },
+        )
+
+        val mappedUsages = findUsages(declaration).filter { it.element === macroCall }
+        assertEquals(1, mappedUsages.size, "生成引用结果应定位到宏调用 PSI")
+        assertEquals("greet", mappedUsages.single().canonicalText)
+        assertTrue(mappedUsages.single().isReferenceTo(declaration))
     }
 
     /**
@@ -113,6 +147,30 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         assertReferencesStayInsideLocalScope(bindingPattern, references)
     }
 
+    /** 全局 tuple 叶子必须按规范 PSI 搜索原名及全部别名，并排除被局部绑定遮盖的同名用法。 */
+    @Test
+    fun globalPatternLeafWithMultipleAliases(mainFile: CjFile, testServices: TestServices) {
+        val providerFile = testServices.cjTestModuleStructure.allCjFiles.single { it.name == "provider.cj" }
+        val markers = testServices.expressionMarkerProvider
+        val target = markers.getBottommostElementOfTypeAtCaret<CjBindingPattern>(providerFile, "target")
+        val expected = listOf(
+            "firstImport", "secondImport", "originalImport", "firstUse", "secondUse", "originalUse",
+        ).map { markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(mainFile, it) } +
+            markers.getBottommostElementOfTypeAtCaret<CjSimpleNameExpression>(providerFile, "providerUse")
+
+        val references = findUsages(target)
+        assertEquals(expected.size, references.size, "全局叶子的原名、两个别名及导入引用必须完整且不重复")
+        assertEquals(
+            expected.map { it.containingFile.name to it.textRange }.toSet(),
+            references.map { it.element.containingFile.name to it.rangeInElement.shiftRight(it.element.textRange.startOffset) }.toSet(),
+            "结果必须精确匹配标记位置，不能包含 sibling、声明名称或局部同名引用",
+        )
+        references.forEach { reference ->
+            assertTrue(reference.isReferenceTo(target), "每个搜索结果都必须指向全局叶子")
+            assertSame(target, reference.resolve(), "所有别名必须保持同一个规范叶子 PSI 身份")
+        }
+    }
+
     /**
      * 通过仓颉 references-search executor 收集目标 PSI 的全部引用。
      */
@@ -133,6 +191,16 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
             },
         )
         return references
+    }
+
+    /** 收集文件 PSI 树上暴露的所有 PSI references。 */
+    private fun collectReferences(file: CjFile): List<PsiReference> = buildList {
+        file.accept(object : com.intellij.psi.PsiRecursiveElementWalkingVisitor() {
+            override fun visitElement(element: PsiElement) {
+                addAll(element.references)
+                super.visitElement(element)
+            }
+        })
     }
 
     /**

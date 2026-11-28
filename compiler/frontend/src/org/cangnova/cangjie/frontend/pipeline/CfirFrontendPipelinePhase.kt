@@ -17,21 +17,9 @@ import org.cangnova.cangjie.cfir.builder.toParsingContext
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.pipeline.*
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
-import org.cangnova.cangjie.cfir.serialization.cjo.CfirCjoPackageMetadataProducer
-import org.cangnova.cangjie.cfir.resolve.source.CfirSourceGraphProducer
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoExportSourceSnapshots
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageWriter
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoExportOptions
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpMode
-import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpChirOutput
-import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.CfirCjmpFamilySnapshot
-import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
-import org.cangnova.cangjie.cfir.session.cjmpFamilyAggregate
 import org.cangnova.cangjie.cfir.session.cjmpSettings
-import org.cangnova.cangjie.cfir.resolve.providers.dependenciesSymbolProvider
 import org.cangnova.cangjie.cfir.declarations.cjoDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.parsingSourceContext
@@ -74,14 +62,15 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithSource
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.text
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 
 /**
  * CFIR 前端管线阶段。
  *
  * 该阶段负责创建 VFS 环境、收集源码、构建 CFIR session、执行宏构造前 raw CFIR 构建，
  * 再完成宏构造、resolve 与 check，并产出所有模块的前端输出。
+ *
+ * 写出 CJO 是独立的 CjoWritePipelinePhase：它是核心管线的 SAVE_CJO 阶段，拥有自己的耗时与
+ * 失败报告；嵌在本阶段里时这两者都看不到。
  */
 object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, DefaultCfirFrontendPipelineArtifact>(
     name = "CfirFrontendPipelinePhase",
@@ -206,7 +195,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         val diagnostics = configuration.diagnosticsCollector.diagnostics.drop(initialDiagnosticCount)
         if (reportBinarySourceDiagnostics(configuration, diagnostics)) return null
         if (configuration.messageCollector.hasErrors()) return null
-        if (!writeLiveCjoOutputs(configuration, outputs)) return null
 
         return DefaultCfirFrontendPipelineArtifact(
             frontendOutput = AllModulesFrontendOutput(outputs),
@@ -236,73 +224,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
                     session.cjmpSettings.withPackageFeatures(featuresByPackage),
                 )
             }
-        }
-    }
-
-    /**
-     * Kotlin FIR writes library metadata after frontend analysis.  CFIR keeps
-     * the same phase boundary: this producer consumes resolved CFIR and writes
-     * one package artifact per package when an explicit output directory is set.
-     */
-    private fun writeLiveCjoOutputs(
-        configuration: CompilerConfiguration,
-        outputs: List<SingleModuleFrontendOutput>,
-    ): Boolean {
-        val outputDirectory = configuration.cjoOutputDirectory?.let(Path::of)
-            ?: configuration.cjoOutputFile?.let { product ->
-                val productPath = Path.of(product)
-                if (Files.isDirectory(productPath)) productPath else productPath.parent ?: Path.of(".")
-            }
-        if (outputDirectory == null) return true
-        return try {
-            Files.createDirectories(outputDirectory)
-            val packages = outputs
-                .flatMap { output -> output.fir.map { output.session to it } }
-                .groupBy { (_, file) -> file.packageDirective.packageFqName.asString() }
-            packages.forEach { (packageName, outputFiles) ->
-                val sessions = outputFiles.map { it.first }.distinct()
-                val files = outputFiles.map { it.second }
-                val specificSessions = sessions.filter { it.cjmpSettings.mode == CfirCjmpMode.SPECIFIC }
-                val families = specificSessions.map { it.cjmpFamilyAggregate.ensureFamilyComplete(FqName(packageName)) }
-                val family = when (families.size) {
-                    0 -> null
-                    1 -> families.single()
-                    else -> CfirCjmpFamilySnapshot.combine(
-                        FqName(packageName),
-                        families,
-                        families.flatMap { it.packageDeclarationsForExport() }.distinctBy { it.symbol },
-                    )
-                }
-                val loadedPackages = CjoExportSourceSnapshots.uniqueLoadedPackages(specificSessions.zip(families).flatMap { (session, snapshot) ->
-                    CjoExportSourceSnapshots.loadedPackages(session.dependenciesSymbolProvider, snapshot)
-                })
-                val metadata = CfirCjoPackageMetadataProducer.produce(
-                    files, family, loadedPackages,
-                    CjoExportOptions(
-                        exportForIncremental = false,
-                        exportContent = configuration.nativeMetadataExportConfiguration.importSourceCode,
-                        serializingCommon = configuration.cjmpChirOutput,
-                        isMacroPackage = files.map { it.packageDirective.isMacroPackage }.distinct().single(),
-                        analysisSettings = org.cangnova.cangjie.cfir.resolve.providers.CfirExportAnalysisSettings(
-                            noSubPackages = configuration.nativeMetadataExportConfiguration.noSubPackages,
-                            exportForTest = configuration.nativeMetadataExportConfiguration.exportForTest,
-                            canInline = configuration.nativeMetadataExportConfiguration.canInlineSource(configuration.enableCompileTest),
-                            compileCjd = configuration.compileCjd,
-                        ),
-                    ),
-                    canonicalSources = listOf(CfirSourceGraphProducer.produce(files, family)),
-                )
-                val target = outputDirectory.resolve(CjoConstants.packageNameToPath(packageName))
-                    Files.createDirectories(target.parent)
-                    CjoPackageWriter.write(target, metadata)
-                }
-            true
-        } catch (failure: Throwable) {
-            configuration.messageCollector.report(
-                CompilerMessageSeverity.ERROR,
-                "Cannot produce live CJO metadata: ${failure.message ?: failure::class.simpleName}",
-            )
-            false
         }
     }
 

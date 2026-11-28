@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference
+import org.cangnova.cangjie.analysis.api.cfir.references.CaResolvedSymbolsCacheEntry
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.caches.NullableCaffeineCache
@@ -15,9 +16,13 @@ import org.cangnova.cangjie.analysis.api.platform.caches.withStatsCounter
 import org.cangnova.cangjie.analysis.api.resolution.CaCallResolutionAttempt
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionAttempt
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDeclarationModificationService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationTracker
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import org.cangnova.cangjie.analysis.utils.caches.softCachedValue
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.psi.CjElement
 import java.util.concurrent.ConcurrentHashMap
 
@@ -73,8 +78,12 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
     @OptIn(CaPlatformInterface::class)
     /**
      * CFIR 引用到公开符号集合的缓存。
+     *
+     * 值里带有解析时的文件修改戳，因为 [softCachedValueWithPsiKey] 的失效追踪器只覆盖
+     * 物理 PSI 与宏快照，非物理副本（dangling file / PSI copy）的编辑只能靠条目自身校验
+     * `PsiFile.modificationStamp` 发现。见 [org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference.resolveToSymbols]。
      */
-    val resolveToSymbolsCache: CachedValue<Cache<CaCfirReference, Collection<CaSymbol>>> by lazy {
+    val resolveToSymbolsCache: CachedValue<Cache<CaCfirReference, CaResolvedSymbolsCacheEntry>> by lazy {
         softCachedValueWithPsiKey {
             Caffeine.newBuilder()
                 .withStatsCounter(statisticsService?.analysisSessions?.resolveToSymbolsCacheStatsCounter)
@@ -82,15 +91,43 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
         }
     }
 
+    @OptIn(CaPlatformInterface::class)
     /**
-     * The lifetime of this cache is the same as the corresponding [org.jetbrains.kotlin.analysis.api.CaSession],
-     * so it doesn't require additional invalidation.
+     * Cone 类型到替换后成员作用域的会话级缓存。
      *
-     * The only case where we need to invalidate FIR without the containing session being invalidated is
-     * [in-block modification][org.jetbrains.kotlin.analysis.low.level.api.fir.file.structure.LLCfirDeclarationModificationService].
+     * `CaType.scope` 家族与 `CaType.typeScope` 走同一条 `typeToScope` 接缝且参数
+     * 完全一致（同 session、同 scopeSession、同 `USE_SITE` 模式），一个类型必须
+     * 只构造一份作用域：补全是高频调用方，两个公开入口共享该缓存也避免同一接收者
+     * 在一次补全会话里重复遍历 extend 索引与父类型图。
+     */
+    val typeScopeCache: CachedValue<NullableConcurrentCache<ConeCangJieType, CfirTypeScope?>> by lazy {
+        softCachedValueWithPsiKey {
+            NullableConcurrentCache()
+        }
+    }
+
+    /**
+     * 获取或计算 [type] 的替换后成员作用域，供 use-site 成员通道与类型作用域通道共享。
+     */
+    fun getOrCreateTypeScope(
+        type: ConeCangJieType,
+        create: () -> CfirTypeScope?,
+    ): CfirTypeScope? = typeScopeCache.value.getOrPut(type) { create() }
+
+    /**
+     * 缓存随对应的 [CaSession] 持有；为响应 session 存续期间的语义变化，也会注册独立修改跟踪器。
+     *
+     * 函数体内修改由 [LLCfirDeclarationModificationService] 管理的 tracker 跟踪；当 CFIR session
+     * 可解析时，宏语义快照修改也会通过 session 的快照 tracker 单独触发缓存失效。
      */
     private inline fun <T> softCachedValueWithPsiKey(crossinline createValue: () -> T): CachedValue<T> {
-        return softCachedValue(project, LLCfirInBlockModificationTracker.getInstance(project)) {
+        val invalidationTrackers = buildList {
+            add(LLCfirInBlockModificationTracker.getInstance(project))
+            (analysisSession.cfirSession as? LLCfirResolvableModuleSession)
+                ?.macroSemanticSnapshotModificationTracker
+                ?.let(::add)
+        }
+        return softCachedValue(project, *invalidationTrackers.toTypedArray()) {
             createValue()
         }
     }

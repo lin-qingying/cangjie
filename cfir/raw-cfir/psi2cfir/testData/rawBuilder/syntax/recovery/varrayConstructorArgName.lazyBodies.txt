@@ -1,0 +1,4 @@
+FILE: varrayConstructorArgName.cj
+    internal? func badName(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

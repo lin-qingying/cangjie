@@ -643,7 +643,7 @@ fun CjElement.getQualifiedExpressionForSelector(): CjQualifiedExpression? {
  * 保存 `CjDeclaration.containingTypeStatement`，供PSI 工具流程读取节点结构或语义信息。
  */
 val CjDeclaration.containingTypeStatement: CjTypeStatement?
-    get() = parent.let {
+    get() = unwrapDeclarationMacroInputParent(parent).let {
         when (it) {
             is CjAbstractClassBody -> it.parent as? CjTypeStatement
             is CjTypeStatement -> it

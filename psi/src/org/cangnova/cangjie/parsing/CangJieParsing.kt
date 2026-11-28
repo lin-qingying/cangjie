@@ -39,17 +39,18 @@ import org.cangnova.cangjie.CjmpFileRoleTransition
 import org.cangnova.cangjie.CjmpRoleEventKind
 import org.cangnova.cangjie.CjmpRoleModifiers
 import org.cangnova.cangjie.hasCjmpDefaultImplementation
-import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.BuiltInAnnotationDescriptor
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.messages.CangJieParsingBundle
 import org.cangnova.cangjie.messages.CjParsingDiagnosticOrder
-import org.cangnova.cangjie.messages.ParsingDiagnosticHint
-import org.cangnova.cangjie.psi.CjRelativeErrorHint
 import org.cangnova.cangjie.messages.ParsingDiagnostic
+import org.cangnova.cangjie.messages.ParsingDiagnosticHint
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjRelativeErrorHint
 import org.cangnova.cangjie.psi.CallingConvention
 import org.cangnova.cangjie.psi.CjBuiltInAnnotation
 import org.cangnova.cangjie.psi.CjPsiUtil
@@ -471,6 +472,14 @@ class CangJieParsing private constructor(
             get() = inheritedModifiers + parsedModifierOccurrences.mapNotNull { it.token.cjModifierKindOrNull() }
 
         /**
+         * `@Intrinsic` 内置注解事实。
+         *
+         * 官方 `INTRINSIC` 来自**注解**（`NAME_TO_ANNO_KIND`，`Parser.h:52-60`），
+         * 不是关键字修饰符，因此不能进入 [modifiers] 集合（否则会改变 [count] 语义）。
+         */
+        private var intrinsicAnnotated: Boolean = false
+
+        /**
          * 提供 `has` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
          */
         fun has(kind: CjModifierKind): Boolean = modifiers.contains(kind)
@@ -539,6 +548,19 @@ class CangJieParsing private constructor(
          * 保存 `isForeignDetected`，供仓颉语法解析流程读取节点结构或语义信息。
          */
         val isForeignDetected: Boolean get() = has(CjModifierKind.FOREIGN)
+
+        /**
+         * 是否解析到 `@Intrinsic` 内置注解。
+         *
+         * 与 [isForeignDetected] 同属"修饰符检测器收集的非关键字事实"：注解先于
+         * modifier list 解析，由 `parseAnnotations` 在识别到内置 `Intrinsic` 时置位。
+         */
+        val isIntrinsicAnnotated: Boolean get() = intrinsicAnnotated
+
+        /** 记录当前声明带 `@Intrinsic` 内置注解。 */
+        fun markIntrinsicAnnotated() {
+            intrinsicAnnotated = true
+        }
         /**
          * 保存 `isConstDetected`，供仓颉语法解析流程读取节点结构或语义信息。
          */
@@ -1087,10 +1109,14 @@ class CangJieParsing private constructor(
     private fun parseImportDirectives() {
         val importList = mark()
 
-//        if (!(at(IMPORT_KEYWORD) || atSet(IMPORT_ACCESS_MODIFIER_SET) && lookahead(1) == IMPORT_KEYWORD)) {
-//            // 允许注释绑定到首个声明
-//            importList.setCustomEdgeTokenBinders(DoNotBindAnything, null)
-//        }
+        // 没有任何 import 时，import 列表**不得吞掉它后面的注释**——否则 `package`/`import` 之后的
+        // 文档注释会被绑定进 import list 子树，而声明的 `docComment` 只找自己的子节点与前驱兄弟，
+        // 于是「有 CDoc 的声明取不到文档」且不报错（LSP 的 resolve/hover 一直为空文档即此因）。
+        // 这段曾在移植时被注释掉，实测恢复后 `findDocComment` 能从紧邻前驱取到注释。
+        if (!(at(IMPORT_KEYWORD) || atSet(IMPORT_ACCESS_MODIFIER_SET) && lookahead(1) == IMPORT_KEYWORD)) {
+            // 允许注释绑定到首个声明
+            importList.setCustomEdgeTokenBinders(DoNotBindAnything, null)
+        }
 
         while (at(IMPORT_KEYWORD) || atSet(IMPORT_ACCESS_MODIFIER_SET) && lookahead(1) == IMPORT_KEYWORD || isWhenAnnotation()) {
             if (!parseImportDirective()) {
@@ -2555,9 +2581,14 @@ class CangJieParsing private constructor(
      * @return 解析结果的节点类型
      */
     context(parseContext: ParsingContext)
-    fun parseAnnotation() {
+    fun parseAnnotation(detector: ModifierDetector? = null) {
 
         if (isBuiltInAnnotation()) {
+            // `@Intrinsic` 是官方 `INTRINSIC` 属性唯一的来源；它是注解而非关键字修饰符，
+            // 只能在注解解析点登记到检测器，供缺体判定使用。
+            if (languageBuiltInAnnotationAtCurrentToken()?.kind == BuiltInAnnotationKind.INTRINSIC) {
+                detector?.markIntrinsicAnnotated()
+            }
             parseBuiltAnnotation()
             return
         }
@@ -2659,6 +2690,8 @@ class CangJieParsing private constructor(
 
     /**
      * 提供 `parseAnnotations` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
+     *
+     * @param detector 修饰符检测器；声明前缀场景传入它以登记 `@Intrinsic`。
      */
     context(parseContext: ParsingContext)
     fun parseAnnotations(detector: ModifierDetector? = null) {
@@ -2671,11 +2704,15 @@ class CangJieParsing private constructor(
         annotationConsumer: ((CjmpParsedAnnotationFacts) -> Unit)?,
     ) {
         val mark = mark()
+        val builtInNames = mutableSetOf<String>()
         while (isAnnotationStart()) {
             val builtInAnnotation = if (isBuiltInAnnotation()) languageBuiltInAnnotationAtCurrentToken() else null
+            if (builtInAnnotation != null && !builtInNames.add(builtInAnnotation.sourceName)) {
+                error("Duplicated built-in annotation")
+            }
             val sourceName = builtInAnnotation?.sourceName ?: annotationSourceNameAtCurrentToken()
             val startOffset = builder.currentOffset
-            parseAnnotation()
+            parseAnnotation(detector)
             val endOffset = lastSignificantTokenEndOffset()
             val sourceFact = CjAnnotationSourceFact(sourceName, builtInAnnotation?.kind,
                 builder.macroParsingJournal.sourceOrigin(startOffset, endOffset))
@@ -2760,13 +2797,31 @@ class CangJieParsing private constructor(
     }
 
     /** 语法分派与 @! 保留名检查共享模块约束；显式限定名称属于自定义注解。 */
+    private fun annotationModuleNameAtCurrentToken(): String {
+        val provider = builder.getUserData(ANNOTATION_MODULE_PROVENANCE)
+        return provider?.invoke(builder.currentOffset) ?: languageModuleName
+    }
+
+    /** 注解的完整语法 identifier，限定 custom 名称不冒充同名语言 builtin。 */
+    private fun annotationIdentifierAtCurrentToken(): String {
+        val name = StringBuilder()
+        var index = 1
+        while (lookahead(index) == IDENTIFIER) {
+            name.append(rawTokenText(builder, index))
+            if (lookahead(index + 1) != DOT) break
+            name.append('.')
+            index += 2
+        }
+        return name.toString()
+    }
+
     private fun languageBuiltInAnnotationAtCurrentToken(): BuiltInAnnotationDescriptor? {
         if (!_atSet(AT, ATEXCL) || lookahead(1) != IDENTIFIER || lookahead(2) == DOT) return null
         val sourceName = rawTokenText(builder, 1).toString()
         return BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
             sourceName = sourceName,
             forcedCustom = _at(ATEXCL),
-            moduleName = languageModuleName,
+            moduleName = annotationModuleNameAtCurrentToken(),
         )
     }
 
@@ -2785,7 +2840,7 @@ class CangJieParsing private constructor(
         return BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
             sourceName = rawTokenText(builder, 1).toString(),
             forcedCustom = false,
-            moduleName = languageModuleName,
+            moduleName = annotationModuleNameAtCurrentToken(),
         )
     }
 
@@ -3246,36 +3301,24 @@ class CangJieParsing private constructor(
      *
      * 处理类内部的通用声明，包括函数、属性、变量等。
      *
-     * @param tokenId 令牌 ID
-     * @param classdetector 类修饰符检测器
+     * @param scopeKind 宿主作用域
      * @param detector 修饰符检测器
      * @return 解析结果的节点类型
      */
     context(parseContext: ParsingContext)
     private fun parseClassCommonDeclaration(
-        tokenId: Int?, classdetector: ModifierDetector, detector: ModifierDetector
+        tokenId: Int?, detector: ModifierDetector
     ): IElementType? {
+        val scopeKind = parseContext.memberScope?.declarationScope ?: CjScopeKind.UNKNOWN_SCOPE
         return when (getTokenId()) {
             AT_Id -> with(parseContext.copy(backToken = true)) {
                 expressionParsing.parseMacroExpression(checkNotNull(parseContext.memberScope).declarationScope,
                     DeclarationParsingMode.MEMBER, detector.declarationPrefix())
             }
 
-            FUNC_KEYWORD_Id -> if (tokenId != null) {
-                if (tokenId == INTERFACE_KEYWORD_Id) {
-                    parseFunction(true, classdetector, detector, topTokenId = tokenId)
-                } else {
-                    parseFunction(classdetector = classdetector, detector = detector, topTokenId = tokenId)
-                }
-            } else {
-                parseFunction(detector = detector, topTokenId = tokenId)
-            }
+            FUNC_KEYWORD_Id -> parseFunction(detector = detector, scopeKind = scopeKind)
 
-            PROP_KEYWORD_Id -> if (tokenId != null && tokenId == INTERFACE_KEYWORD_Id) {
-                parseProperty(true, classdetector, detector)
-            } else {
-                parseProperty(classdetector = classdetector, detector = detector)
-            }
+            PROP_KEYWORD_Id -> parseProperty(detector = detector, scopeKind = scopeKind)
 
             LET_KEYWORD_Id, VAR_KEYWORD_Id, CONST_KEYWORD_Id -> parseField(detector)
 
@@ -3456,7 +3499,7 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     fun parseVariable(
-        classdetector: ModifierDetector
+        classdetector: ModifierDetector,
     ): IElementType {
         assert(at(LET_KEYWORD) || at(VAR_KEYWORD) || at(CONST_KEYWORD))
         val declarationAnchor = builder.currentOffset
@@ -3671,7 +3714,7 @@ class CangJieParsing private constructor(
                 parsePrimaryInitFunc(checkNotNull(primaryParameterGrammar()), detector)
                 PRIMARY_CONSTRUCTOR
             }
-            memberKeyword != null -> parseMemberDeclarationRest(memberKeyword, ModifierDetector(), detector)
+            memberKeyword != null -> parseMemberDeclarationRest(memberKeyword, detector)
             else -> {
                 val mode = when (scope) {
                     CjScopeKind.TOPLEVEL -> DeclarationParsingMode.TOPLEVEL
@@ -3901,7 +3944,8 @@ class CangJieParsing private constructor(
             nameParsingMode: NameParsingMode,
             scope: DeclarationParsingMode
         ): IElementType? {
-            return parser.parseFunction(detector = detector)
+            // 该入口用于顶层 / 局部声明，宿主不是 class 体，缺体按官方 DiagMissingBody 处理。
+            return parser.parseFunction(detector = detector, scopeKind = CjScopeKind.TOPLEVEL)
         }
     }
 
@@ -4090,14 +4134,14 @@ class CangJieParsing private constructor(
      *   ;
      * ```
      *
-     * @param isInterface 是否在接口中
-     * @param classdetector 类修饰符检测器
      * @param detector 修饰符检测器
+     * @param scopeKind 宿主作用域；宏输入为 [CjScopeKind.UNKNOWN_SCOPE]
      * @return 解析结果的节点类型
      */
     context(parseContext: ParsingContext)
     fun parseProperty(
-        isInterface: Boolean = false, classdetector: ModifierDetector? = null, detector: ModifierDetector? = null
+        detector: ModifierDetector? = null,
+        scopeKind: CjScopeKind = CjScopeKind.UNKNOWN_SCOPE,
     ): IElementType {
         assert(_at(PROP_KEYWORD))
 
@@ -4119,22 +4163,63 @@ class CangJieParsing private constructor(
             return PROPERTY
         }
 
-        parseByType()
+        // 官方 `ParsePropDecl` 在属性类型缺失（缺 ':' 或 ':' 后没有类型名）时只报类型诊断，
+        // 不再叠报缺体：此时声明已因类型残缺而 broken。
+        val isSignatureBroken = !parseByType()
         checkCjmpDeclarationFileRole(detector, PROPERTY, declarationAnchor)
 
         if (at(LBRACE)) {
             parsePropertyBody(detector, propertyNameStartOffset)
-        } else if (!isInterface) {
-            if (classdetector != null && !classdetector.isAbstractDetected) {
-                // 只抑制"缺体"诊断；"无 {} 即 abstract"的判定（R4）不在这里，保持原样。
-                reportMissingBody {
-                    error(CangJieParsingBundle.message("parsing.error.unimplemented.abstract.property"))
-                    error(CangJieParsingBundle.message("parsing.error.missing", "prop body. Expecting '{''"))
-                }
-            }
+        } else {
+            reportMissingPropertyBody(scopeKind, isSignatureBroken, detector)
         }
 
         return PROPERTY
+    }
+
+    /**
+     * 属性缺体适配器：提取 [CjMemberBodyFacts] → 调 [CjMemberBodyPolicy.checkPropertyBody] →
+     * 执行诊断。
+     *
+     * 官方 `ParserImpl::ParsePropDecl`（`external/cangjie_compiler/src/Parse/Parser.cpp:340-394`）：
+     * ```cpp
+     * if (Skip(TokenKind::LCURL)) {
+     *     ParsePropBody(modifiers, *ret);
+     * } else if (scopeKind == CLASS_BODY || scopeKind == INTERFACE_BODY || scopeKind == UNKNOWN_SCOPE) {
+     *     ret->EnableAttr(Attribute::ABSTRACT);        // 隐式 abstract，不报缺体
+     * } else {
+     *     DiagMissingPropertyBody(*ret);               // 其余作用域才报缺体
+     * }
+     * ```
+     *
+     * 官方该分支**没有** abstract 类判定、也没有 `FOREIGN` / `INTRINSIC` 因子，且
+     * `parseDeclFile` 只抑制 `DiagMissingPropertyBody`、不抑制 ABSTRACT 标记。
+     * 判定本身在策略对象内，本函数只负责把 parser 事实搬进纯数据并执行结果。
+     *
+     * @param scopeKind 宿主作用域
+     * @param isSignatureBroken 属性类型是否残缺
+     * @param detector 修饰符检测器；仅用于提供 foreign / intrinsic 事实（策略不读取）
+     */
+    context(parseContext: ParsingContext)
+    private fun reportMissingPropertyBody(
+        scopeKind: CjScopeKind,
+        isSignatureBroken: Boolean,
+        detector: ModifierDetector?,
+    ) {
+        val decision = CjMemberBodyPolicy.checkPropertyBody(
+            CjMemberBodyFacts(
+                scopeKind = scopeKind,
+                hasBody = false,
+                hasAccessors = false,
+                isForeign = detector?.isForeignDetected == true,
+                isIntrinsic = detector?.isIntrinsicAnnotated == true,
+                isDeclarationFile = sourceKind.isDeclaration,
+                isSignatureBroken = isSignatureBroken,
+            )
+        )
+        if (decision.diagnostic == CjMemberBodyDiagnostic.MISSING_PROPERTY_BODY) {
+            error(CangJieParsingBundle.message("parsing.error.property.declaration.must.have.body"))
+        }
     }
 
 
@@ -4147,14 +4232,19 @@ class CangJieParsing private constructor(
      *   : ":" typeReference
      *   ;
      * ```
+     *
+     * @return 是否解析到合法的类型起点；缺 ':' 或 ':' 后没有类型名时返回 false。
      */
     context(parseContext: ParsingContext)
-    private fun parseByType() {
+    private fun parseByType(): Boolean {
         if (at(COLON)) {
             advance() // COLON
+            val hasType = isTypeReferenceStart()
             parseTypeRef()
+            return hasType
         } else {
             error(CangJieParsingBundle.message("parsing.error.missing", "type. Expecting ':' type"))
+            return false
         }
     }
 
@@ -4168,6 +4258,7 @@ class CangJieParsing private constructor(
      *   : "get" "(" ")" block
      *   ;
      * ```
+     *
      */
     context(parseContext: ParsingContext)
     private fun parsePropertyGet() {
@@ -4240,7 +4331,16 @@ class CangJieParsing private constructor(
      *   ;
      * ```
      *
-     * @param detector 修饰符检测器
+     * 官方 `ParserImpl::ParsePropBody`（`external/cangjie_compiler/src/Parse/ParseDecl.cpp:275-329`）
+     * 对重复的同类 accessor 报 `duplicated '<get|set>' in prop`，但**不丢弃**第二个节点：
+     * 诊断后照常解析并追加进 `getters` / `setters`。本实现同样保留全部节点，仅在解析重复项时补报诊断。
+     *
+     * 官方主诊断锚重复关键字，另带 "previous one" 与 prop 起始位置两个 hint；仓库的
+     * `PsiErrorElement` 只有 errorDescription，无法表达 hint。
+     *
+     * 当前循环只接受裸 `get` / `set`；注解、访问器修饰符与分号分隔尚未对齐官方循环。
+     *
+     * @param detector 修饰符检测器，透传给 setter 解析
      */
     context(parseContext: ParsingContext)
     private fun parsePropertyBody(detector: ModifierDetector?, propertyNameStartOffset: Int) {
@@ -5046,8 +5146,7 @@ class CangJieParsing private constructor(
     /**
      * 解析成员声明
      *
-     * @param tokenId 令牌 ID
-     * @param classdetector 类修饰符检测器
+     * @param scopeKind 宿主作用域
      * @param rollbackMacro 是否回滚宏
      */
     context(parseContext: ParsingContext)
@@ -5075,7 +5174,7 @@ class CangJieParsing private constructor(
         )
 
         val declarationStart = builder.currentOffset
-        val parsedDeclType = parseMemberDeclarationRest(tokenId, classdetector, detector)
+        val parsedDeclType = parseMemberDeclarationRest(tokenId, detector)
         val memberEndOffset = lastSignificantTokenEndOffset()
         val declType = if (parsedDeclType == VARIABLE) {
             // ParseClassBody 等名义 body 只接收普通变量；ParseDecl/宏片段本身仍保留模式身份。
@@ -5196,27 +5295,27 @@ class CangJieParsing private constructor(
     /**
      * 解析成员声明的剩余部分
      *
-     * @param tokenId 令牌 ID
-     * @param classdetector 类修饰符检测器
+     * @param scopeKind 宿主作用域
      * @param detector 修饰符检测器
      * @return 解析结果的节点类型
      */
     context(parseContext: ParsingContext)
     private fun parseMemberDeclarationRest(
-        tokenId: Int?, classdetector: ModifierDetector, detector: ModifierDetector
+        tokenId: Int?, detector: ModifierDetector
     ): IElementType? {
-        var declType = parseClassCommonDeclaration(tokenId, classdetector, detector)
+        val scopeKind = parseContext.memberScope?.declarationScope ?: CjScopeKind.UNKNOWN_SCOPE
+        var declType = parseClassCommonDeclaration(tokenId, detector)
 
         if (declType != null) return declType
 
-        if (tokenId != null && at(TILDE)) {
+        if (scopeKind != CjScopeKind.UNKNOWN_SCOPE && at(TILDE)) {
             val tilde = mark()
             advance() // TILDE ~
             if (builder.newlineBeforeCurrentToken() || !at(INIT_KEYWORD)) {
                 tilde.error(CangJieParsingBundle.message("parsing.error.expecting.member.declaration"))
                 return INVALID_DECLARATION
             }
-            val scopeError = if (tokenId != CLASS_KEYWORD_Id) tilde else null
+            val scopeError = if (scopeKind != CjScopeKind.CLASS_BODY) tilde else null
             if (scopeError == null) {
                 tilde.drop()
             }
@@ -5285,7 +5384,7 @@ class CangJieParsing private constructor(
             else -> return null
         }
         if (!at(TILDE)) return null
-        return parseMemberDeclarationRest(enclosingDeclarationToken, ModifierDetector(), detector)
+        return parseMemberDeclarationRest(enclosingDeclarationToken, detector)
     }
 
     /** class-like 的 IS_BROKEN InvalidDecl 恢复；外层接收者决定丢弃或保留宏 input 槽位。 */
@@ -5578,8 +5677,7 @@ class CangJieParsing private constructor(
      *   ;
      * ```
      *
-     * @param tokenId 令牌 ID
-     * @param detector 修饰符检测器
+     * @param scopeKind 宿主作用域（class / interface / struct / enum / extend 体）
      */
     context(parseContext: ParsingContext)
     private fun parseMembers(
@@ -5603,8 +5701,7 @@ class CangJieParsing private constructor(
      *   ;
      * ```
      *
-     * @param tokenId 令牌 ID
-     * @param detector 修饰符检测器
+     * @param scopeKind 宿主作用域
      */
     context(parseContext: ParsingContext)
     private fun parseClassBody(
@@ -5626,7 +5723,6 @@ class CangJieParsing private constructor(
         body.done(
             when (tokenId) {
                 INTERFACE_KEYWORD_Id -> INTERFACE_BODY
-
                 ENUM_KEYWORD_Id -> ENUM_BODY
                 else -> CLASS_BODY
             }
@@ -5696,18 +5792,19 @@ class CangJieParsing private constructor(
      *   ;
      * ```
      *
-     * @param isInterfaceMethod 是否为接口方法
-     * @param classdetector 类修饰符检测器
+     * 语法本身允许 `functionBody?`：缺体是否合法**只取决于宿主作用域**（见 [reportMissingFunctionBody]），
+     * 与成员自身的 `abstract` 修饰符无关。
+     *
      * @param detector 修饰符检测器
-     * @param topTokenId 顶层token ID
+     * @param isForeign 是否为外部函数
+     * @param scopeKind 宿主作用域；顶层为 [CjScopeKind.TOPLEVEL]，宏输入为 [CjScopeKind.UNKNOWN_SCOPE]
      * @return 解析结果的节点类型
      */
     context(parseContext: ParsingContext)
     fun parseFunction(
-        isInterfaceMethod: Boolean = false,
-        classdetector: ModifierDetector? = null,
         detector: ModifierDetector? = null,
-        topTokenId: Int? = 0
+        isForeign: Boolean = false,
+        scopeKind: CjScopeKind = CjScopeKind.TOPLEVEL,
     ): IElementType {
         assert(_at(FUNC_KEYWORD))
         val declarationAnchor = builder.currentOffset
@@ -5767,16 +5864,21 @@ class CangJieParsing private constructor(
 
         reportUnsupportedSpecificParameterDefaults(cjmpParameterFacts, parameterLists.size)
 
-        // 返回值类型
-        val hasReturnType = at(COLON)
-        if (hasReturnType) {
+        // 返回值类型：只有真的解析到类型节点才算 hasReturnType；`func f():` 的类型是残缺的，
+        // 官方此时仍会报 abstract 函数缺返回类型。注意该诊断与"缺类型名"落在同一个
+        // lookahead token，PSI 层可能只保留一个错误元素；策略结果由纯单测锁定。
+        val hasReturnType = if (at(COLON)) {
             advance() // COLON
-            thisTypeAllowed = topTokenId == CLASS_KEYWORD_Id && at(THIS_KEYWORD_UPPER)
+            thisTypeAllowed = scopeKind == CjScopeKind.CLASS_BODY && at(THIS_KEYWORD_UPPER)
+            val hasType = isTypeReferenceStart()
             try {
                 parseTypeRef()
             } finally {
                 thisTypeAllowed = false
             }
+            hasType
+        } else {
+            false
         }
 
         parseTypeConstraintsGuarded(typeParameterListOccurred)
@@ -5811,14 +5913,16 @@ class CangJieParsing private constructor(
                 errorOnRange(bodyStart, lastSignificantTokenEndOffset(),
                     CangJieParsingBundle.message("parsing.error.foreign.function.no.body"))
             }
-        } else if (
-            !(isInterfaceMethod || detector?.isAbstractDetected == true || detector?.isCommonDetected == true) &&
-            (detector?.isForeignDetected != true) && !parameters.parameterListMissing
-        ) {
-            reportMissingBody {
-                val name = detector?.cjmpDeclarationName?.let { " '${CjPsiUtil.unquoteIdentifier(it)}'" }.orEmpty()
-                errorOnPosition(lastSignificantTokenEndOffset(), CangJieParsingBundle.message("parsing.error.body.missing", "function", name))
-            }
+        } else if (detector?.isCommonDetected != true) {
+            reportMissingFunctionBody(
+                scopeKind = scopeKind,
+                hasReturnType = hasReturnType,
+                isForeign = isForeign || detector?.isForeignDetected == true,
+                isIntrinsic = detector?.isIntrinsicAnnotated == true,
+                isSignatureBroken = parameters.parameterListMissing,
+                cjmpRoleRequiresReturnType = cjmpRole != null,
+                declarationName = detector?.cjmpDeclarationName,
+            )
         }
 
         // 官方不支持 currying；错误属于第二个实际列表，所有列表仍交给共享签名 owner。
@@ -5860,18 +5964,17 @@ class CangJieParsing private constructor(
      * ```
      *
      * @param detector 修饰符检测器
-     * @param topTokenId 顶层token ID
+     * @param scopeKind 宿主作用域；`foreign` 声明本身不参与缺体判定
      * @return 解析结果的节点类型
      */
     context(parseContext: ParsingContext)
     fun parseForeignFunction(
-        detector: ModifierDetector, topTokenId: Int = 0
+        detector: ModifierDetector, scopeKind: CjScopeKind = CjScopeKind.TOPLEVEL
     ): IElementType {
         return parseFunction(
-            isInterfaceMethod = false,
-            classdetector = null,
             detector = detector,
-            topTokenId = topTokenId
+            isForeign = true,
+            scopeKind = scopeKind
         )
     }
 
@@ -6155,8 +6258,11 @@ class CangJieParsing private constructor(
     /**
      * 上报"声明体缺失"类诊断。
      *
-     * 【唯一】的缺体抑制点：声明文件（`.cj.d`）中函数 / 构造 / 访问器 / 属性的体允许不存在，
-     * 对齐官方 `Parser::parseDeclFile`（P1 / P4 / P6）。
+     * 承担构造器 / 访问器 / 主函数体的缺体抑制：声明文件（`.cj.d`）中这些体允许不存在，
+     * 对齐官方 `Parser::parseDeclFile`。
+     *
+     * 函数 / 属性成员不走这里：它们的缺体判定（含 `parseDeclFile` 门与作用域分支）已
+     * 收敛到 [CjMemberBodyPolicy]，见 [reportMissingFunctionBody] / [reportMissingPropertyBody]。
      *
      * 只用于"名字、参数列表、类型都已解析完，仅缺 body"的情形。
      * 残缺输入（如 `class C { func }`，连函数名都没有）在各自的上报点走
@@ -6164,8 +6270,7 @@ class CangJieParsing private constructor(
      * 这正是"缺体"与"残缺输入"在结构上分开的关键，也是本设计能不用人工分组
      * 就保证不会误豁免残缺输入的原因。
      *
-     * @param report 具体诊断的上报动作。消息按 owner 不同而不同（函数 / 属性 / 访问器各有措辞），
-     *   但"是否抑制"只在 [reportMissingBody] 内部判定一次 —— 新增体 owner 时不需要再判断模式。
+     * @param report 具体诊断的上报动作。消息按 owner 不同而不同，但"是否抑制"只在这一处判定。
      */
     context(parseContext: ParsingContext)
     private fun reportMissingBody(report: () -> Unit) {
@@ -6179,6 +6284,81 @@ class CangJieParsing private constructor(
     context(parseContext: ParsingContext)
     private fun reportMissingBody() = reportMissingBody {
         error(CangJieParsingBundle.message("parsing.error.function.body.expected"))
+    }
+
+    /**
+     * 函数缺体适配器：提取 [CjMemberBodyFacts] → 调 [CjMemberBodyPolicy.checkFunctionBody] →
+     * 执行诊断。
+     *
+     * 官方 `ParserImpl::CheckFuncBody`（`external/cangjie_compiler/src/Parse/ParseDecl.cpp:1533-1562`）：
+     * ```cpp
+     * const bool isMember = fb && !fb->body && !FOREIGN && !INTRINSIC && scopeKind != UNKNOWN_SCOPE;
+     * if (isMember && !parseDeclFile) {
+     *     if (scopeKind == ScopeKind::CLASS_BODY || scopeKind == ScopeKind::INTERFACE_BODY) {
+     *         decl.EnableAttr(Attribute::ABSTRACT);              // 隐式 abstract，不报缺体
+     *         if (!decl.funcBody->retType && !fb->TestAttr(HAS_BROKEN))
+     *             ParseDiagnoseRefactor(parse_abstract_func_must_have_return_type, ...);
+     *     } else {
+     *         DiagMissingBody("function", ...);                  // 其余作用域才报缺体
+     *     }
+     * }
+     * ```
+     *
+     * 判定依据是**宿主作用域**，而不是成员自身写了没写 `abstract`：
+     * - 官方 cjc 1.0.5 明确拒绝 `abstract func` 出现在 class / interface 体内
+     *   （`unexpected modifier 'abstract' on function declaration in class body`），
+     *   仅 1.1.3 的 CJMP `common` / `specific` 抽象类例外；若把"有 abstract 修饰符"当免报条件，
+     *   恰好会放过官方禁止的形态、却对官方允许的形态报错（与实测方向相反）。
+     * - `struct` / `enum` / `extend` / 顶层 / 局部作用域缺体仍然报错（官方 `DiagMissingBody`）。
+     *
+     * @param scopeKind 宿主作用域；`UNKNOWN_SCOPE`（宏输入）对函数缺体保持沉默。
+     * @param hasReturnType 是否真的解析到返回类型节点；隐式 abstract 函数必须有返回类型。
+     * @param isForeign 是否为 foreign 函数：官方 `isMember` 显式排除 `FOREIGN`。
+     * @param isIntrinsic 是否带 `@Intrinsic`：官方 `isMember` 显式排除 `INTRINSIC`。
+     * @param isSignatureBroken 签名是否残缺（如缺参数列表）；官方 `HAS_BROKEN` 只门诊断。
+     */
+    context(parseContext: ParsingContext)
+    private fun reportMissingFunctionBody(
+        scopeKind: CjScopeKind,
+        hasReturnType: Boolean,
+        isForeign: Boolean,
+        isIntrinsic: Boolean,
+        isSignatureBroken: Boolean,
+        cjmpRoleRequiresReturnType: Boolean,
+        declarationName: String?,
+    ) {
+        val decision = CjMemberBodyPolicy.checkFunctionBody(
+            CjMemberBodyFacts(
+                scopeKind = scopeKind,
+                hasBody = false,
+                hasAccessors = false,
+                hasReturnType = hasReturnType,
+                isForeign = isForeign,
+                isIntrinsic = isIntrinsic,
+                isDeclarationFile = sourceKind.isDeclaration,
+                isSignatureBroken = isSignatureBroken,
+            )
+        )
+        when (decision.diagnostic) {
+            CjMemberBodyDiagnostic.ABSTRACT_FUNCTION_MUST_HAVE_RETURN_TYPE -> {
+                if (!cjmpRoleRequiresReturnType) {
+                    errorOnPosition(
+                        lastSignificantTokenEndOffset(),
+                        CangJieParsingBundle.message("parsing.error.abstract.function.must.have.return.type"),
+                    )
+                }
+            }
+            CjMemberBodyDiagnostic.MISSING_FUNCTION_BODY -> {
+                val name = declarationName?.let { " '${CjPsiUtil.unquoteIdentifier(it)}'" }.orEmpty()
+                errorOnPosition(
+                    lastSignificantTokenEndOffset(),
+                    CangJieParsingBundle.message("parsing.error.body.missing", "function", name),
+                )
+            }
+            null -> Unit
+            // 函数过程不会产生属性诊断。
+            CjMemberBodyDiagnostic.MISSING_PROPERTY_BODY -> Unit
+        }
     }
 
     /**
@@ -6309,6 +6489,73 @@ class CangJieParsing private constructor(
     }
 
     /**
+     * 类型参数列表（元组类型 / 函数类型的形参表）的解析结果。
+     *
+     * 对齐官方 `ParserImpl::ParseTypeWithParen`（`src/Parse/ParseType.cpp:186-225`）：形参可带
+     * `name:` 标签；列表要么全部具名、要么全部无名；具名不得重名；右括号缺失时整段类型
+     * 退化为官方 `InvalidType`，因此这里把"是否闭合"一并带回给调用方。
+     *
+     * @property count 形参（类型）个数。
+     * @property namedFlags 每个形参是否带 `name:` 标签，按出现顺序。
+     * @property labelNames 具名形参的名称身份，按出现顺序，用于重名检查。
+     * @property isClosed 是否在类型参数列表自己的位置解析到右括号 `)`。
+     */
+    private class TypeParameterListInfo(
+        val count: Int,
+        val namedFlags: List<Boolean>,
+        val labelNames: List<Name>,
+        val isClosed: Boolean,
+    )
+
+    /**
+     * 单个类型形参的头部信息：是否具名、名称身份。
+     *
+     * @property isNamed 是否写成 `name:` 形式。
+     * @property name 名称身份；匿名形参为 null。
+     */
+    private class TypeParameterHead(val isNamed: Boolean, val name: Name?)
+
+    /**
+     * 把标识符 token 文本转成解析期的名称身份。
+     *
+     * 反引号只是转义写法：词法层把 `ESCAPED_IDENTIFIER` 与 `PLAIN_IDENTIFIER` 收敛为同一个
+     * `IDENTIFIER` token，标识符身份由 `CjPsiUtil.unquoteIdentifier` 单一维护；官方
+     * `SrcIdentifier` 的相等性也按去掉反引号的文本比较（`src/Parse/ParseType.cpp:164-171`
+     * 用 `typeNameMap.find(typeParameterName)` 查重，实测 ``(x: Int64, `x`: String)`` 也报重复）。
+     */
+    private fun typeParameterNameOf(tokenText: CharSequence?): Name? =
+        tokenText?.let { Name.identifier(CjPsiUtil.unquoteIdentifier(it)) }
+
+    /**
+     * 报告类型参数列表的官方命名诊断。
+     *
+     * 对齐官方 `src/Parse/ParseType.cpp`：
+     * - `:164-171` `parse_duplicate_type_parameter_name` —— 具名形参重名；
+     * - `:198-205` `parse_all_parameters_must_be_named` —— 具名与匿名混用。
+     *
+     * 诊断以零宽错误节点落在最后一个形参之后，不改变列表节点类型：官方在这些情形下
+     * 仍然构造 `TupleType` / `FuncType`，只有缺右括号才退化为 `InvalidType`。
+     *
+     * @param namedFlags 每个形参是否具名。
+     * @param labelNames 具名形参的名称身份。
+     */
+    context(parseContext: ParsingContext)
+    private fun reportTypeParameterListViolations(
+        namedFlags: List<Boolean>,
+        labelNames: List<Name>,
+    ) {
+        val reportedNames = mutableSetOf<Name>()
+        for (name in labelNames) {
+            if (!reportedNames.add(name)) {
+                error(CangJieParsingBundle.message("parsing.error.duplicated.type.parameter.name", name.asString()))
+            }
+        }
+        if (namedFlags.any { it } && namedFlags.any { !it }) {
+            error(CangJieParsingBundle.message("parsing.error.mixed.named.parameters"))
+        }
+    }
+
+    /**
      * 解析函数类型的参数列表
      *
      * 用于解析函数类型声明中的参数列表，参数可以省略名称（仅类型）。
@@ -6338,15 +6585,17 @@ class CangJieParsing private constructor(
      * ```
      */
     context(parseContext: ParsingContext)
-    fun parseFunctionTypeParameterList(
+    private fun parseFunctionTypeParameterList(
         typeRequired: Boolean = true
-    ) {
+    ): TypeParameterListInfo {
 //   不允许处理注解和宏
-        with(parseContext.copy(disableMacroParsing = true, allowParseAnnotationsInValueParameter = false)) {
+        return with(parseContext.copy(disableMacroParsing = true, allowParseAnnotationsInValueParameter = false)) {
             parseParameterListCore(
                 parseParameter = { parseFunctionTypeParameter(typeRequired) },
                 checkMixedParameters = true,
-                recoverySet = TokenSet.EMPTY
+                recoverySet = TokenSet.EMPTY,
+                // 缺右括号时整段函数类型按官方 InvalidType 处理，诊断由 parseFunctionType 落在整段类型上
+                reportUnclosedDelimiter = false
             )
         }
     }
@@ -6356,16 +6605,19 @@ class CangJieParsing private constructor(
      *
      * 提取公共的参数列表解析逻辑，避免代码重复。
      *
-     * @param parseParameter 参数解析函数，返回 null（不检查混合）或 Boolean（是否为命名参数）
+     * @param parseParameter 参数解析函数，返回 null（不检查混合）或形参头部信息
      * @param checkMixedParameters 是否检查混合命名/匿名参数
      * @param recoverySet 错误恢复token集合
+     * @param reportUnclosedDelimiter 缺右括号时是否就地报诊断；调用方要把整段类型
+     *        标成错误节点（官方 `InvalidType`）时传 false，由调用方统一报一次
      */
     context(parseContext: ParsingContext)
     private fun parseParameterListCore(
-        parseParameter: () -> Boolean?,
+        parseParameter: () -> TypeParameterHead?,
         checkMixedParameters: Boolean,
-        recoverySet: TokenSet
-    ) {
+        recoverySet: TokenSet,
+        reportUnclosedDelimiter: Boolean = true,
+    ): TypeParameterListInfo {
         assert(at(LPAR))
         val parameters = mark()
 
@@ -6373,8 +6625,9 @@ class CangJieParsing private constructor(
         advance() // consume '('
 
         // 只在需要时追踪命名参数状态
-        var hasNamedParameters: Boolean? = null
-        var hasMixedParameters = false
+        val namedFlags = mutableListOf<Boolean>()
+        val labelNames = mutableListOf<Name>()
+        var count = 0
 
         while (!at(RPAR) && !atSet(recoverySet) && !eof()) {
             // 处理连续逗号错误
@@ -6386,17 +6639,13 @@ class CangJieParsing private constructor(
             }
 
             // 解析参数
-            val isNamed = parseParameter()
+            val head = parseParameter()
+            count++
 
-            // 检测混合参数（仅当需要时）
-            if (checkMixedParameters && isNamed != null && !hasMixedParameters) {
-                when (hasNamedParameters) {
-                    null -> hasNamedParameters = isNamed
-                    isNamed -> { /* 一致，继续 */
-                    }
-
-                    else -> hasMixedParameters = true  // 检测到混合
-                }
+            // 官方 ParseTypeParameterInTupleType:161-176：逐项记录形参是否具名及其名称身份
+            if (checkMixedParameters && head != null) {
+                namedFlags += head.isNamed
+                head.name?.let { labelNames += it }
             }
 
             // 处理分隔符
@@ -6409,34 +6658,52 @@ class CangJieParsing private constructor(
             }
         }
 
-        expect(RPAR, "Expecting ')'", recoverySet)
+        // 官方 ParseType.cpp:198-205：要么全具名、要么全无名；具名不得重名
+        if (checkMixedParameters) {
+            reportTypeParameterListViolations(namedFlags, labelNames)
+        }
+
+        val isClosed = if (at(RPAR)) {
+            advance()
+            true
+        } else {
+            if (reportUnclosedDelimiter) {
+                // 官方 DiagExpectedRightDelimiter("(", leftParenPos)：报在缺右括号的位置
+                errorWithRecovery(
+                    CangJieParsingBundle.message("parsing.error.unclosed.delimiter", "("),
+                    recoverySet
+                )
+            }
+            false
+        }
         builder.restoreNewlinesState()
 
-        // 完成或报错
-        if (hasMixedParameters) {
-            parameters.error(CangJieParsingBundle.message("parsing.error.mixed.named.parameters"))
-        } else {
-            parameters.done(VALUE_PARAMETER_LIST)
-        }
+        parameters.done(VALUE_PARAMETER_LIST)
+
+        return TypeParameterListInfo(count, namedFlags, labelNames, isClosed)
     }
 
     /**
      * 解析函数类型参数
      *
+     * 官方 `ParseType.cpp:161-176 ParseTypeParameterInTupleType` 的形参标签只有
+     * `IDENTIFIER ':' type` 一种写法，所以标签名在进入参数解析前按同样的形状识别。
+     *
      * @param typeRequired 是否要求类型注解
-     * @return true 如果是命名参数，false 如果是匿名参数（仅类型）
+     * @return 形参头部信息：是否具名、标签名（匿名形参为 null）
      */
     context(parseContext: ParsingContext)
-    private fun parseFunctionTypeParameter(typeRequired: Boolean): Boolean {
+    private fun parseFunctionTypeParameter(typeRequired: Boolean): TypeParameterHead {
+        val label = if (at(IDENTIFIER) && lookahead(1) == COLON) typeParameterNameOf(builder.tokenText) else null
         return if (!tryParseValueParameter(typeRequired)) {
             // 匿名参数：只有类型
             val valueParameter = mark()
             parseTypeRef()
             closeDeclarationWithCommentBinders(valueParameter, VALUE_PARAMETER, false)
-            false
+            TypeParameterHead(isNamed = false, name = null)
         } else {
             // 命名参数
-            true
+            TypeParameterHead(isNamed = true, name = label)
         }
     }
 
@@ -6968,6 +7235,10 @@ class CangJieParsing private constructor(
     /**
      * 解析函数类型
      *
+     * 官方 `ParseTypeWithParen` 只有在右括号之后看到 `->` 才构造 `FuncType`；右括号缺失时
+     * 直接返回 `InvalidType`（`src/Parse/ParseType.cpp:206-212`），这里同样把整段类型标成
+     * 错误节点，不再退化成括号类型。
+     *
      * Grammar:
      * ```
      * functionType
@@ -6979,83 +7250,108 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     private fun parseFunctionType(functionType: PsiBuilder.Marker) {
-        parseFunctionTypeContents(functionType).done(FUNCTION_TYPE)
-    }
+        val info = parseFunctionTypeParameterList(typeRequired = true)
 
-
-    /**
-     * 解析函数类型内容
-     *
-     * @param functionType 函数类型标记
-     * @return 处理后的标记
-     */
-    context(parseContext: ParsingContext)
-
-    private fun parseFunctionTypeContents(functionType: PsiBuilder.Marker): PsiBuilder.Marker {
-        assert(_at(LPAR)) { tt()!! }
-
-        parseFunctionTypeParameterList(typeRequired = true)
+        if (!info.isClosed) {
+            // 官方 ParseType.cpp:206-209：缺右括号 ⇒ InvalidType
+            functionType.error(CangJieParsingBundle.message("parsing.error.unclosed.delimiter", "("))
+            return
+        }
 
         expect(ARROW, "Expecting '->' to specify return type of a function type", TYPE_REF_FIRST)
         parseTypeRef()
 
-        return functionType
+        functionType.done(FUNCTION_TYPE)
     }
 
 
     /**
-     * 解析元组类型
+     * 解析元组 / 括号类型的类型参数列表
+     *
+     * 对齐官方 `ParserImpl::ParseTypeWithParen`（`src/Parse/ParseType.cpp:186-225`）：
+     * 每个类型前允许一段 `IDENTIFIER ':'` 标签；标签只有元组类型与函数类型允许
+     * （单元素括号类型报 `parse_only_tuple_and_func_type_allow_type_parameter_name`），
+     * 具名不得重名（`parse_duplicate_type_parameter_name`），且必须全具名或全无名
+     * （`parse_all_parameters_must_be_named`）。右括号缺失时返回 `isClosed = false`，
+     * 由调用方把整段类型标成官方 `InvalidType`。
      *
      * Grammar:
      * ```
      * tupleType
-     *   : "(" typeReference ("," typeReference)* ")"
+     *   : "(" (identifier ":")? typeReference ("," (identifier ":")? typeReference)* ")"
      *   ;
      * ```
      *
-     * @return 元组中类型的数量
+     * @return 类型参数列表的解析结果
      */
     context(parseContext: ParsingContext)
-    private fun parseTupleType(): Int {
+    private fun parseTupleType(): TypeParameterListInfo {
         assert(_at(LPAR))
         var count = 0
+        val namedFlags = mutableListOf<Boolean>()
+        val labelNames = mutableListOf<Name>()
 
         advance() // LPAR
 
-        if (!at(RPAR)) {
-            while (true) {
-                parseTypeRef()
-                count++
-                if (!at(COMMA)) break
-                advance() // COMMA
-                // 官方 ParseTypeWithParen 只在至少两个类型后接受元组尾逗号，不能生成空类型项。
-                if (count > 1 && at(RPAR)) break
+        if (!at(RPAR) && !eof()) do {
+            // 官方 ParseTypeParameterInTupleType:161-176：`IDENTIFIER ':'` 是类型形参名，
+            // 其余情况按匿名类型解析。标签只是语法元数据——官方 TupleType 只保存 fieldTypes，
+            // 标签不进入元组类型本身，因此这里也不为标签建立 PSI 节点。
+            if (at(IDENTIFIER) && lookahead(1) == COLON) {
+                typeParameterNameOf(builder.tokenText)?.let(labelNames::add)
+                advance() // 类型形参名
+                advance() // ':'
+                namedFlags += true
+            } else {
+                namedFlags += false
             }
-        } else {
-            error(CangJieParsingBundle.message("parsing.error.expecting", "type"))
+            parseTypeRef()
+            count++
+
+            if (!at(COMMA)) break
+            advance() // COMMA
+            // 官方 ParseTypeWithParen 只在已经有两个类型时忽略尾逗号。
+        } while (!eof() && (count < 2 || !at(RPAR)))
+
+        reportTypeParameterListViolations(namedFlags, labelNames)
+
+        val isClosed = acceptRightParenthesisInTupleType()
+        // 官方 ParseType.cpp:227-244：单元素括号类型不是元组类型，不允许类型形参名；
+        // 该诊断在官方位于 `)` 之后的 ParseParenType 分支，缺右括号时不会报。
+        if (isClosed && count == 1 && namedFlags.any { it }) {
+            error(CangJieParsingBundle.message("parsing.error.type.parameter.name.not.allowed"))
         }
 
-        expectRightParenthesisInTupleType()
-
-        return count
+        return TypeParameterListInfo(count, namedFlags, labelNames, isClosed)
     }
 
     /**
-     * 元组/括号类型缺少右括号时，官方 parser 只报告右定界符缺失并把当前类型标为损坏。
-     * 本地也要消费到右括号或声明恢复点，避免后续变量声明层继续报告同一坏类型尾巴。
+     * 消费元组/括号类型的右括号，并返回类型参数列表是否以自己的 `)` 闭合。
+     *
+     * 官方 `ParseTypeWithParen:206-209` 在缺右括号时报告 `DiagExpectedRightDelimiter("(")`
+     * 并把整段类型标成 `InvalidType`。这里不就地报诊断，而是把"是否在自己的位置闭合"
+     * 交回调用方：调用方据此把整段类型标成错误节点（官方 `InvalidType`）；同时仍按
+     * 既有恢复策略消费到右括号或声明恢复点，避免上层声明层继续报告同一个坏类型尾巴。
+     *
+     * @return 右括号是否出现在类型参数列表自己的位置
      */
     context(parseContext: ParsingContext)
-    private fun expectRightParenthesisInTupleType() {
-        if (expect(RPAR, "Expecting ')'")) return
+    private fun acceptRightParenthesisInTupleType(): Boolean {
+        if (at(RPAR)) {
+            advance()
+            return true
+        }
 
         while (!eof() && !at(RPAR) && !at(EQ) && !at(LBRACE) && !at(RBRACE) && !at(SEMICOLON)) {
-            if (builder.newlineBeforeCurrentToken()) return
+            if (builder.newlineBeforeCurrentToken()) break
             advance()
         }
 
+        // 恢复：把扫到的右括号一并消费，让上层声明继续解析
         if (at(RPAR)) {
             advance()
         }
+        return false
     }
 
 
@@ -7397,28 +7693,61 @@ class CangJieParsing private constructor(
         typeRefMarker.done(TYPE_REFERENCE)
     }
 
+    /**
+     * 当前 token 是否能开始一个 `typeReference`。
+     *
+     * 判定条件与 [parseTypeRefContents] 的分派逐项一致（那里调用的三个 `parse*Type`
+     * 在未匹配时不消费 token）：用于在**消费**类型之前记录"类型是否真的存在"，
+     * 作为缺体判定的 broken 事实。
+     */
+    private fun isTypeReferenceStart(): Boolean =
+        at(VARRAY_KEYWORD) || at(THIS_KEYWORD_UPPER) || atSet(BASICTYPES) ||
+                at(IDENTIFIER) || at(LPAR) || at(QUEST)
+
 
     /**
      * 解析元组或函数类型
      *
-     * 根据上下文决定是解析为元组还是函数类型。
+     * 官方 `ParseTypeWithParen` 先解析类型参数列表，再决定类型种类：看到 `->` 是函数类型，
+     * 1 个类型是括号类型，2 个及以上是元组类型，0 个且没有 `->` 是损坏的函数类型。
      */
     context(parseContext: ParsingContext)
     private fun parseTupleOrFunctionType() {
         var oType = mark()
 
-        val count = parseTupleType()
+        val info = parseTupleType()
+
+        if (!info.isClosed) {
+            // 官方 ParseType.cpp:206-209：缺右括号是 InvalidType，整段类型不再作为括号/元组/函数类型。
+            // 官方在声明层靠 HAS_BROKEN 跳过残缺签名；这里在类型层收口：已经放弃的函数类型尾巴
+            // `-> T` 也一并吞进错误节点，避免上层把 `-> Bool` 当成声明之间的垃圾 token。
+            if (at(ARROW)) {
+                advance() // '->' 属于已被放弃的函数类型
+                parseTypeRef() // 返回类型同样属于该被放弃的类型
+            }
+            oType.error(CangJieParsingBundle.message("parsing.error.unclosed.delimiter", "("))
+            return
+        }
 
         if (at(ARROW) || at(COLON)) {
             oType.rollbackTo()
             oType = mark()
             parseFunctionType(oType)
+            return
+        }
+
+        if (info.count == 0) {
+            // 官方 ParseType.cpp:222-224：空类型参数列表没有 '->' 时按损坏的函数类型处理
+            error(CangJieParsingBundle.message("parsing.error.expected.arrow.in.function.type"))
+            parseTypeRef()
+            oType.done(FUNCTION_TYPE)
+            return
+        }
+
+        if (info.count <= 1) {
+            oType.done(PARENTHESIZED_TYPE)
         } else {
-            if (count <= 1) {
-                oType.done(PARENTHESIZED_TYPE)
-            } else {
-                oType.done(TUPLE_TYPE)
-            }
+            oType.done(TUPLE_TYPE)
         }
     }
 

@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
@@ -26,16 +27,22 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.types.abbreviatedTypeOrSelf
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjNameReferenceExpression
+import org.cangnova.cangjie.psi.CjEnumPattern
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjImportGroup
 import org.cangnova.cangjie.psi.CjImportPathOwner
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUserType
+import org.cangnova.cangjie.psi.CjValueArgumentName
+import org.cangnova.cangjie.psi.CjVarOrEnumPattern
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.psiUtil.isImportDirectiveExpression
 
@@ -58,6 +65,11 @@ internal object CfirReferenceResolveHelper {
         val expression = ref.expression
         val symbolBuilder = analysisSession.cfirSymbolBuilder
 
+        // 命名实参标签没有独立 CFIR 节点；交给元素级 resolver 使用所属调用的参数映射。
+        if (expression is CjNameReferenceExpression && expression.parent is CjValueArgumentName) {
+            return with(analysisSession) { expression.resolveSymbols() }
+        }
+
         // 组织限定符不是包名，没有对应的声明符号；不得进入普通名称解析。
         val pathOwner = expression.getStrictParentOfType<CjImportPathOwner>()
         if (pathOwner?.organizationReference === expression) return emptyList()
@@ -69,11 +81,22 @@ internal object CfirReferenceResolveHelper {
         val adjustedResolutionExpression = adjustResolutionExpression(expression)
         val cfir = adjustedResolutionExpression.getOrBuildCfir(analysisSession.resolutionFacade)
 
+        if (expression.patternConstructorOwner() != null) {
+            // 名字位置由正式 LL mapping 给出实际引用；失败候选不能变成 constructor 使用身份。
+            val reference = cfir as? CfirResolvedNamedReference ?: return emptyList()
+            if (reference is CfirDiagnosticHolder) return emptyList()
+            return reference.toCaTargetSymbols(symbolBuilder)
+        }
+
         if (cfir is CfirQualifierPart) {
             return getSymbolsByUserTypeQualifierPart(expression, analysisSession, symbolBuilder)
         }
 
-        return when (cfir) {
+        val result = when (cfir) {
+            is org.cangnova.cangjie.cfir.expressions.CfirAssignment ->
+                if (expression is org.cangnova.cangjie.psi.CjOperationReferenceExpression) emptyList()
+                else (cfir.lValue as? org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression)
+                    ?.calleeReference?.toCaTargetSymbols(symbolBuilder).orEmpty()
             is CfirResolvedTypeRef -> listOfNotNull(cfir.toTargetSymbol(analysisSession, symbolBuilder))
             is CfirTypeParameter -> listOf(symbolBuilder.buildSymbol(cfir.symbol))
             is CfirResolvable -> getSymbolsByResolvable(cfir, symbolBuilder)
@@ -81,6 +104,7 @@ internal object CfirReferenceResolveHelper {
             is CfirErrorNamedReference -> cfir.toCaTargetSymbols(symbolBuilder)
             else -> emptyList()
         }
+        return result
     }
 
     /**
@@ -103,8 +127,11 @@ internal object CfirReferenceResolveHelper {
         if (expression.isPartOfUserTypeRefQualifier()) return emptyList()
 
         val typeReference = userType.parent as? CjTypeReference ?: return emptyList()
-        val resolvedTypeRef = typeReference.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirResolvedTypeRef
-            ?: return emptyList()
+        val typeReferenceCfir = typeReference.getOrBuildCfir(analysisSession.resolutionFacade)
+        val resolvedTypeRef = typeReferenceCfir as? CfirResolvedTypeRef
+        if (resolvedTypeRef == null) {
+            return emptyList()
+        }
 
         return listOfNotNull(resolvedTypeRef.toTargetSymbol(analysisSession, symbolBuilder))
     }
@@ -120,6 +147,32 @@ internal object CfirReferenceResolveHelper {
             currentParent = currentParent.parent
         }
         return false
+    }
+
+    /**
+     * 当简单名正好是 pattern 的 constructor 名字时，返回承载它的 pattern 节点。
+     *
+     * 只接受 constructor 位置：`CjEnumPattern.expression` 或 `CjVarOrEnumPattern.reference`；
+     * 嵌套 binding pattern 的名字不进入这条路径。
+     */
+    private fun CjSimpleNameExpression.patternConstructorOwner(): CjElement? {
+        var current: com.intellij.psi.PsiElement? = this
+        while (current != null) {
+            when (current) {
+                is CjEnumPattern -> return current.takeIf { pattern ->
+                    when (val expression = pattern.expression) {
+                        // 限定名 pattern：只有 selector 本身是 constructor 名字；receiver（`E`）
+                        // 和 selector 上类型实参里的名字都不是 constructor。
+                        is CjDotQualifiedExpression -> expression.selectorExpression === this
+                        else -> expression === this
+                    }
+                }
+
+                is CjVarOrEnumPattern -> return current.takeIf { it.reference === this }
+            }
+            current = current.parent
+        }
+        return null
     }
 
     /**
@@ -235,11 +288,12 @@ internal object CfirReferenceResolveHelper {
     /**
      * 从已解析类型引用恢复目标符号。
      */
-    private fun CfirResolvedTypeRef.toTargetSymbol(
+    internal fun CfirResolvedTypeRef.toTargetSymbol(
         analysisSession: CaCfirSession,
         symbolBuilder: CaSymbolByCfirBuilder,
     ): org.cangnova.cangjie.analysis.api.symbols.CaSymbol? {
-        return coneType.toTargetSymbol(analysisSession, symbolBuilder) ?: run {
+        val symbol = coneType.toTargetSymbol(analysisSession, symbolBuilder)
+        return symbol ?: run {
             val diagnostic = (this as? CfirErrorTypeRef)?.diagnostic as? ConeUnmatchedTypeArgumentsError
             diagnostic?.symbol?.buildSymbol(symbolBuilder)
         }
@@ -266,3 +320,14 @@ internal object CfirReferenceResolveHelper {
     }
 
 }
+/**
+ * [CfirReferenceResolveHelper.toTargetSymbol] 的顶层桥接。
+ *
+ * 原实现是 helper object 的成员扩展，调用方无法直接导入；这里以顶层函数暴露同一语义，
+ * 供 CFIR resolver 的元素级符号解析路径复用，避免复制类型到符号的还原逻辑。
+ */
+internal fun CfirResolvedTypeRef.toCaTargetSymbol(
+    analysisSession: CaCfirSession,
+    symbolBuilder: CaSymbolByCfirBuilder,
+): org.cangnova.cangjie.analysis.api.symbols.CaSymbol? =
+    with(CfirReferenceResolveHelper) { toTargetSymbol(analysisSession, symbolBuilder) }

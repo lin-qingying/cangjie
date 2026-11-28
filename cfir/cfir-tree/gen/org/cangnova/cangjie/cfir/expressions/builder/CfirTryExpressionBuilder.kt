@@ -12,9 +12,10 @@ import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirTryExpressionImpl
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -25,7 +26,8 @@ class CfirTryExpressionBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     var mappedExpression: CfirExpression? = null
     var overflowStrategy: CangjieOverflowStrategy? = null
-    val resources: MutableList<CfirFieldVariable> = mutableListOf()
+    var calleeReference: CfirReference = org.cangnova.cangjie.cfir.references.CfirStubReference
+    val resources: MutableList<CfirResourceVariable> = mutableListOf()
     lateinit var tryBlock: CfirBlock
     val handlers: MutableList<CfirHandleClause> = mutableListOf()
     val catches: MutableList<CfirCatch> = mutableListOf()
@@ -39,6 +41,7 @@ class CfirTryExpressionBuilder {
             coneTypeOrNull,
             mappedExpression,
             overflowStrategy,
+            calleeReference,
             resources,
             tryBlock,
             handlers,
@@ -68,6 +71,7 @@ inline fun buildTryExpressionCopy(original: CfirTryExpression, init: CfirTryExpr
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.mappedExpression = original.mappedExpression
     copyBuilder.overflowStrategy = original.overflowStrategy
+    copyBuilder.calleeReference = original.calleeReference
     copyBuilder.resources.addAll(original.resources)
     copyBuilder.tryBlock = original.tryBlock
     copyBuilder.handlers.addAll(original.handlers)

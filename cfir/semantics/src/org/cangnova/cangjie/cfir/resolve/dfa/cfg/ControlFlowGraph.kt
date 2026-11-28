@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.dfa.cfg
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.resolve.dfa.DfaSourceVisitor
 
 /**
@@ -28,7 +29,7 @@ class ControlFlowGraph(
      * 控制流图所属结构种类。
      */
     val kind: Kind,
-) {
+) : FunctionCallNodeIndexOwner {
     private val pendingSemanticTransfers: MutableSet<CfirElement> =
         java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirElement, Boolean>())
 
@@ -37,6 +38,86 @@ class ControlFlowGraph(
 
     @CfgInternals
     fun requireSemanticTransfer(element: CfirElement) { pendingSemanticTransfers += element }
+
+    /** 完成图与隔离 probe 的正式采用都保留实际 node/index 事实，生命周期不依赖 builder 栈。 */
+    private val functionCallNodes: MutableMap<CfirFunctionCall, MutableList<CFGNode<*>>> = java.util.IdentityHashMap()
+    private val functionCallNodeAliases: MutableMap<CFGNode<*>, MutableSet<CfirFunctionCall>> = java.util.IdentityHashMap()
+    private val withdrawnFunctionCallNodes: MutableMap<CfirFunctionCall, MutableSet<CFGNode<*>>> = java.util.IdentityHashMap()
+
+    @CfgInternals
+    fun registerFunctionCallNode(node: CFGNode<*>) {
+        check(node.owner === this && node is RevisableFunctionCallNode) { "Call CFG registration must belong to the actual graph" }
+        val call = node.fir as? CfirFunctionCall ?: return
+        addFunctionCallNodeAlias(call, node)
+    }
+
+    private fun addFunctionCallNodeAlias(call: CfirFunctionCall, node: CFGNode<*>) {
+        check(node.owner === this) { "Call CFG alias belongs to another graph" }
+        val nodes = functionCallNodes.getOrPut(call) { mutableListOf() }
+        if (nodes.none { it === node }) nodes += node
+        functionCallNodeAliases.getOrPut(node) {
+            java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirFunctionCall, Boolean>())
+        }.add(call)
+        withdrawnFunctionCallNodes[call]?.let { withdrawn ->
+            withdrawn.remove(node)
+            if (withdrawn.isEmpty()) withdrawnFunctionCallNodes.remove(call)
+        }
+    }
+
+    /** 完整 AST 回滚恢复同一节点的真实成员集合，新 alias 键撤销后仍保留拒绝凭证。 */
+    @CfgInternals
+    override fun captureFunctionCallNodeIndex(node: CFGNode<*>): RevisableFunctionCallNodeSnapshot {
+        check(node.owner === this) { "Call CFG snapshot belongs to another graph" }
+        val before = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirFunctionCall, Boolean>()).apply {
+            addAll(checkNotNull(functionCallNodeAliases[node]) { "Call CFG node has no actual graph registration" })
+        }
+        return object : RevisableFunctionCallNodeSnapshot {
+            override fun validateRestore() {
+                check(node.owner === this@ControlFlowGraph && functionCallNodeAliases.containsKey(node)) {
+                    "Call CFG snapshot lost its actual graph/node owner"
+                }
+            }
+
+            override fun restore() {
+                validateRestore()
+                val aliases = checkNotNull(functionCallNodeAliases[node])
+                for (call in aliases.toList()) {
+                    if (call in before) continue
+                    val nodes = checkNotNull(functionCallNodes[call])
+                    check(nodes.removeAll { it === node }) { "Call CFG reverse index differs from its actual nodes" }
+                    if (nodes.isEmpty()) functionCallNodes.remove(call)
+                    aliases.remove(call)
+                    withdrawnFunctionCallNodes.getOrPut(call) {
+                        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CFGNode<*>, Boolean>())
+                    }.add(node)
+                }
+                before.forEach { addFunctionCallNodeAlias(it, node) }
+            }
+        }
+    }
+
+    /** 只换本图实际 node 的 fir，既有 owner/id/level/edge/flow/subgraph 不变。 */
+    @CfgInternals
+    fun updateFunctionCallNodes(original: CfirFunctionCall, replacement: CfirFunctionCall) {
+        if (original === replacement) return
+        val nodes = functionCallNodes[original]
+        if (nodes == null) {
+            check(withdrawnFunctionCallNodes[original].isNullOrEmpty()) { "CFG call replacement reused a withdrawn AST identity" }
+            return
+        }
+        check(nodes.all { it.fir === original || it.fir === replacement }) {
+            "CFG call replacement reused a withdrawn AST identity: " + describeFunctionCallNodes(original)
+        }
+        nodes.filter { it.fir === original }.forEach {
+            (it as RevisableFunctionCallNode).setResolvedFunctionCall(original, replacement)
+        }
+        nodes.forEach { addFunctionCallNodeAlias(replacement, it) }
+    }
+
+    fun describeFunctionCallNodes(call: CfirFunctionCall): String = functionCallNodes[call].orEmpty().joinToString {
+        "${it.javaClass.simpleName}(graph=${System.identityHashCode(it.owner)},id=${it.id},fir=${System.identityHashCode(it.fir)})"
+    }
+
     /** 当前图已经创建的节点数量，同时作为新节点 id 分配器。 */
     @set:CfgInternals
     var nodeCount: Int = 0
@@ -52,6 +133,10 @@ class ControlFlowGraph(
     /** 图出口节点。 */
     @set:CfgInternals
     lateinit var exitNode: CFGNode<*>
+
+    /** 未处理异常的独立出口；按需创建，不进入正常返回值收集。 */
+    @set:CfgInternals
+    var exceptionExitNode: ExceptionExitNode? = null
 
     /** 当前图是否作为其他图中的子图存在。 */
     val isSubGraph: Boolean
@@ -101,6 +186,19 @@ class ControlFlowGraph(
         if (from::exitNode.isInitialized) {
             exitNode = mapper[from.exitNode]
         }
+        exceptionExitNode = from.exceptionExitNode?.let(mapper::get)
+        functionCallNodes.clear()
+        functionCallNodeAliases.clear()
+        withdrawnFunctionCallNodes.clear()
+        from.functionCallNodes.forEach { (call, nodes) ->
+            nodes.forEach { addFunctionCallNodeAlias(call, mapper[it]) }
+        }
+        from.withdrawnFunctionCallNodes.forEach { (call, nodes) ->
+            withdrawnFunctionCallNodes[call] = nodes.mapTo(
+                java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CFGNode<*>, Boolean>()),
+                mapper::get,
+            )
+        }
     }
 
     /**
@@ -108,6 +206,8 @@ class ControlFlowGraph(
      */
     @CfgInternals
     fun complete() {
+        // 异常出口的全部输入在所属图完成后才确定；早期 dead 输入不能阻断后续 live 异常。
+        exceptionExitNode?.updateDeadStatus()
         nodes = orderNodes(isComplete = true)
     }
 
@@ -168,6 +268,8 @@ class ControlFlowGraph(
         AnonymousFunctionCalledInPlace,
         /** 字段初始化控制流图。 */
         FieldInitializer,
+        /** retained 资源 initializer 的独立执行根，不是外层 try 的资源获取步骤。 */
+        ResourceInitializer,
         /** 代码片段控制流图。 */
         CodeFragment,
         /** 默认参数表达式控制流图。 */
@@ -290,6 +392,21 @@ data object MatchBranchSuccess : EdgeLabel {
 data object MatchBranchFailure : EdgeLabel {
     /** 失败边在 CFG 渲染中的标签。 */
     override val label: String get() = "match-failure"
+}
+
+/** if 条件成立的路径，包含 then 分支。 */
+data object IfBranchTrue : EdgeLabel {
+    override val label: String get() = "if-true"
+}
+
+/** if 条件不成立的路径；无 else 时直接继续表达式后的正文。 */
+data object IfBranchFalse : EdgeLabel {
+    override val label: String get() = "if-false"
+}
+
+/** 当前 catch 类型测试失败，异常值保持不变。 */
+data object ExceptionNotMatched : EdgeLabel {
+    override val label: String get() = "exception-not-matched"
 }
 
 /** 未捕获异常路径。 */

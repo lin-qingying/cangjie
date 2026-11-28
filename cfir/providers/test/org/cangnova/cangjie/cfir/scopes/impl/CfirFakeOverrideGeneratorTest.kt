@@ -121,9 +121,12 @@ class CfirFakeOverrideGeneratorTest {
         assertFreshParameters(original, copy, listOf(ConePrimitiveType.INT64, fixture.callbackType))
         assertLazyCopyStatus(original, copy)
         assertEquals(fixture.enumReceiver, copy.returnTypeRef.coneTypeOrNull)
-        assertNotSame(original.typeParameters.single().symbol, copy.typeParameters.single().symbol)
-        assertTrue(copy.typeParameters.single() is CfirTypeParameter)
-        assertSame(copy.symbol, copy.typeParameters.single().symbol.cfir.containingDeclarationSymbol)
+        val ownerParameter = original.typeParameters.single().symbol
+        assertTrue(copy.typeParameters.single() is CfirConstructedClassTypeParameterRef)
+        assertSame(ownerParameter, copy.typeParameters.single().symbol)
+        val enumOwner = fixture.session.symbolProvider.getClassLikeSymbolByClassId(fixture.enumReceiver.classId)
+        assertTrue(enumOwner is CfirEnumSymbol)
+        assertSame(enumOwner, ownerParameter.cfir.containingDeclarationSymbol)
         assertNull(copy.valueParameters[0].defaultValue)
         val stub = requireNotNull(copy.valueParameters[1].defaultValue)
         assertTrue(stub is CfirExpressionStub)
@@ -977,6 +980,11 @@ class CfirFakeOverrideGeneratorTest {
         private fun resolvedStatus(): CfirResolvedDeclarationStatus = buildResolvedDeclarationStatus {
             visibility = Visibilities.Public
             modality = Modality.FINAL
+            visibilityExplicitness = CfirModifierExplicitness.EXPLICIT
+            modalityExplicitness = CfirModifierExplicitness.IMPLICIT
+            bodyPresence = CfirBodyPresence.UNKNOWN
+            isDeclarationFile = false
+            isFromCommonPart = false
             isVisibilityExplicit = true
             isModalityExplicit = false
             isAbstractExplicit = false

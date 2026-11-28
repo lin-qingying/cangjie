@@ -6,14 +6,17 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.builder.MacroSurfaceCollectionMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.publishParsingDiagnostics
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.materializePrimaryConstructorParameterFields
+import org.cangnova.cangjie.cfir.resolve.providers.macro.prepareDefaultParameterFunctions
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
-import org.cangnova.cangjie.cfir.session.recordRawExpressionMacroSurfaces
-import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
+import org.cangnova.cangjie.cfir.session.ensureRawMacroSurfaceUsageStore
 import org.cangnova.cangjie.cfir.session.cjmpSettings
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.builder.toParsingContext
@@ -37,7 +40,75 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
     /**
      * 构建或复用指定 PSI 文件的 raw CFIR 文件，并校验 contextual module 与实际文件模块一致。
      */
-    fun buildRawCfirFileWithCaching(cjFile: CjFile): CfirFile = moduleComponents.cache.fileCached(cjFile) {
+    fun buildRawCfirFileWithCaching(cjFile: CjFile): CfirFile {
+        LLCfirSourcePsiGeneration.capture(listOf(cjFile), compareModificationStamps = false).requireCurrent()
+        return moduleComponents.cache.fileCached(cjFile) {
+            val session = moduleComponents.session
+            val collectionMode = if (session.macroSemanticSnapshot != null) {
+                MacroSurfaceCollectionMode.EXPRESSION_ONLY
+            } else {
+                MacroSurfaceCollectionMode.CONSTRUCTION
+            }
+            val input = buildRawFileInput(cjFile, BodyBuildingMode.LAZY_BODIES, collectionMode)
+            val generation = input.generation
+            val file = generation.cfirFile
+            val product = generation.product
+            materializePrimaryConstructorParameterFields(file, input.annotationMetadata)
+            prepareDefaultParameterFunctions(file, input.annotationMetadata, product.actualInputSeed.settings.backend)
+            generation.requireConsistentInput(session)
+            val productMetadata = input.annotationMetadata.seal(listOf(file))
+            synchronized(session) {
+                val publication = session.ensureAnnotationMetadataRegistry().preparePublication(listOf(productMetadata))
+                try {
+                    publication.commit()
+                    session.ensureRawMacroSurfaceUsageStore().recordSurfaces(
+                        file, listOf(product.file, product.originFile), input.surfaces,
+                    )
+                } catch (failure: Throwable) {
+                    publication.restore()
+                    throw failure
+                }
+            }
+            generation
+        }
+    }
+
+    /** 解析入口先选择实际发布的语义文件；普通 raw 入口仍独立管理各自的来源代次。 */
+    fun getOrBuildFileForResolution(cjFile: CjFile): CfirFile {
+        val snapshot = moduleComponents.session.macroSemanticSnapshot
+        return snapshot?.fileForSource(cjFile) ?: snapshot?.fileForReparsedPsi(cjFile)
+            ?: buildRawCfirFileWithCaching(cjFile)
+    }
+
+    /** 宏构造独占完整正文、同代 parser 报告和仍打开的 annotation writer。 */
+    fun buildPreMacroRawFileUncached(cjFile: CjFile): PreMacroCfirFile {
+        val input = buildRawFileInput(cjFile, BodyBuildingMode.NORMAL, MacroSurfaceCollectionMode.CONSTRUCTION)
+        val product = input.generation.product
+        return PreMacroCfirFile(
+            cfirFile = input.generation.cfirFile,
+            surfaces = input.surfaces,
+            annotationMetadata = input.annotationMetadata,
+            parsingDiagnosticPublication = product.diagnosticPublication,
+            parserSettings = product.actualInputSeed.settings,
+            sourceFileIdentity = cjFile,
+        )
+    }
+
+    /** 独立构造树不会在此入口取得普通 LL 文件缓存或 source provider 的归属。 */
+    fun buildRawCfirFileUncached(cjFile: CjFile): CfirFile = buildPreMacroRawFileUncached(cjFile).cfirFile
+
+    private class RawFileInput(
+        val generation: LLCfirFileSourceGeneration,
+        val annotationMetadata: CfirAnnotationMetadataBuilder,
+        val surfaces: List<MacroSurface>,
+    )
+
+    private fun buildRawFileInput(
+        cjFile: CjFile,
+        bodyBuildingMode: BodyBuildingMode,
+        macroSurfaceCollectionMode: MacroSurfaceCollectionMode,
+    ): RawFileInput {
+        LLCfirSourcePsiGeneration.capture(listOf(cjFile), compareModificationStamps = false).requireCurrent()
         val contextualModule = moduleComponents.module
         val actualFileModule = projectStructureProvider.getModule(cjFile, contextualModule)
 
@@ -54,8 +125,9 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
         val builder = PsiRawCfirBuilder(
             moduleComponents.session,
             moduleComponents.scopeProvider,
-            bodyBuildingMode = BodyBuildingMode.LAZY_BODIES,
+            bodyBuildingMode = bodyBuildingMode,
             annotationMetadata = CfirAnnotationMetadataBuilder(),
+            macroSurfaceCollectionMode = macroSurfaceCollectionMode,
         )
         val product = cjFile.compilationParsingResultOrNull() ?: parseFile(cjFile)
         check(product.actualInputSeed.cjmpContext ==
@@ -66,23 +138,9 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
         cfirFile.replaceSourceFile(product.sourceFile)
         cfirFile.replaceSourceFileLinesMapping(product.sourceFileLinesMapping)
         cfirFile.publishParsingDiagnostics(product.diagnosticPublication, product.actualInputSeed.settings)
-        materializePrimaryConstructorParameterFields(cfirFile, builder.annotationMetadata)
-        org.cangnova.cangjie.cfir.resolve.providers.macro.prepareDefaultParameterFunctions(
-            cfirFile, builder.annotationMetadata, product.actualInputSeed.settings.backend,
-        )
         val generation = LLCfirFileSourceGeneration(product, cfirFile, moduleComponents.session.languageVersionSettings)
         generation.requireConsistentInput(moduleComponents.session)
-        // 封闭当前 raw 代次的元数据，不授予 macro construction 完成身份。
-        // 后续 LL construction 必须在此 seal 之前完成，不能改写已缓存图。
-        val metadata = builder.annotationMetadata.seal(listOf(cfirFile))
-        moduleComponents.session.ensureAnnotationMetadataRegistry().publish(metadata)
-        moduleComponents.session.recordRawExpressionMacroSurfaces(
-            file = cfirFile,
-            sourceFileIdentity = product.file,
-            surfaces = builder.consumeCollectedMacroSurfaces(),
-        )
-        checkNotNull(moduleComponents.session.rawMacroSurfaceUsageStoreOrNull).bindSourceFileIdentity(cfirFile, product.originFile)
-        generation
+        return RawFileInput(generation, builder.annotationMetadata, builder.consumeCollectedMacroSurfaces())
     }
 
     /** 文件产品由当前 session 语境完整解析；原入口、目标树与缓存身份始终共同保存。 */

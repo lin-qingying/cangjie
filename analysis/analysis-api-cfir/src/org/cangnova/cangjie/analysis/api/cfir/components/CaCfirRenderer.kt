@@ -1,15 +1,18 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.CaNonPublicApi
 import org.cangnova.cangjie.analysis.api.components.CaRenderer
 import org.cangnova.cangjie.analysis.api.impl.base.CaBaseSession
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.renderer.base.prettyPrint
+import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
 import org.cangnova.cangjie.analysis.api.renderer.types.CaTypeRenderer
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.rendering.CangJieAnnotatedText
 
 /**
  * 统一文本渲染入口。
@@ -31,6 +34,18 @@ internal class CaCfirRenderer(
             prettyPrint { renderer.renderDeclaration(useSiteSession, this@render, this) }
         }
     }
+
+    /** 通过同一轮 PrettyPrinter 渲染返回规范文本及其语义区间。 */
+    @OptIn(CaNonPublicApi::class)
+    override fun CaDeclarationSymbol.renderAnnotated(renderer: CaDeclarationRenderer): CangJieAnnotatedText =
+        withValidityAssertion {
+            val session = analysisSession as CaBaseSession
+            val printer = PrettyPrinter()
+            with(session) {
+                renderer.renderDeclaration(useSiteSession, this@renderAnnotated, printer)
+            }
+            printer.toAnnotatedText()
+        }
 
     /**
      * 使用指定类型 renderer 渲染公开类型。

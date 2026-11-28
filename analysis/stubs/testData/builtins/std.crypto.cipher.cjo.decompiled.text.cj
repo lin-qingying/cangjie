@@ -5,18 +5,16 @@ package std.crypto.cipher
 
 import std.core.*
 
-interface BlockCipher {
-    @Annotation
-    abstract open prop blockSize: Int64
+public interface BlockCipher {
+    public open prop blockSize: Int64
 
-    @Annotation
-    abstract open prop algorithm: std.core.String
+    public open prop algorithm: std.core.String
 
-    open func encrypt(input: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
+    public open func encrypt(input: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
 
-    open func decrypt(input: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
+    public open func decrypt(input: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
 
-    abstract open func encrypt(input: std.core.Array<UInt8>, to: std.core.Array<UInt8>): Int64
+    public open func encrypt(input: std.core.Array<UInt8>, to!: std.core.Array<UInt8>): Int64
 
-    abstract open func decrypt(input: std.core.Array<UInt8>, to: std.core.Array<UInt8>): Int64
+    public open func decrypt(input: std.core.Array<UInt8>, to!: std.core.Array<UInt8>): Int64
 }

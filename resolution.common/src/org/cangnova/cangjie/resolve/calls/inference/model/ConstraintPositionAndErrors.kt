@@ -261,7 +261,9 @@ data class IncorporationConstraintPosition(
     /**
      * 该位置是否由声明上界传播而来。
      */
-    var isFromDeclaredUpperBound: Boolean = false
+    var isFromDeclaredUpperBound: Boolean = false,
+    /** 当前关系是否保持类型身份；结构化等式的双向子类型分解仍属于同一等式。 */
+    val isEqualityRelation: Boolean = initialConstraint.constraintKind == ConstraintKind.EQUALITY,
 ) : ConstraintPosition() {
     /**
      * 初始约束的原始来源位置。

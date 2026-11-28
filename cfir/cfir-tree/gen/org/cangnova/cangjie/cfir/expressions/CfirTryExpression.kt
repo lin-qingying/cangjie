@@ -8,7 +8,8 @@ package org.cangnova.cangjie.cfir.expressions
 import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResourceVariable
+import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -17,13 +18,14 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.tryExpression]
  */
-abstract class CfirTryExpression : CfirExpression() {
+abstract class CfirTryExpression : CfirExpression(), CfirResolvable {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract override val mappedExpression: CfirExpression?
     abstract override val overflowStrategy: CangjieOverflowStrategy?
-    abstract val resources: List<CfirFieldVariable>
+    abstract override val calleeReference: CfirReference
+    abstract val resources: List<CfirResourceVariable>
     abstract val tryBlock: CfirBlock
     abstract val handlers: List<CfirHandleClause>
     abstract val catches: List<CfirCatch>
@@ -33,6 +35,7 @@ abstract class CfirTryExpression : CfirExpression() {
     @CfirImplementationDetail
     override fun <R, D> acceptSourceChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
+        calleeReference.accept(visitor, data)
         resources.forEach { it.accept(visitor, data) }
         tryBlock.accept(visitor, data)
         handlers.forEach { it.accept(visitor, data) }
@@ -58,9 +61,13 @@ abstract class CfirTryExpression : CfirExpression() {
 
     abstract override fun replaceOverflowStrategy(newOverflowStrategy: CangjieOverflowStrategy?)
 
-    abstract fun replaceResources(newResources: List<CfirFieldVariable>)
+    abstract override fun replaceCalleeReference(newCalleeReference: CfirReference)
+
+    abstract fun replaceResources(newResources: List<CfirResourceVariable>)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTryExpression
+
+    abstract override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirTryExpression
 
     abstract fun <D> transformResources(transformer: CfirTransformer<D>, data: D): CfirTryExpression
 

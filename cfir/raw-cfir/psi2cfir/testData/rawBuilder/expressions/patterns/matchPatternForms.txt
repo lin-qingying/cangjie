@@ -1,0 +1,105 @@
+FILE: matchPatternForms.cj
+    internal? enum Shape {
+        Circle(R|Int64|)
+        Rect(R|Int64|, R|Int64|)
+        init()
+        internal? func selfArea(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(Circle(deferred(r))) {
+                        NAMED_ACCESS(r)
+                    }
+                    BRANCH(Rect(deferred(w), deferred(h))) {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(w)
+                            arguments:
+                                NAMED_ACCESS(h)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    internal? func area(s: R|Shape|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(s)
+                BRANCH(Circle(deferred(r))) {
+                    NAMED_ACCESS(r)
+                }
+                BRANCH(Rect(deferred(w), deferred(h))) {
+                    FUNCTION_CALL(*operator_times) {
+                        receiver:
+                            NAMED_ACCESS(w)
+                        arguments:
+                            NAMED_ACCESS(h)
+                    }
+                }
+            }
+        }
+    }
+    internal? func guarded(s: R|Shape|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(s)
+                BRANCH(Circle(deferred(r)) where r > 10) {
+                    INT(2)
+                }
+                BRANCH(Circle(_)) {
+                    INT(1)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func orPattern(x: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(x)
+                BRANCH(const(1) | const(2)) {
+                    INT(1)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func tuple(t: R|(R|Int64|, R|String|)|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(t)
+                BRANCH((deferred(a), deferred(b))) {
+                    NAMED_ACCESS(a)
+                }
+            }
+        }
+    }
+    internal? enum E {
+        A
+        B(R|Int64|)
+        init()
+    }
+    internal? func varOrEnum(e: R|E|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(e)
+                BRANCH(E.A()) {
+                    INT(1)
+                }
+                BRANCH(E.B(deferred(x))) {
+                    NAMED_ACCESS(x)
+                }
+            }
+        }
+    }

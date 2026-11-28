@@ -7,12 +7,15 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.projectStructure.*
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirLibraryOrLibrarySourceResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.analysis.low.level.api.cfir.state.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.llDiagnosticsStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
@@ -25,6 +28,16 @@ class LLResolutionFacadeService(project: Project) {
      * project 级 low-level CFIR session cache。
      */
     private val cache = LLCfirSessionCache.getInstance(project)
+
+    /**
+     * 诊断收集统计域；统计未启用时为 `null`。
+     *
+     * 在工程服务上取一次并注入 provider：provider 挂在 module components 上、数量随模块增长，
+     * 每个 provider 自己去工程级取一次统计服务是多余的 service 查找。
+     */
+    private val diagnosticsStatistics: LLDiagnosticsStatistics? by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        project.llDiagnosticsStatistics()
+    }
 
     /**
      * 返回指定 use-site 模块对应的 resolution facade。
@@ -77,7 +90,7 @@ class LLResolutionFacadeService(project: Project) {
         return when (moduleProvider.useSiteModule) {
             is CaSourceModule,
             is CaDanglingFileModule
-                -> LLSourceDiagnosticProvider(moduleProvider, sessionProvider)
+                -> LLSourceDiagnosticProvider(moduleProvider, sessionProvider, diagnosticsStatistics)
             else -> LLEmptyDiagnosticProvider
         }
     }
@@ -94,10 +107,14 @@ class LLResolutionFacadeService(project: Project) {
 private class LLSourceModuleResolutionStrategyProvider(private val useSiteModule: CaModule) : LLModuleResolutionStrategyProvider {
     /**
      * source 模块走 lazy 解析，builtins/library 依赖走 static 解析。
+     *
+     * `CaLibrarySourceModule` 是纯源码库（无 `.cjo`）的源码孪生，它可以作为源码模块的
+     * 直接依赖参与解析，因此必须按源码模块（LAZY）处理；否则解析库源码里的声明时会落到
+     * `cannotProvideResolutionStrategy` 硬报错。
      */
     override fun getKind(module: CaModule): LLModuleResolutionStrategy {
         return when (module) {
-            is CaSourceModule -> LLModuleResolutionStrategy.LAZY
+            is CaSourceModule, is CaLibrarySourceModule -> LLModuleResolutionStrategy.LAZY
             is CaBuiltinsModule, is CaLibraryModule -> LLModuleResolutionStrategy.STATIC
             else -> cannotProvideResolutionStrategy(module, useSiteModule)
         }

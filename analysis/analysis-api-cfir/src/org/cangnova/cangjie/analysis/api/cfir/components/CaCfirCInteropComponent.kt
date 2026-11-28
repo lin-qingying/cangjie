@@ -75,7 +75,7 @@ internal fun CaCfirSession.getInteropInfo(element: CjElement): CaInteropInfo? {
 
 /** 按 symbol 构建互操作信息；非 CFIR symbol 时返回 `null`。 */
 internal fun CaCfirSession.getInteropInfo(symbol: CaSymbol): CaInteropInfo? {
-    val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbol ?: return null
+    val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbolOrNull ?: return null
     cfirSymbol.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
     return buildInteropInfo(cfirSymbol)
 }

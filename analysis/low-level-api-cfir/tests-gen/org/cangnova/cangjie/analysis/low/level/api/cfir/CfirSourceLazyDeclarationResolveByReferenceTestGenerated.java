@@ -25,6 +25,12 @@ public class CfirSourceLazyDeclarationResolveByReferenceTestGenerated extends Ab
   }
 
   @Test
+  @TestMetadata("extendSuperType.cj")
+  public void testExtendSuperType() {
+    run("extendSuperType.cj");
+  }
+
+  @Test
   @TestMetadata("resolveTargetByCall.cj")
   public void testResolveTargetByCall() {
     run("resolveTargetByCall.cj");

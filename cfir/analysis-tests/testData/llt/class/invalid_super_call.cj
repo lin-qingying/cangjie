@@ -13,7 +13,7 @@ open class c {
 class m <: c {
     public var a = <!ILLEGAL_SUPER_ALONE!>super<!> // ok
     public var b = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>()
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var c: Int64 = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>()
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>public var c: Int64 = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>()<!>
     public static var d = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>()
     public static var e: Int64 = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>()
     public init() {

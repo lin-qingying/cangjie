@@ -36,7 +36,9 @@ fun CfirCallableDeclaration.containingClassLookupTag(): ConeClassLikeLookupTag? 
 var CfirCallableDeclaration.containingExtend: CfirExtend? by CfirDeclarationDataRegistry.data(ContainingExtendKey)
 
 /** [CfirCallableDeclaration.containingExtend] 扩展属性使用的声明数据键。 */
-private object ContainingExtendKey : CfirDeclarationDataKey()
+private object ContainingExtendKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.reference<org.cangnova.cangjie.cfir.declarations.CfirExtend>("containing extend owner")
+}
 
 /**
  * 静态成员声明显式记录的所属 class lookup tag。
@@ -77,7 +79,9 @@ var <D : CfirCallableDeclaration>
 /**
  * intersection override 原始声明的附加数据键。
  */
-private object IntersectionOverrideOriginalKey : CfirDeclarationDataKey()
+private object IntersectionOverrideOriginalKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration>("intersection override scope state")
+}
 
 /**
  * 当前声明是 intersection override 时返回其原始声明。
@@ -100,7 +104,9 @@ val CfirCallableDeclaration.isSubstitutionOverride: Boolean
 /**
  * substitution override 原始声明的附加数据键。
  */
-private object SubstitutedOverrideOriginalKey : CfirDeclarationDataKey()
+private object SubstitutedOverrideOriginalKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.forbidden<org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration>("substitution override scope state")
+}
 
 /**
  * substitution override 对应的原始 callable。
@@ -176,9 +182,15 @@ inline fun <reified D : CfirCallableDeclaration> D.unwrapSubstitutionOverrides()
 inline fun <reified S : CfirCallableSymbol<*>> S.unwrapSubstitutionOverrides(): S =
     cfir.unwrapSubstitutionOverrides().symbol as S
 
-internal object CorrespondingFieldKey : CfirDeclarationDataKey()
-internal object CorrespondingValueParameterKey : CfirDeclarationDataKey()
-internal object MemberParameterKey : CfirDeclarationDataKey()
+internal object CorrespondingFieldKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = CfirRawDeclarationDataPolicies.reference<CfirFieldVariable>("corresponding primary constructor field")
+}
+internal object CorrespondingValueParameterKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = CfirRawDeclarationDataPolicies.reference<CfirValueParameter>("corresponding primary constructor parameter")
+}
+internal object MemberParameterKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = CfirRawDeclarationDataPolicies.boolean
+}
 
 private var CfirValueParameter.correspondingFieldAttribute: CfirFieldVariable? by
     CfirDeclarationDataRegistry.data(CorrespondingFieldKey)
@@ -215,7 +227,9 @@ fun bindPrimaryConstructorParameterField(parameter: CfirValueParameter, field: C
 /**
  * catch 参数属性标记的附加数据键。
  */
-private object IsCatchParameterPropertyKey : CfirDeclarationDataKey()
+private object IsCatchParameterPropertyKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.boolean
+}
 
 /**
  * catch 参数在 CFIR 中按 local property 建模，但语义上不是普通属性声明。
@@ -226,7 +240,9 @@ var CfirProperty.isCatchParameter: Boolean? by CfirDeclarationDataRegistry.data(
 /**
  * callable 所属 class lookup tag 的附加数据键。
  */
-private object ContainingClassKey : CfirDeclarationDataKey()
+private object ContainingClassKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.classLookupTag
+}
 
 /**
  * 从 callable symbol 的 dispatch receiver 中提取 class lookup tag。

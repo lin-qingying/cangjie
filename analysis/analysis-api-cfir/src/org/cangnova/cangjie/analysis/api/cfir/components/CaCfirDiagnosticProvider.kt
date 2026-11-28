@@ -29,6 +29,9 @@ internal class CaCfirDiagnosticProvider(
      * 收集指定 PSI 元素关联的诊断。
      */
     override fun CjElement.diagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> = withPsiValidityAssertion {
+        // 反编译 `.cjo` 视图不是源码：对它跑源码诊断会走 PSI→raw CFIR 构建，
+        // 而反编译 PSI 会随 provider 重建失效，最终以 invalid element 异常中断诊断。
+        if (containingCjFile?.isCompiled == true) return@withPsiValidityAssertion emptyList()
         getDiagnostics(resolutionFacade, filter.asLLFilter()).map { it.asCaDiagnostic() }
     }
 
@@ -37,6 +40,8 @@ internal class CaCfirDiagnosticProvider(
      */
     override fun CjFile.collectDiagnostics(filter: CaDiagnosticCheckerFilter): Collection<CaDiagnosticWithPsi<*>> =
         withPsiValidityAssertion {
+            // 库/内建的 `.cjo` 反编译视图没有源码语义，诊断必须为空。
+            if (isCompiled) return@withPsiValidityAssertion emptyList()
             collectDiagnosticsForFile(resolutionFacade, filter.asLLFilter()).map { it.asCaDiagnostic() }
         }
 

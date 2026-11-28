@@ -15,21 +15,52 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class CjoManager(
     private val searchPath: CjoSearchPath,
-    private val formatVersionPolicy: CjoFormatVersionPolicy,
+    private val formatVersionPolicy: CjoFormatVersionPolicy? = null,
     explicitCommonPartPaths: List<Path> = emptyList(),
     val canInline: Boolean = false,
+    /** 同一 metadata 依赖图共用事务；包快照与 record 缓存仍各归本 manager。 */
+    internal val declarationMaterialization: org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeclarationMaterialization =
+        org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeclarationMaterialization(),
 ) : CjoLoadedPackageProvider, CjoLoadedPackageSnapshotProvider {
     private class Snapshot(
-        buffer: ByteBuffer,
+        bytes: ByteArray,
         override val sourcePath: Path,
     ) : CjoLoadedPackage {
-        private val buffer: ByteBuffer = buffer.asReadOnlyBuffer()
+        /** 来源字节独立于供 FlatBuffer 读取的同代声明池。 */
+        private val sourceBytes = bytes.copyOf()
+        private val buffer: ByteBuffer = ByteBuffer.wrap(sourceBytes.copyOf())
+        fun hasContent(bytes: ByteArray): Boolean = sourceBytes.contentEquals(bytes)
         override val header: CjoPackageHeader = CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer.duplicate()))
         override val pkg: Package get() = Package.getRootAsPackage(buffer.duplicate())
     }
 
     private val snapshots = ConcurrentHashMap<String, CjoLoadedPackage>()
-    private val snapshotsByPath = ConcurrentHashMap<Path, CjoLoadedPackage>()
+    private val snapshotsByPath = ConcurrentHashMap<Path, Snapshot>()
+    /** 显式来源可先在名称枚举中读取。包名和版本门通过后才发布为正式来源。 */
+    private val explicitSnapshotCandidates = HashMap<Path, Snapshot>()
+
+    internal fun loadedSnapshotIdentity(header: CjoPackageHeader, path: Path?): CjoLoadedPackage? =
+        path?.let(::loadedPackageSnapshot)?.takeIf { it.header === header }
+
+    /** 实际文件读取与按包名读取共用已发布的来源身份，并检查请求字节。 */
+    @Synchronized
+    fun loadPackageSnapshot(fullPkgName: String, sourcePath: Path, content: ByteArray): CjoLoadedPackage {
+        val path = sourcePath.toAbsolutePath().normalize()
+        val old = snapshotsByPath[path] ?: explicitSnapshotCandidates[path]
+        val snapshot = if (old == null) Snapshot(content, path) else old.also {
+            check(it.hasContent(content)) { "CJO content changed inside a metadata generation: $path" }
+        }
+        val diagnostics = snapshotDiagnostics(fullPkgName, snapshot)
+        check(diagnostics.isEmpty()) { "Rejected actual CJO $path: $diagnostics" }
+        return publishSnapshot(snapshot)
+    }
+
+    private fun publishSnapshot(snapshot: Snapshot): CjoLoadedPackage {
+        check(Thread.holdsLock(this))
+        val previous = snapshotsByPath.putIfAbsent(snapshot.sourcePath, snapshot)
+        check(previous == null || previous === snapshot) { "A different CJO snapshot already owns this source" }
+        return snapshot
+    }
     private val snapshotsByPackage = ConcurrentHashMap<String, List<CjoLoadedPackage>>()
     private val explicitCommonPartPaths = explicitCommonPartPaths.map { it.toAbsolutePath().normalize() }
     private val missingPackages = ConcurrentHashMap.newKeySet<String>()
@@ -107,13 +138,11 @@ class CjoManager(
     }
 
     /** 单个显式 parent 路径的内容与来源一起缓存，不能按 package 名覆盖同包的其他 parent。 */
-    private fun loadExplicitSnapshot(path: Path): CjoLoadedPackage {
+    private fun loadExplicitSnapshot(path: Path): Snapshot {
+        check(Thread.holdsLock(this))
         val normalizedPath = path.toAbsolutePath().normalize()
-        return snapshotsByPath.computeIfAbsent(normalizedPath) {
-            Snapshot(
-                ByteBuffer.wrap(normalizedPath.toFile().readBytes()),
-                normalizedPath,
-            )
+        return snapshotsByPath[normalizedPath] ?: explicitSnapshotCandidates.getOrPut(normalizedPath) {
+            Snapshot(normalizedPath.toFile().readBytes(), normalizedPath)
         }
     }
 
@@ -125,29 +154,38 @@ class CjoManager(
             missingPackages += fullPkgName
             return null
         }
-        val snapshot = loadExplicitSnapshot(file.toPath())
+        val path = file.toPath().toAbsolutePath().normalize()
+        val bytes = file.readBytes()
+        val old = snapshotsByPath[path] ?: explicitSnapshotCandidates[path]
+        val snapshot = if (old == null) Snapshot(bytes, path) else old.also {
+            check(it.hasContent(bytes)) { "CJO content changed inside a metadata generation: $path" }
+        }
         return validateSnapshot(fullPkgName, snapshot)?.also { snapshots[fullPkgName] = it }
     }
 
-    private fun validateSnapshot(fullPkgName: String, snapshot: CjoLoadedPackage): CjoLoadedPackage? {
-        // 格式版本只对显式 common-part 输入按当前编译语言版本策略判定；包名错配仍作为无效 package 元数据拒绝。
-        // 诊断随加载结果上浮，供装配层外显，避免静默地把包当"不存在"。
-        val diagnostics = buildList {
-            if (isExplicitCommonPartPath(snapshot.sourcePath)) {
-                formatVersionPolicy.checkCommonPart(fullPkgName, snapshot.header.cjoVersion)?.let(::add)
-            }
-            CjmpCommonPartLoadGate.checkPackageName(fullPkgName, snapshot.header.fullPkgName)?.let(::add)
+    private fun snapshotDiagnostics(fullPkgName: String, snapshot: Snapshot): List<CfirCjmpLoadDiagnostic> = buildList {
+        val versionProblem = when {
+            formatVersionPolicy == null -> CjmpCommonPartLoadGate.checkFormatVersion(fullPkgName, snapshot.header.cjoVersion)
+            isExplicitCommonPartPath(snapshot.sourcePath) -> formatVersionPolicy.checkCommonPart(fullPkgName, snapshot.header.cjoVersion)
+            else -> null
         }
+        versionProblem?.let(::add)
+        CjmpCommonPartLoadGate.checkPackageName(fullPkgName, snapshot.header.fullPkgName)?.let(::add)
+    }
+
+    private fun validateSnapshot(fullPkgName: String, snapshot: Snapshot): CjoLoadedPackage? {
+        val diagnostics = snapshotDiagnostics(fullPkgName, snapshot)
         if (diagnostics.isNotEmpty()) {
             loadDiagnostics.merge(fullPkgName, diagnostics) { previous, current -> previous + current }
             return null
         }
-        return snapshot
+        return publishSnapshot(snapshot)
     }
 
     fun loadPackageHeader(fullPkgName: String): CjoPackageHeader? = loadPackageSnapshot(fullPkgName)?.header
     fun loadPackage(fullPkgName: String): Package? = loadPackageSnapshot(fullPkgName)?.pkg
 
+    @Synchronized
     fun getAvailablePackageNames(): Set<FqName> =
         buildSet {
             searchPath.getAvailablePackageNames().mapTo(this, ::FqName)

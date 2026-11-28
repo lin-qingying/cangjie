@@ -38,7 +38,9 @@ public data class CfirDeclarationAnnotationInfo(
 )
 
 /** [CfirDeclaration.annotationInfo] 扩展属性使用的声明数据键。 */
-internal object CfirDeclarationAnnotationInfoKey : CfirDeclarationDataKey()
+internal object CfirDeclarationAnnotationInfoKey : CfirDeclarationDataKey() {
+    override val rawCopyPolicy get() = org.cangnova.cangjie.cfir.CfirRawDeclarationDataPolicies.annotationInfo
+}
 internal object CfirOwnedDeclarationAnnotationInfoKey : CfirDeclarationDataKey()
 internal object CfirSerializedAnnotationHeaderRegisteredKey : CfirDeclarationDataKey()
 

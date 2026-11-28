@@ -51,4 +51,10 @@ public class CfirIdeDependentAnalysisSourceModuleDeclarationReturnTypeTestGenera
   public void testDeclarationReturnType() {
     run("declarationReturnType.cj");
   }
+
+  @Test
+  @TestMetadata("inferredReturnType.cj")
+  public void testInferredReturnType() {
+    run("inferredReturnType.cj");
+  }
 }

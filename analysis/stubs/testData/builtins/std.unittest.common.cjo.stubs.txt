@@ -6,49 +6,60 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Parsable, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Parsable]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.ReentrantMutex, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ReentrantMutex]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.fold, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=fold]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.enumerate, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=enumerate]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Formattable, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.common]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Formattable]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.collection, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Parsable, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.convert.Parsable, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Parsable]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.ReentrantMutex, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.sync.ReentrantMutex, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ReentrantMutex]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.ArrayList, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.fold, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.fold, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=fold]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.enumerate, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.enumerate, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=enumerate]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Formattable, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.common]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.convert.Formattable, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Formattable]
   CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
-      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-        CangJieStub$CONSTRUCTOR_CALLEE
-          CangJieStub$TYPE_REFERENCE
-            CangJieStub$USER_TYPE
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.unittest.common.NOT_PRINTABLE_PLACEHOLDER, name=NOT_PRINTABLE_PLACEHOLDER]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=NOT_PRINTABLE_PLACEHOLDER]
@@ -62,7 +73,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$CLASS[classId=std/unittest/common/Configuration, fqName=std.unittest.common.Configuration, name=Configuration, superNames=[Object, ToString]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -87,7 +98,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -120,7 +131,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -146,7 +157,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -173,7 +184,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -193,7 +204,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -226,7 +237,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -252,7 +263,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -265,7 +276,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Configuration]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -276,7 +287,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -309,7 +320,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Configuration]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=storage]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -338,13 +349,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
   CangJieStub$INTERFACE[classId=std/unittest/common/DataShrinker, fqName=std.unittest.common.DataShrinker, name=DataShrinker, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -364,7 +375,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
   CangJieStub$CLASS[classId=std/unittest/common/NoShrinker, fqName=std.unittest.common.NoShrinker, name=NoShrinker, superNames=[Object, DataShrinker]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
@@ -394,7 +405,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[public override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -414,7 +425,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[internal static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -436,18 +447,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$INTERFACE[classId=std/unittest/common/KeyFor, fqName=std.unittest.common.KeyFor, name=KeyFor, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=name]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -457,7 +463,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$STRUCT[classId=std/unittest/common/KeyTags, fqName=std.unittest.common.KeyTags, name=KeyTags, superNames=[KeyFor]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -490,12 +496,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=tags]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -510,12 +511,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=name]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -532,7 +528,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$CLASS[classId=std/unittest/common/ConfigurationKey, fqName=std.unittest.common.ConfigurationKey, name=ConfigurationKey, superNames=[Object, Equatable, Hashable]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[abstract open]
+    CangJieStub$MODIFIER_LIST[public abstract open]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -572,13 +568,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[public override]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -594,7 +590,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override operator]
+        CangJieStub$MODIFIER_LIST[public override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -610,7 +606,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override operator]
+        CangJieStub$MODIFIER_LIST[public override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -626,7 +622,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=name]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -647,7 +643,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/common/ConfigurationKey, extendId=std.unittest.common:ConfigurationKey<:, fqName=std.unittest.common.ConfigurationKey, name=ConfigurationKey, receiverTypeName=ConfigurationKey, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:ConfigurationKey<:, fqName=std.unittest.common.ConfigurationKey, name=ConfigurationKey, receiverTypeName=ConfigurationKey, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -662,7 +658,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -685,13 +681,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ConfigurationKey]
   CangJieStub$INTERFACE[classId=std/unittest/common/DataProvider, fqName=std.unittest.common.DataProvider, name=DataProvider, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -707,13 +703,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
   CangJieStub$INTERFACE[classId=std/unittest/common/DataStrategy, fqName=std.unittest.common.DataStrategy, name=DataStrategy, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -741,7 +737,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -769,18 +765,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isInfinite]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/unittest/common/Array, extendId=std.unittest.common:Array<:DataProvider&DataStrategy, fqName=std.unittest.common.Array, name=Array, receiverTypeName=Array, superNames=[DataStrategy, DataProvider]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Array<:DataProvider&DataStrategy, fqName=std.unittest.common.Array, name=Array, receiverTypeName=Array, superNames=[DataStrategy, DataProvider]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -807,7 +798,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -823,12 +814,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$PROPERTY[fqName=std.unittest.common.isInfinite, isTopLevel=false, isTopLevel=false, name=isInfinite]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$PROPERTY_BODY
@@ -836,7 +822,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -862,7 +848,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/common/Range, extendId=std.unittest.common:Range<:DataProvider&DataStrategy, fqName=std.unittest.common.Range, name=Range, receiverTypeName=Range, superNames=[DataStrategy, DataProvider]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Range<:DataProvider&DataStrategy, fqName=std.unittest.common.Range, name=Range, receiverTypeName=Range, superNames=[DataStrategy, DataProvider]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -889,7 +875,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -905,12 +891,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$PROPERTY[fqName=std.unittest.common.isInfinite, isTopLevel=false, isTopLevel=false, name=isInfinite]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$PROPERTY_BODY
@@ -918,7 +899,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -946,7 +927,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
   CangJieStub$CLASS[classId=std/unittest/common/JsonException, fqName=std.unittest.common.JsonException, name=JsonException, superNames=[Exception]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -975,7 +956,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -986,7 +967,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$CLASS[classId=std/unittest/common/JsonNull, fqName=std.unittest.common.JsonNull, name=JsonNull, superNames=[JsonValue]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1001,7 +982,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1014,7 +995,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1025,7 +1006,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1040,7 +1021,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$ENUM[classId=std/unittest/common/JsonKind, fqName=std.unittest.common.JsonKind, isNonExhaustive=false, name=JsonKind, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.common.JsonKind, name=JsNull, typeCount=0]
         CangJieStub$ANNOTATIONS
@@ -1065,7 +1046,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$MODIFIER_LIST[]
   CangJieStub$CLASS[classId=std/unittest/common/JsonValue, fqName=std.unittest.common.JsonValue, name=JsonValue, superNames=[Object, ToString]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[abstract]
+    CangJieStub$MODIFIER_LIST[protected abstract]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1086,7 +1067,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1097,7 +1078,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1108,7 +1089,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1129,7 +1110,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1142,7 +1123,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1155,7 +1136,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonNull]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1168,7 +1149,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonBool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1181,7 +1162,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonInt]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1194,7 +1175,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonFloat]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1207,7 +1188,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonString]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1220,7 +1201,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonArray]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1237,7 +1218,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$CLASS[classId=std/unittest/common/JsonBool, fqName=std.unittest.common.JsonBool, name=JsonBool, superNames=[JsonValue]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1252,7 +1233,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=JsonBool]
@@ -1264,13 +1245,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
               CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1283,7 +1264,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1294,7 +1275,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1305,7 +1286,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$CLASS[classId=std/unittest/common/JsonInt, fqName=std.unittest.common.JsonInt, name=JsonInt, superNames=[JsonValue]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1320,7 +1301,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=JsonInt]
@@ -1332,13 +1313,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1351,7 +1332,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1362,7 +1343,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1373,7 +1354,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$CLASS[classId=std/unittest/common/JsonFloat, fqName=std.unittest.common.JsonFloat, name=JsonFloat, superNames=[JsonValue]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1388,7 +1369,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=JsonFloat]
@@ -1407,13 +1388,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1426,7 +1407,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1437,7 +1418,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1448,7 +1429,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$CLASS[classId=std/unittest/common/JsonString, fqName=std.unittest.common.JsonString, name=JsonString, superNames=[JsonValue]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1463,7 +1444,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1485,7 +1466,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1496,7 +1477,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1509,7 +1490,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1520,7 +1501,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1531,7 +1512,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$CLASS[classId=std/unittest/common/JsonArray, fqName=std.unittest.common.JsonArray, name=JsonArray, superNames=[JsonValue]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1546,7 +1527,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=items]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1617,7 +1598,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1630,7 +1611,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1641,15 +1622,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1657,6 +1639,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1666,7 +1649,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1677,13 +1660,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1706,7 +1689,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonArray]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1731,7 +1714,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1747,7 +1730,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1769,7 +1752,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
   CangJieStub$CLASS[classId=std/unittest/common/JsonObject, fqName=std.unittest.common.JsonObject, name=JsonObject, superNames=[JsonValue]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1784,7 +1767,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=fields]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1848,7 +1831,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1861,7 +1844,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonKind]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1872,15 +1855,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1888,6 +1872,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1897,7 +1882,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1908,13 +1893,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1928,7 +1913,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1952,7 +1937,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -1982,7 +1967,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2003,7 +1988,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2033,11 +2018,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
   CangJieStub$INTERFACE[classId=std/unittest/common/ToJson, fqName=std.unittest.common.ToJson, name=ToJson, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2050,7 +2035,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2073,13 +2058,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
   CangJieStub$CLASS[classId=std/unittest/common/DataModel, fqName=std.unittest.common.DataModel, name=DataModel, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[abstract]
+    CangJieStub$MODIFIER_LIST[protected abstract]
     CangJieStub$CLASS_BODY
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=DataModel]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/unittest/common/DataModel, extendId=std.unittest.common:DataModel<:ToJson, fqName=std.unittest.common.DataModel, name=DataModel, receiverTypeName=DataModel, superNames=[ToJson]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:DataModel<:ToJson, fqName=std.unittest.common.DataModel, name=DataModel, receiverTypeName=DataModel, superNames=[ToJson]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2099,7 +2084,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2122,7 +2107,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2135,7 +2120,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
   CangJieStub$CLASS[classId=std/unittest/common/UnittestOptionValidationException, fqName=std.unittest.common.UnittestOptionValidationException, name=UnittestOptionValidationException, superNames=[Exception]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2148,7 +2133,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2159,12 +2144,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$ENUM[classId=std/unittest/common/OptionValidity, fqName=std.unittest.common.OptionValidity, isNonExhaustive=false, name=OptionValidity, superNames=[]]
     CangJieStub$ANNOTATIONS
-      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-        CangJieStub$CONSTRUCTOR_CALLEE
-          CangJieStub$TYPE_REFERENCE
-            CangJieStub$USER_TYPE
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.common.OptionValidity, name=UnknownOptionType, typeCount=0]
         CangJieStub$ANNOTATIONS
@@ -2202,11 +2182,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
       CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$STRUCT[classId=std/unittest/common/OptionInfo, fqName=std.unittest.common.OptionInfo, name=OptionInfo, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=name]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2216,12 +2196,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=userDefined]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=description]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2240,7 +2220,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=types]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2307,7 +2287,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=OptionInfo]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -2342,7 +2322,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -2369,7 +2349,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2386,11 +2366,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -2437,7 +2418,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$ENUM[classId=std/unittest/common/Color, fqName=std.unittest.common.Color, isNonExhaustive=false, name=Color, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2485,7 +2466,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$MODIFIER_LIST[]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2501,7 +2482,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[public operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2517,11 +2498,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$CLASS[classId=std/unittest/common/PrettyPrinter, fqName=std.unittest.common.PrettyPrinter, name=PrettyPrinter, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[abstract]
+    CangJieStub$MODIFIER_LIST[public abstract]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2535,13 +2516,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[open]
+        CangJieStub$MODIFIER_LIST[protected open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2557,7 +2538,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentIndent]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2567,12 +2548,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=needIndent]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentColor]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2584,12 +2565,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Color]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isTopLevel]
         CangJieStub$ANNOTATIONS
-          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-            CangJieStub$CONSTRUCTOR_CALLEE
-              CangJieStub$TYPE_REFERENCE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$PROPERTY_BODY
@@ -2597,7 +2573,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2616,29 +2592,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$BASIC_TYPE[basicType=UInt64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$FUNCTION_TYPE
-                CangJieStub$VALUE_PARAMETER_LIST
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$BASIC_TYPE[basicType=Unit]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2660,7 +2614,29 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$BASIC_TYPE[basicType=UInt64]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$FUNCTION_TYPE
+                CangJieStub$VALUE_PARAMETER_LIST
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=Unit]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2689,7 +2665,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2711,7 +2687,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2742,7 +2718,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2763,31 +2739,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$BASIC_TYPE[basicType=UInt64]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2811,7 +2763,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2835,7 +2787,31 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$BASIC_TYPE[basicType=UInt64]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=PP]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -2854,7 +2830,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2867,7 +2843,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2888,7 +2864,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=PP]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -2907,33 +2883,35 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=indentationSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=startingIndent]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=PrettyPrinter]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$INTERFACE[classId=std/unittest/common/PrettyPrintable, fqName=std.unittest.common.PrettyPrintable, name=PrettyPrintable, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -2956,12 +2934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
   CangJieStub$ENUM[classId=std/unittest/common/PrettyPrintableTextChunk, fqName=std.unittest.common.PrettyPrintableTextChunk, isNonExhaustive=false, name=PrettyPrintableTextChunk, superNames=[]]
     CangJieStub$ANNOTATIONS
-      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
-        CangJieStub$CONSTRUCTOR_CALLEE
-          CangJieStub$TYPE_REFERENCE
-            CangJieStub$USER_TYPE
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[internal]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.common.PrettyPrintableTextChunk, name=PPTextPiece, typeCount=1]
         CangJieStub$ANNOTATIONS
@@ -2992,7 +2965,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$MODIFIER_LIST[]
   CangJieStub$CLASS[classId=std/unittest/common/PrettyText, fqName=std.unittest.common.PrettyText, name=PrettyText, superNames=[PrettyPrinter, PrettyPrintable, ToString]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[public]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3041,7 +3014,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$TYPE_PARAMETER_LIST
           CangJieStub$TYPE_PARAMETER[fqName=null, name=PP]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -3060,13 +3033,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyText]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3080,7 +3053,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3096,13 +3069,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3125,7 +3098,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3136,7 +3109,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=data]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3155,7 +3128,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrintableTextChunk]
-  CangJieStub$EXTEND[classId=std/unittest/common/Array, extendId=std.unittest.common:Array<:PrettyPrintable, fqName=std.unittest.common.Array, name=Array, receiverTypeName=Array, superNames=[PrettyPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Array<:PrettyPrintable, fqName=std.unittest.common.Array, name=Array, receiverTypeName=Array, superNames=[PrettyPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3178,7 +3151,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3199,7 +3172,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/common/ArrayList, extendId=std.unittest.common:ArrayList<:PrettyPrintable, fqName=std.unittest.common.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[PrettyPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:ArrayList<:PrettyPrintable, fqName=std.unittest.common.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[PrettyPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3222,7 +3195,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3245,7 +3218,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
@@ -3262,7 +3235,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
@@ -3279,7 +3252,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
@@ -3294,7 +3267,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/common/Color, extendId=std.unittest.common:Color<:Serializable, fqName=std.unittest.common.Color, name=Color, receiverTypeName=Color, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Color<:Serializable, fqName=std.unittest.common.Color, name=Color, receiverTypeName=Color, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3314,7 +3287,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3327,7 +3300,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3350,13 +3323,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Color]
   CangJieStub$INTERFACE[classId=std/unittest/common/Serializable, fqName=std.unittest.common.Serializable, name=Serializable, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3369,7 +3342,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3384,7 +3357,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/common/PrettyText, extendId=std.unittest.common:PrettyText<:Serializable, fqName=std.unittest.common.PrettyText, name=PrettyText, receiverTypeName=PrettyText, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:PrettyText<:Serializable, fqName=std.unittest.common.PrettyText, name=PrettyText, receiverTypeName=PrettyText, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3404,7 +3377,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3417,7 +3390,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3440,7 +3413,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyText]
   CangJieStub$CLASS[classId=std/unittest/common/DataModelNull, fqName=std.unittest.common.DataModelNull, name=DataModelNull, superNames=[DataModel]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3459,7 +3432,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$CLASS[classId=std/unittest/common/DataModelBool, fqName=std.unittest.common.DataModelBool, name=DataModelBool, superNames=[DataModel]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3474,7 +3447,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=DataModelBool]
@@ -3486,13 +3459,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
               CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$CLASS[classId=std/unittest/common/DataModelInt, fqName=std.unittest.common.DataModelInt, name=DataModelInt, superNames=[DataModel]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3507,7 +3480,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=DataModelInt]
@@ -3519,13 +3492,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$CLASS[classId=std/unittest/common/DataModelFloat, fqName=std.unittest.common.DataModelFloat, name=DataModelFloat, superNames=[DataModel]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3540,7 +3513,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=DataModelFloat]
@@ -3559,13 +3532,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
   CangJieStub$CLASS[classId=std/unittest/common/DataModelString, fqName=std.unittest.common.DataModelString, name=DataModelString, superNames=[DataModel]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3580,7 +3553,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3602,7 +3575,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3613,7 +3586,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$CLASS[classId=std/unittest/common/DataModelSeq, fqName=std.unittest.common.DataModelSeq, name=DataModelSeq, superNames=[DataModel]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3628,7 +3601,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=items]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3676,7 +3649,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3698,7 +3671,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3714,7 +3687,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$CLASS[classId=std/unittest/common/DataModelStruct, fqName=std.unittest.common.DataModelStruct, name=DataModelStruct, superNames=[DataModel]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3729,7 +3702,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=fields]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3777,7 +3750,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Field]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3799,7 +3772,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Field]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3822,7 +3795,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModelStruct]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -3843,11 +3816,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
   CangJieStub$CLASS[classId=std/unittest/common/Field, fqName=std.unittest.common.Field, name=Field, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=name]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[private]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3857,7 +3830,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=data]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[internal]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3891,7 +3864,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3902,7 +3875,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3915,7 +3888,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
@@ -3942,7 +3915,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Field]
   CangJieStub$CLASS[classId=std/unittest/common/DataModelException, fqName=std.unittest.common.DataModelException, name=DataModelException, superNames=[Exception]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3971,7 +3944,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$MODIFIER_LIST[protected override]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -3980,7 +3953,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/common/Int64, extendId=std.unittest.common:Int64<:Serializable, fqName=std.unittest.common.Int64, name=Int64, receiverTypeName=Int64, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Int64<:Serializable, fqName=std.unittest.common.Int64, name=Int64, receiverTypeName=Int64, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3993,7 +3966,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4006,7 +3979,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4020,7 +3993,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/unittest/common/Int32, extendId=std.unittest.common:Int32<:Serializable, fqName=std.unittest.common.Int32, name=Int32, receiverTypeName=Int32, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Int32<:Serializable, fqName=std.unittest.common.Int32, name=Int32, receiverTypeName=Int32, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4033,7 +4006,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4046,7 +4019,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4060,7 +4033,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/unittest/common/Int16, extendId=std.unittest.common:Int16<:Serializable, fqName=std.unittest.common.Int16, name=Int16, receiverTypeName=Int16, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Int16<:Serializable, fqName=std.unittest.common.Int16, name=Int16, receiverTypeName=Int16, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4073,7 +4046,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4086,7 +4059,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4100,7 +4073,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/unittest/common/Int8, extendId=std.unittest.common:Int8<:Serializable, fqName=std.unittest.common.Int8, name=Int8, receiverTypeName=Int8, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Int8<:Serializable, fqName=std.unittest.common.Int8, name=Int8, receiverTypeName=Int8, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4113,7 +4086,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4126,7 +4099,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4140,7 +4113,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/unittest/common/UInt64, extendId=std.unittest.common:UInt64<:Serializable, fqName=std.unittest.common.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:UInt64<:Serializable, fqName=std.unittest.common.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4153,7 +4126,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4166,7 +4139,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4180,7 +4153,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/unittest/common/UInt32, extendId=std.unittest.common:UInt32<:Serializable, fqName=std.unittest.common.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:UInt32<:Serializable, fqName=std.unittest.common.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4193,7 +4166,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4206,7 +4179,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4220,7 +4193,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/unittest/common/UInt16, extendId=std.unittest.common:UInt16<:Serializable, fqName=std.unittest.common.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:UInt16<:Serializable, fqName=std.unittest.common.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4233,7 +4206,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4246,7 +4219,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4260,7 +4233,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/unittest/common/UInt8, extendId=std.unittest.common:UInt8<:Serializable, fqName=std.unittest.common.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:UInt8<:Serializable, fqName=std.unittest.common.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4273,7 +4246,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4286,7 +4259,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4300,7 +4273,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/unittest/common/Float64, extendId=std.unittest.common:Float64<:Serializable, fqName=std.unittest.common.Float64, name=Float64, receiverTypeName=Float64, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Float64<:Serializable, fqName=std.unittest.common.Float64, name=Float64, receiverTypeName=Float64, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4313,7 +4286,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4326,7 +4299,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4340,7 +4313,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/unittest/common/Float32, extendId=std.unittest.common:Float32<:Serializable, fqName=std.unittest.common.Float32, name=Float32, receiverTypeName=Float32, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Float32<:Serializable, fqName=std.unittest.common.Float32, name=Float32, receiverTypeName=Float32, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4353,7 +4326,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4366,7 +4339,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4380,7 +4353,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/unittest/common/Float16, extendId=std.unittest.common:Float16<:Serializable, fqName=std.unittest.common.Float16, name=Float16, receiverTypeName=Float16, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Float16<:Serializable, fqName=std.unittest.common.Float16, name=Float16, receiverTypeName=Float16, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4393,7 +4366,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4406,7 +4379,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4420,7 +4393,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/unittest/common/Bool, extendId=std.unittest.common:Bool<:Serializable, fqName=std.unittest.common.Bool, name=Bool, receiverTypeName=Bool, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Bool<:Serializable, fqName=std.unittest.common.Bool, name=Bool, receiverTypeName=Bool, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4433,7 +4406,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4446,7 +4419,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4460,7 +4433,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/common/String, extendId=std.unittest.common:String<:Serializable, fqName=std.unittest.common.String, name=String, receiverTypeName=String, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:String<:Serializable, fqName=std.unittest.common.String, name=String, receiverTypeName=String, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4478,7 +4451,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4491,7 +4464,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4510,7 +4483,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/common/Rune, extendId=std.unittest.common:Rune<:Serializable, fqName=std.unittest.common.Rune, name=Rune, receiverTypeName=Rune, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Rune<:Serializable, fqName=std.unittest.common.Rune, name=Rune, receiverTypeName=Rune, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4523,7 +4496,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4536,7 +4509,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4550,7 +4523,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Rune]
-  CangJieStub$EXTEND[classId=std/unittest/common/Option, extendId=std.unittest.common:Option<:Serializable, fqName=std.unittest.common.Option, name=Option, receiverTypeName=Option, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Option<:Serializable, fqName=std.unittest.common.Option, name=Option, receiverTypeName=Option, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4573,7 +4546,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4586,7 +4559,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4610,7 +4583,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/common/Array, extendId=std.unittest.common:Array<:Serializable, fqName=std.unittest.common.Array, name=Array, receiverTypeName=Array, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Array<:Serializable, fqName=std.unittest.common.Array, name=Array, receiverTypeName=Array, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4633,7 +4606,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4646,7 +4619,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4670,7 +4643,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/common/ArrayList, extendId=std.unittest.common:ArrayList<:Serializable, fqName=std.unittest.common.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:ArrayList<:Serializable, fqName=std.unittest.common.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4693,7 +4666,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4706,7 +4679,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4730,7 +4703,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/common/HashSet, extendId=std.unittest.common:HashSet<:Serializable, fqName=std.unittest.common.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:HashSet<:Serializable, fqName=std.unittest.common.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4753,7 +4726,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4766,7 +4739,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4790,7 +4763,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/common/HashMap, extendId=std.unittest.common:HashMap<:Serializable, fqName=std.unittest.common.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:HashMap<:Serializable, fqName=std.unittest.common.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4817,7 +4790,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4830,7 +4803,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DataModel]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[public static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
@@ -4860,15 +4833,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
   CangJieStub$INTERFACE[classId=std/unittest/common/TextWidth, fqName=std.unittest.common.TextWidth, name=TextWidth, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$MODIFIER_LIST[public open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/unittest/common/Rune, extendId=std.unittest.common:Rune<:TextWidth, fqName=std.unittest.common.Rune, name=Rune, receiverTypeName=Rune, superNames=[TextWidth]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:Rune<:TextWidth, fqName=std.unittest.common.Rune, name=Rune, receiverTypeName=Rune, superNames=[TextWidth]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4881,11 +4854,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/unittest/common/String, extendId=std.unittest.common:String<:TextWidth, fqName=std.unittest.common.String, name=String, receiverTypeName=String, superNames=[TextWidth]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:String<:TextWidth, fqName=std.unittest.common.String, name=String, receiverTypeName=String, superNames=[TextWidth]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4903,13 +4876,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[public]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[protected]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$TYPE_REFERENCE
@@ -4919,18 +4892,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=true, hasLetOrVar=false, isMutable=false, isNamed=true]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -4938,7 +4915,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/common/PrettyPrinter, extendId=std.unittest.common:PrettyPrinter<:, fqName=std.unittest.common.PrettyPrinter, name=PrettyPrinter, receiverTypeName=PrettyPrinter, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.common:PrettyPrinter<:, fqName=std.unittest.common.PrettyPrinter, name=PrettyPrinter, receiverTypeName=PrettyPrinter, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4953,7 +4930,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -4966,7 +4943,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.common, facadeFqNa
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[protected]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE

@@ -2,6 +2,9 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import PackageFormat.CompositeValueIndex
 import PackageFormat.ConstValue
 import PackageFormat.DeclKind
@@ -496,10 +499,10 @@ class CjoTypedConstantGraphTest {
                 val manager = CjoManager(CjoSearchPath(envProvider = { null }),
                     CjoFormatVersionPolicy.DeferredToConsumerSession,
                     explicitCommonPartPaths = parentPaths + listOf(consumerPath))
-                val q1 = Module("Q1")
-                val q2 = Module("Q2")
-                val p = Module("P", dependencies = listOf(q2))
                 val library = Module("library")
+                val q1 = Module("Q1", producerSession = library.session)
+                val q2 = Module("Q2", producerSession = library.session)
+                val p = Module("P", dependencies = listOf(q2), producerSession = library.session)
                 val modules = linkedMapOf<CfirModuleData, LibraryPathFilter>(
                     library to LibraryPathFilter.RejectAll,
                     p to LibraryPathFilter.LibraryList(setOf(consumerPath)),
@@ -510,7 +513,6 @@ class CjoTypedConstantGraphTest {
                 val provider = CfirDeserializedSymbolProvider(library.session, manager, CfirCangJieScopeProvider(),
                     library, MultipleModuleDataProvider(modules, regularDependenciesModuleData = library))
                 library.registerProvider(provider)
-                p.registerProvider(provider)
                 val selected = assertNotNull(provider.selectImportedSnapshot(p, "parent"))
                 assertEquals(q2Path, selected.sourcePath)
                 assertEquals(if (reversePaths) listOf("Q2", "Q1") else listOf("Q1", "Q2"),
@@ -661,7 +663,7 @@ class CjoTypedConstantGraphTest {
         }
 
     /** 唯一语义观察入口是变量正式求值产品，不读取 decoder cache 或 context 内部 working 图。 */
-    private fun constantValue(variable: CfirFieldVariable): CfirConstantValue {
+    private fun constantValue(variable: CfirVariable): CfirConstantValue {
         val result = assertIs<CfirEvaluatorResult.Evaluated>(variable.evaluatedInitializer)
         val expression = assertIs<CfirConstantValueExpression>(result.result)
         assertSame(expression.constantValue.type, expression.coneTypeOrNull)
@@ -669,8 +671,7 @@ class CjoTypedConstantGraphTest {
     }
 
     private fun topLevelVariable(provider: CfirDeserializedSymbolProvider, packageName: String,
-                                 name: String): CfirFieldVariable =
-        assertIs<CfirFieldVariable>(provider.getTopLevelCallableSymbols(FqName(packageName), Name.identifier(name)).single().cfir)
+                                 name: String): CfirPatternBindingVariable = provider.packageVariableBinding(packageName, name)
 
     private fun field(owner: CfirClass, name: String): CfirFieldVariable =
         owner.declarations.filterIsInstance<CfirFieldVariable>().single { it.name.asString() == name }
@@ -804,8 +805,7 @@ class CjoTypedConstantGraphTest {
         val provider: CfirDeserializedSymbolProvider,
         val wire: Package,
     ) {
-        fun variable(name: String): CfirFieldVariable =
-            assertIs<CfirFieldVariable>(provider.getTopLevelCallableSymbols(FqName(packageName), Name.identifier(name)).single().cfir)
+        fun variable(name: String): CfirPatternBindingVariable = provider.packageVariableBinding(packageName, name)
         fun classifier(name: String): CfirClass =
             assertIs<CfirClass>(assertNotNull(provider.getClassLikeSymbolByClassId(
                 ClassId(FqName(packageName), Name.identifier(name)))).cfir)
@@ -827,7 +827,10 @@ class CjoTypedConstantGraphTest {
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT),
         )
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.registerProvider(provider)
         val wire = assertNotNull(manager.loadPackage(input.fullPackageName))
         assertEquals(input.declarations.size, wire.allDeclsLength)
@@ -874,6 +877,7 @@ class CjoTypedConstantGraphTest {
     private class Module(
         moduleName: String = "cjo-typed-constant-graph-test",
         override val dependencies: List<CfirModuleData> = emptyList(),
+        producerSession: CfirSession? = null,
     ) : CfirModuleData() {
         override val name = Name.identifier(moduleName)
         override val refinementDependencies: List<CfirModuleData> = emptyList()
@@ -882,7 +886,7 @@ class CjoTypedConstantGraphTest {
         override val platform = CfirPlatform.DEFAULT
         override val isCommon = false
         override val stableModuleName = moduleName
-        override val session = object : CfirSession(Kind.Library) {}.also {
+        override val session = producerSession ?: object : CfirSession(Kind.Library) {}.also {
             it.register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT))
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
             it.register(TypeComponents::class, TypeComponents(it))

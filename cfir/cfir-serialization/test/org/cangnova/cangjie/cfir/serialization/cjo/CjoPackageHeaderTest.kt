@@ -201,4 +201,45 @@ class CjoPackageHeaderTest {
 
         assertEquals(listOf("org::sample.Thing"), header.decompiledImportTexts)
     }
+
+    /**
+     * 跨包 FullId 引用键必须同时接受官方 exportId 与声明名。
+     *
+     * 官方 `ASTWriter` 只写 exportId（如 `_CN3prov6MyByteE`），本仓库写出侧目前写声明名；
+     * 头索引把两种键都登记到同一个声明，冲突时 exportId 优先。
+     */
+    @Test
+    fun `full id reference keys accept both export id and declaration name`() {
+        val builder = FlatBufferBuilder(256)
+        val packageNameOffset = builder.createString("prov")
+        val moduleNameOffset = builder.createString("prov")
+        val identifierOffset = builder.createString("MyByte")
+        val exportIdOffset = builder.createString("_CN3prov6MyByteE")
+        val aliasInfoOffset = PackageFormat.AliasInfo.createAliasInfo(builder, 0u)
+        val aliasDeclOffset = run {
+            Decl.startDecl(builder)
+            Decl.addKind(builder, DeclKind.TypeAliasDecl)
+            Decl.addIsTopLevel(builder, true)
+            Decl.addFullPkgName(builder, packageNameOffset)
+            Decl.addIdentifier(builder, identifierOffset)
+            Decl.addExportId(builder, exportIdOffset)
+            Decl.addInfoType(builder, DeclInfo.AliasInfo)
+            Decl.addInfo(builder, aliasInfoOffset)
+            Decl.endDecl(builder)
+        }
+        val allDeclsOffset = Package.createAllDeclsVector(builder, intArrayOf(aliasDeclOffset))
+
+        Package.startPackage(builder)
+        Package.addFullPkgName(builder, packageNameOffset)
+        Package.addModuleName(builder, moduleNameOffset)
+        Package.addAllDecls(builder, allDeclsOffset)
+        val packageOffset = Package.endPackage(builder)
+        Package.finishPackageBuffer(builder, packageOffset)
+
+        val pkg = Package.getRootAsPackage(java.nio.ByteBuffer.wrap(builder.sizedByteArray()))
+        val header = CjoPackageHeader.fromPackage(pkg)
+
+        assertEquals(0, header.fullIdReferenceKeyToIndex["_CN3prov6MyByteE"], "官方 exportId 键必须可解析")
+        assertEquals(0, header.fullIdReferenceKeyToIndex["MyByte"], "声明名键也必须可解析（本仓写出侧使用）")
+    }
 }

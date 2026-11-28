@@ -37,6 +37,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -45,6 +46,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.SessionHolderImpl
@@ -59,7 +61,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.psi.CjBlockCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.psiUtil.getParentOfType
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
@@ -358,6 +362,12 @@ private class ContextCollectorVisitor(
     }
 
     /**
+     * 判断该片段是否为块片段——只有块片段才有自身顶层声明可发布为成员作用域。
+     */
+    private val CfirCodeFragment.isBlockFragment: Boolean
+        get() = (source as? CjPsiSourceElement)?.psi is CjBlockCodeFragment
+
+    /**
      * 访问 code fragment 并在其专用上下文中收集 block 上下文。
      */
     override fun visitCodeFragment(codeFragment: CfirCodeFragment) = withProcessor(codeFragment) {
@@ -369,7 +379,10 @@ private class ContextCollectorVisitor(
             val holder = getSessionHolder(codeFragment)
             context.withCodeFragmentCompat(codeFragment, holder) {
                 dumpContext(codeFragment, ContextKind.BODY)
-                process(codeFragment.block)
+                // 只有**块**片段才有自身顶层声明可发布，投影为 CODE_FRAGMENT_MEMBER_SCOPE。
+                // 表达式/类型片段没有顶层声明，给它挂一层空的成员作用域会凭空多出一层，
+                // 与「不泄漏宿主专有符号」的验收直接冲突。
+                doVisitBlock(codeFragment.block, isCodeFragmentMemberScope = codeFragment.isBlockFragment)
             }
         }
     }
@@ -440,9 +453,16 @@ private class ContextCollectorVisitor(
         }
 
         onActive {
-            context.withContainer(extend) {
-                dumpContext(extend, ContextKind.BODY)
-                processChildren(extend)
+            // `withScopesForExtend` 要求 extend 目标类型已解析；completion 等增量场景下
+            // 文件可能只推进到 RAW/STATUS，必须先补到 TYPES，否则会命中
+            // "Extend target type must be resolved before body resolution"。
+            extend.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            val holder = getSessionHolder(extend)
+            context.withScopesForExtend(extend, holder) {
+                context.withContainer(extend) {
+                    dumpContext(extend, ContextKind.BODY)
+                    processChildren(extend)
+                }
             }
         }
     }
@@ -582,7 +602,15 @@ private class ContextCollectorVisitor(
      * 访问字段变量。
      */
     override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
-        visitVariableLike(fieldVariable, fieldVariable.symbol, fieldVariable.initializer)
+        visitVariableLike(fieldVariable, fieldVariable.initializer)
+        // 与 pattern binding 同理：字段变量要在 visitVariableLike 的清理之外入作用域。
+        if (isActive) {
+            context.storeVariable(fieldVariable, fieldVariable.moduleData.session)
+        }
+    }
+
+    override fun visitResourceVariable(resourceVariable: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable) {
+        visitVariableLike(resourceVariable, resourceVariable.initializer)
     }
 
     /**
@@ -601,40 +629,60 @@ private class ContextCollectorVisitor(
                     process(patternVariable.pattern)
                 }
             }
+
+            // 绑定变量必须在 withLocalVariableBodyCompat **之外** 入作用域。
+            //
+            // 该 compat 是 `withTowerDataCleanup`：退出时把 tower 恢复成进入前的状态。
+            // 若在 `process(patternVariable.pattern)` 期间就地存储，清理会把这次存储一并回滚，
+            // 块内 `let` 绑定的名字就永远不会出现在该块的上下文快照里——
+            // 表现为解析与补全都「看不见」局部变量，且不报任何诊断。
+            if (isActive) {
+                for (binding in patternVariable.pattern.bindingVariables()) {
+                    context.storeVariable(binding, binding.moduleData.session)
+                }
+            }
         }
     }
 
     /**
      * 访问 pattern binding 变量。
+     *
+     * 存储放在 `visitVariableLike` 之后：那里的 `withLocalVariableBodyCompat` 已退出，
+     * 本方法自己的清理不会回滚这次存储。
+     *
+     * `match` 分支的绑定可以直接走到这里而不经过 [visitPatternVariable]，
+     * 因此这次存储不能省——只由 pattern variable 统一存储会让 `case Year(y) => y`
+     * 的 `y` 从作用域里消失。
      */
     override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable) {
-        visitVariableLike(patternBindingVariable, patternBindingVariable.symbol, patternBindingVariable.initializer)
+        visitVariableLike(patternBindingVariable, patternBindingVariable.initializer)
+        if (isActive) {
+            context.storeVariable(patternBindingVariable, patternBindingVariable.moduleData.session)
+        }
     }
 
     /**
      * 处理局部变量、字段变量和 pattern binding 变量的通用上下文收集流程。
+     *
+     * 这里**不做**入作用域存储：调用方必须在自己的 `withTowerDataCleanup` 之外存储，
+     * 否则清理会把存储回滚。作用域由 [visitPatternVariable] 与 [visitFieldVariable] 负责。
      */
     private fun visitVariableLike(
-        variable: CfirDeclaration,
-        symbol: CfirCallableSymbol<*>,
+        variable: CfirVariable,
         initializer: CfirElement?,
     ) = withProcessor(variable) {
         dumpContext(variable, ContextKind.SELF)
 
-        if (variable is CfirFieldVariable) {
-            processAnnotations(variable)
-            process(variable.returnTypeRef)
-        }
+        processAnnotations(variable)
+        process(variable.returnTypeRef)
 
         onActive {
             context.withLocalVariableBodyCompat {
-                dumpContext(variable, ContextKind.BODY)
-                process(initializer)
+                context.withVariableInitializer(variable) {
+                    dumpContext(variable, ContextKind.BODY)
+                    process(initializer)
+                }
             }
-        }
-
-        if (variable is org.cangnova.cangjie.cfir.declarations.CfirVariable) {
-            context.storeVariable(variable, variable.moduleData.session)
         }
     }
 
@@ -683,17 +731,99 @@ private class ContextCollectorVisitor(
     }
 
     /**
+     * 访问 match 表达式：每个 `case` 分支是**独立的**局部作用域。
+     *
+     * 编译器侧 `resolveBranch` 用 `withNewLocalScope` 逐分支隔离，收集侧必须对齐：
+     * 若不做隔离，`case Circle(radius)` 的 `radius` 会留在同一个收集作用域里，
+     * 于是 `case Square(side)` 分支内也能看到 `radius`——
+     * 补全会把兄弟分支的绑定当成本分支候选，用户选中后无法通过编译。
+     */
+    override fun visitMatchExpression(
+        matchExpression: org.cangnova.cangjie.cfir.expressions.CfirMatchExpression,
+    ) = withProcessor(matchExpression) {
+        dumpContext(matchExpression, ContextKind.SELF)
+
+        onActive {
+            process(matchExpression.subject)
+            for (branch in matchExpression.branches) {
+                if (!isActive) break
+                context.withBlockScopeCompat {
+                    process(branch)
+                }
+            }
+        }
+    }
+
+    /**
+     * 访问 match 分支：模式与分支体共享同一个局部作用域（编译器侧同形）。
+     *
+     * 分支体若是 block，由 [visitBlock] 再开一层；直接是表达式时就在当前分支作用域里解析。
+     */
+    override fun visitMatchBranch(
+        matchBranch: org.cangnova.cangjie.cfir.expressions.CfirMatchBranch,
+    ) = withProcessor(matchBranch) {
+        dumpContext(matchBranch, ContextKind.SELF)
+
+        onActive {
+            process(matchBranch.pattern)
+            dumpContext(matchBranch, ContextKind.BODY)
+            process(matchBranch.guard)
+            doVisitBlock(matchBranch.body, isolateBlock = false)
+        }
+    }
+
+    override fun visitTryExpression(tryExpression: org.cangnova.cangjie.cfir.expressions.CfirTryExpression) = withProcessor(tryExpression) {
+        dumpContext(tryExpression, ContextKind.SELF)
+        onActive {
+            context.forBlock(context.file.moduleData.session) {
+                // 与正式 try 解析相同：所有资源名字先进入共同作用域，各 initializer 仅排除自身。
+                tryExpression.resources.forEach { resource ->
+                    context.storeVariable(resource, resource.moduleData.session)
+                }
+                processList(tryExpression.resources)
+                doVisitBlock(tryExpression.tryBlock, isolateBlock = false)
+            }
+            processList(tryExpression.catches)
+            processList(tryExpression.handlers)
+            process(tryExpression.finallyBlock)
+        }
+    }
+
+    override fun visitCatch(catch: org.cangnova.cangjie.cfir.expressions.CfirCatch) = withProcessor(catch) {
+        dumpContext(catch, ContextKind.SELF)
+        onActive {
+            context.forBlock(context.file.moduleData.session) {
+                process(catch.pattern)
+                dumpContext(catch, ContextKind.BODY)
+                doVisitBlock(catch.body, isolateBlock = false)
+            }
+        }
+    }
+
+    override fun visitHandleClause(handleClause: org.cangnova.cangjie.cfir.expressions.CfirHandleClause) = withProcessor(handleClause) {
+        dumpContext(handleClause, ContextKind.SELF)
+        onActive {
+            context.forBlock(context.file.moduleData.session) {
+                process(handleClause.commandPattern)
+                dumpContext(handleClause, ContextKind.BODY)
+                doVisitBlock(handleClause.body, isolateBlock = false)
+            }
+        }
+    }
+
+    /**
      * 收集 [block] 的 SELF/BODY 上下文。
      */
     private fun doVisitBlock(
         block: org.cangnova.cangjie.cfir.expressions.CfirBlock,
         isolateBlock: Boolean = true,
+        isCodeFragmentMemberScope: Boolean = false,
     ) = withProcessor(block) {
         dumpContext(block, ContextKind.SELF)
 
         onActive {
             if (isolateBlock) {
-                context.withBlockScopeCompat {
+                context.withBlockScopeCompat(isCodeFragmentMemberScope) {
                     processBlockBody(block)
                 }
             } else {
@@ -973,13 +1103,7 @@ private inline fun BodyResolveContext.forConstructorBodyCompat(
     constructor: CfirConstructor,
     block: () -> Unit,
 ) {
-    withTowerDataCleanup {
-        addLocalScope(CfirLocalScope(constructor.moduleData.session))
-        for (valueParameter in constructor.valueParameters) {
-            storeValueParameterIfNeeded(valueParameter, constructor.moduleData.session)
-        }
-        block()
-    }
+    forConstructorBody(constructor, constructor.moduleData.session, block)
 }
 
 /**
@@ -1083,9 +1207,18 @@ private inline fun BodyResolveContext.withAnonymousFunctionCompat(
 /**
  * 在普通 block 局部作用域中执行 [block]。
  */
-private inline fun BodyResolveContext.withBlockScopeCompat(block: () -> Unit) {
+private inline fun BodyResolveContext.withBlockScopeCompat(
+    isCodeFragmentMemberScope: Boolean = false,
+    block: () -> Unit,
+) {
     withTowerDataCleanup {
-        addLocalScope(CfirLocalScope(file.moduleData.session))
+        addLocalScope(
+            if (isCodeFragmentMemberScope) {
+                CfirLocalScope.forCodeFragment(file.moduleData.session)
+            } else {
+                CfirLocalScope(file.moduleData.session)
+            }
+        )
         block()
     }
 }

@@ -7,7 +7,7 @@
 package cjmp_p
 
 public common interface I<T> {
-    public common func f(value: T): Unit { }
+    <!REDUNDANT_MODIFIER_FOR_TARGET, REDUNDANT_MODIFIER_FOR_TARGET!>public<!> common func f(value: T): Unit { }
 }
 
 public common class C<T> <: I<T> {

@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
@@ -16,12 +17,16 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirBuiltinsSessionProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirBuiltinsSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
+import kotlin.time.TimeSource
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
@@ -44,6 +49,21 @@ import java.util.concurrent.ConcurrentHashMap
 @LLCfirInternals
 class LLCfirBuiltinsSessionFactory(private val project: Project) {
     /**
+     * 工厂诊断日志。
+     */
+    private val log = logger<LLCfirBuiltinsSessionFactory>()
+
+    /**
+     * session 创建统计域；统计未启用时为 `null`。
+     *
+     * builtins session 不经 [LLCfirSessionCache] 创建，因此单独解析一次；
+     * 延迟解析以免在工程级统计服务注册完成前取值。
+     */
+    private val sessionStatistics by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLCfirGlobalResolveComponents.getInstance(project).sessionStatistics
+    }
+
+    /**
      * 所有 builtins session 共享的 CFIR 内建类型集合。
      */
     private val builtInTypes = CfirBuiltinTypes()
@@ -59,6 +79,15 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      * session 包装在 IntelliJ [CachedValue] 中，使其能跟随 session validity tracker 自动失效。
      */
     private val builtinsSessions = ConcurrentHashMap<TargetPlatform, CachedValue<LLCfirBuiltinsSession>>()
+
+    /**
+     * 建 session 期间的同线程重入守卫。
+     *
+     * 建 session 的过程（注册组件、建库符号提供器、解析 builtins 搜索根）可能同线程回到本入口：
+     * 对缓存 map 直接递归会抛 `Recursive update`，而静默拿到空 session 会把失败推迟到远处读组件时。
+     * 守卫命中时返回半成品 session，并把现场写进日志；不要把缓存换成 `computeIfAbsent`。
+     */
+    private val creationGuard = BuiltinsSessionCreationGuard<LLCfirBuiltinsSession, TargetPlatform>()
 
     /**
      * 当前工程的项目结构提供器，用于读取 builtins session 创建所需的语言版本设置。
@@ -79,14 +108,32 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      * 返回 [targetPlatform] 对应的 builtins session。
      *
      * session 按平台懒创建，并通过其 validity tracker 绑定缓存生命周期。
+     *
+     * 建 session 期间同线程再次请求同一平台时，返回当前正在构造的**半成品 session**：
+     * 它只保证重入点之前注册的组件（IDE 公共组件、module data、作用域提供器）可读，
+     * `CfirProvider` / `CfirSymbolProvider` 在最后才注册，半成品上读它们会失败，错误信息里带
+     * `construction=IN_PROGRESS`（见 [LLCfirBuiltinsSession.toString]）。
      */
-    fun getBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession =
-        builtinsSessions.getOrPut(targetPlatform) {
+    fun getBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
+        creationGuard.halfBakedSessionFor(targetPlatform)?.let { halfBaked ->
+            check(halfBaked.isUnderConstruction) {
+                "Builtins session for $targetPlatform is registered as under construction but already completed; " +
+                    "the creation guard was not cleared"
+            }
+            log.warn(
+                "Reentrant builtins session creation on thread ${Thread.currentThread().name} for $targetPlatform; " +
+                    "returning the half-built session $halfBaked. Only components registered before the reentrant call are usable.",
+            )
+            return halfBaked
+        }
+
+        return builtinsSessions.getOrPut(targetPlatform) {
             CachedValuesManager.getManager(project).createCachedValue {
-                val session = createBuiltinsSession(targetPlatform)
+                val session = createBuiltinsSessionTimed(targetPlatform)
                 CachedValueProvider.Result(session, session.createValidityTracker())
             }
         }.value
+    }
 
     /**
      * Invalidates all builtins modules and sessions.
@@ -111,32 +158,111 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      *
      * 创建流程会注册 IDE 公共组件、builtins symbol provider、CFIR provider 和模块数据；
      * builtins 使用 dummy lazy resolver，因为 builtins 声明来自库符号提供器而非源码 lazy resolve。
+     *
+     * 整个注册过程登记在 [creationGuard] 里：同线程重入时能拿到半成品 session 而不是递归炸缓存。
      */
+    /**
+     * 在计时包装内创建 builtins session。
+     *
+     * 只在缓存未命中时执行：命中意味着 session 早已建好，把它算进本次请求会虚增创建成本。
+     */
+    private fun createBuiltinsSessionTimed(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
+        val statistics = sessionStatistics
+        if (statistics == null) return createBuiltinsSession(targetPlatform)
+
+        statistics.onSessionStarted(CaModuleKind.BUILTINS)
+        val startedAt = TimeSource.Monotonic.markNow()
+        try {
+            return createBuiltinsSession(targetPlatform)
+        } finally {
+            statistics.onSessionCreated(CaModuleKind.BUILTINS, startedAt.elapsedNow().inWholeNanoseconds)
+        }
+    }
+
     private fun createBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
         val builtinsModule = getBuiltinsModule(targetPlatform)
         val session = LLCfirBuiltinsSession(builtinsModule, builtInTypes)
         val moduleData = LLCfirModuleData(session)
 
-        return session.apply {
-            val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
-            registerIdeComponents(project, languageVersionSettings, builtinsModule.contentScope)
-            register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
-            registerCommonComponents(languageVersionSettings)
-            registerCommonComponentsAfterExtensionsAreConfigured()
-            registerModuleData(moduleData)
-            val cangjieScopeProvider = CfirCangJieScopeProvider()
-            register(CfirCangJieScopeProvider::class, cangjieScopeProvider)
+        return creationGuard.withSessionUnderConstruction(targetPlatform, session) {
+            session.apply {
+                val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
+                // 不再传 builtinsModule.contentScope：IDE 宿主下它每次访问都会重新遍历 SDK 目录，
+                // session 构造期求值会把搜索根烤死，并让构造同线程重入 `.cjo` stub 构建。
+                registerIdeComponents(project, languageVersionSettings)
+                register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
+                registerCommonComponents(languageVersionSettings)
+                registerCommonComponentsAfterExtensionsAreConfigured()
+                registerModuleData(moduleData)
+                val cangjieScopeProvider = CfirCangJieScopeProvider()
+                register(CfirCangJieScopeProvider::class, cangjieScopeProvider)
 
-            val symbolProvider = createCompositeSymbolProvider(this) {
-                addAll(
-                    LLLibrarySymbolProviderFactory
-                        .fromSettings(project)
-                        .createBuiltinsSymbolProvider(session)
+                /*
+                 * builtins session 同样必须满足分析基础组件契约（TypeComponents、
+                 * typeResolver、superTypeGraph、accessibility、extend 索引等）：
+                 * primitive / BuiltInDecl 的合成声明 moduleData 指向本 session，
+                 * checkers 与 IDE 诊断收集会经声明所属 session 触达这些组件。
+                 * 缺失时以 `No '<component>' in array owner` 炸掉诊断收集
+                 * （实证：`LLCfirBuiltinsSession … 缺 TypeComponents`）。
+                 * builtins 不跑 resolve 流水线，因此不注册阶段 Processor；
+                 * 诊断上报器复用默认 collector，与 CLI 共享行为。
+                 */
+                registerAnalysisBaseComponents(
+                    diagnosticReporterOrNull ?: CfirDiagnosticCollector().also(::registerDiagnosticReporter),
                 )
-            }
 
-            register(CfirSymbolProvider::class, symbolProvider)
-            register(CfirProvider::class, LLCfirBuiltinsSessionProvider(symbolProvider))
+                val symbolProvider = createCompositeSymbolProvider(this) {
+                    addAll(
+                        LLLibrarySymbolProviderFactory
+                            .fromSettings(project)
+                            .createBuiltinsSymbolProvider(session)
+                    )
+                }
+
+                register(CfirSymbolProvider::class, symbolProvider)
+                register(CfirProvider::class, LLCfirBuiltinsSessionProvider(symbolProvider))
+
+                /*
+                 * P2-5：extend provider 归属“拥有反序列化声明的 session”。
+                 *
+                 * builtins 合成的声明（`Array`、`Int64` 等）moduleData 指向本 session，
+                 * `getContainingExtend`/`getDeclarationPackage` 经
+                 * `symbol.moduleData.session.extendProviderOrNull` 查询；缺了这一步，
+                 * `Array.isEmpty`、`Int64.toString` 等 extend 成员的声明归属恒为 null。
+                 */
+                val binaryExtendProvider =
+                    org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer.lazyFromSymbolProviders {
+                        val origin = org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+                            .getInstance(project).deserializedDeclarationsOrigin
+                        if (origin == org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin.STUBS) {
+                            listOf(
+                                org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories
+                                    .LLBinaryOriginLibrarySymbolProviderFactory.createBuiltinsExtendProvider(session),
+                            )
+                        } else {
+                            // 原因同 binary session：composite provider 本身不是反序列化 provider。
+                            val composite = symbolProvider
+                                as? org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
+                            composite?.providers ?: listOf(symbolProvider)
+                        }
+                    }
+                val extendProvider = if (org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+                        .getInstance(project).deserializedDeclarationsOrigin ==
+                    org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin.STUBS
+                ) {
+                    val materializer = org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
+                        .LLExtendPsiMaterializer(project) { extend -> binaryExtendProvider.getPackageFqName(extend) }
+                    org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLPsiBackedExtendProvider(
+                        binaryExtendProvider,
+                    ) { extend -> if (extend.source != null) extend else materializer.materialize(extend) ?: extend }
+                } else {
+                    binaryExtendProvider
+                }
+                register(org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider::class, extendProvider)
+
+                // 组件齐了，半成品标记摘掉；之后的重入不再命中守卫。
+                markConstructionCompleted()
+            }
         }
     }
 

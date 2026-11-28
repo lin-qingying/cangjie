@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedBuiltinOperatorReference
+import org.cangnova.cangjie.cfir.resolve.expandedArrayLiteralElementType
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
-
-import org.cangnova.cangjie.cfir.types.asCone
-
 import org.cangnova.cangjie.cfir.CfirLookupTrackerComponent
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -14,7 +16,6 @@ import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.resolve.calls.CfirLambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.resolve.calls.lambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
 import org.cangnova.cangjie.cfir.diagnostic.ConePointerUnknowGenericTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferExpressionTypeError
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -36,12 +37,15 @@ import org.cangnova.cangjie.cfir.resolve.calls.shouldUseExpectedTypeForBuiltinPo
 import org.cangnova.cangjie.cfir.resolve.calls.builtinPointerExpectedTypeArgument
 import org.cangnova.cangjie.cfir.resolve.calls.addExpectedEnumOwnerConstraints
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.canUseOperatorExpectedReturnType
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.processCandidatesAndPostponedAtoms
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.declarations.instantiatedQualifierOwnerType
-import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
@@ -49,7 +53,6 @@ import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstra
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.resolve.toErrorReference
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.resultType
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
@@ -71,6 +74,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeStubType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePointerType
@@ -83,7 +87,6 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
 import org.cangnova.cangjie.cfir.resolve.substitution.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -112,6 +115,15 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import org.cangnova.cangjie.utils.runIf
+
+/** 仅真实 FULL completion 返回后产生的 authority；普通 factory 的非空 CS 不授予 receipt。 */
+internal sealed interface CfirFullCompletionAuthority {
+    val candidate: Candidate
+    val root: CfirExpression
+    val system: org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
+    val generation: Any
+    val writerEpoch: Any
+}
 
 /**
  * CFIR 调用完成器。
@@ -147,8 +159,64 @@ class CfirCallCompleter(
         resolutionMode: ResolutionMode,
         skipEvenPartialCompletion: Boolean = false,
     ): T where T : CfirResolvable, T : CfirExpression {
+        if (call.calleeReference is org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder) {
+            transformer.context.implicitTypeComputationScope?.let { scope -> scope.graph.recordRejectedSourceCall(scope, call) }
+        }
+        return completeCallImpl(call, resolutionMode, skipEvenPartialCompletion)
+    }
+
+    /**
+     * 迟到 source operand 的 completion 准入。实际 BUILDING/frame/selection 才进入正常推断；
+     * 已完成值只消费原 terminal 或 FULL receipt，未获准的 frozen/foreign 引用原样保留。
+     */
+    internal fun <T> tryCompletePendingSourceCall(call: T, resolutionMode: ResolutionMode): Boolean
+        where T : CfirExpression, T : CfirResolvable {
+        val reference = call.calleeReference
+        if (reference !is CfirNamedReferenceWithCandidate) {
+            if (reference is CfirDiagnosticHolder ||
+                reference !is CfirResolvedNamedReference && reference !is CfirResolvedBuiltinOperatorReference
+            ) return false
+            val scope = transformer.context.implicitTypeComputationScope
+            return scope?.graph?.hasCompletedSourceCallResult(call) == true ||
+                (inferenceSession as? CfirPCLAInferenceSession)?.hasCompletedSourceCallResult(call) == true
+        }
+        val candidate = reference.candidate
+        val context = transformer.context
+        if (!candidate.isInSourceCompletionFrame(context)) return false
+        val scope = candidate.implicitTypeComputationScope
+        if (scope == null && candidate.callInfo.callSite !== call) return false
+        val admitted = candidate.withExistingConstraintSystemForCompletionResults { system ->
+            if (!system.canStartCallCompletion) return@withExistingConstraintSystemForCompletionResults false
+            if (scope != null) {
+                if (!scope.graph.isMutableSourceCallSelected(scope, candidate, call)) {
+                    return@withExistingConstraintSystemForCompletionResults false
+                }
+            } else if (system.usesOuterCs &&
+                (inferenceSession as? CfirPCLAInferenceSession)?.ownsMutableSourceCall(candidate, call) != true
+            ) return@withExistingConstraintSystemForCompletionResults false
+            val storage = system.captureStorage()
+            candidate.freshVariables.all { storage.allTypeVariables[it.typeConstructor] === it }
+        } == true
+        if (!admitted) return false
+        // 已离开只读借用。原入口按当前 infer owner 同步 parent、计算模式并执行真正的完成。
+        completeCall(call, resolutionMode)
+        return true
+    }
+
+    /** FULL 与 partial 的最终存储都由外层入口登记；完成算法自身保持普通调用流程。 */
+    private fun <T> completeCallImpl(
+        call: T,
+        resolutionMode: ResolutionMode,
+        skipEvenPartialCompletion: Boolean,
+    ): T where T : CfirResolvable, T : CfirExpression {
         val reference = call.calleeReference as? CfirNamedReferenceWithCandidate ?: return call
         val candidate = reference.candidate
+        if (candidate.isSourceCompletionWithdrawn) return call
+        fun attempt(outcome: CfirRetainedCallOutcome) {
+            candidate.implicitTypeComputationScope?.let { scope -> scope.graph.recordCallAttempt(scope, candidate, outcome) }
+        }
+        // 先登记真实尝试；只有下面最终 writer 才能将其提升为 COMPLETED。
+        attempt(if (reference.isError) CfirRetainedCallOutcome.REJECTED else CfirRetainedCallOutcome.SKIPPED)
         val initialType = components.typeFromCallee(call).initialTypeOfCandidate(candidate)
 
         // Annotation types are resolved during type resolution, and generic arguments aren't inferred.
@@ -160,14 +228,31 @@ class CfirCallCompleter(
         }
 
         /*
-         * 裸 generic enum owner 可能先把候选标记为恢复型 error reference，但无参 constructor
-         * 仍可由同一 owner 的 expected type 或显式 qualifier 完整定型。该结构化 substitution
-         * 必须先于普通错误候选早退；无法覆盖全部 fresh owner 变量时 helper 返回 null，
-         * 其余错误候选仍保持不可完成。
+         * 无参 enum 值以同 owner 的完整目标参与正式推断。只有成功候选可以完成；
+         * 含未固定变量的目标保留原 candidate，由父调用合入子系统后共同收敛。
+         * 错误引用保持原出口，不能由 target typing 发布成成功 constructor。
          */
-        when (val completion = candidate.noArgEnumConstructorTargetCompletion(initialType, resolutionMode)) {
+        when (val completion = if (reference.isError) null else
+            candidate.noArgEnumConstructorTargetCompletion(initialType, resolutionMode)
+        ) {
             is NoArgEnumConstructorCompletion.Resolved -> {
-                val completedCall = call.transformSingle(createCompletionResultsWriter(completion.substitutor), null)
+                // 目标 owner 的实际推断映射必须进入正式 CS，不能仅靠外部替换器宣称完成。
+                for (variable in candidate.freshVariables) {
+                    val type = completion.substitutor.substituteOrSelf(variable.defaultType)
+                    val system = candidate.system
+                    val previous = system.fixedTypeVariables[variable.typeConstructor]
+                    if (previous == null) {
+                        system.fixVariable(variable, type,
+                            org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstraintPosition(variable))
+                    } else {
+                        check(org.cangnova.cangjie.type.AbstractTypeChecker.equalTypes(session.typeContext,
+                            completion.substitutor.substituteOrSelf(previous as ConeCangJieType), type))
+                    }
+                }
+                if (candidate.usedOuterCs) {
+                    inferenceSession.processPartiallyResolvedCall(call, resolutionMode, ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL)
+                }
+                val completedCall = call.transformSingle(createCompletionResultsWriter(completion.substitutor, completionSystem = candidate.system, completionRoot = call, completionCandidate = candidate), null)
                 completedCall.replaceConeTypeOrNull(completion.targetType)
                 return completedCall
             }
@@ -206,14 +291,24 @@ class CfirCallCompleter(
         }
 
         session.lookupTracker?.recordTypeResolveAsLookup(initialType, call.source, components.context.file.source)
-        if (candidate.shouldKeepNoArgEnumConstructorForBareGenericDiagnostic(initialType)) {
+        if (resolutionMode.forceFullCompletion &&
+            candidate.shouldKeepNoArgEnumConstructorForBareGenericDiagnostic(initialType)
+        ) {
             return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
         }
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
-        if (!transformer.context.isInsideCallArgumentResolution &&
+        val completionReference = if (!transformer.context.isInsideCallArgumentResolution &&
             candidate.shouldReportBuiltinPointerInferenceFailure(resolutionMode)
         ) {
-            call.replaceCalleeReference(reference.toErrorReference(ConePointerUnknowGenericTypeError()))
+            // 完成阶段仍需同一个候选解析实参并写回错误类型，最终引用由 writer 发布。
+            CfirErrorReferenceWithCandidate(
+                reference.source,
+                reference.name,
+                candidate,
+                ConePointerUnknowGenericTypeError(),
+            ).also(call::replaceCalleeReference)
+        } else {
+            reference
         }
         candidate.addSameClassifierArgumentTypeConstraints()
         if (skipEvenPartialCompletion) return call
@@ -229,14 +324,13 @@ class CfirCallCompleter(
             else -> computedCompletionMode
         }
         val analyzer = createPostponedArgumentsAnalyzer(transformer.resolutionContext)
-
         return when (completionMode) {
             ConstraintSystemCompletionMode.FULL -> {
-                runCompletionForCall(candidate, completionMode, call, initialType, analyzer)
+                val authority = runFullCompletionForCall(candidate, call, initialType, analyzer)
                 val finalSubstitutor = candidate.system.asReadOnlyStorage()
                     .buildAbstractResultingSubstitutor(session.typeContext)
                     .asCone()
-                call.transformSingle(createCompletionResultsWriter(finalSubstitutor), null)
+                call.transformSingle(createCompletionResultsWriterForFullCompletion(authority, finalSubstitutor), null)
             }
 
             ConstraintSystemCompletionMode.PARTIAL,
@@ -244,10 +338,11 @@ class CfirCallCompleter(
                 // PARTIAL 的顶层类型必须保留候选返回签名中的结构化 owner 变量。
                 // 使用已写回表达式类型会把 enum constructor 的 owner 提前物化，
                 // 使外层 expected type 无法继续反向约束当前候选。
-                val completionTopLevelType = candidate.substitutedReturnType()
+                val completionTopLevelType = candidate.substitutedReturnTypeFromCalculator()
                 runCompletionForCall(candidate, completionMode, call, completionTopLevelType, analyzer)
                 call.updatePartiallyCompletedResultType(candidate)
                 inferenceSession.processPartiallyResolvedCall(call, resolutionMode, completionMode)
+                attempt(if (completionReference.isError || !candidate.isSuccessful) CfirRetainedCallOutcome.REJECTED else CfirRetainedCallOutcome.PARTIAL)
                 if (candidate.isSyntheticCallForTopLevelLambda()) {
                     val finalSubstitutor = candidate.system.currentStorage()
                         .buildCurrentSubstitutor(session.typeContext, emptyMap())
@@ -272,7 +367,7 @@ class CfirCallCompleter(
      */
     private fun CfirExpression.updatePartiallyCompletedResultType(candidate: Candidate) {
         if (this is CfirAnnotationCall || this is CfirAnonymousFunctionExpression) return
-        val currentType = candidate.substitutedReturnType()
+        val currentType = candidate.substitutedReturnTypeFromCalculator()
         val substitutor = candidate.system.currentStorage()
             .buildCurrentSubstitutor(session.typeContext, emptyMap())
             .asCone()
@@ -303,7 +398,10 @@ class CfirCallCompleter(
         if (resolutionMode !is ResolutionMode.WithExpectedType) return
         val expectedType = resolutionMode.expectedType.fullyExpandedType()
         if (!candidate.shouldUseExpectedTypeForCompletion(expectedType)) return
-        if (resolutionMode.isOperatorOperandInference && candidate.system.isProperType(initialType)) return
+        if (resolutionMode.isOperatorOperandInference &&
+            (candidate.system.isProperType(initialType) ||
+                !candidate.canUseOperatorExpectedReturnType(initialType, expectedType, session))
+        ) return
         if (
             resolutionMode.lastStatementInBlock &&
             candidate.system.isProperType(initialType)
@@ -364,7 +462,7 @@ class CfirCallCompleter(
         if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
         if (hasSourceTypeArguments()) return false
 
-        val expectedElementType = expectedType.fullyExpandedType().arrayLiteralElementType ?: return false
+        val expectedElementType = expectedType.expandedArrayLiteralElementType(session) ?: return false
         val elementVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
         system.addSubtypeConstraint(elementVariableType, expectedElementType, ConeExpectedTypeConstraintPosition)
         return true
@@ -412,7 +510,7 @@ class CfirCallCompleter(
      *
      * 官方 `ChkPointerExpr` 不把 `T <: CType` 的声明上界当作 `T` 的推断结果；
      * 如果目标类型没有有效类型实参，或指针转换的输入没有建立元素类型约束，
-     * 必须保留 `sema_unable_to_infer_generic_func`，不能让通用完成器把 `T` 默认
+     * 必须保留 `sema_pointer_unknow_generic_type`，不能让通用完成器把 `T` 默认
      * 固定成 `CType` 后再由外层赋值检查伪造 `TYPE_MISMATCH`。
      */
     private fun Candidate.shouldReportBuiltinPointerInferenceFailure(
@@ -650,6 +748,7 @@ class CfirCallCompleter(
         initialType: ConeCangJieType,
         resolutionMode: ResolutionMode,
     ): NoArgEnumConstructorCompletion? {
+        if (!isSuccessful || isSourceCompletionWithdrawn) return null
         val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return null
         if (enumConstructor.valueParameters.isNotEmpty()) return null
         if (callInfo.hasExplicitTypeArguments) return null
@@ -665,6 +764,8 @@ class CfirCallCompleter(
                 return NoArgEnumConstructorCompletion.UnableToInferExpectedOwner
             EnumConstructorTargetTypeResult.NotApplicable -> return null
         }
+        // 父/子推断变量、stub 和错误均不是可发布的完整目标，交正常 PARTIAL/FULL 求解。
+        if (targetType.contains { it is ConeTypeVariableType || it is ConeStubType || it is ConeErrorType }) return null
         if (freshVariables.isEmpty()) {
             return NoArgEnumConstructorCompletion.Resolved(targetType, ConeSubstitutor.Empty)
         }
@@ -696,6 +797,7 @@ class CfirCallCompleter(
      * 无目标类型的无参 enum constructor 不是“泛型函数推断失败”，而是裸泛型 owner
      * 缺少类型实参。这里保留已经解析出的 enum constructor 引用和带 fresh owner 变量的
      * 返回类型，让后续裸泛型访问 checker 统一报告 `GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT`。
+     * 仅独立 FULL 边界写回；ContextDependent 保留原候选/子系统，接受父调用的形参约束。
      */
     private fun Candidate.shouldKeepNoArgEnumConstructorForBareGenericDiagnostic(
         initialType: ConeCangJieType,
@@ -802,12 +904,7 @@ class CfirCallCompleter(
         val expectedInterfaceType = (resolutionMode as? ResolutionMode.WithExpectedType)
             ?.expectedType
             ?.fullyExpandedType()
-            ?: return callInfo.explicitReceiver
-                ?.coneTypeOrNull
-                ?.fullyExpandedType()
-                ?.takeIf { it.enumConstructorOwnerClassIdOrNull() == ownerClassId }
-                ?.let(EnumConstructorTargetTypeResult::Resolved)
-                ?: EnumConstructorTargetTypeResult.NotApplicable
+            ?: return EnumConstructorTargetTypeResult.NotApplicable
 
         val initialOwnerType = initialType.fullyExpandedType() as? ConeRigidType
             ?: return EnumConstructorTargetTypeResult.NotApplicable
@@ -921,6 +1018,11 @@ class CfirCallCompleter(
     private fun Candidate.isSyntheticFunctionCallThatShouldUseEqualityConstraint(
         expectedType: ConeCangJieType,
     ): Boolean {
+        // 官方 ChkIfExpr/ChkMatchExpr/ChkTryExpr 对已确定的 value target 逐分支检查；Any 也是合法 target。
+        // 只对正式 select 的确定目标加 equality，未固定 lambda R/T 不因此获得任意 Any 解。
+        if (callInfo.callKind == CallKind.SyntheticSelect && !expectedType.isUnit &&
+            !expectedType.contains { it is ConeTypeVariableType || it is ConeErrorType }
+        ) return true
         if (components.context.isInsideAssignmentOrInitializerValue) return false
         val symbol = symbol as? CfirCallableSymbol ?: return false
         return symbol.origin == CfirDeclarationOrigin.Synthetic.FakeFunction && !expectedType.isUnitOrAny()
@@ -956,7 +1058,11 @@ class CfirCallCompleter(
             initialType,
             transformer.resolutionContext,
         ) { atom, withPCLASession ->
-            actualAnalyzer.analyze(candidate.system, atom, candidate, withPCLASession)
+            val privateGraphs = candidate.retainedChildSessions.filter { it.ownsPrivateElement(atom.expression) }
+            check(privateGraphs.size <= 1) { "A postponed atom belongs to multiple retained private graphs" }
+            val privateGraph = privateGraphs.singleOrNull()
+            if (privateGraph == null) actualAnalyzer.analyze(candidate.system, atom, candidate, withPCLASession)
+            else checkNotNull(privateGraph.analyzePostponedAtom)(candidate.system, atom, candidate, withPCLASession)
         }
     }
 
@@ -970,12 +1076,18 @@ class CfirCallCompleter(
         candidate: Candidate,
     ) {
         val expectedFunctionType = atom.expectedType as? ConeFunctionType ?: return
-        val returnVariable = ConeTypeVariableForLambdaReturnType(
-            atom.anonymousFunction,
-            PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE,
-        )
+        val returnVariable = atom.candidateOfOuterCall.createInferenceVariable(
+            atom.anonymousFunction, CfirInferenceVariableRole.FACTORY_LAMBDA_RETURN,
+        ) {
+            ConeTypeVariableForLambdaReturnType(
+                atom.anonymousFunction,
+                PostponedArgumentInputTypesResolver.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE,
+            )
+        }
         val csBuilder = candidate.system.getBuilder()
-        csBuilder.registerVariable(returnVariable)
+        val previous = csBuilder.currentStorage().allTypeVariables[returnVariable.typeConstructor]
+        if (previous == null) csBuilder.registerVariable(returnVariable)
+        else check(previous === returnVariable)
 
         val revisedExpectedType = ConeFunctionType(
             parameterTypes = expectedFunctionType.parameterTypes,
@@ -1001,10 +1113,278 @@ class CfirCallCompleter(
      * writer 会应用最终 substitutor，并同步处理 return type 计算、数据流分析结果、
      * 整数字面量/操作符近似以及 body resolve 上下文中的完成模式。
      */
+    private class FullCompletionAuthority(
+        override val candidate: Candidate,
+        override val root: CfirExpression,
+        override val system: org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl,
+    ) : CfirFullCompletionAuthority {
+        override val generation: Any = candidate.unscopedCompletionGeneration
+        override val writerEpoch: Any = candidate.unscopedWriterEpoch
+    }
+
+    /**
+     * 标准 completeCall 的实际 FULL producer；正常返回后才创建 provenance。
+     * internal 仅供协议测试直接驱动相同生产方法，不从已闭合 CS 推断 FULL。
+     */
+    internal fun <T> runFullCompletionForCall(
+        candidate: Candidate,
+        call: T,
+        initialType: ConeCangJieType = candidate.substitutedReturnTypeFromCalculator(),
+        analyzer: PostponedArgumentsAnalyzer = createPostponedArgumentsAnalyzer(transformer.resolutionContext),
+    ): CfirFullCompletionAuthority where T : CfirExpression, T : CfirResolvable {
+        check(!candidate.isSourceCompletionWithdrawn) { "Withdrawn source producer cannot run FULL completion" }
+        val reference = call.calleeReference
+        val scope = candidate.implicitTypeComputationScope
+        check((reference is CfirNamedReferenceWithCandidate && reference.candidate === candidate) ||
+            (scope != null && scope.graph.matchesResolvedCompletionReference(scope, candidate, call, reference))) {
+            "FULL receipt preparation changed its actual root candidate"
+        }
+        runCompletionForCall(candidate, ConstraintSystemCompletionMode.FULL, call, initialType, analyzer)
+        check(!candidate.isSourceCompletionWithdrawn) { "Source producer was withdrawn during FULL completion" }
+        return FullCompletionAuthority(candidate, call, candidate.system)
+    }
+
+    /** 标准 FULL 分支在 asReadOnlyStorage 后的实际 factory 接线；唯一输入是上述 producer 的凭证。 */
+    internal fun createCompletionResultsWriterForFullCompletion(
+        authority: CfirFullCompletionAuthority,
+        substitutor: ConeSubstitutor,
+    ): CfirCallCompletionResultsWriterTransformer {
+        check(!authority.candidate.isSourceCompletionWithdrawn && authority.system === authority.candidate.system &&
+            authority.generation === authority.candidate.unscopedCompletionGeneration &&
+            authority.writerEpoch === authority.candidate.unscopedWriterEpoch) {
+            "FULL producer authority was revoked before writer creation"
+        }
+        return createCompletionResultsWriter(substitutor, CfirCallCompletionResultsWriterTransformer.Mode.Normal,
+            authority.system, authority.root, authority.candidate, authority)
+    }
+
     fun createCompletionResultsWriter(
         substitutor: ConeSubstitutor,
         mode: CfirCallCompletionResultsWriterTransformer.Mode = CfirCallCompletionResultsWriterTransformer.Mode.Normal,
+        completionSystem: org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl? = null,
+        completionRoot: CfirExpression? = null,
+        completionCandidate: Candidate? = null,
+    ): CfirCallCompletionResultsWriterTransformer =
+        createCompletionResultsWriter(substitutor, mode, completionSystem, completionRoot, completionCandidate, null)
+
+    /** 显式 FULL producer 私有通道；普通公开 factory 不能 mint 或消费 unscoped receipt。 */
+    private fun createCompletionResultsWriter(
+        substitutor: ConeSubstitutor,
+        mode: CfirCallCompletionResultsWriterTransformer.Mode,
+        completionSystem: org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl?,
+        completionRoot: CfirExpression?,
+        completionCandidate: Candidate?,
+        fullAuthority: CfirFullCompletionAuthority?,
     ): CfirCallCompletionResultsWriterTransformer {
+        check(completionCandidate?.isSourceCompletionWithdrawn != true) { "Final writer source producer was withdrawn" }
+        if (completionSystem != null && completionCandidate != null &&
+            components.context.implicitTypeComputationScope?.privateTreeScope() == null &&
+            completionCandidate.implicitTypeComputationScope?.privateTreeScope() == null
+        ) {
+            // PRIVATE 任务用其真实 lexical/DFA writer 执行；退出生产阶段后再创建本次 FORMAL lease。
+            val owners = java.util.Collections.newSetFromMap(
+                java.util.IdentityHashMap<CfirPCLAInferenceSession, Boolean>(),
+            )
+            completionCandidate.retainedChildSessions.toList().forEach { graph ->
+                val hasPrivateProducers = graph.needsPrivateAdditionalResultsCompletion(completionCandidate, completionSystem) ||
+                        completionCandidate.postponedPCLACalls.any { call ->
+                    val actual = (call as? ConeAtomWithCandidate)?.candidate ?: return@any false
+                    val scope = actual.implicitTypeComputationScope
+                    scope?.graph === graph && scope.mode == CfirImplicitTypeComputationMode.PRIVATE &&
+                        !graph.isCandidateWithdrawn(actual) && graph.ownCalls.any { it === call }
+                }
+                if (!hasPrivateProducers) return@forEach
+                check(graph.completionOwnerCandidate === completionCandidate) {
+                    "Retained PRIVATE producer changed its actual candidate owner"
+                }
+                val owner = checkNotNull(graph.inferenceOwner)
+                if (owners.add(owner)) {
+                    owner.completeRetainedPrivateCallProducers(completionCandidate, completionSystem, substitutor)
+                }
+            }
+        }
+        val leases = java.util.IdentityHashMap<CfirImplicitTypeComputation, CfirRetainedCompletionLease>()
+        val candidates = java.util.IdentityHashMap<CfirElement, Candidate>()
+        val argumentReplacements = java.util.IdentityHashMap<CfirElement, Pair<Candidate, CfirExpression>>()
+        val completionOwners = mutableListOf<Candidate>()
+        if (completionSystem != null) {
+            val root = checkNotNull(completionRoot) { "Final writer requires its actual completion root" }
+            val scopes = java.util.IdentityHashMap<CfirImplicitTypeComputation, CfirImplicitTypeComputationScope>()
+            components.context.implicitTypeComputationScope?.let { scopes[it.graph] = it }
+            val collector = object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+                private val visitedElements = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<CfirElement, Boolean>())
+                private val visitedCandidates = java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Candidate, Boolean>())
+                private val pendingCandidates = ArrayDeque<Candidate>()
+                private val queuedAtoms = mutableListOf<Pair<Candidate, ConeAtomWithCandidate>>()
+                private val acceptedCandidateAliases = mutableListOf<ConeAtomWithCandidate>()
+                private val acceptedAtoms = java.util.Collections.newSetFromMap(
+                    java.util.IdentityHashMap<ConeResolutionAtom, Boolean>(),
+                )
+                private val retainedGraphs = java.util.Collections.newSetFromMap(
+                    java.util.IdentityHashMap<CfirImplicitTypeComputation, Boolean>(),
+                )
+
+                private fun remember(candidate: Candidate) {
+                    if (candidate.isSourceCompletionWithdrawn) return
+                    if (visitedCandidates.add(candidate)) {
+                        pendingCandidates.addLast(candidate)
+                        completionOwners += candidate
+                    }
+                }
+
+                /** 实际 AST 引用先行选择；队列绑定验证全部别名后才登记选择，队列顺序不决定 winner。 */
+                fun bindCandidate(expression: CfirElement, candidate: Candidate) {
+                    if (candidate.isSourceCompletionWithdrawn ||
+                        candidate.implicitTypeComputationScope?.graph?.isCandidateWithdrawn(candidate) == true
+                    ) return
+                    val previous = candidates[expression]
+                    check(previous == null || previous === candidate || previous.isSourceCompletionWithdrawn ||
+                        previous.implicitTypeComputationScope?.graph?.isCandidateWithdrawn(previous) == true
+                    ) { "Completion carrier has conflicting actual candidates" }
+                    candidates[expression] = candidate
+                    // 先收集真实 carrier；replacement/return atom 闭合之前不能撤销同槽的 accepted successor。
+                    candidate.implicitTypeComputationScope?.let { scopes[it.graph] = it }
+                    remember(candidate)
+                }
+
+                /** return atoms 和 replacements 属于实际已接受 Candidate，不能只遍历尚未采用它们的原 AST。 */
+                private fun collectAcceptedAtom(atom: ConeResolutionAtom) {
+                    if (!acceptedAtoms.add(atom)) return
+                    atom.expression.accept(this)
+                    when (atom) {
+                        is ConeAtomWithCandidate -> {
+                            remember(atom.candidate)
+                            val reference = (atom.expression as? CfirResolvable)?.calleeReference as? CfirNamedReferenceWithCandidate
+                            if (reference == null || reference.candidate === atom.candidate) {
+                                bindCandidate(atom.expression, atom.candidate)
+                            } else acceptedCandidateAliases += atom
+                        }
+                        is ConeResolvedLambdaAtom -> if (atom.analyzed) atom.returnStatements.forEach(::collectAcceptedAtom)
+                        is org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild ->
+                            atom.subAtom?.let(::collectAcceptedAtom)
+                        is org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithSingleChild ->
+                            atom.subAtom?.let(::collectAcceptedAtom)
+                        else -> atom.processCandidatesAndPostponedAtoms(::remember, {})
+                    }
+                }
+
+                private fun collectAcceptedReplacements(owner: Candidate) {
+                    owner.argumentReplacements.orEmpty().forEach { (original, replacement) ->
+                        if (original === replacement) return@forEach
+                        val previous = argumentReplacements[original]
+                        check(previous == null || previous.first === owner && previous.second === replacement) {
+                            "Completion replacement has conflicting actual owners or carriers"
+                        }
+                        argumentReplacements[original] = owner to replacement
+                        replacement.accept(this)
+                    }
+                    owner.postponedAtoms.forEach(::collectAcceptedAtom)
+                }
+
+                fun collectQueuedBindings() {
+                    // 先读 root 及所有真实 carrier 的当前引用，不用旧 queued candidate 撤销当前 AST。
+                    do {
+                        while (pendingCandidates.isNotEmpty()) {
+                            val owner = pendingCandidates.removeFirst()
+                            if (owner.isSourceCompletionWithdrawn || owner.implicitTypeComputationScope?.graph?.isCandidateWithdrawn(owner) == true) continue
+                            if (owner.callInfo.callSite in argumentReplacements) continue
+                            collectAcceptedReplacements(owner)
+                            retainedGraphs.addAll(owner.retainedChildSessions)
+                            for (atom in owner.postponedPCLACalls.toList()) {
+                                val registeredWriter = owner.pclaCallWriters[atom]
+                                if (registeredWriter != null) {
+                                    continue
+                                }
+                                atom.expression.accept(this)
+                                if (atom is ConeAtomWithCandidate) {
+                                    queuedAtoms += owner to atom
+                                    remember(atom.candidate)
+                                }
+                            }
+                        }
+                        if (components.context.implicitTypeComputationScope?.privateTreeScope() == null &&
+                            completionCandidate?.implicitTypeComputationScope?.privateTreeScope() == null
+                        ) {
+                            retainedGraphs.addAll(scopes.keys)
+                            for (graph in retainedGraphs.toList()) {
+                                graph.collectCompletedFormalCallCarriers(visitedElements) { carrier, candidate ->
+                                    if (carrier !in argumentReplacements && candidates[carrier] == null) {
+                                        bindCandidate(carrier, candidate)
+                                    }
+                                }
+                            }
+                        }
+                        // 完成 carrier 自身仍可持有真实 child 队列，按原身份集合遍历到闭合。
+                    } while (pendingCandidates.isNotEmpty())
+                    // accepted replacement 闭合后先选择实际 carrier，再按原 guard 检验 queued aliases。
+                    // owning Candidate 已接受的 predecessor -> successor 关系是当前写回树，不以遍历顺序选 winner。
+                    argumentReplacements.keys.forEach { original ->
+                        val seen = java.util.Collections.newSetFromMap(
+                            java.util.IdentityHashMap<CfirElement, Boolean>(),
+                        )
+                        var current = original
+                        while (current in argumentReplacements) {
+                            check(seen.add(current)) { "Completion replacement contains an owning cycle" }
+                            current = checkNotNull(argumentReplacements[current]).second
+                        }
+                        candidates.remove(original)
+                    }
+                    val selected = java.util.Collections.newSetFromMap(
+                        java.util.IdentityHashMap<Candidate, Boolean>(),
+                    )
+                    fun selectActualCandidate(actual: Candidate) {
+                        check(!actual.isSourceCompletionWithdrawn) { "Withdrawn source producer cannot be selected for completion" }
+                        if (selected.add(actual)) actual.implicitTypeComputationScope?.let { scope ->
+                            check(!scope.graph.isCandidateWithdrawn(actual)) {
+                                "Accepted completion carrier belongs to a withdrawn candidate"
+                            }
+                            scope.graph.selectCompletionCandidate(scope, actual)
+                        }
+                    }
+                    candidates.values.forEach(::selectActualCandidate)
+                    // return atom 的旧别名与 queued 别名遵循相同的 actual AST-first 规则。
+                    for (atom in acceptedCandidateAliases) {
+                        if (atom.expression in argumentReplacements) continue
+                        bindCandidate(atom.expression, atom.candidate)
+                    }
+                    candidates.values.forEach(::selectActualCandidate)
+                    for ((owner, atom) in queuedAtoms) {
+                        if (owner.isSourceCompletionWithdrawn || atom.candidate.isSourceCompletionWithdrawn) continue
+                        if (atom.expression in argumentReplacements) continue
+                        // 在 forward graph 的 resolved carrier collector 闭合之后判断；不能提前遮住 FORMAL binding。
+                        if (fullAuthority != null && atom.candidate.implicitTypeComputationScope == null &&
+                            candidates[atom.expression]?.implicitTypeComputationScope == null
+                        ) {
+                            val system = checkNotNull(completionSystem)
+                            val receipt = owner.unscopedCompletionReceipt(atom, system)
+                            if (receipt?.canConsume(owner, system) == true) continue
+                            val previousResult = owner.postponedPCLACalls.filterIsInstance<ConeAtomWithCandidate>().any { previous ->
+                                previous !== atom && previous.expression === atom.expression &&
+                                    owner.unscopedCompletionReceipt(previous, system)?.matchesCurrentResult() == true
+                            }
+                            val actual = ((atom.expression as? CfirResolvable)?.calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
+                            check(!previousResult || actual === atom.candidate) {
+                                "Unscoped queued replacement has no actual candidate reference"
+                            }
+                        }
+                        bindCandidate(atom.expression, atom.candidate)
+                    }
+                    candidates.values.forEach(::selectActualCandidate)
+                    completionOwners.removeAll { it !in selected }
+                }
+
+                override fun visitElement(element: CfirElement) {
+                    if (!visitedElements.add(element)) return
+                    val candidate = ((element as? CfirResolvable)?.calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
+                    if (candidate != null) bindCandidate(element, candidate)
+                    element.acceptChildren(this)
+                }
+            }
+            root.accept(collector)
+            completionCandidate?.let { collector.bindCandidate(root, it) }
+            collector.collectQueuedBindings()
+            scopes.forEach { (graph, scope) -> leases[graph] = graph.captureCompletionLease(scope, root, completionSystem) }
+        }
         return CfirCallCompletionResultsWriterTransformer(
             components.session,
             components.scopeSession,
@@ -1016,13 +1396,19 @@ class CfirCallCompleter(
             components.context,
             transformer.declarationsTransformer,
             mode,
-        )
+            completionSystem = completionSystem,
+        ).also {
+            it.bindCompletionAuthority(leases, candidates, argumentReplacements)
+            it.bindSourceCompletionRoot(completionCandidate)
+            it.bindUnscopedCompletionOwners(completionOwners)
+            if (fullAuthority != null) it.activateUnscopedFullCompletion(fullAuthority)
+        }
     }
 
     /**
      * 返回候选在当前替换状态下的完成后结果类型。
      */
-    fun completedResultType(candidate: Candidate): ConeCangJieType = candidate.substitutedReturnType()
+    fun completedResultType(candidate: Candidate): ConeCangJieType = candidate.substitutedReturnTypeFromCalculator()
 
     /**
      * 为当前调用上下文创建 postponed argument 分析器。
@@ -1105,7 +1491,13 @@ class CfirCallCompleter(
             transformer.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
                 val lambdaExpression = lambdaAtom.expression as CfirAnonymousFunctionExpression
                 val declarationsTransformer = transformer.declarationsTransformer
-                val pclaInferenceSession = runIf(withPCLASession) {
+                val enclosingPclaSession = transformer.context.inferenceSession as? CfirPCLAInferenceSession
+                // synthetic body 会按同一 Candidate 的 AST/cache 边界重查；即使输入已经确定，
+                // 首轮任务也必须归该 Candidate，不能写入随后不会被其 reset 清理的 enclosing 队列。
+                // 归属由真实 callSite/body 身份和 enclosing 的 exact outerCandidate 判定，不由名字或目标类型推导。
+                val needsOwnedSyntheticSession = candidate.callInfo.callSite === lambdaExpression &&
+                        enclosingPclaSession != null && !enclosingPclaSession.isOuterCandidate(candidate)
+                val pclaInferenceSession = runIf(withPCLASession || needsOwnedSyntheticSession) {
                     candidate.lambdasAnalyzedWithPCLA += lambda
                     /*
                      * 仅 synthetic 顶层 lambda 启用逐语句 postponed 处理：
@@ -1116,11 +1508,15 @@ class CfirCallCompleter(
                      */
                     val statementProcessingOwnerLambda =
                         if (candidate.callInfo.callSite is CfirAnonymousFunctionExpression) lambda else null
-                    CfirPCLAInferenceSession(
-                        candidate,
-                        session.inferenceComponents,
-                        statementProcessingOwnerLambda = statementProcessingOwnerLambda,
-                    )
+                    if (enclosingPclaSession != null) {
+                        enclosingPclaSession.createChildSession(candidate, statementProcessingOwnerLambda)
+                    } else {
+                        CfirPCLAInferenceSession(
+                            candidate,
+                            session.inferenceComponents,
+                            statementProcessingOwnerLambda = statementProcessingOwnerLambda,
+                        )
+                    }
                 }
 
                 if (pclaInferenceSession != null) {

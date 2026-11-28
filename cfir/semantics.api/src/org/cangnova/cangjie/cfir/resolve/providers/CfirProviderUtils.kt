@@ -75,13 +75,13 @@ private fun CfirCallableSymbol<*>.unwrapPropertyAccessor(): CfirCallableSymbol<*
 /**
  * 顶层 pattern 声明进入名称作用域的是 binding symbol，但声明注解和 initializer 的 owner
  * 是外层 [org.cangnova.cangjie.cfir.declarations.CfirPatternVariable]。非局部 binding 必须
- * 通过 provider 索引还原到该 owner，才能让所有声明元数据查询看到同一个声明身份。
+ * 通过模式树的双向关系取得该 owner，源码与反序列化入口采用相同的声明身份。
  */
 private fun CfirCallableSymbol<*>.unwrapNonLocalPatternBinding(): CfirCallableSymbol<*> {
     val binding = this as? CfirPatternBindingSymbol ?: return this
     if (binding.cfir.isLocal) return binding
-    val owner = checkNotNull(binding.cfir.moduleData.session.cfirProvider.getCfirPatternVariableForBinding(binding)) {
-        "Non-local pattern binding `${binding.callableId}` is missing its declaration owner index"
+    val owner = checkNotNull(binding.cfir.patternTreeOwner as? org.cangnova.cangjie.cfir.declarations.CfirPatternVariable) {
+        "Non-local pattern binding `${binding.callableId}` is missing its pattern-tree owner"
     }
     return owner.symbol
 }

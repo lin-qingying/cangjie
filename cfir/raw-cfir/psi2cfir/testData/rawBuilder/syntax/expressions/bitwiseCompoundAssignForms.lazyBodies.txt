@@ -1,0 +1,7 @@
+FILE: bitwiseCompoundAssignForms.cj
+    internal? func bitwiseCompoundAssignForms(a: R|Int64|, b: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func bitwiseShiftForms(a: R|UInt64|, b: R|UInt64|): R|UInt64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,36 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package cross_file_generated_declaration_conflict
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+
+
+// FILE: generated.cj
+// MACRO_PACKAGE: false
+FILE: generated.cj
+    package shared_macro_group
+    import cross_file_generated_declaration_conflict.GenerateDuplicate
+    public func ideTarget(): R|Int64| {
+        RETURN {
+            INT(7)
+        }
+    }
+
+
+// FILE: physical.cj
+// MACRO_PACKAGE: false
+FILE: physical.cj
+    package shared_macro_group
+    internal? func ideTarget(): R|Int64| {
+        RETURN {
+            INT(42)
+        }
+    }
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    package shared_macro_group
+    <element: CfirMainFunction>

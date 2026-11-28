@@ -1,6 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
 interface Named {
-    public func name(): String
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func name(): String
 }
 
 class User <: Named {

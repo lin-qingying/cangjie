@@ -3,6 +3,7 @@
 package org.cangnova.cangjie.lsp.analysis
 
 import com.intellij.openapi.components.service
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFile
@@ -14,21 +15,29 @@ import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
-import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
 import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleStateModificationEvent
+import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModuleStateModificationKind
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProviderBase
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProviderBase
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.lsp.state.LspTextDocument
@@ -181,6 +190,9 @@ class AnalysisApiLspProjectStructureState(
      */
     private val workspaceModulesByName = linkedMapOf<String, WorkspaceModuleEntry>()
 
+    /** 配置中明确给出的 CJO 搜索根拥有独立 binary module，不能归入任意 consumer。 */
+    private val libraryModulesByRoot = linkedMapOf<Path, CaLspLibraryModule>()
+
     /**
      * 打开文档 URI 到所属工作区源码模块的映射。
      */
@@ -212,6 +224,7 @@ class AnalysisApiLspProjectStructureState(
     val allModules: List<CaModule>
         get() = buildList {
             addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
+            addAll(libraryModulesByRoot.values)
             addAll(danglingSnapshotsByUri.values.map(DanglingSnapshotEntry::module))
         }
 
@@ -259,52 +272,63 @@ class AnalysisApiLspProjectStructureState(
      * 打开文档对应的磁盘文件会从工作区源码枚举中显式排除，由 snapshot 模块承载；
      * 这样同一份源码在任一时刻只会有一个真实 use-site 入口，不会同时混入磁盘旧文本和内存快照。
      */
-    @Synchronized
     internal fun configure(workspaceState: LspWorkspaceState) {
-        val previousModules = buildSet {
-            addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
-            addAll(danglingSnapshotsByUri.values.map(DanglingSnapshotEntry::module))
-        }
-        val newEntries = buildWorkspaceModuleEntries(
-            definitions = workspaceState.projectConfiguration().workspaceModules,
-            openSnapshots = openSnapshotsByUri.values.toList(),
-        )
-        val workspaceDocumentUris = newEntries.flatMapTo(linkedSetOf()) { it.documentUris }
-
-        workspaceModulesByName.clear()
-        workspaceModuleByDocumentUri.clear()
-        danglingSnapshotsByUri.clear()
-        documentUriByPsiFile.clear()
-        modulesByPsiFile.clear()
-
-        newEntries.forEach { entry ->
-            workspaceModulesByName[entry.definition.name] = entry
-            entry.sourceFiles.forEach { psiFile ->
-                modulesByPsiFile[psiFile] = entry.module
+        // 模块图替换、计数更新与 LL/API 退役共用写动作，读者不能观察中间映射。
+        ApplicationManager.getApplication().runWriteAction {
+            val previousModules = buildSet {
+                addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
+                addAll(libraryModulesByRoot.values)
+                addAll(danglingSnapshotsByUri.values.map(DanglingSnapshotEntry::module))
             }
-            entry.sourceFiles.zip(entry.sourceDocumentUris).forEach { (psiFile, documentUri) ->
-                documentUriByPsiFile[psiFile] = documentUri
-            }
-            entry.documentUris.forEach { documentUri ->
-                workspaceModuleByDocumentUri[documentUri] = entry.module
-            }
-        }
-        val danglingEntries = buildDanglingSnapshotEntries(
-            openSnapshots = openSnapshotsByUri.values
-                .filterNot { snapshot -> snapshot.document.uri in workspaceDocumentUris }
-                .sortedBy { snapshot -> snapshot.document.uri },
-        )
-        danglingEntries.forEach { entry ->
-            danglingSnapshotsByUri[entry.document.uri] = entry
-            modulesByPsiFile[entry.psiFile] = entry.module
-            documentUriByPsiFile[entry.psiFile] = entry.document.uri
-        }
+            val newEntries = buildWorkspaceModuleEntries(
+                definitions = workspaceState.projectConfiguration().workspaceModules,
+                openSnapshots = openSnapshotsByUri.values.toList(),
+            )
+            val configuration = workspaceState.projectConfiguration()
+            val libraryEntries = buildLibraryModules(
+                newEntries,
+                configuration.librarySearchPaths,
+            )
+            val workspaceDocumentUris = newEntries.flatMapTo(linkedSetOf()) { it.documentUris }
 
-        val currentModules = buildSet {
-            addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
-            addAll(danglingEntries.map(DanglingSnapshotEntry::module))
+            libraryModulesByRoot.clear()
+            libraryModulesByRoot.putAll(libraryEntries)
+            workspaceModulesByName.clear()
+            workspaceModuleByDocumentUri.clear()
+            danglingSnapshotsByUri.clear()
+            documentUriByPsiFile.clear()
+            modulesByPsiFile.clear()
+
+            newEntries.forEach { entry ->
+                workspaceModulesByName[entry.definition.name] = entry
+                entry.sourceFiles.forEach { psiFile ->
+                    modulesByPsiFile[psiFile] = entry.module
+                }
+                entry.sourceFiles.zip(entry.sourceDocumentUris).forEach { (psiFile, documentUri) ->
+                    documentUriByPsiFile[psiFile] = documentUri
+                }
+                entry.documentUris.forEach { documentUri ->
+                    workspaceModuleByDocumentUri[documentUri] = entry.module
+                }
+            }
+            val danglingEntries = buildDanglingSnapshotEntries(
+                openSnapshots = openSnapshotsByUri.values
+                    .filterNot { snapshot -> snapshot.document.uri in workspaceDocumentUris }
+                    .sortedBy { snapshot -> snapshot.document.uri },
+            )
+            danglingEntries.forEach { entry ->
+                danglingSnapshotsByUri[entry.document.uri] = entry
+                modulesByPsiFile[entry.psiFile] = entry.module
+                documentUriByPsiFile[entry.psiFile] = entry.document.uri
+            }
+
+            val currentModules = buildSet {
+                addAll(workspaceModulesByName.values.map(WorkspaceModuleEntry::module))
+                addAll(libraryModulesByRoot.values)
+                addAll(danglingEntries.map(DanglingSnapshotEntry::module))
+            }
+            invalidate(previousModules + currentModules)
         }
-        invalidate(previousModules + currentModules)
     }
 
     /**
@@ -313,7 +337,7 @@ class AnalysisApiLspProjectStructureState(
      * 只允许使用显式注册的快照模块或根据真实磁盘路径回溯到工作区源码模块，
      * 不允许退化为“随便取一个模块”的兜底行为。
      */
-    internal fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
+    internal fun getModule(element: PsiElement): CaModule {
         val containingFile = element.containingFile as? CjFile
             ?: error("LSP Analysis API 只能为带有仓颉源码文件的元素恢复 use-site 模块：${element.javaClass.simpleName}")
 
@@ -342,10 +366,18 @@ class AnalysisApiLspProjectStructureState(
      * 1. 打开文档对应的快照模块；
      * 2. 根据磁盘路径回溯到的工作区源码模块。
      */
+    internal fun isRegisteredFile(file: CjFile): Boolean = modulesByPsiFile.containsKey(file)
+
+    /** 按当前登记事实和实际 binary/source scope 恢复模块。 */
     internal fun getModuleForFile(file: CjFile): CaModule? {
         modulesByPsiFile[file]?.let { return it }
 
         val virtualFile = file.virtualFile ?: return null
+        if (file.isCompiled) {
+            val owners = libraryModulesByRoot.values.filter { it.contentScope.contains(virtualFile) }
+            check(owners.size <= 1) { "Multiple LSP binary owners for ${virtualFile.path}" }
+            return owners.singleOrNull()?.also { modulesByPsiFile[file] = it }
+        }
         val workspaceModule = findWorkspaceModuleForPath(Path.of(virtualFile.path).normalize()) ?: return null
         modulesByPsiFile.putIfAbsent(file, workspaceModule)
         return workspaceModule
@@ -422,17 +454,25 @@ class AnalysisApiLspProjectStructureState(
      *
      * 该方法更新 LSP 自身修改计数，并在存在外部 session invalidation service 时继续委托。
      */
+    @OptIn(org.cangnova.cangjie.analysis.api.CaImplementationDetail::class)
     override fun invalidate(modules: Set<CaModule>) {
         if (modules.isEmpty()) return
 
-        globalModificationCount.incrementAndGet()
-        modules.forEach { module ->
-            moduleModificationCounts.computeIfAbsent(module) { AtomicLong(0) }.incrementAndGet()
-        }
+        // revision、真实 LL session 退役和 API cache 逐出必须在同一次写动作内提交。
+        ApplicationManager.getApplication().runWriteAction {
+            globalModificationCount.incrementAndGet()
+            modules.forEach { module ->
+                moduleModificationCounts.computeIfAbsent(module) { AtomicLong(0) }.incrementAndGet()
+            }
 
-        val delegatedInvalidationService = project.getService(CaSessionProvider::class.java) as? CaSessionInvalidationService
-        if (delegatedInvalidationService != null && delegatedInvalidationService !== this) {
-            delegatedInvalidationService.invalidate(modules)
+            val invalidationService = LLCfirSessionInvalidationService.getInstance(project)
+            modules.forEach { module ->
+                invalidationService.invalidate(KotlinModuleStateModificationEvent(module, KotlinModuleStateModificationKind.UPDATE))
+            }
+            val delegatedInvalidationService = project.getService(CaSessionProvider::class.java) as? CaSessionInvalidationService
+            if (delegatedInvalidationService != null) {
+                delegatedInvalidationService.invalidate(modules)
+            }
         }
     }
 
@@ -448,7 +488,7 @@ class AnalysisApiLspProjectStructureState(
             snapshot.normalizedPath?.let { path -> openSnapshotsByPath[path] = snapshot }
         }
 
-        return definitions.map { definition ->
+        val entries = definitions.map { definition ->
             val sourceRootPaths = definition.sourceRootUris
                 .mapNotNull(String::uriToPathOrNull)
                 .map(Path::normalize)
@@ -478,6 +518,51 @@ class AnalysisApiLspProjectStructureState(
                 documentUris = sourceFileEntries.mapNotNull(WorkspaceSourceFileEntry::documentUri).toSet(),
             )
         }
+
+        // 建立模块依赖边：`requires` 声明的是其它工作区模块（源码依赖各自成模块）。
+        // 没有依赖边时，`import <包名>` 只能按二进制搜索路径解析，纯源码依赖必然 UNRESOLVED。
+        val modulesByName = entries.associateBy { entry -> entry.module.name }
+        for (entry in entries) {
+            for (requiredName in entry.definition.requiredModuleNames) {
+                val target = modulesByName[requiredName] ?: continue
+                if (target.module !== entry.module) {
+                    entry.module.directRegularDependencies += target.module
+                }
+            }
+        }
+
+        return entries
+    }
+
+    /**
+     * 仓颉平台的 CJO roots 由初始化配置提供；Kotlin 对应职责是 binary module roots 与 regular dependencies。
+     * shared roots 只建立一个 owner，缺失或实际多 owner 不制造 consumer-owned 库符号。
+     */
+    private fun buildLibraryModules(
+        sourceEntries: List<WorkspaceModuleEntry>,
+        configuredRoots: List<String>,
+    ): Map<Path, CaLspLibraryModule> {
+        val moduleSpecificRoots = sourceEntries.flatMap { it.definition.packageSearchPaths }.toSet()
+        val sharedRoots = configuredRoots.filterNot { it in moduleSpecificRoots }
+        val rootsBySource = sourceEntries.associateWith { entry ->
+            (sharedRoots + entry.definition.packageSearchPaths).map { raw ->
+                val path = Path.of(raw).toAbsolutePath().normalize()
+                check(Files.isDirectory(path)) { "Configured LSP CJO root is not a directory: $path" }
+                path.toRealPath()
+            }.distinct()
+        }
+        val roots = rootsBySource.values.flatten().distinct()
+        val libraries = roots.associateWith { root ->
+            val consumers = rootsBySource.filterValues { root in it }.keys
+            val platform = consumers.map { it.module.targetPlatform }.distinct().single()
+            val virtualRoot = checkNotNull(findLocalVirtualFile(root)) { "CJO root has no VFS view: $root" }
+            val psiRoot = checkNotNull(psiManager.findDirectory(virtualRoot)) { "CJO root has no PSI view: $root" }
+            CaLspLibraryModule(project, root, listOf(psiRoot), platform)
+        }
+        for ((sourceEntry, dependencies) in rootsBySource) {
+            sourceEntry.module.directRegularDependencies.addAll(dependencies.map(libraries::getValue))
+        }
+        return libraries
     }
 
     /**
@@ -496,7 +581,7 @@ class AnalysisApiLspProjectStructureState(
                     documentUri = snapshot.document.uri,
                     psiFile = snapshot.psiFile,
                     contextModule = contextModule,
-                    contentVirtualFile = snapshot.normalizedPath?.let(::findLocalVirtualFile),
+                    contentVirtualFile = findLocalVirtualFile(snapshot.normalizedPath),
                 ),
                 psiFile = snapshot.psiFile,
             )
@@ -668,8 +753,20 @@ internal class CaLspSourceModule(
 
     /**
      * 该源码模块暴露给 Analysis API 的 PSI 根。
+     *
+     * 注意：LSP 的 `psiRoots` 是**源码文件**集合（供 content scope/符号提供者按文件消费），
+     * 与 IDE 返回源码根目录不同；需要目录语义的调用方应使用 [sourceRoots]。
      */
     override val psiRoots: List<PsiFileSystemItem> = psiRoots.toList()
+
+    /**
+     * 该源码模块的规范化源码根目录路径。
+     *
+     * 宏展开等需要 `CompilerConfiguration.addCangJieSourceRoot` 目录语义的宿主使用该入口；
+     * 不要从 [psiRoots] 反推（它装的是文件）。
+     */
+    internal val sourceRoots: List<Path>
+        get() = sourceRootPaths
 
     /**
      * 直接 regular 依赖列表。
@@ -849,6 +946,29 @@ internal class CaLspDanglingFileModule(
 }
 
 /**
+ * CJO 二进制模块。与 Kotlin KaLibraryModuleImpl 同样只承载显式 roots、scope、platform 和依赖事实。
+ * LSP 没有 JVM package parts；这里使用仓颉已有的 PSI binary roots 契约。
+ */
+internal class CaLspLibraryModule(
+    override val project: Project,
+    private val binaryRoot: Path,
+    override val binaryRoots: List<PsiFileSystemItem>,
+    override val targetPlatform: TargetPlatform,
+) : CaModuleBase(), CaLibraryModule {
+    override val libraryName: String = "lsp-binary:${binaryRoot.toUri()}"
+    override val directRegularDependencies: List<CaModule> = emptyList()
+    override val directDependsOnDependencies: List<CaModule> = emptyList()
+    override val directFriendDependencies: List<CaModule> = emptyList()
+    override val baseContentScope: GlobalSearchScope = object : GlobalSearchScope(project) {
+        override fun contains(file: VirtualFile): Boolean =
+            Path.of(file.path).toAbsolutePath().normalize().startsWith(binaryRoot)
+
+        override fun isSearchInModuleContent(aModule: com.intellij.openapi.module.Module): Boolean = false
+        override fun isSearchInLibraries(): Boolean = true
+    }
+}
+
+/**
  * 构造源码模块内容搜索范围。
  *
  * 搜索范围只包含给定源码根下的文件，不包含库内容。
@@ -892,7 +1012,7 @@ internal class AnalysisApiLspProjectStructureProvider(
      * 当前 LSP project。
      */
     private val project: Project,
-) : CangJieProjectStructureProvider {
+) : CangJieProjectStructureProviderBase() {
     /**
      * 当前 project 的 LSP 项目结构状态。
      */
@@ -902,9 +1022,30 @@ internal class AnalysisApiLspProjectStructureProvider(
     /**
      * 为 PSI 元素恢复 Analysis API 模块。
      */
+    @OptIn(LLCfirInternals::class)
     override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
-        return state.getModule(element, useSiteModule)
+        val file = element.containingFile
+            ?: error("LSP Analysis API requires a PSI file with an explicit module or context.")
+        val virtualFile = file.virtualFile
+        if (file is CjFile && file.isCompiled && virtualFile != null &&
+            BuiltinsVirtualFileProvider.getInstance().isInBuiltinRoot(virtualFile, project)
+        ) {
+            val platforms = if (useSiteModule != null) listOf(useSiteModule.targetPlatform)
+                else state.allSourceLikeModules.map { it.targetPlatform }.distinct()
+            val platform = platforms.single()
+            return LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsModule(platform)
+        }
+        computeSpecialModule(file)?.let { return it }
+        return state.getModule(element)
     }
+
+    /** 已登记的 overlay/source/library 文件保持实际模块；只有真正的临时文件走共享 dangling 协议。 */
+    override fun isDangling(file: CjFile): Boolean =
+        !file.isCompiled && !state.isRegisteredFile(file) && super.isDangling(file)
+
+    /** LSP 未声明 context 的临时文件不能制造默认 owner。 */
+    override fun getNotUnderContentRootModule(project: Project): CaNotUnderContentRootModule =
+        error("LSP temporary PSI requires an explicit module or a real source context.")
 
     /**
      * 查找 dependsOn 指向指定模块的实现模块。
@@ -965,6 +1106,18 @@ internal class AnalysisApiLspModuleProvider(
     override fun getModuleByStableName(stableModuleName: String): CaModule? {
         return state.getModuleByStableName(stableModuleName)
     }
+}
+
+/** Kotlin module-dependents 平台职责：关系只来自当前登记的实际模块依赖对象。 */
+internal class AnalysisApiLspModuleDependentsProvider(private val project: Project) : CangJieModuleDependentsProviderBase() {
+    private val state: AnalysisApiLspProjectStructureState
+        get() = AnalysisApiLspProjectStructureState.getInstance(project)
+
+    override fun getDirectDependents(module: CaModule): Set<CaModule> =
+        state.allModules.filter { candidate -> module in candidate.allDirectDependencies }.toSet()
+
+    override fun getRefinementDependents(module: CaModule): Set<CaModule> =
+        state.allModules.filter { candidate -> module in candidate.transitiveDependsOnDependencies }.toSet()
 }
 
 /**
@@ -1059,10 +1212,11 @@ internal class AnalysisApiLspRestrictedAnalysisService : CaRestrictedAnalysisSer
  */
 internal class AnalysisApiLspPlatformSettings : CaPlatformSettings {
     /**
-     * 反序列化声明来源。
+     * LSP 已建立真实 compiled PSI/stub 索引，声明恢复与库引用共享其实际 PSI 和模块 owner。
+     * 使用现有 STUBS 库工厂，与 IDE 同一协议；CJO 解码仍由既有官方格式 reader 完成。
      */
     override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
-        get() = CaDeserializedDeclarationsOrigin.BINARIES
+        get() = CaDeserializedDeclarationsOrigin.STUBS
 
     /**
      * 是否允许 use-site library module 分析。

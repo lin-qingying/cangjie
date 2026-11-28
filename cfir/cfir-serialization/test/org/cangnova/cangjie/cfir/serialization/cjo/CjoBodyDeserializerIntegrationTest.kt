@@ -6,6 +6,8 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
+import org.cangnova.cangjie.test.cjoFixtureModuleDataProvider
 import PackageFormat.*
 import com.google.flatbuffers.Table
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
@@ -1002,15 +1004,16 @@ class CjoBodyDeserializerIntegrationTest {
         val manager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = listOf(root.toFile()), envProvider = { null }),
             CjoFormatVersionPolicy.Compilation(LanguageVersionSettingsImpl.DEFAULT), explicitCommonPartPaths = listOf(path))
         val module = Module()
-        val provider = CfirDeserializedSymbolProvider(module.session, manager, CfirCangJieScopeProvider(), module)
+        val provider = CfirDeserializedSymbolProvider(
+            module.session, manager, CfirCangJieScopeProvider(), module,
+            moduleDataProvider = cjoFixtureModuleDataProvider(module, setOf(root)),
+        )
         module.session.register(CfirProvider::class, CfirLibrarySessionProvider(provider))
         module.session.register(CfirSymbolProvider::class, provider)
         module.session.register(CfirExtendProvider::class, CfirExtendProviderComposer.fromSymbolProviders(listOf(provider)))
         val snapshot = assertNotNull(manager.loadPackageSnapshot(seed.fullPackageName))
         assertEquals(path, snapshot.sourcePath)
-        val context = CfirDeserializationContext(snapshot.pkg, snapshot.header, module, manager, sourcePath = path,
-            declarationResolver = { sourcePath, packageName, index -> provider.deserializeCjoDeclaration(sourcePath, packageName, index) },
-            dependencySnapshotResolver = { provider.selectImportedSnapshot(module, it) }, loadedPackage = snapshot)
+        val context = provider.deserializationBinding.contextForSnapshot(snapshot, CjoDeserializationMode.FULL)
         return Fixture(context, provider)
     }
 

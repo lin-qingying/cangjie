@@ -1,0 +1,83 @@
+name: Discover Cangjie SDK versions
+outputs:
+  matrix_json:
+    description: JSON include matrix of available Linux x64 Cangjie SDK packages.
+    value: ${{ steps.discover.outputs.matrix_json }}
+
+runs:
+  using: composite
+  steps:
+    - name: Discover all standard Linux x64 SDK packages
+      id: discover
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        from html.parser import HTMLParser
+        from urllib.parse import quote, unquote, urljoin, urlparse
+        from urllib.request import Request, urlopen
+        import json
+        import re
+        import sys
+
+        base_url = "https://repo.huaweicloud.com/openharmony/compiler/cangjie/"
+
+        class LinkParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.links = []
+
+            def handle_starttag(self, tag, attrs):
+                if tag == "a":
+                    href = dict(attrs).get("href")
+                    if href:
+                        self.links.append(href)
+
+        def links_at(url):
+            request = Request(url, headers={"User-Agent": "cangjie-ci-sdk-discovery"})
+            with urlopen(request, timeout=30) as response:
+                html = response.read().decode("utf-8", errors="replace")
+            parser = LinkParser()
+            parser.feed(html)
+            return parser.links
+
+        directories = set()
+        for href in links_at(base_url):
+            if not href.endswith("/"):
+                continue
+            name = unquote(urlparse(href).path.rstrip("/").rsplit("/", 1)[-1])
+            if re.fullmatch(r"[0-9][A-Za-z0-9_.-]*", name):
+                directories.add(name)
+
+        entries = []
+        skipped = []
+        for version in sorted(directories):
+            version_url = urljoin(base_url, quote(version, safe=".-") + "/")
+            filenames = {
+                unquote(urlparse(href).path.rstrip("/").rsplit("/", 1)[-1])
+                for href in links_at(version_url)
+            }
+            packages = sorted(
+                name for name in filenames
+                if name.startswith("cangjie-linux-x64-")
+                and name.endswith(".zip")
+                and "hwasan" not in name.lower()
+            )
+            if not packages:
+                skipped.append(version)
+                continue
+            if len(packages) != 1:
+                raise RuntimeError(f"{version}: expected one standard Linux x64 SDK package, found {packages}")
+            package = packages[0]
+            if package + ".sha256" not in filenames:
+                raise RuntimeError(f"{version}: missing SHA-256 sidecar for {package}")
+            entries.append({"sdk_version": version, "sdk_package": package})
+
+        if not entries:
+            raise RuntimeError(f"No standard Linux x64 SDK packages found under {base_url}")
+
+        print(f"Discovered {len(entries)} Linux x64 SDK versions: {[item['sdk_version'] for item in entries]}", file=sys.stderr)
+        if skipped:
+            print(f"Skipped directories without a standard Linux x64 package: {skipped}", file=sys.stderr)
+        print("matrix_json=" + json.dumps({"include": entries}, separators=(",", ":")))
+        PY

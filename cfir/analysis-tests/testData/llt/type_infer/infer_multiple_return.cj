@@ -23,7 +23,7 @@ func test2<T>(): Unit where T <: I<T> {
     if (true) {
         return <!RETURN_TYPE_MISMATCH!>B<Int64>()<!>
     } else if (false) {
-        return <!RETURN_TYPE_MISMATCH!>1<!>
+        return <!CANNOT_CONVERT_LITERAL!>1<!>
     } else {
         return ()
     }

@@ -64,6 +64,13 @@ internal fun com.intellij.psi.PsiElement.rawIdentifierTokenText(): String? {
 /**
  * 将 PSI 类型引用转换为未解析的 CFIR 类型引用。
  *
+ * 对齐 Kotlin `KtTypeReference.toFirType`（`PsiRawFirBuilder.kt:2795-2907`）的三分法：
+ * - 类型注解整体缺席（调用方没有类型节点）⇒ implicit type ref；
+ * - 类型节点存在但类型元素缺失（语法写坏，官方 `InvalidType`）⇒ error type ref，
+ *   与 Kotlin 的 `FirErrorTypeRef` 同形；该错误由解析阶段已经上报，CFIR 侧不再重复报
+ *   （见 [RawCfirTypeDiagnostics.invalidTypeDiagnostic]）；
+ * - 其余按具体类型元素分派。
+ *
  * @receiver 待转换的 PSI 类型引用；为 null 时生成 implicit type ref。
  * @param toSource PSI 元素到 CFIR source element 的映射函数。
  * @return raw 阶段未解析的 [CfirTypeRef]。
@@ -76,7 +83,7 @@ internal fun CjTypeReference?.toCfirOrImplicitTypeRef(
         ?: return buildErrorTypeRef {
             source = this@toCfirOrImplicitTypeRef.toCjSourceElementOrNull(toSource)
             typeUseOrigin = org.cangnova.cangjie.cfir.types.CfirTypeRefOrigin.SOURCE
-            diagnostic = ConeSimpleDiagnostic("Malformed type reference: missing type element")
+            diagnostic = RawCfirTypeDiagnostics.invalidTypeDiagnostic()
         }
     return typeElement.toCfirTypeRef(this, toSource)
 }

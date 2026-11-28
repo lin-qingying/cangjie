@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.entrypoint.session
 import org.cangnova.cangjie.cfir.resolve.providers.symbolProvider
 
 import org.cangnova.cangjie.cfir.SessionConfiguration
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.deserialization.ModuleDataProvider
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
@@ -11,7 +12,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
+import org.cangnova.cangjie.cfir.serialization.deserialize.CjoDeserializationMode
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
+import org.cangnova.cangjie.cfir.source.CfirImportedSourceGraphProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.registerTypeAwareSupertypeComponents
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
@@ -129,8 +132,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     /**
      * 创建默认普通库会话。
      *
-     * 默认实现始终注册 [CfirBuiltinSymbolProvider]；当 [Context.cjoManager] 存在时，同时注册
-     * [CfirDeserializedSymbolProvider] 用于读取 CJO 依赖符号。
+     * 共享库会话提供已明确 owner 的 builtin 基础；CJO 会话中的 primitive facade 则属于
+     * 实际 std.core snapshot 的模块，与该 metadata reader 共用同一 factory。
      */
     fun createLibrarySession(
         sharedLibrarySession: CfirSession,
@@ -147,20 +150,23 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
             extensionRegistrars,
             createProviders = { session, cangjieScopeProvider ->
                 buildList {
-                    // Prefer declarations from CJO; the builtin provider is synthetic fallback.
+                    // 先由实际 CJO 路径确定模块，不能把 regular-dependencies 组件当作 std.core owner。
                     context.cjoManager?.let { manager ->
-                        add(
-                            CfirDeserializedSymbolProvider(
-                                session = session,
-                                cjoManager = manager,
-                                cangjieScopeProvider = cangjieScopeProvider,
-                                libraryModuleData = moduleDataProvider.regularDependenciesModuleData,
-                                moduleDataProvider = moduleDataProvider,
-                            ).also { session.register(org.cangnova.cangjie.cfir.source.CfirImportedSourceGraphProvider::class, it) }
+                        val metadataProvider = CfirDeserializedSymbolProvider(
+                            session = session,
+                            cjoManager = manager,
+                            cangjieScopeProvider = cangjieScopeProvider,
+                            libraryModuleData = moduleDataProvider.regularDependenciesModuleData,
+                            moduleDataProvider = moduleDataProvider,
                         )
+                        session.register(CfirImportedSourceGraphProvider::class, metadataProvider)
+                        add(metadataProvider)
+                        metadataProvider.getOwnPackageContext(
+                            StandardNames.FqNames.core.asString(), CjoDeserializationMode.FULL,
+                        )?.let { core ->
+                            add(CfirBuiltinSymbolProvider(core.moduleData.session, core.moduleData))
+                        }
                     }
-
-                    add(CfirBuiltinSymbolProvider(session))
 
                     addAll(context.additionalLibraryProviders(session, moduleDataProvider, cangjieScopeProvider))
                 }
@@ -218,7 +224,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     ): List<CfirSymbolProvider> {
         return buildList {
             addAll(context.additionalSharedProviders(session, moduleData, scopeProvider))
-            add(CfirBuiltinSymbolProvider(session))
+            add(CfirBuiltinSymbolProvider(session, moduleData))
         }
     }
 

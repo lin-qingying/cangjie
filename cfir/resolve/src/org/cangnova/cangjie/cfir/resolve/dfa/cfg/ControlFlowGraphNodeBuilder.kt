@@ -1,3 +1,5 @@
+@file:OptIn(CfgInternals::class)
+
 package org.cangnova.cangjie.cfir.resolve.dfa.cfg
 
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -122,6 +124,12 @@ fun ControlFlowGraphBuilder.createFieldInitializerEnterNode(fir: CfirFieldVariab
 /** 创建字段初始化器出口节点。 */
 fun ControlFlowGraphBuilder.createFieldInitializerExitNode(fir: CfirFieldVariable): FieldInitializerExitNode =
     FieldInitializerExitNode(currentGraph, fir, levelCounter)
+/** 创建 retained 资源 initializer 的实际根节点。 */
+fun ControlFlowGraphBuilder.createResourceInitializerEnterNode(fir: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable): ResourceInitializerEnterNode =
+    ResourceInitializerEnterNode(currentGraph, fir, levelCounter)
+/** 创建 retained 资源 initializer 的实际根出口。 */
+fun ControlFlowGraphBuilder.createResourceInitializerExitNode(fir: org.cangnova.cangjie.cfir.declarations.CfirResourceVariable): ResourceInitializerExitNode =
+    ResourceInitializerExitNode(currentGraph, fir, levelCounter)
 
 /** 创建 value parameter 解析入口节点。 */
 fun ControlFlowGraphBuilder.createEnterValueParameterNode(fir: CfirValueParameter): EnterValueParameterNode =
@@ -158,11 +166,11 @@ fun ControlFlowGraphBuilder.createSplitPostponedLambdasNode(
     fir: CfirStatement,
     lambdas: List<CfirFunction>,
 ): SplitPostponedLambdasNode =
-    SplitPostponedLambdasNode(currentGraph, fir, lambdas, levelCounter)
+    SplitPostponedLambdasNode(currentGraph, fir, lambdas, levelCounter).also { registerFunctionCallNode(it) }
 
 /** 创建 postponed lambda 出口合并节点。 */
 fun ControlFlowGraphBuilder.createMergePostponedLambdaExitsNode(fir: CfirElement): MergePostponedLambdaExitsNode =
-    MergePostponedLambdaExitsNode(currentGraph, fir, levelCounter)
+    MergePostponedLambdaExitsNode(currentGraph, fir, levelCounter).also { registerFunctionCallNode(it) }
 
 // ----------------------------------- Block -----------------------------------
 
@@ -248,9 +256,17 @@ fun ControlFlowGraphBuilder.createMatchSyntheticElseBranchNode(fir: CfirMatchExp
 fun ControlFlowGraphBuilder.createIfEnterNode(fir: CfirIfExpression): IfEnterNode =
     IfEnterNode(currentGraph, fir, levelCounter)
 
-/** 创建条件真/假分支的独立入口。 */
-fun ControlFlowGraphBuilder.createIfBranchResultEnterNode(fir: CfirIfExpression, isThenBranch: Boolean): IfBranchResultEnterNode =
-    IfBranchResultEnterNode(currentGraph, fir, isThenBranch, levelCounter)
+/** 创建真实条件的分叉节点。 */
+fun ControlFlowGraphBuilder.createIfConditionExitNode(fir: CfirIfExpression): IfConditionExitNode =
+    IfConditionExitNode(currentGraph, fir, levelCounter)
+
+/** 创建 then/else 的独立入口，不为缺失 else 造 AST。 */
+fun ControlFlowGraphBuilder.createIfBranchResultEnterNode(fir: CfirIfExpression, isThen: Boolean): IfBranchResultEnterNode =
+    IfBranchResultEnterNode(currentGraph, fir, isThen, levelCounter)
+
+/** 创建 then/else 的独立正常出口。 */
+fun ControlFlowGraphBuilder.createIfBranchResultExitNode(fir: CfirIfExpression, isThen: Boolean): IfBranchResultExitNode =
+    IfBranchResultExitNode(currentGraph, fir, isThen, levelCounter)
 
 /** 创建 if 表达式出口节点。 */
 fun ControlFlowGraphBuilder.createIfExitNode(fir: CfirIfExpression): IfExitNode =
@@ -432,22 +448,22 @@ fun ControlFlowGraphBuilder.createQualifiedAccessNode(fir: CfirQualifiedAccessEx
 
 /** 创建函数调用参数列表入口节点。 */
 fun ControlFlowGraphBuilder.createFunctionCallArgumentsEnterNode(fir: CfirFunctionCall): FunctionCallArgumentsEnterNode =
-    FunctionCallArgumentsEnterNode(currentGraph, fir, levelCounter)
+    FunctionCallArgumentsEnterNode(currentGraph, fir, levelCounter).also { registerFunctionCallNode(it) }
 
 /** 创建函数调用参数列表出口节点，并记录显式接收者的出口节点。 */
 fun ControlFlowGraphBuilder.createFunctionCallArgumentsExitNode(
     fir: CfirFunctionCall,
     explicitReceiverExitNode: CFGNode<*>,
 ): FunctionCallArgumentsExitNode =
-    FunctionCallArgumentsExitNode(currentGraph, fir, explicitReceiverExitNode, levelCounter)
+    FunctionCallArgumentsExitNode(currentGraph, fir, explicitReceiverExitNode, levelCounter).also { registerFunctionCallNode(it) }
 
 /** 创建函数调用 callee 入口节点。 */
 fun ControlFlowGraphBuilder.createFunctionCallEnterNode(fir: CfirFunctionCall): FunctionCallEnterNode =
-    FunctionCallEnterNode(currentGraph, fir, levelCounter)
+    FunctionCallEnterNode(currentGraph, fir, levelCounter).also { registerFunctionCallNode(it) }
 
 /** 创建函数调用出口节点。 */
 fun ControlFlowGraphBuilder.createFunctionCallExitNode(fir: CfirFunctionCall): FunctionCallExitNode =
-    FunctionCallExitNode(currentGraph, fir, levelCounter)
+    FunctionCallExitNode(currentGraph, fir, levelCounter).also { registerFunctionCallNode(it) }
 
 // ----------------------------------- Variable (local let/var) -----------------------------------
 

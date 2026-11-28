@@ -1,7 +1,10 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+
 import org.cangnova.cangjie.analysis.api.cfir.*
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
@@ -12,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassKind
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaModifierExplicitness
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
@@ -104,7 +108,10 @@ internal class CaCfirClassSymbol private constructor(
      * class-like 可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion { status?.isVisibilityExplicit == true }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * class-like modality。
@@ -116,7 +123,10 @@ internal class CaCfirClassSymbol private constructor(
      * class-like modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = withValidityAssertion { status?.isModalityExplicit == true }
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicModalityExplicitness() }
 
     /**
      * class-like 的 classId。
@@ -146,15 +156,30 @@ internal class CaCfirClassSymbol private constructor(
 
     /**
      * class-like 的公开类别。
+     *
+     * 无法判定时失败；需要「不确定就返回 null」的调用方请用 [classKindOrNull]。
      */
     override val classKind: CaClassKind
+        get() = classKindOrNull ?: error("Class kind is unavailable for `${name.asString()}`")
+
+    /**
+     * class-like 的公开类别；符号不可恢复或出现未分类形态时返回 `null`。
+     */
+    override val classKindOrNull: CaClassKind?
         get() = withValidityAssertion {
-            when (cfirSymbol) {
+            when (val symbol = cfirSymbolOrNull) {
+                null -> null
                 is CfirClassSymbol -> CaClassKind.CLASS
                 is CfirInterfaceSymbol -> CaClassKind.INTERFACE
                 is org.cangnova.cangjie.cfir.symbols.CfirStructSymbol -> CaClassKind.STRUCT
                 is org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol -> CaClassKind.ENUM
-                else -> error("Unsupported class-like symbol `${cfirSymbol::class.simpleName}`")
+                // primitive 的合成 class-like 是名称解析与 qualifier 查找的正常形态，
+                // 不是错误路径；Analysis 公开层必须能区分它而不是抛错。
+                is org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol -> CaClassKind.PRIMITIVE
+                else -> null.also {
+                    // 未分类形态是缺陷而不是环境状态：留下可检索的日志，同时让展示层继续工作。
+                    LOG.warn("Unsupported class-like CFIR symbol: ${symbol::class.simpleName}, symbol=$symbol")
+                }
             }
         }
 
@@ -245,7 +270,10 @@ internal class CaCfirTypeAliasSymbol private constructor(
      * typealias 可见性是否显式声明。
      */
     override val isVisibilityExplicit: Boolean
-        get() = withValidityAssertion { status?.isVisibilityExplicit == true }
+        get() = visibilityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val visibilityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicVisibilityExplicitness() }
 
     /**
      * typealias modality。
@@ -257,7 +285,10 @@ internal class CaCfirTypeAliasSymbol private constructor(
      * typealias modality 是否显式声明。
      */
     override val isModalityExplicit: Boolean
-        get() = withValidityAssertion { status?.isModalityExplicit == true }
+        get() = modalityExplicitness == CaModifierExplicitness.EXPLICIT
+
+    override val modalityExplicitness: CaModifierExplicitness
+        get() = withValidityAssertion { status.asPublicModalityExplicitness() }
 
     /**
      * typealias 的 classId。
@@ -310,3 +341,8 @@ internal class CaCfirTypeAliasSymbol private constructor(
 
     override fun hashCode(): Int = psiOrSymbolHashCode()
 }
+
+/**
+ * class-like 符号形态判定的日志对象。
+ */
+private val LOG: Logger = Logger.getInstance("org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbols")

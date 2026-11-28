@@ -31,36 +31,37 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeSources
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
-import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
-import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
-import org.cangnova.cangjie.cfir.resolve.providers.prepareExtendMemberTypeMapping
-import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendMemberPeerPreparationInput
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
-import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerFacts
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.declarationTypeArguments
-import org.cangnova.cangjie.cfir.types.extendTargetKey
-import org.cangnova.cangjie.cfir.types.containsErrorType
-import org.cangnova.cangjie.cfir.types.generateGenericTypeMapping
-import org.cangnova.cangjie.type.AbstractTypeChecker
-import org.cangnova.cangjie.cfir.resolve.toSymbol
-import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
-import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.resolve.providers.getDeclarationPackage
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
-import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendMemberPeerPreparationInput
 import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeDescriptor
 import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.resolve.providers.getDeclarationPackage
+import org.cangnova.cangjie.cfir.resolve.providers.isBareOrDeclarationSelfTypeOf
+import org.cangnova.cangjie.cfir.resolve.providers.prepareExtendMemberTypeMapping
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.scopes.CfirMemberScopeOwner
+import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirFunctionInstantiationScope
 import org.cangnova.cangjie.cfir.scopes.CfirFunctionInstantiationTable
 import org.cangnova.cangjie.cfir.scopes.CfirFunctionMemberTableKind
+import org.cangnova.cangjie.cfir.scopes.CfirMemberScopeOwner
+import org.cangnova.cangjie.cfir.scopes.CfirPotentialDirectExtendCallableScope
 import org.cangnova.cangjie.cfir.scopes.CfirStoredFunctionMember
 import org.cangnova.cangjie.cfir.scopes.instantiationExtendOwners
 import org.cangnova.cangjie.cfir.scopes.instantiationRelatedPreparedMemberExtends
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerFacts
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.containsErrorType
+import org.cangnova.cangjie.cfir.types.declarationTypeArguments
+import org.cangnova.cangjie.cfir.types.extendTargetKey
+import org.cangnova.cangjie.cfir.types.generateGenericTypeMapping
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenanceScope
@@ -82,8 +83,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
-import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhaseRecursively
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -140,7 +142,7 @@ class CfirExtendMemberScope internal constructor(
     /** 普通查找无此事实；实例化发布表必须由实际 nominal/extend 声明给出 owner。 */
     private val instantiationOwner: CfirDeclaration? = scopeOwner.extendOwner,
 ) : CfirTypeScope(), CfirCjmpMemberSubstitutorProvider, CfirFunctionInheritanceScope, CfirFunctionInstantiationScope,
-    CfirCallableLookupProvenanceScope, CfirDeclarationInheritanceScope {
+    CfirCallableLookupProvenanceScope, CfirDeclarationInheritanceScope, CfirPotentialDirectExtendCallableScope {
 
     /** 一个实际 extend owner 的冻结成员输入，包含参数上界和原始来源引用。 */
     internal data class OwnerInput(
@@ -829,6 +831,58 @@ class CfirExtendMemberScope internal constructor(
                 ),
             )
         }
+    }
+
+    /**
+     * 按 K2 CDoc 的候选协议，枚举该 receiver target 上的直接成员，暂不做适用性过滤。
+     *
+     * 返回值保留 extend 来源，调用方必须完成 fresh-variable 类型关系与 use-site 可见性检查；
+     * 运行期普通成员查询继续使用 [memberIndex] 的严格候选集合。
+     */
+    override fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        val shadowed = if (memberScopeView != CfirCjmpMemberScopeView.RAW && session.isCjmpSpecificCompilationEnabled()) {
+            scopeInput.candidates.asSequence().map { it.extend }
+                .filter { it.isCjmpMatchingCandidate(CfirCjmpDeclarationRole.SPECIFIC) }
+                .flatMap { specific -> cjmpMemberSnapshot(specific).commonCounterpartsFor(specific).asSequence() }
+                .map { it.symbol }.toSet()
+        } else {
+            emptySet()
+        }
+        for ((extend, _) in scopeInput.candidates) {
+            if (extend === excludingExtend || !scopeOwner.includesDirectExtend(extend) || extend.symbol in shadowed) continue
+
+            for (declaration in scopeInput.owners.getValue(extend).members) {
+                if (!scopeOwner.includesPrivateMembersFrom(extend) &&
+                    declaration is CfirMemberDeclaration &&
+                    declaration.status.visibility == Visibilities.Private
+                ) continue
+                val symbol = when (declaration) {
+                    is CfirNamedFunction -> declaration.symbol.takeIf { declaration.callableNameOrNull() == name }
+                    is CfirProperty -> declaration.symbol.takeIf { declaration.name == name }
+                    is CfirFieldVariable -> declaration.symbol.takeIf { declaration.name == name }
+                    else -> null
+                } ?: continue
+                val candidate = CfirCallableWithLookupProvenance(
+                    symbol = symbol,
+                    provenance = CfirCallableLookupProvenance.directExtendMember(extend),
+                )
+                if (emitted.add(candidate)) processor(candidate)
+            }
+        }
+    }
+
+    /**
+     * 按名称处理 extend 变量。
+     *
+     * 与类声明成员作用域同因：索引已持有变量，只透出 `processCallablesByName`
+     * 会让按变量族查询的调用方拿不到 extend 引入的变量成员。
+     */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        memberIndex.variables[name]?.forEach(processor)
     }
 
     /**

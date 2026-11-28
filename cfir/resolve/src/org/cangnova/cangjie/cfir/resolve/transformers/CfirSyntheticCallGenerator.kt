@@ -35,14 +35,21 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildTypeParameter
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
+import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.lambdaParameterInferenceFailedAtDefinition
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.references.CfirStubReference
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCallCopy
@@ -52,16 +59,20 @@ import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.hasUninferredLambdaParameterType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithExistingCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.processCandidatesAndPostponedAtoms
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.visitors.transformSingle
@@ -86,9 +97,9 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * 生成只参与解析流水线的合成调用。
  *
- * 对齐 Kotlin FIR `FirSyntheticCallGenerator`：顶层 lambda 先被包装成
- * `accept(argument: expectedOrAny)` 形态，再复用普通候选、实参检查、
- * postponed lambda completion 与结果写回，而不是在 lambda checker 中放行。
+ * 对齐 Kotlin FIR `FirSyntheticCallGenerator`：顶层 lambda 的 accept 与控制流分支的 select
+ * 都由真实函数签名、CandidateFactory、实参检查、postponed completion 和正式结果 writer 处理。
+ * 控制流 select 由原表达式承载，不在运行时 CFG 中增加函数调用。
  */
 class CfirSyntheticCallGenerator(
     /** body resolve transformer 共享组件。 */
@@ -129,6 +140,8 @@ class CfirSyntheticCallGenerator(
             calleeReference = reference
             this.argumentList = argumentList
         }
+        // synthetic accept 的 carrier 由本构造入口登记；retained PRIVATE 队列不能把它当作外来调用。
+        components.context.implicitTypeComputationScope?.registerDerivedElement(anonymousFunctionExpression, fakeCall)
 
         components.dataFlowAnalyzer.enterCallArguments(fakeCall, argumentList.arguments)
         components.dataFlowAnalyzer.enterAnonymousFunctionExpression(anonymousFunctionExpression)
@@ -136,10 +149,15 @@ class CfirSyntheticCallGenerator(
         components.dataFlowAnalyzer.enterFunctionCall(fakeCall)
 
         val preBodyResolveSnapshot = CfirResolutionSnapshot.capture(anonymousFunctionExpression)
+        val preRetainedSnapshot = components.context.implicitTypeComputationScope?.let { scope ->
+            scope.graph.captureReplayState(scope, anonymousFunctionExpression, preservedCallSite = anonymousFunctionExpression)
+        }
         val anonymousFunction = anonymousFunctionExpression.anonymousFunction
         if (parameterType == ConeAnyType &&
             (anonymousFunction.valueParameters.isNotEmpty() || !anonymousFunction.hasNestedAnonymousFunction())
         ) {
+            val implicitBodyResolveComputationSession = components.transformer.implicitBodyResolveComputationSession
+            val implicitBodyResolveSnapshot = preBodyResolveSnapshot.captureImplicitBodyCache(implicitBodyResolveComputationSession)
             // 官方 SynLamExpr 先收集函数体约束并重查，再在定义点决定未标注参数是否有解。
             // 无参数 lambda 只有在自身不含嵌套 lambda 时才需要这一步重查；嵌套 lambda
             // 的 body 已在首次 completion 中按其调用参数类型完成，恢复外层快照会把这些
@@ -160,10 +178,14 @@ class CfirSyntheticCallGenerator(
             val inferenceData = CfirLambdaBodyReinferenceData(
                 anonymousFunctionExpression,
                 preBodyResolveSnapshot,
+                implicitBodyResolveComputationSession,
+                implicitBodyResolveSnapshot,
+                preRetainedSnapshot,
             )
             inferenceData.reanalyzeTopLevelLambdaBodyIfPossible(reference)
         }
         val resultingCall = components.callCompleter.completeCall(fakeCall, ResolutionMode.ContextIndependent)
+        recordLambdaParameterInferenceOutcome(anonymousFunctionExpression.anonymousFunction)
         (resultingCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
             ?.let { diagnostic ->
                 anonymousFunctionExpression.restoreActualTypeAfterSyntheticTypeMismatch(diagnostic)
@@ -171,6 +193,23 @@ class CfirSyntheticCallGenerator(
 
         components.dataFlowAnalyzer.exitFunctionCall(resultingCall, callCompleted = true)
         return resultingCall.argumentList.arguments.single()
+    }
+
+    /**
+     * 固化 lambda 定义点的形参推断结论。
+     *
+     * 合成外层调用是 CFIR 承载官方 `SynLamExpr` / `SolveLamExprParamTys` 的位置：官方在
+     * lambda 自身合成完成时决定省略类型形参能否解出，之后语句产生的约束（例如 `g(i)`
+     * 反解同一个 placeholder）不改变该结论。CFIR 的解析会让后续约束改写形参类型，
+     * 因此这里只按第一次完成的结果写一次事实，供 checker 消费，避免用最终类型反推。
+     */
+    private fun recordLambdaParameterInferenceOutcome(anonymousFunction: CfirAnonymousFunction) {
+        if (anonymousFunction.lambdaParameterInferenceFailedAtDefinition != null) return
+        val omittedParameters = anonymousFunction.valueParameters
+            .filter { it.hasOmittedLambdaParameterType() }
+        if (omittedParameters.isEmpty()) return
+        anonymousFunction.lambdaParameterInferenceFailedAtDefinition =
+            omittedParameters.any { it.hasUninferredLambdaParameterType() }
     }
 
     /**
@@ -190,9 +229,10 @@ class CfirSyntheticCallGenerator(
             candidateDiagnostic is ArgumentTypeMismatch && candidateDiagnostic.argument === this
         } as? ArgumentTypeMismatch ?: return
 
-        val substitutor = candidate.system.currentStorage()
-            .buildCurrentSubstitutor(session.typeContext, emptyMap())
-            .asCone()
+        // FULL 后只借用原 candidate 的只读完成快照，不能读取会触发 rebase 的 currentStorage。
+        val substitutor = candidate.withConstraintSystemForCompletionResults { system ->
+            system.captureStorage().buildCurrentSubstitutor(session.typeContext, emptyMap()).asCone()
+        }
         val actualType = substitutor.substituteOrSelf(mismatch.actualType)
         anonymousFunction.replaceTypeRef(
             actualType.toCfirResolvedTypeRef(anonymousFunction.typeRef.source, anonymousFunction.typeRef),
@@ -214,9 +254,9 @@ class CfirSyntheticCallGenerator(
         // 必须再重查一遍，否则体内成员访问会停在形参未知时的歧义结果上。
         var remainingPasses = MAX_LAMBDA_REINFER_PASSES
         while (remainingPasses-- > 0) {
-            val parameterTypesBeforePass = lambda.currentValueParameterTypes()
+            val parameterTypesBeforePass = lambda.currentInferredBodyTypes()
             if (!runLambdaBodyReinferPass(reference)) return
-            if (!lambda.currentValueParameterTypes().newlyDeterminedComparedTo(parameterTypesBeforePass)) return
+            if (!lambda.currentInferredBodyTypes().newlyDeterminedComparedTo(parameterTypesBeforePass)) return
         }
     }
 
@@ -232,20 +272,51 @@ class CfirSyntheticCallGenerator(
         val candidate = reference.candidate
         val storage = candidate.system.currentStorage()
         val substitutor = storage.buildCurrentSubstitutor(session.typeContext, emptyMap()).asCone()
+        // returnStatements 会在恢复时变动，先冻结旧 body 的实际 AST 域；外部 receiver/实参不被撤权。
+        val previousBodyElements = java.util.Collections.newSetFromMap(
+            java.util.IdentityHashMap<CfirElement, Boolean>(),
+        )
+        lambdaExpression.anonymousFunction.body?.accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (previousBodyElements.add(element)) element.acceptChildren(this)
+            }
+        })
+        val previousBodyCandidates = java.util.Collections.newSetFromMap(
+            java.util.IdentityHashMap<Candidate, Boolean>(),
+        )
+        (candidate.postponedPCLACalls.toList() + candidate.postponedAtoms.toList()).forEach { atom ->
+            atom.processCandidatesAndPostponedAtoms(
+                { previous ->
+                    if (previous !== candidate && previous.callInfo.callSite in previousBodyElements) {
+                        previousBodyCandidates += previous
+                    }
+                },
+                {},
+            )
+        }
         val applied = applyCompletionResult(
             substitutor = substitutor,
             restoreBodyResolveState = true,
+            cacheOwner = components.transformer.implicitBodyResolveComputationSession,
+            actualSystem = candidate.system,
         )
         if (!applied) return false
 
-        candidate.resetLambdaBodyResolutionResults()
+        candidate.resetLambdaBodyResolutionResults(previousBodyCandidates)
         val expression = lambdaExpression
         val lambda = expression.anonymousFunction
-        val pclaInferenceSession = CfirPCLAInferenceSession(
-            candidate,
-            session.inferenceComponents,
-            statementProcessingOwnerLambda = lambda,
-        )
+        // 重查继续使用同一 synthetic Candidate 的队列，继承实际 enclosing 的类型变量 constructor authority；
+        // 首轮和重查都不能把 body 调用提前移交给 enclosing Candidate。
+        val enclosingPclaSession = components.context.inferenceSession as? CfirPCLAInferenceSession
+        val pclaInferenceSession = if (enclosingPclaSession != null) {
+            enclosingPclaSession.createChildSession(candidate, lambda)
+        } else {
+            CfirPCLAInferenceSession(
+                candidate,
+                session.inferenceComponents,
+                statementProcessingOwnerLambda = lambda,
+            )
+        }
         components.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
             components.context.withInferenceSession(pclaInferenceSession) {
                 components.transformer.declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
@@ -267,13 +338,25 @@ class CfirSyntheticCallGenerator(
         applyCompletionResult(
             substitutor = completedSubstitutor,
             restoreBodyResolveState = false,
+            cacheOwner = components.transformer.implicitBodyResolveComputationSession,
+            actualSystem = candidate.system,
         )
         return true
     }
 
     /** lambda 各值形参当前的类型（未解析时为 null）。 */
-    private fun org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction.currentValueParameterTypes():
-            List<ConeCangJieType?> = valueParameters.map { it.returnTypeRef.coneTypeOrNull }
+    private fun org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction.currentInferredBodyTypes(): List<ConeCangJieType?> {
+        val types = valueParameters.map { it.returnTypeRef.coneTypeOrNull }.toMutableList()
+        body?.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
+                if (element is org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable) {
+                    types += element.returnTypeRef.coneTypeOrNull
+                }
+                element.acceptChildren(this)
+            }
+        }, null)
+        return types
+    }
 
     /**
      * 是否有形参从「仍含未定推断变量」变成了完全确定的类型。
@@ -282,12 +365,11 @@ class CfirSyntheticCallGenerator(
      * 继续重查不会产生新信息，只会重复劳动甚至无法终止。
      */
     private fun List<ConeCangJieType?>.newlyDeterminedComparedTo(previous: List<ConeCangJieType?>): Boolean {
-        if (size != previous.size) return false
+        if (size != previous.size) return true
         return indices.any { index ->
             val before = previous[index]
             val after = this[index]
-            before != null && after != null &&
-                    before.contains { it is ConeTypeVariableType } &&
+            after != null && (before == null || before.contains { it is ConeTypeVariableType }) &&
                     !after.contains { it is ConeTypeVariableType }
         }
     }
@@ -314,6 +396,116 @@ class CfirSyntheticCallGenerator(
         lambda.replaceReturnTypeRef(
             bodyResultType.toCfirResolvedTypeRef(lambda.returnTypeRef.source, lambda.returnTypeRef),
         )
+    }
+
+    /**
+     * 对位 Kotlin generateCalleeForWhenExpression；真实 if 持有 select 候选，分支保持原 AST。
+     * 实参 atom 将各自候选系统接入真正父调用，select 不产生额外运行时 call exit。
+     */
+    fun generateCalleeForIfExpression(
+        ifExpression: CfirIfExpression,
+        context: ResolutionContext,
+        resolutionMode: ResolutionMode,
+    ): CfirIfExpression {
+        check(ifExpression.calleeReference === CfirStubReference) { "If select was resolved twice" }
+        val branches = listOf(ifExpression.thenBranch, checkNotNull(ifExpression.elseBranch))
+        val name = Name.special("<synthetic-if-select>")
+        val function = generateSyntheticSelectFunction(ifExpression, name, branches)
+        ifExpression.replaceCalleeReference(generateCalleeReferenceWithCandidate(
+            ifExpression, function, branches, name, context, resolutionMode,
+            CallKind.SyntheticSelect,
+            org.cangnova.cangjie.cfir.resolve.inference.CfirSyntheticCallRole.IF_SELECT,
+        ))
+        return ifExpression
+    }
+
+    /** 对位 Kotlin generateCalleeForWhenExpression：每个真实 match 分支体是 select 实参。 */
+    fun generateCalleeForMatchExpression(
+        matchExpression: CfirMatchExpression,
+        context: ResolutionContext,
+        resolutionMode: ResolutionMode,
+    ): CfirMatchExpression {
+        check(matchExpression.calleeReference === CfirStubReference) { "Match select was resolved twice" }
+        val branches = matchExpression.branches.map { it.body }
+        val name = Name.special("<synthetic-match-select>")
+        val function = generateSyntheticSelectFunction(matchExpression, name, branches)
+        matchExpression.replaceCalleeReference(generateCalleeReferenceWithCandidate(
+            matchExpression, function, branches, name, context, resolutionMode,
+            CallKind.SyntheticSelect,
+            org.cangnova.cangjie.cfir.resolve.inference.CfirSyntheticCallRole.MATCH_SELECT,
+        ))
+        return matchExpression
+    }
+
+    /** 对位 Kotlin generateCalleeForTryExpression：finally 不参加 try/catch 的结果 select。 */
+    fun generateCalleeForTryExpression(
+        tryExpression: CfirTryExpression,
+        context: ResolutionContext,
+        resolutionMode: ResolutionMode,
+    ): CfirTryExpression {
+        check(tryExpression.calleeReference === CfirStubReference) { "Try select was resolved twice" }
+        val branches = listOf(tryExpression.tryBlock) + tryExpression.catches.map { it.body }
+        val name = Name.special("<synthetic-try-select>")
+        val function = generateSyntheticSelectFunction(tryExpression, name, branches)
+        tryExpression.replaceCalleeReference(generateCalleeReferenceWithCandidate(
+            tryExpression, function, branches, name, context, resolutionMode,
+            CallKind.SyntheticSelect,
+            org.cangnova.cangjie.cfir.resolve.inference.CfirSyntheticCallRole.TRY_SELECT,
+        ))
+        return tryExpression
+    }
+
+    /** 对位 Kotlin generateSyntheticSelectTypeParameter，声明 T 与实际函数 symbol 绑定。 */
+    private fun generateSyntheticSelectTypeParameter(
+        functionSymbol: CfirNamedFunctionSymbol,
+        source: CjSourceElement?,
+    ): Pair<org.cangnova.cangjie.cfir.declarations.CfirTypeParameter, ConeCangJieType> {
+        val typeParameterSymbol = CfirTypeParameterSymbol()
+        val typeParameter = buildTypeParameter {
+            this.source = source
+            moduleData = session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+            attributes = CfirDeclarationAttributes.EMPTY
+            containingDeclarationSymbol = functionSymbol
+            symbol = typeParameterSymbol
+            name = Name.identifier("T")
+            bounds += ConeAnyType.toCfirResolvedTypeRef()
+        }
+        return typeParameter to ConeTypeParameterTypeImpl(typeParameterSymbol.toLookupTag())
+    }
+
+    /**
+     * 对位 Kotlin generateSyntheticSelectFunction；if、match、try 的全部值分支共享声明 T。
+     * CFIR 使用自身正式形参模型，按实际分支数构造形参，不把分支包装成运行时 Array。
+     */
+    private fun generateSyntheticSelectFunction(
+        callSite: CfirExpression,
+        name: Name,
+        branches: List<CfirExpression>,
+    ): org.cangnova.cangjie.cfir.declarations.CfirNamedFunction {
+        val functionSymbol = CfirNamedFunctionSymbol(CallableId(name))
+        val (typeParameter, returnType) = generateSyntheticSelectTypeParameter(functionSymbol, callSite.source)
+        return buildNamedFunction {
+            source = callSite.source
+            moduleData = session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = returnType.toCfirResolvedTypeRef()
+            typeParameters += typeParameter
+            branches.forEachIndexed { index, branch ->
+                valueParameters += buildSyntheticValueParameter(
+                    functionSymbol, Name.identifier("branch" + index), returnType, branch.source,
+                )
+            }
+            symbol = functionSymbol
+            this.name = name
+            isMut = false
+        }
     }
 
     /** 构造接受单个指定类型参数的合成函数候选引用。 */
@@ -348,7 +540,28 @@ class CfirSyntheticCallGenerator(
             this.name = name
             isMut = false
         }
-        val callInfo = generateCallInfo(callSite, name, listOf(argument), context)
+        return generateCalleeReferenceWithCandidate(
+            callSite, function, listOf(argument), name, context, ResolutionMode.ContextIndependent,
+            CallKind.Function,
+            org.cangnova.cangjie.cfir.resolve.inference.CfirSyntheticCallRole.LAMBDA_ACCEPT,
+        )
+    }
+
+    /** synthetic select/accept 共用真实 CandidateFactory、阶段 runner 和失败候选构造。 */
+    private fun generateCalleeReferenceWithCandidate(
+        callSite: CfirExpression,
+        function: org.cangnova.cangjie.cfir.declarations.CfirNamedFunction,
+        arguments: List<CfirExpression>,
+        name: Name,
+        context: ResolutionContext,
+        resolutionMode: ResolutionMode,
+        callKind: CallKind,
+        role: org.cangnova.cangjie.cfir.resolve.inference.CfirSyntheticCallRole,
+    ): CfirNamedReferenceWithCandidate {
+        context.bodyResolveContext.implicitTypeComputationScope?.let { scope ->
+            scope.graph.registerSyntheticSymbol(scope, callSite, function.symbol, role)
+        }
+        val callInfo = generateCallInfo(callSite, name, arguments, context, resolutionMode, callKind)
         val candidate = CandidateFactory(context, callInfo).createCandidate(
             callInfo = callInfo,
             symbol = function.symbol,
@@ -393,7 +606,7 @@ class CfirSyntheticCallGenerator(
         return found
     }
 
-    /** 构造合成 accept 函数的唯一值参数。 */
+    /** 构造 synthetic accept/select 的值参数，owner 与声明类型都来自真实合成函数。 */
     private fun buildSyntheticValueParameter(
         ownerSymbol: CfirNamedFunctionSymbol,
         parameterName: Name,
@@ -425,9 +638,11 @@ class CfirSyntheticCallGenerator(
         name: Name,
         arguments: List<CfirExpression>,
         context: ResolutionContext,
+        resolutionMode: ResolutionMode = ResolutionMode.ContextIndependent,
+        callKind: CallKind = CallKind.Function,
     ): CallInfo = CallInfo(
         callSite = callSite,
-        callKind = CallKind.Function,
+        callKind = callKind,
         name = name,
         explicitReceiver = null,
         arguments = arguments,
@@ -436,7 +651,7 @@ class CfirSyntheticCallGenerator(
         session = session,
         containingFile = components.file,
         containingDeclarations = components.containingDeclarations,
-        resolutionMode = ResolutionMode.ContextIndependent,
+        resolutionMode = resolutionMode,
     )
 
     /** 判断类型是否为 Unit 或 Any，作为 synthetic 参数类型时无需保留具体期望类型。 */

@@ -99,11 +99,11 @@ class PatternStateKeeperTest {
             assertThrows(ProcessCanceledException::class.java) {
                 resolveWithKeeper(root, designation, BodyStateKeepers.PATTERN_VARIABLE) {
                     assertTrue(root.initializer is CfirLazyExpression)
-                    assertSame(initializer.call, binding.initializer)
+                    assertSame(root.initializer, binding.initializer)
                     root.replaceReturnTypeRef(completedType)
                     root.replaceInitializer(initializer.replacement)
+                    assertSame(initializer.replacement, binding.initializer)
                     binding.replaceReturnTypeRef(completedType)
-                    binding.replaceInitializer(initializer.replacement)
                     binding.resolveState = CfirResolvedToPhaseState(CfirResolvePhase.BODY_RESOLVE)
                     initializer.mutate()
                     throw ProcessCanceledException()

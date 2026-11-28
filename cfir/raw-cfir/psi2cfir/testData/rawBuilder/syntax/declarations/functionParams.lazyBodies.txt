@@ -1,0 +1,26 @@
+FILE: functionParams.cj
+    internal? func noParams(): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func unnamed(a: R|Int64|, b: R|String|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func named(x: R|Int64|, y: R|String|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func namedWithDefault(x: R|Int64| = INT(1)
+    , y: R|String| = STRING("d")
+    ): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func mixed(a: R|Int64|, b: R|String| = STRING("d")
+    , c: R|Bool| = BOOLEAN(true)
+    ): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func functionParam(f: R|(R|Int64|) -> R|Int64||, g: R|(R|Int64|, R|Int64|) -> R|Unit||): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func returns(): R|(R|Int64|) -> R|Int64|| {
+        <element: CfirLazyBlock>
+    }

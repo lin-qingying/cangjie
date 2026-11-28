@@ -4,53 +4,56 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
-import org.cangnova.cangjie.cfir.expressions.CfirCatch
-import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
-import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
-import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
-import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirTypeConversion
-import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
-import org.cangnova.cangjie.cfir.expressions.CfirOptionalExpression
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
+import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
-import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
-import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirOptionalExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirTypeConversion
+import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirResolvedBuiltinOperatorReference
 import org.cangnova.cangjie.cfir.resolve.body.CfirBuiltinOperatorResolver
-import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperatorOperation
+import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeStubType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
+import org.cangnova.cangjie.cfir.resolve.coalescingTargetType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.tupleLiteralTargetTypeOrNull
 import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
 import org.cangnova.cangjie.cfir.types.optionElementType
 import org.cangnova.cangjie.cfir.types.withArguments
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.resolve.tupleLiteralTargetTypeOrNull
-import org.cangnova.cangjie.cfir.resolve.coalescingTargetType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 
 /**
@@ -177,9 +180,23 @@ class IntegerLiteralAndOperatorApproximationTransformer(
         signature.parameterKinds.singleOrNull()?.let {
             call.replaceArgumentList(call.argumentList.transformArguments(this, operandTarget(it, false)))
         }
-        if (resultType != null) call.replaceConeTypeOrNull(resultType)
+        if (resultType != null && resultType != call.coneTypeOrNull) call.replaceConeTypeOrNull(resultType)
         CfirBuiltinOperatorResolver.completeResolution(call)
         return call
+    }
+
+    /**
+     * 对位 Kotlin 的具体字面量入口；generated visitor 不经 transformExpression 转发。
+     * 只收敛当前字面量的 ideal 类型，保留显式后缀、已固定类型和仍未完成的目标。
+     */
+    override fun transformLiteralExpression(literalExpression: CfirLiteralExpression, data: ConeCangJieType?): CfirExpression {
+        if (data?.contains { it is ConeTypeVariableType || it is ConeStubType || it is ConeErrorType } == true) {
+            return literalExpression
+        }
+        val actualType = literalExpression.coneTypeOrNull ?: return literalExpression
+        val approximatedType = actualType.approximateIntegerLiteralType(data)
+        if (approximatedType != actualType) literalExpression.replaceConeTypeOrNull(approximatedType)
+        return literalExpression
     }
 
     /** 递归处理表达式子节点，并按期望类型近似当前表达式结果类型。 */
@@ -268,11 +285,12 @@ class IntegerLiteralAndOperatorApproximationTransformer(
 
     /** 根据期望类型把 ideal literal 或 primitive ideal 类型近似为具体类型。 */
     private fun ConeCangJieType.approximateIntegerLiteralType(expectedType: ConeCangJieType?): ConeCangJieType {
+        val expandedExpectedType = expectedType?.fullyExpandedType(session)
         return when (this) {
-            is ConeIdealLiteralType -> BuiltinPrimitiveOperators.normalizePrimitiveOperand(expectedType)?.let { expected ->
+            is ConeIdealLiteralType -> BuiltinPrimitiveOperators.normalizePrimitiveOperand(expandedExpectedType)?.let { expected ->
                 IdealTypeResolver.resolveIfIdeal(checkNotNull(BuiltinPrimitiveOperators.normalizePrimitiveOperand(this)), expected)
             } ?: getApproximatedType()
-            is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this, BuiltinPrimitiveOperators.normalizePrimitiveOperand(expectedType))
+            is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this, BuiltinPrimitiveOperators.normalizePrimitiveOperand(expandedExpectedType))
             is ConeTupleType -> {
                 val targets = expectedType?.tupleLiteralTargetTypeOrNull(session)?.elementTypes
                     ?.takeIf { it.size == elementTypes.size }

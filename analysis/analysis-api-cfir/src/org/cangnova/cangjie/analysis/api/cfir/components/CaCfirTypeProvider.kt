@@ -3,8 +3,8 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
-import org.cangnova.cangjie.analysis.api.cfir.utils.cfirSymbol
 import org.cangnova.cangjie.analysis.api.components.CaTypeProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseTypeProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
@@ -12,10 +12,12 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
 import org.cangnova.cangjie.cfir.resolve.defaultType
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.psi.CjTypeReference
@@ -41,7 +43,12 @@ internal class CaCfirTypeProvider(
     override val CaClassLikeSymbol.defaultType: CaType
         get() = withValidityAssertion {
             with(analysisSession) {
-                val firSymbol = cfirSymbol
+                // 符号不可恢复时返回错误类型：`defaultType` 是对外非空属性，
+                // 它的「拿不到」必须表达成可传染的 error type，而不是异常。
+                val firSymbol = (this@defaultType as? CaCfirSymbol<*>)?.cfirSymbolOrNull
+                    ?: return@withValidityAssertion analysisSession.cfirSymbolBuilder.typeBuilder.buildType(
+                        ConeErrorType(ConeSimpleDiagnostic("default type is unavailable for this class-like symbol")),
+                    )
                 val defaultConeType = when (firSymbol) {
                     is CfirTypeParameterSymbol -> firSymbol.defaultType
                     is CfirClassLikeSymbol<*> -> firSymbol.defaultType()

@@ -1,0 +1,10 @@
+FILE: cfuncCallNamedParams.cj
+    internal? func apply(f: R|CFunc<R|(R|Int64|) -> R|Int32||>|, x: R|Int64|): R|Int32| {
+        RETURN {
+            UNSAFE {
+                FUNCTION_CALL(f) {
+                    NAMED_ACCESS(x)
+                }
+            }
+        }
+    }

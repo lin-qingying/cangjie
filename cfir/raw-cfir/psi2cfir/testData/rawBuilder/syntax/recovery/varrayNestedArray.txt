@@ -1,0 +1,50 @@
+FILE: varrayNestedArray.cj
+    internal? func nestedArray(): R|Unit| {
+        local? let a: R|VArray<R|Array<R|Int64|>|, 5>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    ARRAY_LITERAL {
+                        INT(1)
+                        INT(2)
+                        INT(3)
+                        INT(4)
+                        INT(5)
+                    }
+                    ARRAY_LITERAL {
+                        INT(6)
+                        INT(7)
+                        INT(8)
+                        INT(9)
+                        INT(10)
+                    }
+                    ARRAY_LITERAL {
+                        INT(11)
+                        INT(12)
+                        INT(13)
+                        INT(14)
+                        INT(15)
+                    }
+                    ARRAY_LITERAL {
+                        INT(16)
+                        INT(17)
+                        INT(18)
+                        INT(19)
+                        INT(20)
+                    }
+                    ARRAY_LITERAL {
+                        INT(21)
+                        INT(22)
+                        INT(23)
+                        INT(24)
+                        INT(25)
+                    }
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    indices:
+                        INT(0)
+                }
+    }

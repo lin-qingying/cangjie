@@ -16,7 +16,7 @@ dependencies {
     testFixturesApi(project(":common"))
     api(project(":common:diagnostics"))
 
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+    testImplementation(libs.kotlin.test.junit)
     testFixturesApi(project(":compiler:frontend"))
     testFixturesApi(project(":cfir:entrypoint"))
     testFixturesApi(project(":cfir:cfir-cones"))

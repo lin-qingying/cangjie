@@ -1,0 +1,4 @@
+FILE: rawStringEscapes.cj
+    internal? func f(name: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }

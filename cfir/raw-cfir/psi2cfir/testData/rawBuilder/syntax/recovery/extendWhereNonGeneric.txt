@@ -1,0 +1,14 @@
+FILE: extendWhereNonGeneric.cj
+    internal? struct Plain {
+        init()
+        internal? var x: R|Int64| = ...
+            initializer:
+                INT(0)
+    }
+    extend R|Plain| {
+        public func extra(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }

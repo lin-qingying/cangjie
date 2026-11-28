@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "name": "topLevelFunction",
+      "sectionTypes": ["ParametersSection", "ReturnsSection"],
+      "sectionTitles": ["Params", "Returns"],
+      "subjects": ["payload"],
+      "definitionText": "public func convert(local payload: Payload): Payload",
+      "summary": "Converts a payload."
+    },
+    {
+      "name": "classMember",
+      "sectionTypes": ["ThrowsSection", "SamplesSection"],
+      "sectionTitles": ["Throws", "Samples"],
+      "subjects": ["Failure", "sample.documentation.example"],
+      "definitionText": "public func run(): Unit",
+      "summary": "Runs the operation."
+    },
+    {
+      "name": "undocumentedDeclaration",
+      "sectionTypes": [],
+      "sectionTitles": [],
+      "subjects": [],
+      "definitionText": "public func undocumented(): Int64",
+      "summary": null
+    },
+    {
+      "name": "basicTypeInt64",
+      "sectionTypes": [],
+      "sectionTitles": [],
+      "subjects": [],
+      "definitionText": "Int64",
+      "summary": "Signed 64-bit integer with a range from -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807."
+    }
+  ]
+}

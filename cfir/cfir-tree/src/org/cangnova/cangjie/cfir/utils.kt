@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirModifierExplicitness
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
@@ -50,85 +51,6 @@ import org.cangnova.cangjie.util.wrapIntoSourceCodeAnalysisExceptionIfNeeded
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import kotlin.reflect.KClass
-
-/**
- * 对位 Kotlin FirDeclarationStatus.copy：签名副本保留原状态的 resolved 类型及全部仓颉状态事实。
- * raw 重建所用的 cloneDeclarationStatus 是另一项合同，不能把已解析声明复制回 raw 状态。
- */
-fun CfirDeclarationStatus.copy(
-    visibility: Visibility? = this.visibility,
-    modality: Modality? = this.modality,
-    isVisibilityExplicit: Boolean = this.isVisibilityExplicit,
-    isModalityExplicit: Boolean = this.isModalityExplicit,
-    isAbstractExplicit: Boolean = this.isAbstractExplicit,
-    isOverride: Boolean = this.isOverride,
-    isOperator: Boolean = this.isOperator,
-    isStatic: Boolean = this.isStatic,
-    isConst: Boolean = this.isConst,
-    isMut: Boolean = this.isMut,
-    isUnsafe: Boolean = this.isUnsafe,
-    isForeign: Boolean = this.isForeign,
-    isC: Boolean = this.isC,
-    isCommon: Boolean = this.isCommon,
-    isSpecific: Boolean = this.isSpecific,
-    isCommonWithDefault: Boolean = this.isCommonWithDefault,
-    isRedef: Boolean = this.isRedef,
-    isDefault: Boolean = this.isDefault,
-    isAbstract: Boolean = this.isAbstract,
-    isOpen: Boolean = this.isOpen,
-    isSealed: Boolean = this.isSealed,
-): CfirDeclarationStatus {
-    val newVisibility = visibility ?: this.visibility
-    val newModality = modality ?: this.modality
-    return if (this is CfirResolvedDeclarationStatus) {
-        buildResolvedDeclarationStatus {
-            source = this@copy.source
-            this.visibility = newVisibility
-            this.modality = checkNotNull(newModality)
-            this.isVisibilityExplicit = isVisibilityExplicit
-            this.isModalityExplicit = isModalityExplicit
-            this.isAbstractExplicit = isAbstractExplicit
-            this.isOverride = isOverride
-            this.isOperator = isOperator
-            this.isStatic = isStatic
-            this.isConst = isConst
-            this.isMut = isMut
-            this.isUnsafe = isUnsafe
-            this.isForeign = isForeign
-            this.isC = isC
-            this.isCommon = isCommon
-            this.isSpecific = isSpecific
-            this.isCommonWithDefault = isCommonWithDefault
-            this.isRedef = isRedef
-            this.isDefault = isDefault
-            this.isAbstract = isAbstract
-            this.isOpen = isOpen
-            this.isSealed = isSealed
-        }
-    } else {
-        CfirDeclarationStatusImpl(newVisibility, newModality).also { copied ->
-            copied.isVisibilityExplicit = isVisibilityExplicit
-            copied.isModalityExplicit = isModalityExplicit
-            copied.isAbstractExplicit = isAbstractExplicit
-            copied.isOverride = isOverride
-            copied.isOperator = isOperator
-            copied.isStatic = isStatic
-            copied.isConst = isConst
-            copied.isMut = isMut
-            copied.isUnsafe = isUnsafe
-            copied.isForeign = isForeign
-            copied.isC = isC
-            copied.isCommon = isCommon
-            copied.isSpecific = isSpecific
-            copied.isCommonWithDefault = isCommonWithDefault
-            copied.isRedef = isRedef
-            copied.isDefault = isDefault
-            copied.isAbstract = isAbstract
-            copied.isOpen = isOpen
-            copied.isSealed = isSealed
-        }
-    }
-}
 
 /**
  * 在分析 [element] 时运行 [block]，并通过 session 异常处理器包装异常。
@@ -356,4 +278,96 @@ internal fun CfirMemberDeclaration.resolvedStatus(): CfirResolvedDeclarationStat
     }
 
     return status
+}
+
+/** 复制声明状态并保留 resolved 身份；签名副本不能共享仍可变的源码状态。 */
+fun CfirDeclarationStatus.copy(
+    visibility: Visibility? = this.visibility,
+    modality: Modality? = this.modality,
+    isVisibilityExplicit: Boolean? = null,
+    isModalityExplicit: Boolean? = null,
+    isAbstractExplicit: Boolean = this.isAbstractExplicit,
+    isOverride: Boolean = this.isOverride,
+    isOperator: Boolean = this.isOperator,
+    isStatic: Boolean = this.isStatic,
+    isConst: Boolean = this.isConst,
+    isMut: Boolean = this.isMut,
+    isUnsafe: Boolean = this.isUnsafe,
+    isForeign: Boolean = this.isForeign,
+    isC: Boolean = this.isC,
+    isCommon: Boolean = this.isCommon,
+    isFromCommonPart: Boolean = this.isFromCommonPart,
+    isSpecific: Boolean = this.isSpecific,
+    isCommonWithDefault: Boolean = this.isCommonWithDefault,
+    isRedef: Boolean = this.isRedef,
+    isDefault: Boolean = this.isDefault,
+    isAbstract: Boolean = this.isAbstract,
+    isOpen: Boolean = this.isOpen,
+    isSealed: Boolean = this.isSealed,
+): CfirDeclarationStatus {
+    val newVisibility = visibility ?: this.visibility
+    val newModality = modality ?: this.modality
+    fun explicitnessOverride(explicit: Boolean?, original: CfirModifierExplicitness): CfirModifierExplicitness =
+        when (explicit) {
+            true -> CfirModifierExplicitness.EXPLICIT
+            false -> CfirModifierExplicitness.IMPLICIT
+            null -> original
+        }
+    val newVisibilityExplicitness = explicitnessOverride(isVisibilityExplicit, visibilityExplicitness)
+    val newModalityExplicitness = explicitnessOverride(isModalityExplicit, modalityExplicitness)
+    if (this is CfirResolvedDeclarationStatus) {
+        return buildResolvedDeclarationStatus {
+            source = this@copy.source
+            this.visibility = newVisibility
+            this.modality = checkNotNull(newModality)
+            visibilityExplicitness = newVisibilityExplicitness
+            modalityExplicitness = newModalityExplicitness
+            bodyPresence = this@copy.bodyPresence
+            isDeclarationFile = this@copy.isDeclarationFile
+            this.isVisibilityExplicit = isVisibilityExplicit ?: this@copy.isVisibilityExplicit
+            this.isModalityExplicit = isModalityExplicit ?: this@copy.isModalityExplicit
+            this.isAbstractExplicit = isAbstractExplicit
+            this.isOverride = isOverride
+            this.isOperator = isOperator
+            this.isStatic = isStatic
+            this.isConst = isConst
+            this.isMut = isMut
+            this.isUnsafe = isUnsafe
+            this.isForeign = isForeign
+            this.isC = isC
+            this.isCommon = isCommon
+            this.isFromCommonPart = isFromCommonPart
+            this.isSpecific = isSpecific
+            this.isCommonWithDefault = isCommonWithDefault
+            this.isRedef = isRedef
+            this.isDefault = isDefault
+            this.isAbstract = isAbstract
+            this.isOpen = isOpen
+            this.isSealed = isSealed
+        }
+    }
+    return CfirDeclarationStatusImpl(newVisibility, newModality).apply {
+        visibilityExplicitness = newVisibilityExplicitness
+        modalityExplicitness = newModalityExplicitness
+        bodyPresence = this@copy.bodyPresence
+        isDeclarationFile = this@copy.isDeclarationFile
+        this.isAbstractExplicit = isAbstractExplicit
+        this.isOverride = isOverride
+        this.isOperator = isOperator
+        this.isStatic = isStatic
+        this.isConst = isConst
+        this.isMut = isMut
+        this.isUnsafe = isUnsafe
+        this.isForeign = isForeign
+        this.isC = isC
+        this.isCommon = isCommon
+        this.isFromCommonPart = isFromCommonPart
+        this.isSpecific = isSpecific
+        this.isCommonWithDefault = isCommonWithDefault
+        this.isRedef = isRedef
+        this.isDefault = isDefault
+        this.isAbstract = isAbstract
+        this.isOpen = isOpen
+        this.isSealed = isSealed
+    }
 }

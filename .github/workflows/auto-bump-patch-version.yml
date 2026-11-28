@@ -41,12 +41,12 @@ jobs:
           minor="${BASH_REMATCH[2]}"
           patch="${BASH_REMATCH[3]}"
           suffix="${BASH_REMATCH[4]}"
-          next="${major}.${minor}.$((patch + 1))${suffix}"
+          next_version="${major}.${minor}.$((patch + 1))${suffix}"
 
-          awk -v next="$next" '
+          awk -v version="$next_version" '
             BEGIN { updated = 0 }
             /^cangjieVersion=/ {
-              print "cangjieVersion=" next
+              print "cangjieVersion=" version
               updated = 1
               next
             }

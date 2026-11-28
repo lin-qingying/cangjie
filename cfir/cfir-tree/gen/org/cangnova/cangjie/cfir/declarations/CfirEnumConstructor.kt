@@ -71,6 +71,8 @@ abstract class CfirEnumConstructor : CfirCallableDeclaration(), CfirFunctionBody
 
     abstract override fun replaceDeprecationsProvider(newDeprecationsProvider: DeprecationsProvider)
 
+    abstract override fun replaceDispatchReceiverType(newDispatchReceiverType: ConeSimpleCangJieType?)
+
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
     abstract override fun replaceValueParameters(newValueParameters: List<CfirValueParameter>)

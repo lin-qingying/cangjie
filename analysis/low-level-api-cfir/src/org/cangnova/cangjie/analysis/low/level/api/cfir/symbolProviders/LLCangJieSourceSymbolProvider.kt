@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveCompo
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.tolerateMissingCachedSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
@@ -25,13 +26,14 @@ import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 /**
@@ -50,10 +52,16 @@ internal class LLCangJieSourceSymbolProvider(
     declarationProviderFactory: (GlobalSearchScope) -> CangJieDeclarationProvider?,
 ) : LLCangJieSymbolProvider(session), LLMultiClassLikeSymbolProvider {
     /**
-     * 当前源码模块的内容搜索范围。
+     * 当前源码模块的**声明来源**搜索范围。
+     *
+     * 必须使用 [CaModule.baseContentScope]（仅本模块源根），而不是 [CaModule.contentScope]：
+     * `contentScope` 已被 content-scope refiner 扩展到依赖模块的文件，
+     * 若用它做声明索引，本模块的符号提供器会查到依赖模块（如 `import stdx.*` 的目标）
+     * 的声明，再用**本模块**的 `LLCfirModuleResolveComponents` 去构建其 CFIR，
+     * 触发 `Modules are inconsistent`（跨模块源码依赖场景必然出现）。
      */
     private val searchScope: GlobalSearchScope
-        get() = moduleComponents.module.contentScope
+        get() = moduleComponents.module.baseContentScope
 
     /**
      * 聚合当前内容范围内可用的仓颉声明索引。
@@ -76,12 +84,22 @@ internal class LLCangJieSourceSymbolProvider(
     /**
      * 绑定当前源码声明索引的缓存名称提供器。
      */
-    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.create(
+    private val physicalSymbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.create(
         session,
         listOfNotNull(
             LLCfirCangJieSymbolNamesProvider(declarationProvider),
         )
     )
+
+    /** 物理 PSI 名称与已发布快照名称的实时并集，避免发布前缓存的名称负结果过滤生成声明。 */
+    override val symbolNamesProvider: CfirSymbolNamesProvider = LLCfirMacroAwareSymbolNamesProvider(
+        delegate = physicalSymbolNamesProvider,
+        snapshotProvider = { moduleComponents.macroSemanticSnapshotStore.snapshot },
+    )
+
+    /** 只暴露最终宏快照中能由 registry 来源映射确认的生成声明名称。 */
+    override val macroGeneratedSourceDeclarationsNamesProvider: CfirSymbolNamesProvider =
+        LLCfirMacroGeneratedSourceNamesProvider { moduleComponents.macroSemanticSnapshotStore.snapshot }
 
     /**
      * class-like 符号缓存，支持按 [ClassId] 与按 PSI 两种命中路径。
@@ -95,6 +113,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 根据 [classId] 查询当前源码模块中的 class-like 符号。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.classifiers(classId).firstOrNull()?.symbol
+        }
         if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
         return getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration = null)
     }
@@ -103,22 +124,40 @@ internal class LLCangJieSourceSymbolProvider(
      * 根据已知 [classLikeDeclaration] 查询 [classId] 对应的 class-like 符号。
      */
     @LLModuleSpecificSymbolProviderAccess
-    override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? =
-        getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration)
+    override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            val sourceClassifiers = snapshot.classifiersForSource(classLikeDeclaration)
+                .filter { it.symbol.classId == classId }
+            return sourceClassifiers.singleOrNull()?.symbol
+        }
+        return getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration)
+    }
 
     /**
      * 统一按 [classId] 与可选 PSI 上下文查询 class-like 缓存。
+     *
+     * 有精确声明时走 PSI 键，而不是把声明塞进 ClassId 查询的 context：
+     * [org.cangnova.cangjie.cfir.caches.CfirCache] 的命中只看 key，context 只参与首次计算，
+     * 用 ClassId 键承载「必须精确到这个声明」的要求，只会命中同一 ClassId 的任意声明。
      */
     @OptIn(LLModuleSpecificSymbolProviderAccess::class)
     private fun getClassLikeSymbolByClassIdAndDeclaration(
         classId: ClassId,
         classLikeDeclaration: CjClassLikeDeclaration?,
     ): CfirClassLikeSymbol<*>? {
-        return classLikeCache.getSymbolByClassId(
-            classId,
-            classLikeDeclaration,
-            buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
-        )
+        return tolerateMissingCachedSymbol(classId) {
+            // 名称索引只负责取当前 PSI 候选；canonical symbol 缓存以实际 provider generation 的 PSI 为键。
+            // PSI caches 被清空但文本未改时，ClassId 本身无法区分旧/新源码树。
+            val currentDeclaration = classLikeDeclaration
+                ?: declarationProvider.getClassLikeDeclarationByClassId(classId)
+                ?: return@tolerateMissingCachedSymbol null
+            // 非物理文件由自己的 dangling session 提供声明；普通 ClassId 查询没有精确 PSI context。
+            // 对位 Kotlin 的无 context 路径，避免把非物理声明送进只服务物理 PSI 的精确缓存。
+            if (classLikeDeclaration == null && !currentDeclaration.isPhysical) {
+                return@tolerateMissingCachedSymbol classLikeCache.getSymbolByClassId(classId, context = null)
+            }
+            classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(classId, currentDeclaration) { it }
+        }
     }
 
     /**
@@ -126,32 +165,16 @@ internal class LLCangJieSourceSymbolProvider(
      */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
-        return classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
-            classId,
-            declaration,
-            buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
-        ) { it }
-    }
-
-    /**
-     * 为 class-like 缓存异常补充声明索引与内容范围诊断信息。
-     *
-     * 这里会记录指定 class ID 当前是否仍能从 [declarationProvider] 找到声明，以及给定上下文 PSI 是否位于当前符号提供器的
-     * [searchScope] 内，用于定位缓存失效或模块归属异常。
-     */
-    private val buildAdditionalAttachmentsForClassLikeSymbol: ExceptionAttachmentBuilder.(ClassId, CjClassLikeDeclaration?) -> Unit =
-        { classId, context ->
-            val declaration = declarationProvider.getClassLikeDeclarationByClassId(classId)
-            withPsiEntry("declarationFromDeclarationProvider", declaration)
-
-            val virtualFile = context?.containingFile?.virtualFile
-            withVirtualFileEntry("contextVirtualFile", virtualFile)
-
-            if (virtualFile != null) {
-                val isInContentScope = searchScope.contains(virtualFile)
-                withEntry("isContextInScope", isInContentScope.toString())
-            }
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            val sourceDeclaration = declaration as? CjClassLikeDeclaration ?: return null
+            val sourceClassifiers = snapshot.classifiersForSource(sourceDeclaration)
+                .filter { it.symbol.classId == classId }
+            return sourceClassifiers.singleOrNull()?.symbol
         }
+        return tolerateMissingCachedSymbol(classId) {
+            classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(classId, declaration) { it }
+        }
+    }
 
     /**
      * 查询 [classId] 对应的全部 class-like 符号。
@@ -159,6 +182,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 多声明场景下直接使用 [declarationProvider] 提供的声明集合，确保结果只来自当前模块内容范围。
      */
     override fun getAllClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.classifiers(classId).map { it.symbol }
+        }
         val declarations = declarationProvider.getAllClassesByClassId(classId) + declarationProvider.getAllTypeAliasesByClassId(classId)
 
         // We're specifically taking the declarations from the declaration provider, so they're guaranteed to be in the symbol provider's
@@ -183,7 +209,6 @@ internal class LLCangJieSourceSymbolProvider(
             // 这里已经拿到了精确 PSI，优先按同一份声明做映射，
             // 避免仅靠 ClassId 路径搜索时被当前 CFIR 结构差异误伤。
             (CfirElementFinder.findDeclaration(file, classLikeDeclaration) as? CfirClassLikeDeclaration)
-                ?: CfirElementFinder.findClassifierWithClassId(file, classId)
         }
     }
 
@@ -221,7 +246,9 @@ internal class LLCangJieSourceSymbolProvider(
      */
     override fun getTopLevelCallableSymbols(packageFqName: FqName, name: Name): List<CfirCallableSymbol<*>> {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()
-        return getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
+        val callableId = CallableId(packageFqName, name)
+        return getTopLevelCallableSymbols(callableId, callableFiles = null) +
+            getTopLevelEnumConstructorSymbols(callableId, constructors = null)
     }
 
     /**
@@ -230,7 +257,9 @@ internal class LLCangJieSourceSymbolProvider(
     @CfirSymbolProviderInternals
     override fun getTopLevelCallableSymbolsTo(destination: MutableList<CfirCallableSymbol<*>>, packageFqName: FqName, name: Name) {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return
-        destination += getTopLevelCallableSymbols(CallableId(packageFqName, name), callableFiles = null)
+        val callableId = CallableId(packageFqName, name)
+        destination += getTopLevelCallableSymbols(callableId, callableFiles = null)
+        destination += getTopLevelEnumConstructorSymbols(callableId, constructors = null)
     }
 
     /**
@@ -249,6 +278,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 通过 [callableCache] 获取 [callableId] 对应的顶层 callable 符号。
      */
     private fun getTopLevelCallableSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirCallableSymbol<*>> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.callables(callableId).map { it.symbol }
+        }
         return callableCache.getValue(callableId, callableFiles)
     }
 
@@ -301,6 +333,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 通过 [functionCache] 获取 [callableId] 对应的顶层函数符号。
      */
     private fun getTopLevelFunctionSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirNamedFunctionSymbol> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.callables(callableId).mapNotNull { it.symbol as? CfirNamedFunctionSymbol }
+        }
         return functionCache.getValue(callableId, callableFiles)
     }
 
@@ -345,6 +380,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 通过 [propertyCache] 获取 [callableId] 对应的顶层属性符号。
      */
     private fun getTopLevelPropertySymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirPropertySymbol> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.callables(callableId).mapNotNull { it.symbol as? CfirPropertySymbol }
+        }
         return propertyCache.getValue(callableId, callableFiles)
     }
 
@@ -381,6 +419,10 @@ internal class LLCangJieSourceSymbolProvider(
 
     /**
      * 从当前 [CfirFile] 的顶层声明中收集指定 [name] 与 [TYPE] 类型匹配的 callable 符号。
+     *
+     * 顶层 `const` / `let` 是 [CfirPatternVariable]，其自身 symbol 名固定为内部占位名；
+     * 真正进入包级作用域的是 pattern 内的 binding 名。这里必须把 binding symbol 与普通
+     * 顶层 callable 一视同仁，否则跨文件引用包级常量/变量会全部退化为 unresolved。
      */
     private inline fun <reified TYPE : CfirCallableSymbol<*>> CfirFile.collectCallableSymbolsOfTypeTo(result: MutableList<TYPE>, name: Name) {
         for (declaration in declarations) {
@@ -396,18 +438,164 @@ internal class LLCangJieSourceSymbolProvider(
     }
 
     /**
+     * 源码顶层 enum 的枚举项缓存，键为 [CallableId]，上下文为可选的已知枚举项 PSI。
+     *
+     * 仓颉枚举项在 enum 限定位之外按 global scope 参与名字查找
+     * （官方 `Sema/TypeCheckCall.cpp` 的 `CalculateEnumCtorScopeLevel`），
+     * 因此与顶层函数/属性一样必须能从包级 callable 入口取到；
+     * 已编译库侧由 [LLCangJieStubBasedLibrarySymbolProvider] 以同样的投影暴露。
+     */
+    private val enumConstructorCache: CfirCache<CallableId, List<CfirEnumConstructorSymbol>, Collection<CjEnumConstructor>?> =
+        session.cfirCachesFactory.createCache { callableId, context ->
+            loadEnumConstructorsByCallableId(callableId, context)
+        }
+
+    /**
+     * 按 [callableId] 在当前源码模块中加载同名枚举项符号。
+     *
+     * 符号身份取自所属 enum 的 CFIR 声明，不新建第二份枚举项符号；
+     * 找不到对应 CFIR 声明时按缺失处理，交由调用方报 unresolved。
+     */
+    private fun loadEnumConstructorsByCallableId(
+        callableId: CallableId,
+        foundConstructors: Collection<CjEnumConstructor>?,
+    ): List<CfirEnumConstructorSymbol> {
+        val constructors = foundConstructors ?: declarationProvider.getTopLevelEnumConstructors(callableId)
+        if (constructors.isEmpty()) return emptyList()
+        return constructors.mapNotNull { constructor ->
+            val enumDeclaration = constructor.parentEnum ?: return@mapNotNull null
+            val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(enumDeclaration.containingCjFile)
+            val cfirEnum = CfirElementFinder.findDeclaration(cfirFile, enumDeclaration) as? CfirEnum
+                ?: return@mapNotNull null
+            cfirEnum.declarations
+                .filterIsInstance<CfirEnumConstructor>()
+                .firstOrNull { enumConstructor -> enumConstructor.realPsi === constructor }
+                ?.symbol
+        }
+    }
+
+    /**
+     * 查询指定包和名称下的全部枚举项符号（包级 callable 视图）。
+     */
+    private fun getTopLevelEnumConstructorSymbols(
+        callableId: CallableId,
+        constructors: Collection<CjEnumConstructor>?,
+    ): List<CfirEnumConstructorSymbol> =
+        enumConstructorCache.getValue(callableId, constructors)
+
+    /**
      * 判断当前源码模块包索引中是否存在 [fqName] 包。
      */
     override fun hasPackage(fqName: FqName): Boolean {
         return packageProvider.doesPackageExist(fqName)
     }
-
     /**
      * 物化当前源码模块中的顶层扩展文件为 raw CFIR 文件。
      */
     internal override fun materializeTopLevelExtendFiles(): List<CfirFile> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.files.flatMap { file -> file.declarations.filterIsInstance<CfirExtend>() }
+                .mapNotNull { declaration -> moduleComponents.cache.getContainerCfirFile(declaration) }
+                .distinct()
+        }
         return declarationProvider.getTopLevelExtendFiles()
             .distinctBy { file -> file.virtualFile ?: file }
             .map(moduleComponents.cfirFileBuilder::buildRawCfirFileWithCaching)
     }
+}
+
+/**
+ * 在物理声明名称索引上叠加完整 expanded CFIR 中的顶层名称。
+ *
+ * 该 provider 不自行缓存快照，名称查询总是观察当前原子发布结果；物理索引无法枚举时继续返回 null，
+ * 由基类保守策略允许符号查询继续进行。
+ */
+private class LLCfirMacroAwareSymbolNamesProvider(
+    private val delegate: CfirSymbolNamesProvider,
+    private val snapshotProvider: () -> org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot?,
+) : CfirSymbolNamesProvider() {
+    override val hasSpecificClassifierPackageNamesComputation: Boolean
+        get() = delegate.hasSpecificClassifierPackageNamesComputation
+
+    override val hasSpecificCallablePackageNamesComputation: Boolean
+        get() = delegate.hasSpecificCallablePackageNamesComputation
+
+    override val mayHaveSyntheticFunctionTypes: Boolean
+        get() = delegate.mayHaveSyntheticFunctionTypes
+
+    override fun getPackageNames(): Set<String>? =
+        merge(delegate.getPackageNames(), snapshotProvider()?.filesByPackage?.keys?.mapTo(linkedSetOf()) { it.asString() }.orEmpty())
+
+    override fun getPackageNamesWithTopLevelClassifiers(): Set<String>? =
+        merge(
+            delegate.getPackageNamesWithTopLevelClassifiers(),
+            snapshotProvider()?.filesByPackage?.keys
+                ?.filterTo(linkedSetOf()) { snapshotProvider()?.classifierNames(it)?.isNotEmpty() == true }
+                ?.mapTo(linkedSetOf()) { it.asString() }
+                .orEmpty(),
+        )
+
+    override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
+        merge(delegate.getTopLevelClassifierNamesInPackage(packageFqName), snapshotProvider()?.classifierNames(packageFqName).orEmpty())
+
+    override fun getPackageNamesWithTopLevelCallables(): Set<String>? =
+        merge(
+            delegate.getPackageNamesWithTopLevelCallables(),
+            snapshotProvider()?.filesByPackage?.keys
+                ?.filterTo(linkedSetOf()) { snapshotProvider()?.callableNames(it)?.isNotEmpty() == true }
+                ?.mapTo(linkedSetOf()) { it.asString() }
+                .orEmpty(),
+        )
+
+    override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
+        merge(delegate.getTopLevelCallableNamesInPackage(packageFqName), snapshotProvider()?.callableNames(packageFqName).orEmpty())
+
+    override fun mayHaveSyntheticFunctionType(classId: ClassId): Boolean = delegate.mayHaveSyntheticFunctionType(classId)
+
+    private fun <T> merge(base: Set<T>?, additional: Set<T>): Set<T>? = base?.plus(additional)
+}
+
+/** 为 Analysis API 名称发现单独枚举宏生成源码声明，不扫描物理源码名称。 */
+private class LLCfirMacroGeneratedSourceNamesProvider(
+    private val snapshotProvider: () -> org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot?,
+) : CfirSymbolNamesProvider() {
+    override fun getPackageNames(): Set<String>? {
+        val snapshot = snapshotProvider() ?: return emptySet()
+        return snapshot.filesByPackage.keys
+            .filterTo(linkedSetOf()) { packageFqName ->
+                snapshot.macroGeneratedClassifierNames(packageFqName).isNotEmpty() ||
+                    snapshot.macroGeneratedCallableNames(packageFqName).isNotEmpty()
+            }
+            .mapTo(linkedSetOf()) { it.asString() }
+    }
+
+    override val hasSpecificClassifierPackageNamesComputation: Boolean
+        get() = true
+
+    override fun getPackageNamesWithTopLevelClassifiers(): Set<String>? {
+        val snapshot = snapshotProvider() ?: return emptySet()
+        return snapshot.filesByPackage.keys
+            .filterTo(linkedSetOf()) { packageFqName ->
+                snapshot.macroGeneratedClassifierNames(packageFqName).isNotEmpty()
+            }
+            .mapTo(linkedSetOf()) { it.asString() }
+    }
+
+    override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
+        snapshotProvider()?.macroGeneratedClassifierNames(packageFqName).orEmpty()
+
+    override val hasSpecificCallablePackageNamesComputation: Boolean
+        get() = true
+
+    override fun getPackageNamesWithTopLevelCallables(): Set<String>? {
+        val snapshot = snapshotProvider() ?: return emptySet()
+        return snapshot.filesByPackage.keys
+            .filterTo(linkedSetOf()) { packageFqName ->
+                snapshot.macroGeneratedCallableNames(packageFqName).isNotEmpty()
+            }
+            .mapTo(linkedSetOf()) { it.asString() }
+    }
+
+    override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
+        snapshotProvider()?.macroGeneratedCallableNames(packageFqName).orEmpty()
 }

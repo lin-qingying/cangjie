@@ -45,6 +45,8 @@ dependencies {
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:low-level-api-cfir"))
+    // 本模块的聚合描述符以 xi:include 引用宏展开描述符；运行时必须把该模块资源放在 classpath。
+    implementation(project(":analysis:macro-expansion"))
     implementation(project(":analysis:decompiled"))
     implementation(project(":analysis:stubs"))
     implementation(project(":analysis:cj-references"))
@@ -56,6 +58,8 @@ dependencies {
     implementation(project(":cfir:checkers"))
     api(project(":common:diagnostics"))
     implementation(project(":psi"))
+    // 缓存清理器与 session provider 直接使用 LLAnalysisSessionStatistics 的计数器类型（opentelemetry LongCounter）。
+    implementation(libs.opentelemetry.api)
 
 
     compileOnly(intellijCore())

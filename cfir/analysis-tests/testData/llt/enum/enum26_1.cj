@@ -5,7 +5,7 @@ enum A<T> {
     a(T)
 
     public static func foo() {
-        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>t<!>est()
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>test<!>()
     }
     public func test() {}
 }

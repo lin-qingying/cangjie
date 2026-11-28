@@ -2,26 +2,52 @@ package org.cangnova.cangjie.lsp.semantic
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.TokenSet
+import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.macro.expansion.MacroInvocationSemanticKind
+import org.cangnova.cangjie.analysis.macro.expansion.MacroSemanticExpansionService
+import org.cangnova.cangjie.analysis.api.resolution.CaCall
+import org.cangnova.cangjie.analysis.api.resolution.successfulCallOrNull
+import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
+import org.cangnova.cangjie.codeinsight.highlighting.CangJieSemanticHighlighting
+import org.cangnova.cangjie.codeinsight.highlighting.CangJieSemanticHighlightingKind
+import org.cangnova.cangjie.codeinsight.highlighting.CangJieSemanticHighlightingRules
 import org.cangnova.cangjie.codeinsight.highlighting.CangJieHighlightingLexer
+import org.cangnova.cangjie.codeinsight.highlighting.CangJieSemanticHighlightingRules.resolveSuccessfulSymbol
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.lexer.cdoc.lexer.CDocTokens
 import org.cangnova.cangjie.lexer.cdoc.lexer.CDocTokens.CDOC_HIGHLIGHT_TOKENS
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocLink
 import org.cangnova.cangjie.psi.CjCallExpression
+import org.cangnova.cangjie.psi.CjBinaryExpression
+import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.psi.CjBasicType
 import org.cangnova.cangjie.psi.CjClass
+import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
+import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjEnum
 import org.cangnova.cangjie.psi.CjEnumConstructor
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjExpressionWithLabel
+import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjInterface
+import org.cangnova.cangjie.psi.CjLambdaExpression
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjMacroExpression
+import org.cangnova.cangjie.psi.CjNameBasicReferenceExpression
+import org.cangnova.cangjie.psi.CjNameReferenceExpression
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjQualifiedExpression
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjStruct
 import org.cangnova.cangjie.psi.CjSuperTypeCallEntry
 import org.cangnova.cangjie.psi.CjTypeAlias
@@ -29,7 +55,11 @@ import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.CjVariable
+import org.cangnova.cangjie.psi.CjValueArgument
+import org.cangnova.cangjie.psi.CjValueArgumentName
 import org.cangnova.cangjie.psi.CjVisitorUnit
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
+import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 
 /**
  * 表示一个已经映射到 LSP legend 的仓颉语义 token。
@@ -91,6 +121,8 @@ enum class CangJieSemanticTokenType(val lspName: String) {
     PROPERTY("property"),
     /** 参数 token。 */
     PARAMETER("parameter"),
+    /** 注解调用名称。 */
+    ANNOTATION("decorator"),
     /** 标签 token。 */
     LABEL("label"),
     ;
@@ -117,6 +149,32 @@ enum class CangJieSemanticTokenModifier(val lspName: String) {
     STATIC("static"),
     /** token 来自文档注释或文档标签。 */
     DOCUMENTATION("documentation"),
+    /** token 表示抽象 class。 */
+    ABSTRACT("abstract"),
+    /** token 表示构造器调用。 */
+    CONSTRUCTOR("constructor"),
+    /** token 表示扩展成员。 */
+    EXTENSION("extension"),
+    /** token 表示字段。 */
+    FIELD("field"),
+    /** token 表示函数值调用。 */
+    FUNCTION_VALUE("functionValue"),
+    /** token 表示仓颉基本类型引用。 */
+    BASIC_TYPE("basicType"),
+    /** token 表示顶层函数调用。 */
+    PACKAGE("package"),
+    /** token 表示可变声明或引用。 */
+    MUTABLE("mutable"),
+    /** token 表示自定义访问器属性。 */
+    CUSTOM_PROPERTY("customProperty"),
+    /** token 表示类型别名。 */
+    TYPE_ALIAS("typeAlias"),
+    /** token 表示注解调用中的命名属性。 */
+    ANNOTATION_ATTRIBUTE("annotationAttribute"),
+    /** token 是宏 Tokens 输入中的转义定界符。 */
+    MACRO_ESCAPE("macroEscape"),
+    /** token 是 Option 可选链中的问号。 */
+    SAFE_ACCESS("safeAccess"),
     ;
 
     companion object {
@@ -130,8 +188,8 @@ enum class CangJieSemanticTokenModifier(val lspName: String) {
 /**
  * LSP semantic token 收集器。
  *
- * 这是 LSP 协议适配层的模型：它复用 code-insight 的高亮 lexer 和仓颉 PSI，
- * 但不把 LSP token type/modifier 反向暴露给 code-insight。
+ * 词法与声明 token 由本协议适配层收集；引用和调用类别复用 code-insight 的 Analysis API
+ * 分类规则，再投影为 LSP token type/modifier。
  */
 object CangJieSemanticTokenCollector {
     /**
@@ -165,15 +223,11 @@ object CangJieSemanticTokenCollector {
         CjTokens.LONG_TEMPLATE_ENTRY_END,
     )
 
-    /**
-     * 收集指定 PSI 文件的语义 token。
-     *
-     * 结果同时包含词法 token 和结构 token，并按协议编码所需顺序稳定排序。
-     */
-    fun collect(file: CjFile, range: TextRange? = null): List<CangJieSemanticToken> {
+    /** 收集指定 PSI 文件的词法、声明和 Analysis API 语义 token。 */
+    fun collect(file: CjFile, session: CaSession, range: TextRange? = null): List<CangJieSemanticToken> {
         val tokensByRange = linkedMapOf<String, CangJieSemanticToken>()
         collectLexicalTokens(file.text, range, tokensByRange)
-        collectStructuralTokens(file, range, tokensByRange)
+        collectStructuralTokens(file, session, range, tokensByRange)
         return tokensByRange.values.sortedWith(tokenOrder)
     }
 
@@ -187,13 +241,35 @@ object CangJieSemanticTokenCollector {
     ) {
         val lexer = CangJieHighlightingLexer()
         lexer.start(text)
+        var pendingQuestionMark: TextRange? = null
         while (lexer.tokenType != null) {
             val tokenType = lexer.tokenType!!
             val tokenRange = TextRange(lexer.tokenStart, lexer.tokenEnd)
+            if (!CjTokens.WHITE_SPACE_OR_COMMENT_BIT_SET.contains(tokenType)) {
+                pendingQuestionMark?.let { questionRange ->
+                    if (questionRange.shouldInclude(range) &&
+                        CangJieSemanticHighlightingRules.isSafeAccessQuestionMark(CjTokens.QUEST, tokenType)
+                    ) {
+                        val classification = CangJieSemanticHighlightingRules.safeAccess()
+                        putToken(
+                            destination,
+                            CangJieSemanticToken(
+                                questionRange,
+                                classification.kind.toLspType(),
+                                setOf(CangJieSemanticTokenModifier.SAFE_ACCESS),
+                            ),
+                        )
+                    }
+                }
+                pendingQuestionMark = null
+            }
+
             val type = semanticTypeOfLexicalToken(tokenType)
             if (type != null && tokenRange.shouldInclude(range)) {
                 putToken(destination, CangJieSemanticToken(tokenRange, type, modifiersOf(tokenType)))
             }
+
+            if (tokenType == CjTokens.QUEST) pendingQuestionMark = tokenRange
             lexer.advance()
         }
     }
@@ -235,12 +311,46 @@ object CangJieSemanticTokenCollector {
      */
     private fun collectStructuralTokens(
         file: CjFile,
+        session: CaSession,
         range: TextRange?,
         destination: MutableMap<String, CangJieSemanticToken>,
     ) {
         val visitor = object : CjVisitorUnit() {
             override fun visitElement(element: PsiElement) {
                 val elementType = element.node?.elementType
+                if (element is CjAnnotation) {
+                    val classification = CangJieSemanticHighlightingRules.classifyAnnotationCall(session, element)
+                    val name = element.calleeExpression?.constructorReferenceExpression
+                    if (classification != null && name != null) {
+                        addSemanticToken(destination, name, classification, range)
+                    }
+                }
+
+                if (element is CjConstructorCalleeExpression &&
+                    element.parent !is CjSuperTypeCallEntry &&
+                    element.parent !is CjAnnotation
+                ) {
+                    val constructor = resolveSuccessfulSymbol(session, element) as? CaConstructorSymbol
+                    val classification = constructor?.let { CangJieSemanticHighlightingRules.classifyConstructor(session, it) }
+                    if (classification != null) {
+                        addSemanticToken(destination, element.constructorReferenceExpression, classification, range)
+                    }
+                }
+
+                if (element is CjValueArgument) {
+                    val argumentName = element.getArgumentName() as? CjValueArgumentName
+                    if (argumentName != null) {
+                        val classification = if (element.getStrictParentOfType<CjAnnotation>() != null) {
+                            CangJieSemanticHighlightingRules.classifyAnnotationAttributeName(session, argumentName)
+                        } else {
+                            CangJieSemanticHighlightingRules.namedArgument()
+                        }
+                        if (classification != null) {
+                            addSemanticToken(destination, argumentName.referenceExpression, classification, range)
+                        }
+                    }
+                }
+
                 when {
                     element is CDocLink -> addStructuralToken(destination, element, CangJieSemanticTokenType.TYPE, range)
                     elementType != null && elementType in CjTokens.SOFT_KEYWORDS ->
@@ -256,7 +366,11 @@ object CangJieSemanticTokenCollector {
             override fun visitSuperTypeCallEntry(call: CjSuperTypeCallEntry) {
                 val typeElement = call.calleeExpression.typeReference?.typeElement
                 if (typeElement is CjUserType) {
-                    addStructuralToken(destination, typeElement.referenceExpression, CangJieSemanticTokenType.CLASS, range)
+                    val constructor = resolveSuccessfulSymbol(session, call) as? CaConstructorSymbol
+                    val classification = constructor?.let { CangJieSemanticHighlightingRules.classifyConstructor(session, it) }
+                    if (classification != null) {
+                        addSemanticToken(destination, typeElement.referenceExpression, classification, range)
+                    }
                 }
                 super.visitSuperTypeCallEntry(call)
             }
@@ -264,6 +378,39 @@ object CangJieSemanticTokenCollector {
             override fun visitTypeParameter(parameter: CjTypeParameter) {
                 addDeclarationToken(destination, parameter.nameIdentifier, CangJieSemanticTokenType.TYPE_PARAMETER, range)
                 super.visitTypeParameter(parameter)
+            }
+
+            override fun visitParameter(parameter: CjParameter) {
+                val isPropertyParameter = parameter.letOrVarKeyword != null
+                val modifiers = buildList {
+                    if (isPropertyParameter && !parameter.isMutable) add(CangJieSemanticTokenModifier.READONLY)
+                    if (isPropertyParameter && parameter.isMutable) add(CangJieSemanticTokenModifier.MUTABLE)
+                }.toTypedArray()
+                addDeclarationToken(
+                    destination,
+                    parameter.nameIdentifier,
+                    if (isPropertyParameter) CangJieSemanticTokenType.PROPERTY else CangJieSemanticTokenType.PARAMETER,
+                    range,
+                    *modifiers,
+                )
+                super.visitParameter(parameter)
+            }
+
+            override fun visitBasicType(type: CjBasicType) {
+                val classification = CangJieSemanticHighlightingRules.classifyBasicType()
+                addSemanticToken(destination, type, classification, range)
+                super.visitBasicType(type)
+            }
+
+            override fun visitUserType(type: CjUserType) {
+                val typeReference = type.getStrictParentOfType<CjTypeReference>()
+                val reference = type.referenceExpression
+                if (typeReference?.typeElement === type && reference != null && !reference.isConstructorCalleeName()) {
+                    val symbol = resolveSuccessfulSymbol(session, typeReference) as? CaClassifierSymbol
+                    val classification = symbol?.let(CangJieSemanticHighlightingRules::classifyClassifier)
+                    if (classification != null) addSemanticToken(destination, reference, classification, range)
+                }
+                super.visitUserType(type)
             }
 
             override fun visitNamedFunction(function: CjNamedFunction) {
@@ -292,6 +439,32 @@ object CangJieSemanticTokenCollector {
                 super.visitVariable(variable)
             }
 
+            override fun visitFieldVariable(field: CjFieldVariable) {
+                addDeclarationToken(
+                    destination,
+                    field.nameIdentifier,
+                    CangJieSemanticTokenType.VARIABLE,
+                    range,
+                    *variableModifiersOf(field),
+                )
+                super.visitFieldVariable(field)
+            }
+
+            override fun visitPatternVariable(variable: CjPatternVariable) {
+                val modifiers = variableModifiersOf(variable)
+                variable.pattern.getAllPatternDeclarations().forEach { declaration ->
+                    val nameIdentifier = (declaration as? PsiNameIdentifierOwner)?.nameIdentifier
+                    addDeclarationToken(
+                        destination,
+                        nameIdentifier,
+                        CangJieSemanticTokenType.VARIABLE,
+                        range,
+                        *modifiers,
+                    )
+                }
+                super.visitPatternVariable(variable)
+            }
+
             override fun visitProperty(property: CjProperty) {
                 addDeclarationToken(
                     destination,
@@ -301,14 +474,6 @@ object CangJieSemanticTokenCollector {
                     *propertyModifiersOf(property),
                 )
                 super.visitProperty(property)
-            }
-
-            override fun visitTypeReference(typeReference: CjTypeReference) {
-                val typeElement = typeReference.typeElement
-                if (typeElement is CjUserType) {
-                    addStructuralToken(destination, typeElement.referenceExpression, CangJieSemanticTokenType.TYPE, range)
-                }
-                super.visitTypeReference(typeReference)
             }
 
             override fun visitTypeAlias(typeAlias: CjTypeAlias) {
@@ -332,26 +497,98 @@ object CangJieSemanticTokenCollector {
             }
 
             override fun visitCallExpression(expression: CjCallExpression) {
-                expression.referenceExpression?.referencedNameElement?.let { nameElement ->
-                    addStructuralToken(
-                        destination,
-                        nameElement,
-                        if (expression.parent is CjQualifiedExpression) CangJieSemanticTokenType.METHOD else CangJieSemanticTokenType.FUNCTION,
-                        range,
-                    )
+                val callee = expression.calleeExpression
+                if (callee != null && callee !is CjLambdaExpression && callee !is CjCallExpression) {
+                    val call = with(session) { expression.resolveToCall()?.successfulCallOrNull<CaCall>() }
+                    val classification = call?.let { CangJieSemanticHighlightingRules.classifyCall(session, it) }
+                    val nameElement = callee.semanticCallNameElement()
+                    if (classification != null) {
+                        addSemanticToken(destination, nameElement, classification, range)
+                    }
                 }
                 super.visitCallExpression(expression)
             }
 
+            override fun visitBinaryExpression(expression: CjBinaryExpression) {
+                val operationReference = expression.operationReference
+                if (operationReference.operationSignTokenType != CjTokens.EQ) {
+                    val function = resolveSuccessfulSymbol(session, expression) as? CaFunctionSymbol
+                    val classification = function?.let(CangJieSemanticHighlightingRules::classifyFunction)
+                    if (classification != null) {
+                        addSemanticToken(destination, operationReference, classification, range)
+                    }
+                }
+                super.visitBinaryExpression(expression)
+            }
+
+            override fun visitSimpleNameExpression(expression: CjSimpleNameExpression) {
+                val isCallCallee = expression.isCallCallee()
+                val skip = expression.parent is CjValueArgumentName || expression.isDeclarationName() ||
+                    expression.isConstructorCalleeName()
+                val isReference = expression is CjNameReferenceExpression || expression is CjNameBasicReferenceExpression
+                val symbol = if (skip || !isReference) null else resolveSuccessfulSymbol(session, expression)
+                if (symbol != null && isCallCallee && !CangJieSemanticHighlightingRules.isValueReferenceSymbol(symbol)) return
+                val classification = symbol?.let(CangJieSemanticHighlightingRules::classifyReference)
+                classification ?: return
+                addSemanticToken(destination, expression, classification, range)
+            }
+
             override fun visitMacroExpression(expression: CjMacroExpression) {
-                expression.referenceExpression?.referencedNameElement?.let { nameElement ->
-                    addStructuralToken(destination, nameElement, CangJieSemanticTokenType.MACRO, range)
+                CangJieSemanticHighlightingRules.macroEscapeTokenElements(expression).forEach { escapedToken ->
+                    addSemanticToken(
+                        destination,
+                        escapedToken,
+                        CangJieSemanticHighlightingRules.macroEscape(),
+                        range,
+                    )
+                }
+                val nameElement = expression.referenceExpression?.referencedNameElement
+                when (MacroSemanticExpansionService.getInstance(expression.project).invocationKind(expression)) {
+                    MacroInvocationSemanticKind.MACRO -> if (nameElement != null) {
+                        addSemanticToken(destination, nameElement, CangJieSemanticHighlightingRules.macroCall(), range)
+                    }
+
+                    MacroInvocationSemanticKind.BUILTIN_ANNOTATION -> {
+                        val classification = CangJieSemanticHighlightingRules.annotationCall()
+                        if (nameElement != null) addSemanticToken(destination, nameElement, classification, range)
+                        CangJieSemanticHighlightingRules.builtinMacroAnnotationAttributeNameElements(expression)
+                            .forEach { attributeName ->
+                                addSemanticToken(
+                                    destination,
+                                    attributeName,
+                                    CangJieSemanticHighlightingRules.annotationAttributeName(),
+                                    range,
+                                )
+                            }
+                    }
+
+                    MacroInvocationSemanticKind.ANNOTATION_CANDIDATE -> {
+                        val classification = CangJieSemanticHighlightingRules.classifyMacroAnnotationCall(
+                            session,
+                            expression,
+                        )
+                        if (classification != null && nameElement != null) {
+                            addSemanticToken(destination, nameElement, classification, range)
+                            CangJieSemanticHighlightingRules.macroAnnotationAttributeNameElements(session, expression)
+                                .forEach { attributeName ->
+                                    addSemanticToken(
+                                        destination,
+                                        attributeName,
+                                        CangJieSemanticHighlightingRules.annotationAttributeName(),
+                                        range,
+                                    )
+                                }
+                        }
+                    }
+
+                    null -> Unit
                 }
                 super.visitMacroExpression(expression)
             }
 
             override fun visitMacroDeclaration(function: CjMacroDeclaration) {
-                addDeclarationToken(destination, function.nameIdentifier, CangJieSemanticTokenType.MACRO, range)
+                val kind = CangJieSemanticHighlightingRules.macroDeclaration().kind
+                addDeclarationToken(destination, function.nameIdentifier, kind.toLspType(), range)
                 super.visitMacroDeclaration(function)
             }
         }
@@ -383,6 +620,62 @@ object CangJieSemanticTokenCollector {
         addStructuralToken(destination, element, type, range, modifiers)
     }
 
+    /** 添加由共享 Analysis API 分类器产生的语义 token。 */
+    private fun addSemanticToken(
+        destination: MutableMap<String, CangJieSemanticToken>,
+        element: PsiElement?,
+        classification: CangJieSemanticHighlighting,
+        range: TextRange?,
+    ) {
+        val modifiers = buildSet {
+            if (classification.isMutable == false) add(CangJieSemanticTokenModifier.READONLY)
+            if (classification.isStatic) add(CangJieSemanticTokenModifier.STATIC)
+            if (CangJieSemanticHighlightingKind.MUTABLE_VARIABLE in classification.additionalKinds ||
+                CangJieSemanticHighlightingKind.MUTABLE_PROPERTY in classification.additionalKinds
+            ) {
+                add(CangJieSemanticTokenModifier.MUTABLE)
+            }
+            when (classification.kind) {
+                CangJieSemanticHighlightingKind.ABSTRACT_CLASS -> add(CangJieSemanticTokenModifier.ABSTRACT)
+                CangJieSemanticHighlightingKind.BASIC_TYPE_REFERENCE -> add(CangJieSemanticTokenModifier.BASIC_TYPE)
+                CangJieSemanticHighlightingKind.CLASS_CONSTRUCTOR_CALL,
+                CangJieSemanticHighlightingKind.CONSTRUCTOR_CALL,
+                CangJieSemanticHighlightingKind.STRUCT_CONSTRUCTOR_CALL,
+                -> add(CangJieSemanticTokenModifier.CONSTRUCTOR)
+
+                CangJieSemanticHighlightingKind.EXTENSION_FUNCTION_CALL,
+                CangJieSemanticHighlightingKind.EXTENSION_PROPERTY,
+                -> add(CangJieSemanticTokenModifier.EXTENSION)
+
+                CangJieSemanticHighlightingKind.PACKAGE_VARIABLE,
+                CangJieSemanticHighlightingKind.PACKAGE_FUNCTION_CALL,
+                -> add(CangJieSemanticTokenModifier.PACKAGE)
+
+                CangJieSemanticHighlightingKind.INSTANCE_VARIABLE,
+                CangJieSemanticHighlightingKind.STATIC_VARIABLE,
+                -> add(CangJieSemanticTokenModifier.FIELD)
+
+                CangJieSemanticHighlightingKind.VARIABLE_AS_FUNCTION_CALL ->
+                    add(CangJieSemanticTokenModifier.FUNCTION_VALUE)
+
+                CangJieSemanticHighlightingKind.MACRO_ESCAPE ->
+                    add(CangJieSemanticTokenModifier.MACRO_ESCAPE)
+                CangJieSemanticHighlightingKind.SAFE_ACCESS ->
+                    add(CangJieSemanticTokenModifier.SAFE_ACCESS)
+
+                CangJieSemanticHighlightingKind.INSTANCE_PROPERTY_CUSTOM_PROPERTY_DECLARATION,
+                CangJieSemanticHighlightingKind.STATIC_PROPERTY_CUSTOM_PROPERTY_DECLARATION,
+                -> add(CangJieSemanticTokenModifier.CUSTOM_PROPERTY)
+
+                CangJieSemanticHighlightingKind.TYPE_ALIAS -> add(CangJieSemanticTokenModifier.TYPE_ALIAS)
+                CangJieSemanticHighlightingKind.ANNOTATION_ATTRIBUTE_NAME ->
+                    add(CangJieSemanticTokenModifier.ANNOTATION_ATTRIBUTE)
+                else -> Unit
+            }
+        }
+        addStructuralToken(destination, element, classification.kind.toLspType(), range, modifiers)
+    }
+
     /**
      * 添加一个由 PSI 元素范围确定的结构 token。
      */
@@ -399,6 +692,106 @@ object CangJieSemanticTokenCollector {
         putToken(destination, CangJieSemanticToken(textRange, type, modifiers))
     }
 
+    private fun CangJieSemanticHighlightingKind.toLspType(): CangJieSemanticTokenType = when (this) {
+        CangJieSemanticHighlightingKind.CLASS,
+        CangJieSemanticHighlightingKind.ABSTRACT_CLASS,
+        CangJieSemanticHighlightingKind.CLASS_CONSTRUCTOR_CALL,
+        CangJieSemanticHighlightingKind.CONSTRUCTOR_CALL,
+        -> CangJieSemanticTokenType.CLASS
+
+        CangJieSemanticHighlightingKind.STRUCT,
+        CangJieSemanticHighlightingKind.STRUCT_CONSTRUCTOR_CALL,
+        -> CangJieSemanticTokenType.STRUCT
+
+        CangJieSemanticHighlightingKind.INTERFACE -> CangJieSemanticTokenType.INTERFACE
+        CangJieSemanticHighlightingKind.ENUM -> CangJieSemanticTokenType.ENUM
+        CangJieSemanticHighlightingKind.ENUM_CONSTRUCTOR -> CangJieSemanticTokenType.ENUM_MEMBER
+        CangJieSemanticHighlightingKind.ANNOTATION -> CangJieSemanticTokenType.ANNOTATION
+        CangJieSemanticHighlightingKind.ANNOTATION_ATTRIBUTE_NAME -> CangJieSemanticTokenType.PARAMETER
+        CangJieSemanticHighlightingKind.MACRO_CALL -> CangJieSemanticTokenType.MACRO
+        CangJieSemanticHighlightingKind.MACRO_DECLARATION -> CangJieSemanticTokenType.MACRO
+        CangJieSemanticHighlightingKind.MACRO_ESCAPE -> CangJieSemanticTokenType.MACRO
+        CangJieSemanticHighlightingKind.SAFE_ACCESS -> CangJieSemanticTokenType.OPERATOR
+        CangJieSemanticHighlightingKind.TYPE_REFERENCE,
+        CangJieSemanticHighlightingKind.BASIC_TYPE_REFERENCE,
+        CangJieSemanticHighlightingKind.TYPE_ALIAS,
+        -> CangJieSemanticTokenType.TYPE
+
+        CangJieSemanticHighlightingKind.TYPE_PARAMETER -> CangJieSemanticTokenType.TYPE_PARAMETER
+        CangJieSemanticHighlightingKind.LOCAL_VARIABLE,
+        CangJieSemanticHighlightingKind.MUTABLE_VARIABLE,
+        CangJieSemanticHighlightingKind.PACKAGE_VARIABLE,
+        CangJieSemanticHighlightingKind.STATIC_VARIABLE,
+        CangJieSemanticHighlightingKind.INSTANCE_VARIABLE,
+        -> CangJieSemanticTokenType.VARIABLE
+
+        CangJieSemanticHighlightingKind.PARAMETER,
+        CangJieSemanticHighlightingKind.NAMED_ARGUMENT,
+        -> CangJieSemanticTokenType.PARAMETER
+
+        CangJieSemanticHighlightingKind.STATIC_PROPERTY,
+        CangJieSemanticHighlightingKind.INSTANCE_PROPERTY,
+        CangJieSemanticHighlightingKind.INSTANCE_PROPERTY_CUSTOM_PROPERTY_DECLARATION,
+        CangJieSemanticHighlightingKind.STATIC_PROPERTY_CUSTOM_PROPERTY_DECLARATION,
+        CangJieSemanticHighlightingKind.EXTENSION_PROPERTY,
+        CangJieSemanticHighlightingKind.MUTABLE_PROPERTY,
+        -> CangJieSemanticTokenType.PROPERTY
+
+        CangJieSemanticHighlightingKind.FUNCTION_CALL,
+        CangJieSemanticHighlightingKind.PACKAGE_FUNCTION_CALL,
+        CangJieSemanticHighlightingKind.VARIABLE_AS_FUNCTION_CALL,
+        -> CangJieSemanticTokenType.FUNCTION
+
+        CangJieSemanticHighlightingKind.INSTANCE_FUNCTION_CALL,
+        CangJieSemanticHighlightingKind.STATIC_FUNCTION_CALL,
+        CangJieSemanticHighlightingKind.EXTENSION_FUNCTION_CALL,
+        -> CangJieSemanticTokenType.METHOD
+    }
+
+    private fun CjExpression.semanticCallNameElement(): PsiElement? = when (this) {
+        is CjConstructorCalleeExpression -> constructorReferenceExpression
+        is CjQualifiedExpression -> selectorExpression?.semanticCallNameElement()
+        is CjCallExpression -> calleeExpression?.semanticCallNameElement()
+        else -> this
+    }
+
+    private fun CjSimpleNameExpression.isDeclarationName(): Boolean =
+        (parent as? org.cangnova.cangjie.psi.CjNamedDeclaration)?.nameIdentifier == this
+
+    private fun CjSimpleNameExpression.isCallCallee(): Boolean {
+        var ancestor: PsiElement? = parent
+        while (ancestor != null) {
+            if (ancestor is CjCallExpression &&
+                (ancestor.valueArgumentList != null || ancestor.lambdaArguments.isNotEmpty()) &&
+                isWithin(ancestor.calleeExpression)
+            ) {
+                return true
+            }
+            ancestor = ancestor.parent
+        }
+        return false
+    }
+
+    private fun CjSimpleNameExpression.isConstructorCalleeName(): Boolean {
+        var ancestor: PsiElement? = parent
+        while (ancestor != null) {
+            if (ancestor is CjConstructorCalleeExpression) {
+                return ancestor.constructorReferenceExpression == this
+            }
+            ancestor = ancestor.parent
+        }
+        return false
+    }
+
+    private fun PsiElement.isWithin(root: PsiElement?): Boolean {
+        var current: PsiElement? = this
+        while (current != null) {
+            if (current === root) return true
+            current = current.parent
+        }
+        return false
+    }
+
     /**
      * 按文本范围键写入 token，后写入的结构 token 可以覆盖同范围词法 token。
      */
@@ -406,15 +799,40 @@ object CangJieSemanticTokenCollector {
         destination: MutableMap<String, CangJieSemanticToken>,
         token: CangJieSemanticToken,
     ) {
-        destination[token.range.key()] = token
+        val key = token.range.key()
+        val existing = destination[key]
+        val isFunctionValueCall = CangJieSemanticTokenModifier.FUNCTION_VALUE in token.modifiers ||
+            CangJieSemanticTokenModifier.FUNCTION_VALUE in existing?.modifiers.orEmpty()
+        val valueReferenceToken = when {
+            existing != null && existing.type.isValueReferenceToken() -> existing
+            token.type.isValueReferenceToken() -> token
+            else -> null
+        }
+        destination[key] = if (isFunctionValueCall && valueReferenceToken != null) {
+            valueReferenceToken.copy(
+                modifiers = valueReferenceToken.modifiers + CangJieSemanticTokenModifier.FUNCTION_VALUE,
+            )
+        } else {
+            token
+        }
     }
+
+    private fun CangJieSemanticTokenType.isValueReferenceToken(): Boolean =
+        this == CangJieSemanticTokenType.VARIABLE ||
+            this == CangJieSemanticTokenType.PROPERTY ||
+            this == CangJieSemanticTokenType.PARAMETER
 
     /**
      * 计算属性声明的语义 token 修饰符。
      */
     private fun propertyModifiersOf(property: CjProperty): Array<CangJieSemanticTokenModifier> = buildList {
         if (!property.isVar) add(CangJieSemanticTokenModifier.READONLY)
+        if (property.isVar) add(CangJieSemanticTokenModifier.MUTABLE)
         if (property.isStatic) add(CangJieSemanticTokenModifier.STATIC)
+        if (property.parent is CjExtend) add(CangJieSemanticTokenModifier.EXTENSION)
+        if (property.getter?.bodyExpression != null || property.setter?.bodyExpression != null) {
+            add(CangJieSemanticTokenModifier.CUSTOM_PROPERTY)
+        }
     }.toTypedArray()
 
     /**
@@ -422,7 +840,9 @@ object CangJieSemanticTokenCollector {
      */
     private fun variableModifiersOf(variable: CjVariable<*>): Array<CangJieSemanticTokenModifier> = buildList {
         if (!variable.isVar) add(CangJieSemanticTokenModifier.READONLY)
+        if (variable.isVar) add(CangJieSemanticTokenModifier.MUTABLE)
         if (variable.isStatic) add(CangJieSemanticTokenModifier.STATIC)
+        if (variable is CjFieldVariable) add(CangJieSemanticTokenModifier.FIELD)
     }.toTypedArray()
 
     /**

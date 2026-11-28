@@ -3,6 +3,7 @@ package org.cangnova.cangjie.jvm.codegen.pipeline
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
+import org.cangnova.cangjie.chir.core.controlflow.ChirCatchDispatchEntry
 import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.chir.core.declaration.DefaultChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.DefaultChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
@@ -34,6 +36,7 @@ import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirTypeDeclarationId
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
@@ -3937,6 +3940,242 @@ class DefaultChirToJvmCodeGeneratorTest {
             assertEquals(output.mainClassInternalName!!.replace('/', '.'), jarFile.manifest.mainAttributes.getValue("Main-Class"))
             assertTrue(jarFile.getEntry(artifact.relativePath) != null)
         }
+    }
+
+    /**
+     * 验证 CHIR interface 声明会生成抽象 JVM 接口 classfile，而不是可实例化的具体类。
+     */
+    @Test
+    fun `generates CHIR interface declarations as JVM interfaces`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val drawableInterface = DefaultChirInterfaceDeclaration(
+            semanticId = ChirSemanticId("interface:Drawable"),
+            name = "Drawable",
+            memberDeclarations = listOf(
+                DefaultChirFunctionDeclaration(
+                    semanticId = ChirSemanticId("fn:Drawable.area"),
+                    name = "area",
+                    returnType = intType,
+                    parameters = emptyList(),
+                    blocks = listOf(
+                        ChirBlock(
+                            semanticId = ChirSemanticId("block:Drawable.area"),
+                            name = "entry",
+                            expressions = emptyList(),
+                            terminator = ChirReturnTerminator(
+                                semanticId = ChirSemanticId("term:Drawable.area:return"),
+                                returnValue = ChirConstantValue(ChirSemanticId("const:Drawable.area"), intType, "1"),
+                            ),
+                        ),
+                    ),
+                    entryBlockId = ChirSemanticId("block:Drawable.area"),
+                ),
+            ),
+        )
+
+        val output = DefaultChirToJvmCodeGenerator().generate(inputWithDeclarations(drawableInterface))
+        val artifactsByName = output.classes.associateBy { it.internalName }
+
+        assertTrue("demo/pkg/Drawable" in artifactsByName.keys)
+        output.classes.forEach(::verifyClass)
+        val loader = GeneratedClassLoader()
+        val interfaceClass = loader.define(requireNotNull(artifactsByName["demo/pkg/Drawable"]))
+
+        assertTrue(Modifier.isInterface(interfaceClass.modifiers))
+        assertTrue(Modifier.isAbstract(interfaceClass.modifiers))
+        val areaMethod = interfaceClass.getMethod("area")
+        assertTrue(Modifier.isAbstract(areaMethod.modifiers))
+        assertTrue(Modifier.isPublic(areaMethod.modifiers))
+    }
+
+    /**
+     * 验证接口声明实例字段会被拒绝，而不是静默降级为具体类字段。
+     */
+    @Test
+    fun `rejects CHIR interface instance fields instead of degrading to concrete class`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val interfaceWithField = DefaultChirInterfaceDeclaration(
+            semanticId = ChirSemanticId("interface:Stateful"),
+            name = "Stateful",
+            memberDeclarations = listOf(
+                DefaultChirVariableDeclaration(
+                    semanticId = ChirSemanticId("field:Stateful.cache"),
+                    name = "cache",
+                    type = intType,
+                    mutable = true,
+                ),
+            ),
+        )
+
+        val exception = assertThrows(JvmCodegenException::class.java) {
+            DefaultChirToJvmCodeGenerator().generate(inputWithDeclarations(interfaceWithField))
+        }
+        assertTrue(requireNotNull(exception.message).contains("JVM interface 'Stateful' cannot declare instance field 'cache'"))
+    }
+
+    /**
+     * 验证多 catch 类型分派会降低为按类型的 JVM 异常表条目：
+     * 抛出的异常按实际类型命中对应 catch 块。
+     */
+    @Test
+    fun `lowers CHIR typed catch dispatches to JVM exception table entries`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val argumentExceptionType = ChirResolvedTypeRef(ChirNamedType("java.lang.IllegalArgumentException"))
+        val stateExceptionType = ChirResolvedTypeRef(ChirNamedType("java.lang.IllegalStateException"))
+
+        fun dispatchFunction(name: String, thrownType: ChirResolvedTypeRef, expected: Int): DefaultChirFunctionDeclaration {
+            val entryBlockId = ChirSemanticId("block:$name:entry")
+            val catchArgumentBlockId = ChirSemanticId("block:$name:catch_argument")
+            val catchStateBlockId = ChirSemanticId("block:$name:catch_state")
+            val exceptionLocal = ChirLocalValue(
+                semanticId = ChirSemanticId("expr:$name:new-exception"),
+                type = thrownType,
+                name = "expr_${name}_new_exception",
+            )
+            return DefaultChirFunctionDeclaration(
+                semanticId = ChirSemanticId("fn:$name"),
+                name = name,
+                returnType = intType,
+                parameters = emptyList(),
+                blocks = listOf(
+                    ChirBlock(
+                        semanticId = entryBlockId,
+                        name = "entry",
+                        expressions = listOf(
+                            ChirOtherExpression(
+                                semanticId = ChirSemanticId("expr:$name:new-exception"),
+                                operation = "jvm.new",
+                                operands = emptyList(),
+                                resultType = thrownType,
+                            ),
+                        ),
+                        terminator = ChirThrowTerminator(
+                            semanticId = ChirSemanticId("term:$name:throw"),
+                            exceptionValue = exceptionLocal,
+                            unwindTargetBlockId = catchArgumentBlockId,
+                            catchDispatches = listOf(
+                                ChirCatchDispatchEntry(
+                                    catchBlockId = catchArgumentBlockId,
+                                    exceptionBinding = "argumentErr",
+                                    exceptionTypeName = "java.lang.IllegalArgumentException",
+                                ),
+                                ChirCatchDispatchEntry(
+                                    catchBlockId = catchStateBlockId,
+                                    exceptionBinding = "stateErr",
+                                    exceptionTypeName = "java.lang.IllegalStateException",
+                                ),
+                            ),
+                        ),
+                    ),
+                    ChirBlock(
+                        semanticId = catchArgumentBlockId,
+                        name = "catch_argument",
+                        expressions = emptyList(),
+                        terminator = ChirReturnTerminator(
+                            semanticId = ChirSemanticId("term:$name:return_argument"),
+                            returnValue = ChirConstantValue(
+                                semanticId = ChirSemanticId("const:$name:argument_result"),
+                                type = intType,
+                                literal = "11",
+                            ),
+                        ),
+                    ),
+                    ChirBlock(
+                        semanticId = catchStateBlockId,
+                        name = "catch_state",
+                        expressions = emptyList(),
+                        terminator = ChirReturnTerminator(
+                            semanticId = ChirSemanticId("term:$name:return_state"),
+                            returnValue = ChirConstantValue(
+                                semanticId = ChirSemanticId("const:$name:state_result"),
+                                type = intType,
+                                literal = "22",
+                            ),
+                        ),
+                    ),
+                ),
+                entryBlockId = entryBlockId,
+            )
+        }
+
+        val output = DefaultChirToJvmCodeGenerator().generate(
+            inputWith(
+                dispatchFunction("dispatchIllegalArgument", argumentExceptionType, 11),
+                dispatchFunction("dispatchIllegalState", stateExceptionType, 22),
+            ),
+        )
+        val artifact = output.classes.single()
+
+        verifyClass(artifact)
+        val generatedClass = GeneratedClassLoader().define(artifact)
+        // IllegalArgumentException 命中第一个 catch。
+        assertEquals(11, generatedClass.getMethod("dispatchIllegalArgument").invoke(null))
+        // IllegalStateException 越过第一个 catch 命中第二个。
+        assertEquals(22, generatedClass.getMethod("dispatchIllegalState").invoke(null))
+    }
+
+    /**
+     * 验证 tuple 打包/解包 intrinsic 会降低为可执行的 Object[] 载体操作：
+     * pack (7, true) 后 extract 下标 0 返回 7。
+     */
+    @Test
+    fun `lowers CHIR tuple pack and extract to executable JVM object arrays`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
+        val tupleType = ChirResolvedTypeRef(ChirTupleType(listOf(intType, boolType)))
+        val packLocal = ChirLocalValue(
+            semanticId = ChirSemanticId("expr:tuple:pack"),
+            type = tupleType,
+            name = "expr_tuple_pack",
+        )
+        val function = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:tupleExtractFirst"),
+            name = "tupleExtractFirst",
+            returnType = intType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:tuple:entry"),
+                    name = "entry",
+                    expressions = listOf(
+                        ChirOtherExpression(
+                            semanticId = ChirSemanticId("expr:tuple:pack"),
+                            operation = "chir.tuple_pack",
+                            operands = listOf(
+                                ChirConstantValue(ChirSemanticId("const:tuple:seven"), intType, "7"),
+                                ChirConstantValue(ChirSemanticId("const:tuple:yes"), boolType, "true"),
+                            ),
+                            resultType = tupleType,
+                        ),
+                        ChirOtherExpression(
+                            semanticId = ChirSemanticId("expr:tuple:extract"),
+                            operation = "chir.tuple_extract",
+                            operands = listOf(
+                                packLocal,
+                                ChirConstantValue(ChirSemanticId("const:tuple:index"), intType, "0"),
+                            ),
+                            resultType = intType,
+                        ),
+                    ),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:tuple:return"),
+                        returnValue = ChirLocalValue(
+                            semanticId = ChirSemanticId("expr:tuple:extract"),
+                            type = intType,
+                            name = "expr_tuple_extract",
+                        ),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:tuple:entry"),
+        )
+
+        val output = DefaultChirToJvmCodeGenerator().generate(inputWith(function))
+        val artifact = output.classes.single()
+
+        verifyClass(artifact)
+        val generatedClass = GeneratedClassLoader().define(artifact)
+        assertEquals(7, generatedClass.getMethod("tupleExtractFirst").invoke(null))
     }
 
     /**

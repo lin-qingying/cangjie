@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.diagnostics.impl
 
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticCommitPolicy
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithSource
@@ -29,6 +30,10 @@ class PendingDiagnosticsReporterImpl(
      * 可选的源码元素映射函数，用于把诊断重定向到 offset-only 元素。
      */
     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
+    /**
+     * 提交期裁决策略；必须与 IDE 低级 API 的 reporter 保持一致。
+     */
+    private val commitPolicy: DiagnosticCommitPolicy = CfirDiagnosticCommitPolicy,
 ) : PendingDiagnosticReporter() {
     private val pendingDiagnosticsByFilePath: MutableMap<String, MutableList<CjDiagnostic>> = mutableMapOf()
     private val committedDiagnosticsByFilePath: MutableMap<String, MutableList<CjDiagnostic>> = mutableMapOf()
@@ -162,16 +167,10 @@ class PendingDiagnosticsReporterImpl(
                         if (diagnostic.isCfirDceWarning() && hasErrorInFile(path, pendingList)) {
                             continue
                         }
-                        if (diagnostic.isGenericTypeMismatchSupersededByReturnMismatch(
-                                pendingDiagnostics = pendingList,
-                                committedDiagnostics = committedDiagnosticsByFilePath[path],
-                            )
-                        ) {
-                            continue
-                        }
-                        if (diagnostic.isAccessibilityErrorSupersededByReturnTypeError(
-                                pendingDiagnostics = pendingList,
-                                committedDiagnostics = committedDiagnosticsByFilePath[path],
+                        if (commitPolicy.isSupersededByMoreSpecific(
+                                diagnostic = diagnostic,
+                                pending = pendingList.asSequence(),
+                                committed = committedDiagnosticsByFilePath[path].orEmpty().asSequence(),
                             )
                         ) {
                             continue
@@ -197,11 +196,12 @@ class PendingDiagnosticsReporterImpl(
             val (_, pendingList) = iterator.next()
             for (diagnostic in pendingList) {
                 if (!context.isDiagnosticSuppressed(diagnostic)) {
-                    if (diagnostic.isAccessibilityErrorSupersededByReturnTypeError(
-                            pendingDiagnostics = pendingList,
-                            committedDiagnostics = committedDiagnosticsByFilePath[
+                    if (commitPolicy.isSupersededByMoreSpecific(
+                            diagnostic = diagnostic,
+                            pending = pendingList.asSequence(),
+                            committed = committedDiagnosticsByFilePath[
                                 (diagnostic.context as? DiagnosticContext)?.containingFilePath
-                            ],
+                            ].orEmpty().asSequence(),
                         )
                     ) {
                         continue
@@ -226,7 +226,7 @@ class PendingDiagnosticsReporterImpl(
             committedDiagnosticsByFilePath.getOrPut(it) { mutableListOf() }
         }
         if (committedDiagnostics != null) {
-            if (committedDiagnostics.any { it.hasSameDiagnosticIdentity(diagnostic) }) return
+            if (commitPolicy.isDuplicateOfCommitted(diagnostic, committedDiagnostics.asSequence())) return
         }
 
         delegate.report(diagnostic, context)
@@ -239,60 +239,7 @@ class PendingDiagnosticsReporterImpl(
 }
 
 /**
- * 判断两个诊断是否在名称、消息和首范围上等价。
- */
-private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean =
-    factoryName == other.factoryName &&
-        renderMessage() == other.renderMessage() &&
-        firstRange.startOffset == other.firstRange.startOffset &&
-        firstRange.endOffset == other.firstRange.endOffset
-
-/**
  * 判断诊断是否是 CFIR DCE 产生的 unused warning。
  */
 private fun CjDiagnostic.isCfirDceWarning(): Boolean =
     factoryName == "CFIR_UNUSED_VARIABLE" || factoryName == "CFIR_UNUSED_EXPRESSION"
-
-/** 判断诊断是否是可见性（accessibility）错误；用于同范围诊断的取代规则。 */
-private fun CjDiagnostic.isAccessibilityError(): Boolean = factoryName == "CFIR_ACCESSIBILITY_ERROR"
-
-/**
- * 官方诊断引擎对同范围、同严重级别错误只保留一个；继承检查中返回类型错误比随后产生的
- * 可见性错误更具体，因此相同首范围上的可见性错误由返回类型诊断取代。
- */
-private fun CjDiagnostic.isAccessibilityErrorSupersededByReturnTypeError(
-    pendingDiagnostics: List<CjDiagnostic>,
-    committedDiagnostics: List<CjDiagnostic>?,
-): Boolean {
-    if (!isAccessibilityError()) return false
-    return (pendingDiagnostics.asSequence() + committedDiagnostics.orEmpty().asSequence())
-        .any { candidate ->
-            candidate.factoryName in RETURN_TYPE_OVERRIDE_ERROR_NAMES &&
-                candidate.severity == severity &&
-                candidate.firstRange.startOffset == firstRange.startOffset &&
-                candidate.firstRange.endOffset == firstRange.endOffset
-        }
-}
-
-/** 能在同范围上取代可见性错误的返回类型诊断名称集合。 */
-private val RETURN_TYPE_OVERRIDE_ERROR_NAMES: Set<String> = setOf(
-    "CFIR_RETURN_TYPE_INCOMPATIBLE",
-    "CFIR_RETURN_TYPE_INVARIANCE",
-)
-
-/**
- * RETURN_TYPE_MISMATCH 是 return 根表达式上的专用分类；同一起点且覆盖通用
- * TYPE_MISMATCH 范围时，专用诊断拥有该位置，避免重复输出通用类型不匹配。
- */
-private fun CjDiagnostic.isGenericTypeMismatchSupersededByReturnMismatch(
-    pendingDiagnostics: List<CjDiagnostic>,
-    committedDiagnostics: List<CjDiagnostic>?,
-): Boolean {
-    if (factoryName != "CFIR_TYPE_MISMATCH") return false
-    return (pendingDiagnostics.asSequence() + committedDiagnostics.orEmpty().asSequence())
-        .any { candidate ->
-            candidate.factoryName == "CFIR_RETURN_TYPE_MISMATCH" &&
-                candidate.firstRange.startOffset == firstRange.startOffset &&
-                candidate.firstRange.endOffset >= firstRange.endOffset
-        }
-}

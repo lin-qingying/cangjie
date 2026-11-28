@@ -1,0 +1,30 @@
+FILE: forWithWhereGuard.cj
+    internal? func f(arr: R|Array<R|Int64|>|): R|Int64| {
+        local? var total: <implicit> = ...
+            initializer:
+                INT(0)
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                NAMED_ACCESS(arr)
+            patternGuard:
+                COMPARISON(GT) {
+                    NAMED_ACCESS(v)
+                    INT(0)
+                }
+            body:
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(total)
+                    rValue:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(total)
+                            arguments:
+                                NAMED_ACCESS(v)
+                        }
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(total)
+        }
+    }

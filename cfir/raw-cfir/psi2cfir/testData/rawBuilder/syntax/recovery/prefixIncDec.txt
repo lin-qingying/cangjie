@@ -1,0 +1,10 @@
+FILE: prefixIncDec.cj
+    internal? func prefixIncDec(): R|Int64| {
+        local? var a: <implicit> = ...
+            initializer:
+                INT(1)
+        NAMED_ACCESS(a)
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }

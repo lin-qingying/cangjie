@@ -1,0 +1,28 @@
+FILE: genericOptionField.cj
+    internal? class Box<T> {
+        init()
+        private var value: R|Option<R|T|>| = ...
+            initializer:
+                NAMED_ACCESS(None)
+        public func get(): R|Option<R|T|>| {
+            RETURN {
+                NAMED_ACCESS(value) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+        public func put(item: R|T|): R|Unit| {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    FUNCTION_CALL(Some) {
+                        NAMED_ACCESS(item)
+                    }
+            }
+        }
+    }

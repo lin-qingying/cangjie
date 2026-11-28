@@ -1,0 +1,32 @@
+FILE: whereConstraints.cj
+    internal? interface A {
+    }
+    internal? interface B {
+    }
+    internal? func <T>single(x: R|T|): R|T| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T, U>multiple(a: R|T|, b: R|U|): R|T| {
+        <element: CfirLazyBlock>
+    }
+    internal? class ClassBound<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        internal? func get(): R|T| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface InterfaceBound<T> {
+        public? abstract? func f(): R|T|
+    }
+    internal? struct StructBound<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        internal? func get(): R|T| {
+            <element: CfirLazyBlock>
+        }
+    }

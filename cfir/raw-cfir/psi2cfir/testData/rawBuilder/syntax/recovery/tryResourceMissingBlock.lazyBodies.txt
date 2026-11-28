@@ -1,0 +1,20 @@
+FILE: tryResourceMissingBlock.cj
+    internal? class Res <: R|Resource| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func isClosed(): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public func close(): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class MyError <: R|Exception| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func tryResourceMissingBlock(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

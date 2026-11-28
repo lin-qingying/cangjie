@@ -2,10 +2,13 @@ package org.cangnova.cangjie.analysis.api.components
 
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
+import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 
 /**
  * 符号关系查询协议。
@@ -26,6 +29,11 @@ interface CaSymbolRelationProvider : CaLifetimeOwner {
      * 该关系由 session component 统一计算，而不是由每个 symbol 叶子各自持有。
      */
     val CaSymbol.containingDeclaration: CaDeclarationSymbol?
+
+    /**
+     * 主构造器 `let`/`var` 参数对应的实际成员字段。普通值参数返回 `null`。
+     */
+    val CaValueParameterSymbol.correspondingField: CaFieldSymbol?
 
     /**
      * 判断两个 symbol 在当前 session 下是否表示同一语义实体。
@@ -86,6 +94,13 @@ interface CaSymbolRelationProvider : CaLifetimeOwner {
 context(session: CaSession)
 val CaSymbol.containingDeclaration: CaDeclarationSymbol?
     get() = with(session) { containingDeclaration }
+
+/**
+ * 取得仓颉主构造参数对应的实际成员字段。
+ */
+context(session: CaSession)
+val CaValueParameterSymbol.correspondingField: CaFieldSymbol?
+    get() = with(session) { correspondingField }
 
 /**
  * 顶层桥接:在 context [CaSession] 下判断两个 symbol 是否语义等价。

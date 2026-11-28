@@ -54,7 +54,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.CfirPCLAInferenceSession
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceVariableRole
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.cfir.symbols.*
@@ -394,14 +395,18 @@ class CandidateFactory(
         val parameterTypes = callInfo.arguments.mapIndexed { index, argument ->
             argument.coneTypeOrNull
                 ?.let(IdealTypeResolver::resolveIfIdeal)
-                ?: ConeTypeVariableForLambdaParameterType("InvokeParameter$index")
+                ?: context.bodyResolveContext.createInferenceVariable(
+                    callInfo.callSite, CfirInferenceVariableRole.INVOKE_PARAMETER, index,
+                ) { ConeTypeVariableForLambdaParameterType("InvokeParameter$index") }
                     .also { freshVariable ->
                         createdVariables += freshVariable
                         pclaSession.registerInferenceVariable(freshVariable)
                     }
                     .defaultType
         }
-        val returnVariable = ConeTypeVariableForPostponedAtom("InvokeReturn")
+        val returnVariable = context.bodyResolveContext.createInferenceVariable(
+            callInfo.callSite, CfirInferenceVariableRole.INVOKE_RETURN,
+        ) { ConeTypeVariableForPostponedAtom("InvokeReturn") }
             .also { freshVariable ->
                 createdVariables += freshVariable
                 pclaSession.registerInferenceVariable(freshVariable)
@@ -410,7 +415,7 @@ class CandidateFactory(
             parameterTypes = parameterTypes,
             returnType = returnVariable.defaultType,
         )
-        pclaSession.addSubtypeConstraintIfCompatible(receiverType, functionType)
+        pclaSession.addSubtypeConstraintIfCompatible(receiverType, functionType, callInfo.callSite)
         return FreshValueParameterInvokeShape(
             receiverType = receiverType,
             functionType = functionType,
@@ -559,6 +564,21 @@ class CandidateFactory(
                 receiverExpression,
             ),
         )
+        context.bodyResolveContext.implicitTypeComputationScope?.let { scope ->
+            scope.graph.registerSyntheticSymbol(scope, callInfo.callSite, symbol,
+                org.cangnova.cangjie.cfir.resolve.inference.CfirSyntheticCallRole.FUNCTION_TYPE_INVOKE)
+            // 真实 synthetic invoke 使用的就是这份参数/返回签名；具体类型阶段仍执行该消费点。
+            functionType.parameterTypes.forEachIndexed { index, type ->
+                scope.graph.consumeExpressionType(scope, receiverExpression, CfirInferenceVariableRole.INVOKE_PARAMETER,
+                    index, type, candidate.system)
+                scope.graph.consumeExpressionType(scope, callInfo.callSite, CfirInferenceVariableRole.INVOKE_PARAMETER,
+                    index, type, candidate.system)
+            }
+            scope.graph.consumeExpressionType(scope, receiverExpression, CfirInferenceVariableRole.INVOKE_RETURN,
+                0, functionType.returnType, candidate.system)
+            scope.graph.consumeExpressionType(scope, callInfo.callSite, CfirInferenceVariableRole.INVOKE_RETURN,
+                0, functionType.returnType, candidate.system)
+        }
         candidate.registerFunctionTypeInvokeCompletionVariables(functionType)
         return candidate
     }
@@ -620,21 +640,20 @@ class CandidateFactory(
     }
 
     /**
-     * 将函数值 receiver 候选的约束接入当前调用，保留上游 PCLA 的系统边界。
+     * 将函数值 receiver 候选的约束接入当前调用。
+     *
+     * 与 [addSubsystemFromAtom] 的规则一致：`usesOuterCs` 的 receiver 是本会话或上游
+     * PCLA 会话的候选，其约束已由它自己的 `processPartiallyResolvedCall` 集成进推断
+     * 会话；此处不能再把它作为 invoke 的外层系统导入——同源兄弟候选存储的
+     * `allTypeVariables` 会把 common system 的内部变量计入外层前缀，且 outerCS 会偏离
+     * common system，使 invoke 候选回灌时违反 `replaceContentWith` 的前缀不变量。
      */
     private fun ConstraintStorage.withCallableValueReceiverSystems(
         callableValueReceiverStorage: ConstraintStorage,
     ): ConstraintStorage {
         val system = context.inferenceComponents.createConstraintSystem()
-        if (callableValueReceiverStorage.usesOuterCs && !usesOuterCs) {
-            /*
-             * 函数值 receiver 本身可能是 postponed PCLA 调用，必须作为 invoke 的外层
-             * 系统导入；把它作为根系统的普通同级子系统会破坏嵌套约束系统的不变量。
-             */
-            system.addOuterSystem(callableValueReceiverStorage)
-            system.addOtherSystem(this)
-        } else {
-            system.setBaseSystem(this)
+        system.setBaseSystem(this)
+        if (!callableValueReceiverStorage.usesOuterCs) {
             system.addOtherSystem(callableValueReceiverStorage)
         }
         return system.asReadOnlyStorage()
@@ -1138,6 +1157,7 @@ class CandidateFactory(
     fun createErrorCandidate(callInfo: CallInfo, diagnostic: ConeDiagnostic): Candidate {
         val errorSymbol = when(callInfo.callKind) {
             is CallKind.Function,
+            CallKind.SyntheticSelect,
             CallKind.DelegatingConstructorCall,
                 ->  createErrorFunctionSymbol(diagnostic)
 

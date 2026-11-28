@@ -360,6 +360,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(fieldVariable)
     }
 
+    final override fun visitResourceVariable(resourceVariable: CfirResourceVariable, data: Nothing?) {
+        visitResourceVariable(resourceVariable)
+    }
+
+    open fun visitResourceVariable(resourceVariable: CfirResourceVariable) {
+        visitElement(resourceVariable)
+    }
+
     final override fun visitPatternVariable(patternVariable: CfirPatternVariable, data: Nothing?) {
         visitPatternVariable(patternVariable)
     }
